@@ -39,3 +39,26 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# keep example envs in repo
+!.env.example
+
+# editors / IDEs
+.vscode/
+.idea/
+.history/
+.eslintcache
+
+# OS junk
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Playwright / Vitest artifacts
+playwright-report/
+test-results/
+
+# Supabase local dev noise
+supabase/.temp/
+supabase/.branches/
+supabase/.snapshots/
