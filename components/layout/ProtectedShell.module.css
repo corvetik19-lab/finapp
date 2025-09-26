@@ -1,0 +1,92 @@
+/* Basic protected layout shell */
+.root {
+  display: flex;
+  min-height: 100dvh;
+  background: #f3f4f6; /* gray-100 */
+}
+
+.sidebar {
+  width: 240px;
+  background: var(--primary-dark);
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  gap: 4px;
+}
+
+.nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #ffffff;
+  text-decoration: none;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.nav a:hover {
+  background: rgba(255,255,255,0.10);
+}
+
+.active {
+  background: rgba(255,255,255,0.15);
+  color: #ffffff;
+}
+
+.bottom {
+  margin-top: auto;
+  padding: 8px;
+  border-top: 1px solid rgba(255,255,255,0.15);
+}
+
+.signout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #ffe1e1;
+  text-decoration: none;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.signout:hover {
+  background: rgba(255,255,255,0.10);
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  height: 56px;
+  background: var(--card-bg);
+  border-bottom: 1px solid #eaeef3;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.main {
+  flex: 1;
+  padding: 16px;
+}

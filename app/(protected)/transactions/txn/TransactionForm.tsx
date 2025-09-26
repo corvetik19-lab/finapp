@@ -1,0 +1,108 @@
+"use client";
+import { useEffect, useRef, useActionState } from "react";
+import { useFormStatus } from "react-dom";
+import { createTransactionAction, type TxnActionState } from "../actions";
+import { useRouter } from "next/navigation";
+import stylesTxn from "@/components/transactions/Transactions.module.css";
+
+export default function TransactionForm({
+  accounts,
+  categories,
+}: {
+  accounts: { id: string; name: string; currency: string }[];
+  categories: { id: string; name: string; kind: "income" | "expense" | "transfer" }[];
+}) {
+  const initial: TxnActionState = { ok: false };
+  const [state, formAction] = useActionState(createTransactionAction, initial);
+  const formRef = useRef<HTMLFormElement>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (state.ok) {
+      formRef.current?.reset();
+      router.refresh();
+    }
+  }, [state.ok, router]);
+
+  return (
+    <form ref={formRef} action={formAction} style={{ display: "grid", gap: 8, background: "#fff", padding: 12, borderRadius: 8 }}>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <label>
+          <span>Тип</span>
+          <select name="direction" defaultValue="expense" required style={{ display: "block", padding: 8, borderRadius: 8, border: "1px solid #ccc" }}>
+            <option value="expense">Расход</option>
+            <option value="income">Доход</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Счёт</span>
+          <select name="account_id" defaultValue={accounts[0]?.id || ""} required style={{ display: "block", padding: 8, borderRadius: 8, border: "1px solid #ccc", minWidth: 200 }}>
+            <option value="">— выберите —</option>
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name} ({a.currency})
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          <span>Категория</span>
+          <select name="category_id" style={{ display: "block", padding: 8, borderRadius: 8, border: "1px solid #ccc", minWidth: 200 }}>
+            <option value="">— не выбрана —</option>
+            {categories
+              .filter((c) => c.kind !== "transfer")
+              .map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+          </select>
+        </label>
+
+        <label>
+          <span>Сумма</span>
+          <input
+            name="amount_major"
+            type="number"
+            step="0.01"
+            inputMode="decimal"
+            placeholder="0"
+            required
+            style={{ display: "block", padding: 8, borderRadius: 8, border: "1px solid #ccc", width: 140 }}
+          />
+        </label>
+
+        <label>
+          <span>Дата</span>
+          <input name="occurred_at" type="datetime-local" style={{ display: "block", padding: 8, borderRadius: 8, border: "1px solid #ccc" }} />
+        </label>
+
+        <label style={{ flex: 1 }}>
+          <span>Заметка</span>
+          <input name="note" type="text" placeholder="Комментарий" style={{ display: "block", padding: 8, borderRadius: 8, border: "1px solid #ccc", width: "100%" }} />
+        </label>
+      </div>
+
+      <input type="hidden" name="currency" value={accounts[0]?.currency || "RUB"} />
+
+      <div aria-live="polite" style={{ minHeight: 20, color: state.error ? "#c62828" : "#2e7d32" }}>
+        {state.error ? state.error : state.ok ? "Сохранено" : null}
+      </div>
+
+      <div>
+        <SubmitButton />
+      </div>
+    </form>
+  );
+}
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button type="submit" disabled={pending} className={stylesTxn.primaryBtn}>
+      {pending ? "Сохраняем…" : "Добавить"}
+    </button>
+  );
+}
