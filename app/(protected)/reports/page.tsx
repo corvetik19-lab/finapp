@@ -1,5 +1,6 @@
 import { createRSCClient } from "@/lib/supabase/helpers";
 import { aggregateReports } from "@/lib/reports/aggregations";
+import { listBudgetsWithUsage } from "@/lib/budgets/service";
 import MonthlyTrendChart from "@/components/reports/MonthlyTrendChart";
 import ExpenseBreakdownDonut from "@/components/reports/ExpenseBreakdownDonut";
 import styles from "@/components/reports/Reports.module.css";
@@ -47,6 +48,21 @@ export default async function ReportsPage() {
 
   const categoryMap = Object.fromEntries((catData ?? []).map((cat: CategoryRow) => [cat.id, cat.name] as const));
 
+  const budgets = await listBudgetsWithUsage();
+  const today = new Date();
+  const activeBudgets = budgets.filter((budget) => {
+    const start = new Date(`${budget.period_start}T00:00:00Z`);
+    const end = new Date(`${budget.period_end}T23:59:59Z`);
+    return start <= today && end >= today;
+  });
+  const hasOverBudget = activeBudgets.some((budget) => budget.status === "over");
+  const hasWarningBudget = activeBudgets.some((budget) => budget.status === "warning");
+  const budgetStatusByCategory = new Map(
+    activeBudgets
+      .filter((budget) => budget.category)
+      .map((budget) => [budget.category!.name, budget.status] as const)
+  );
+
   if (transactions.length === 0) {
     return (
       <div className={styles.page}>
@@ -88,6 +104,10 @@ export default async function ReportsPage() {
   const breakdownTotal = expenseBreakdown.values.reduce((sum, value) => sum + value, 0);
   const hasBreakdown = expenseBreakdown.labels.length > 0 && breakdownTotal > 0;
 
+  const expenseCardClasses = [styles.summaryCard, styles.expense];
+  if (hasOverBudget) expenseCardClasses.push(styles.dangerAccent);
+  else if (hasWarningBudget) expenseCardClasses.push(styles.warningAccent);
+
   return (
     <div className={styles.page}>
       <section className={styles.header}>
@@ -103,10 +123,17 @@ export default async function ReportsPage() {
           <span className={styles.summaryValue}>{formatMajor(currentIncome)}</span>
           <span className={styles.summaryHint}>Изменение к прошлому месяцу: {incomeDeltaLabel}</span>
         </div>
-        <div className={`${styles.summaryCard} ${styles.expense}`}>
+        <div className={expenseCardClasses.join(" ")}>
           <span className={styles.summaryLabel}>Расходы за {periodLabel}</span>
           <span className={styles.summaryValue}>{formatMajor(currentExpense)}</span>
           <span className={styles.summaryHint}>Изменение к прошлому месяцу: {expenseDeltaLabel}</span>
+          {(hasOverBudget || hasWarningBudget) && (
+            <span
+              className={`${styles.summaryHint} ${hasOverBudget ? styles.summaryHintAlert : styles.summaryHintNotice}`}
+            >
+              {hasOverBudget ? "Есть категории с превышенным бюджетом" : "Часть категорий близка к лимиту"}
+            </span>
+          )}
         </div>
         <div className={`${styles.summaryCard} ${styles.net}`}>
           <span className={styles.summaryLabel}>Чистый поток за {periodLabel}</span>
@@ -160,13 +187,30 @@ export default async function ReportsPage() {
             {expenseBreakdown.labels.map((label, index) => {
               const valueMajor = expenseBreakdown.values[index];
               const pct = breakdownTotal > 0 ? (valueMajor / breakdownTotal) * 100 : 0;
+              const budgetStatus = budgetStatusByCategory.get(label);
+              const breakdownItemClasses = [styles.breakdownItem];
+              if (budgetStatus === "over") breakdownItemClasses.push(styles.breakdownItemOver);
+              else if (budgetStatus === "warning") breakdownItemClasses.push(styles.breakdownItemWarning);
               return (
-                <div key={label} className={styles.breakdownItem}>
+                <div key={label} className={breakdownItemClasses.join(" ")}> 
                   <div className={styles.breakdownName}>
                     <span className={styles.breakdownLabel}>{label}</span>
                     <span className={styles.breakdownMeta}>{pct.toFixed(1)}% от расходов месяца</span>
                   </div>
-                  <span className={styles.breakdownValue}>{formatMajor(valueMajor)}</span>
+                  <div className={styles.breakdownValueWrap}>
+                    <span className={styles.breakdownValue}>{formatMajor(valueMajor)}</span>
+                    {budgetStatus && (
+                      <span
+                        className={`${styles.breakdownStatusBadge} ${
+                          budgetStatus === "over"
+                            ? styles.breakdownStatusBadgeOver
+                            : styles.breakdownStatusBadgeWarning
+                        }`}
+                      >
+                        {budgetStatus === "over" ? "перерасход" : "почти лимит"}
+                      </span>
+                    )}
+                  </div>
                 </div>
               );
             })}

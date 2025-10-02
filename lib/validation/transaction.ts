@@ -44,3 +44,27 @@ export const transactionEditFormSchema = transactionFormSchema.extend({
 });
 
 export type TransactionEditFormValues = z.infer<typeof transactionEditFormSchema>;
+
+export const transferSchema = z.object({
+  from_account_id: z.string().uuid({ message: "Выберите счёт-источник" }),
+  to_account_id: z.string().uuid({ message: "Выберите счёт-назначение" }),
+  amount_major: z
+    .preprocess((v) => (typeof v === "string" ? v.replace(/,/g, ".") : v), z.coerce.number().positive("Сумма должна быть больше 0"))
+    .describe("Сумма в рублях, дробная часть через точку"),
+  currency: z.string().min(3).max(3).default("RUB"),
+  occurred_at: z.string().optional(),
+  note: z.string().optional().nullable(),
+});
+
+export type TransferInput = z.infer<typeof transferSchema>;
+
+export const transferFormSchema = z.object({
+  from_account_id: z.string().uuid({ message: "Выберите счёт-источник" }),
+  to_account_id: z.string().uuid({ message: "Выберите счёт-назначение" }),
+  amount_major: amountStringSchema,
+  currency: z.string().min(3).max(3),
+  occurred_at: z.string().min(1, "Укажите дату"),
+  note: z.string().optional().nullable(),
+});
+
+export type TransferFormValues = z.infer<typeof transferFormSchema>;

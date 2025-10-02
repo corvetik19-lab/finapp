@@ -1,6 +1,6 @@
 "use client";
 import styles from "@/components/transactions/Transactions.module.css";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 // Amount input mask helpers (module scope for stable references)
@@ -82,14 +82,14 @@ export default function FiltersAndSearch({
     return raw ? raw.split(",").filter(Boolean) : [];
   });
 
-  function updateUrl(next: Partial<Record<string, string>>) {
+  const updateUrl = useCallback((next: Partial<Record<string, string>>) => {
     const params = new URLSearchParams(sp.toString());
     for (const [k, v] of Object.entries(next)) {
       if (v === undefined || v === null || v === "") params.delete(k);
       else params.set(k, v);
     }
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  }
+  }, [router, pathname, sp]);
 
   function handleMinChange(val: string) {
     const disp = formatAmountDisplay(val);
@@ -185,8 +185,22 @@ export default function FiltersAndSearch({
     });
   }
 
-  const incomeCats = categories.filter((c) => c.kind === "income");
-  const expenseCats = categories.filter((c) => c.kind === "expense");
+  const incomeCats = useMemo(() => categories.filter((c) => c.kind === "income"), [categories]);
+  const expenseCats = useMemo(() => categories.filter((c) => c.kind === "expense"), [categories]);
+  const visibleCats = useMemo(() => {
+    if (type === "income") return incomeCats;
+    if (type === "expense") return expenseCats;
+    return [...incomeCats, ...expenseCats];
+  }, [type, incomeCats, expenseCats]);
+
+  useEffect(() => {
+    if (categoriesSel.length === 0) return;
+    const allowedIds = new Set(visibleCats.map((c) => c.id));
+    if (!categoriesSel.every((id) => allowedIds.has(id))) {
+      setCategoriesSel([]);
+      updateUrl({ categories: "" });
+    }
+  }, [visibleCats, categoriesSel, updateUrl]);
 
   return (
     <section className={styles.filtersCard}>
@@ -292,7 +306,7 @@ export default function FiltersAndSearch({
 
         <div className={styles.filterGroup}>
           <label className={styles.label}>Категория</label>
-          {incomeCats.length + expenseCats.length === 0 ? (
+          {visibleCats.length === 0 ? (
             <select className={styles.select} disabled>
               <option>Нет категорий</option>
             </select>
@@ -308,13 +322,19 @@ export default function FiltersAndSearch({
               }}
             >
               <option value="all">Все категории</option>
-              {[{ label: "Доход", list: incomeCats }, { label: "Расход", list: expenseCats }].map((g) => (
-                <optgroup key={g.label} label={g.label}>
-                  {g.list.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </optgroup>
-              ))}
+              {type === "all" ? (
+                [{ label: "Доход", list: incomeCats }, { label: "Расход", list: expenseCats }].map((g) => (
+                  <optgroup key={g.label} label={g.label}>
+                    {g.list.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </optgroup>
+                ))
+              ) : (
+                visibleCats.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))
+              )}
             </select>
           )}
         </div>

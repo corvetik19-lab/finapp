@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import stylesTxn from "@/components/transactions/Transactions.module.css";
 import modal from "@/components/transactions/AddModal.module.css";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   transactionFormSchema,
@@ -59,6 +59,7 @@ export default function AddTransactionButton({
     handleSubmit,
     reset,
     setValue,
+    control,
     watch,
     formState: { errors },
   } = useForm<TransactionFormValues>({
@@ -84,6 +85,13 @@ export default function AddTransactionButton({
 
   const amountValue = watch("amount_major");
   const accountValue = watch("account_id");
+  const directionValue = useWatch({ control, name: "direction" }) ?? "expense";
+  const categoryValue = useWatch({ control, name: "category_id" }) ?? "";
+
+  const filteredCategories = useMemo(
+    () => categories.filter((c) => c.kind === directionValue),
+    [categories, directionValue]
+  );
 
   useEffect(() => {
     const current = accounts.find((a) => a.id === accountValue);
@@ -91,6 +99,12 @@ export default function AddTransactionButton({
       setValue("currency", current.currency);
     }
   }, [accountValue, accounts, setValue]);
+
+  useEffect(() => {
+    if (!filteredCategories.find((c) => c.id === categoryValue)) {
+      setValue("category_id", "");
+    }
+  }, [filteredCategories, categoryValue, setValue]);
 
   const onSubmit = handleSubmit((values) => {
     setServerError(null);
@@ -157,13 +171,11 @@ export default function AddTransactionButton({
                   <label className={modal.label}>Категория</label>
                   <select {...register("category_id")} className={stylesTxn.select} defaultValue="">
                     <option value="">— не выбрана —</option>
-                    {categories
-                      .filter((c) => c.kind !== "transfer")
-                      .map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
+                    {filteredCategories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>

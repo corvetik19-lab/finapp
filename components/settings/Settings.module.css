@@ -9,10 +9,18 @@
 .sectionTitle{font-size:18px;font-weight:500;color:var(--primary-dark);margin-bottom:12px}
 .toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px}
 .input{padding:8px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px}
+.select{padding:8px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;min-width:160px;background:#fff}
 .btn{padding:8px 12px;border-radius:8px;border:0;background:var(--primary-color);color:#fff;cursor:pointer}
 .btn.secondary{background:var(--primary-light);color:var(--primary-color)}
+.btnSecondary{background:var(--primary-light);color:var(--primary-color)}
 
 .list{display:flex;flex-direction:column;gap:8px}
 .item{display:flex;align-items:center;gap:8px;justify-content:space-between;background:var(--background);border-radius:8px;padding:8px 10px}
 .itemForm{display:flex;gap:8px;align-items:center}
 .del{background:#fff;color:var(--danger);border:1px solid rgba(244,67,54,0.25);padding:6px 8px;border-radius:8px;cursor:pointer}
+
+.tree{display:flex;flex-direction:column;gap:6px}
+.treeGroup{display:flex;flex-direction:column;gap:6px}
+.treeRow{display:flex;align-items:center;justify-content:space-between;background:var(--background);border-radius:8px;padding:8px 10px;gap:12px}
+.treeInfo{display:flex;align-items:center;gap:6px;font-weight:500}
+.treeActions{display:flex;align-items:center;gap:8px}

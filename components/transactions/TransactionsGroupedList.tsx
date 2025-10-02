@@ -1,18 +1,25 @@
 "use client";
 
-import { useMemo, useState, useEffect, useActionState, useTransition } from "react";
+import {
+  useMemo,
+  useState,
+  useEffect,
+  useActionState,
+  useTransition,
+} from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import styles from "@/components/transactions/Transactions.module.css";
 import {
   deleteTransactionAction,
   updateTransactionFromValues,
   type DeleteTxnState,
 } from "@/app/(protected)/transactions/actions";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
   transactionEditFormSchema,
   type TransactionEditFormValues,
 } from "@/lib/validation/transaction";
+import { formatMoney } from "@/lib/utils/format";
 
 export type Txn = {
   id: string;
@@ -26,6 +33,8 @@ export type Txn = {
   account_id?: string | null;
   tags?: unknown;
   attachment_count?: number | null;
+  transfer_id?: string | null;
+  transfer_role?: "expense" | "income" | null;
 };
 
 export type Category = { id: string; name: string; kind: "income" | "expense" | "transfer" };
@@ -37,66 +46,61 @@ type Group = {
   total: number;
 };
 
-function formatMoney(minor: number, currency: string) {
-  const sign = minor >= 0 ? 1 : -1;
-  const abs = Math.abs(minor);
-  const major = abs / 100;
-  return new Intl.NumberFormat("ru-RU", { style: "currency", currency }).format(sign * major);
-}
-
 function formatAmountInput(minor: number) {
   return (minor / 100).toString();
 }
+
+type TransactionsGroupedListProps = {
+  txns: Txn[];
+  categories: Category[];
+  accounts: Account[];
+};
 
 export default function TransactionsGroupedList({
   txns,
   categories,
   accounts,
-}: {
-  txns: Txn[];
-  categories: Category[];
-  accounts: Account[];
-}) {
+}: TransactionsGroupedListProps) {
   const catMap = useMemo(() => Object.fromEntries(categories.map((c) => [c.id, c])), [categories]);
   const accMap = useMemo(() => Object.fromEntries(accounts.map((a) => [a.id, a])), [accounts]);
 
   const byDir = useMemo(() => {
     const buckets: Record<string, Txn[]> = {};
-    for (const t of txns) {
-      if (t.direction !== "income" && t.direction !== "expense") continue;
-      const key = `${t.direction}|${t.category_id || "uncat"}`;
+    for (const txn of txns) {
+      if (txn.direction !== "income" && txn.direction !== "expense") continue;
+      const key = `${txn.direction}|${txn.category_id || "uncat"}`;
       if (!buckets[key]) buckets[key] = [];
-      buckets[key].push(t);
+      buckets[key].push(txn);
     }
-    const result: Record<"income" | "expense", Group[]> = { income: [], expense: [] };
+
+    const grouped: Record<"income" | "expense", Group[]> = { income: [], expense: [] };
     for (const [key, list] of Object.entries(buckets)) {
       const [dir, catId] = key.split("|") as ["income" | "expense", string];
       const sorted = [...list].sort(
         (a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime(),
       );
-      result[dir].push({
+      grouped[dir].push({
         category: catId === "uncat" ? undefined : catMap[catId],
         txns: sorted,
         total: sorted.reduce((sum, item) => sum + Number(item.amount), 0),
       });
     }
+
     for (const dir of ["income", "expense"] as const) {
-      result[dir].sort((a, b) => {
+      grouped[dir].sort((a, b) => {
         const an = a.category?.name || "Без категории";
         const bn = b.category?.name || "Без категории";
         return an.localeCompare(bn, "ru");
       });
     }
-    return result;
+
+    return grouped;
   }, [txns, catMap]);
 
-  const incomeTotal = useMemo(() => byDir.income.reduce((sum, g) => sum + g.total, 0), [byDir]);
-  const expenseTotal = useMemo(() => byDir.expense.reduce((sum, g) => sum + g.total, 0), [byDir]);
+  const incomeTotal = useMemo(() => byDir.income.reduce((sum, group) => sum + group.total, 0), [byDir]);
+  const expenseTotal = useMemo(() => byDir.expense.reduce((sum, group) => sum + group.total, 0), [byDir]);
 
-  const [openDir, setOpenDir] = useState<{ income: boolean; expense: boolean }>({
-    income: true,
-    expense: true,
-  });
+  const [openDir, setOpenDir] = useState<{ income: boolean; expense: boolean }>({ income: true, expense: true });
   const [openCats, setOpenCats] = useState<Record<string, boolean>>({});
   const [selected, setSelected] = useState<Txn | null>(null);
   const [editMode, setEditMode] = useState(false);
@@ -106,9 +110,7 @@ export default function TransactionsGroupedList({
   const [toast, setToast] = useState<string | null>(null);
   const [removingIds, setRemovingIds] = useState<Record<string, boolean>>({});
 
-  const [deleteState, deleteAction] = useActionState(deleteTransactionAction, {
-    ok: false,
-  } as DeleteTxnState);
+  const [deleteState, deleteAction] = useActionState(deleteTransactionAction, { ok: false } as DeleteTxnState);
   const [isSaving, startSaving] = useTransition();
 
   const {
@@ -172,10 +174,8 @@ export default function TransactionsGroupedList({
       }
     } catch {}
     try {
-      const stored = localStorage.getItem("txn_open_cats");
-      if (stored) {
-        setOpenCats(JSON.parse(stored) || {});
-      }
+      const storedCats = localStorage.getItem("txn_open_cats");
+      if (storedCats) setOpenCats(JSON.parse(storedCats) || {});
     } catch {}
   }, []);
 
@@ -197,9 +197,7 @@ export default function TransactionsGroupedList({
   useEffect(() => {
     if (!editMode || !accountValue) return;
     const account = accounts.find((a) => a.id === accountValue);
-    if (account) {
-      setValue("currency", account.currency, { shouldDirty: true });
-    }
+    if (account) setValue("currency", account.currency, { shouldDirty: true });
   }, [accountValue, accounts, editMode, setValue]);
 
   useEffect(() => {
@@ -285,7 +283,6 @@ export default function TransactionsGroupedList({
     setRemovingIds: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
     removingIds: Record<string, boolean>;
     delAction: (formData: FormData) => void;
-    setToast: (msg: string | null) => void;
   };
 
   function DirBlock({
@@ -302,7 +299,6 @@ export default function TransactionsGroupedList({
     setRemovingIds,
     removingIds,
     delAction,
-    setToast,
   }: DirBlockProps) {
     const totalCurrency = groups[0]?.txns[0]?.currency || "RUB";
     return (
@@ -343,44 +339,65 @@ export default function TransactionsGroupedList({
 
                   {catOpen && (
                     <div className={styles.list}>
-                      {group.txns.map((t) => {
-                        const signCls = dir === "income" ? styles.income : styles.expense;
+                      {group.txns.map((txn) => {
+                        const signCls =
+                          txn.transfer_id && txn.transfer_role
+                            ? styles.transfer
+                            : dir === "income"
+                              ? styles.income
+                              : styles.expense;
                         return (
                           <div
-                            key={t.id}
-                            className={`${styles.item} ${removingIds[t.id] ? styles.removing : ""}`}
+                            key={txn.id}
+                            className={`${styles.item} ${removingIds[txn.id] ? styles.removing : ""}`}
                             onClick={() => {
-                              setSelected(t);
+                              setSelected(txn);
                               setEditMode(false);
                             }}
                           >
                             <div className={styles.left}>
                               <div className={`${styles.icon} ${signCls}`}>
                                 <span className="material-icons" aria-hidden>
-                                  {dir === "income" ? "arrow_upward" : "arrow_downward"}
+                                  {txn.transfer_id
+                                    ? txn.transfer_role === "expense"
+                                      ? "swap_horizontal_circle"
+                                      : "swap_horizontal_circle"
+                                    : dir === "income"
+                                      ? "arrow_upward"
+                                      : "arrow_downward"}
                                 </span>
                               </div>
                               <div className={styles.main}>
-                                <div className={styles.title}>{t.counterparty || t.note || "Без названия"}</div>
-                                <div className={styles.subtitle}>{new Date(t.occurred_at).toLocaleString("ru-RU")}</div>
+                                <div className={styles.title}>
+                                  {txn.transfer_id
+                                    ? txn.transfer_role === "expense"
+                                      ? "Перевод (списание)"
+                                      : "Перевод (зачисление)"
+                                    : txn.counterparty || txn.note || "Без названия"}
+                                </div>
+                                <div className={styles.subtitle}>{new Date(txn.occurred_at).toLocaleString("ru-RU")}</div>
                               </div>
                             </div>
 
                             <div className={styles.rowActions} onClick={(e) => e.stopPropagation()}>
                               <div className={`${styles.amount} ${signCls}`}>
-                                {dir === "income" ? "+" : ""}
-                                {formatMoney(dir === "income" ? t.amount : -t.amount, t.currency)}
+                                {txn.transfer_id
+                                  ? ""
+                                  : dir === "income"
+                                    ? "+"
+                                    : ""}
+                                {formatMoney(dir === "income" ? txn.amount : -txn.amount, txn.currency)}
                               </div>
 
                               <form
                                 action={(fd) => {
                                   if (!confirm("Удалить эту транзакцию?")) return;
-                                  setRemovingIds((prev) => ({ ...prev, [t.id]: true }));
+                                  setRemovingIds((prev) => ({ ...prev, [txn.id]: true }));
                                   delAction(fd);
                                 }}
                                 onClick={(e) => e.stopPropagation()}
                               >
-                                <input type="hidden" name="id" value={t.id} />
+                                <input type="hidden" name="id" value={txn.id} />
                                 <button type="submit" className={styles.iconBtn} title="Удалить" aria-label="Удалить">
                                   <span className="material-icons" aria-hidden>
                                     delete
@@ -394,7 +411,7 @@ export default function TransactionsGroupedList({
                                 title="Редактировать"
                                 aria-label="Редактировать"
                                 onClick={() => {
-                                  setSelected(t);
+                                  setSelected(txn);
                                   setEditMode(true);
                                   setEditKey((prev) => prev + 1);
                                 }}
@@ -434,7 +451,6 @@ export default function TransactionsGroupedList({
         setRemovingIds={setRemovingIds}
         removingIds={removingIds}
         delAction={(fd) => deleteAction(fd)}
-        setToast={setToast}
       />
 
       <DirBlock
@@ -451,7 +467,6 @@ export default function TransactionsGroupedList({
         setRemovingIds={setRemovingIds}
         removingIds={removingIds}
         delAction={(fd) => deleteAction(fd)}
-        setToast={setToast}
       />
 
       {toast && (
@@ -714,9 +729,9 @@ export default function TransactionsGroupedList({
                           <span className={styles.modalValue}>
                             <select {...register("account_id")} className={styles.select}>
                               <option value="">— выберите —</option>
-                              {accounts.map((a) => (
-                                <option key={a.id} value={a.id}>
-                                  {a.name} ({a.currency})
+                              {accounts.map((account) => (
+                                <option key={account.id} value={account.id}>
+                                  {account.name} ({account.currency})
                                 </option>
                               ))}
                             </select>

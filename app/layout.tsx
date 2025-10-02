@@ -1,20 +1,17 @@
  import type { Metadata } from "next";
-import { Roboto, Rubik } from "next/font/google";
 import "./globals.css";
-
-const roboto = Roboto({
-  variable: "--font-roboto",
-  subsets: ["latin", "cyrillic"],
-  weight: ["300", "400", "500", "700"],
-  display: "swap",
-});
-
-const rubik = Rubik({
-  variable: "--font-rubik",
-  subsets: ["latin", "cyrillic"],
-  weight: ["400", "500", "700"],
-  display: "swap",
-});
+import "@fontsource/roboto/300.css";
+import "@fontsource/roboto/400.css";
+import "@fontsource/roboto/500.css";
+import "@fontsource/roboto/700.css";
+import "@fontsource/rubik/400.css";
+import "@fontsource/rubik/500.css";
+import "@fontsource/rubik/700.css";
+import "@fontsource-variable/roboto/index.css";
+import "@fontsource-variable/rubik/index.css";
+import styles from "./layout.module.css";
+import { ToastProvider } from "@/components/toast/ToastContext";
+import ToastContainer from "@/components/toast/ToastContainer";
 
 export const metadata: Metadata = {
   title: "Finapp — учёт финансов",
@@ -34,8 +31,11 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className={`${roboto.variable} ${rubik.variable}`}>
-        {children}
+      <body className={styles.fonts}>
+        <ToastProvider>
+          {children}
+          <ToastContainer />
+        </ToastProvider>
       </body>
     </html>
   );

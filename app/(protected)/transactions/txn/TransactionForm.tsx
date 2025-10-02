@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useActionState } from "react";
+import { useEffect, useMemo, useRef, useState, useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { createTransactionAction, type TxnActionState } from "../actions";
 import { useRouter } from "next/navigation";
@@ -15,21 +15,41 @@ export default function TransactionForm({
   const initial: TxnActionState = { ok: false };
   const [state, formAction] = useActionState(createTransactionAction, initial);
   const formRef = useRef<HTMLFormElement>(null);
+  const categoryRef = useRef<HTMLSelectElement>(null);
   const router = useRouter();
+  const [direction, setDirection] = useState<"expense" | "income">("expense");
 
   useEffect(() => {
     if (state.ok) {
       formRef.current?.reset();
+      setDirection("expense");
       router.refresh();
     }
   }, [state.ok, router]);
+
+  useEffect(() => {
+    if (categoryRef.current) {
+      categoryRef.current.value = "";
+    }
+  }, [direction]);
+
+  const options = useMemo(
+    () => categories.filter((c) => c.kind === direction),
+    [categories, direction]
+  );
 
   return (
     <form ref={formRef} action={formAction} style={{ display: "grid", gap: 8, background: "#fff", padding: 12, borderRadius: 8 }}>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <label>
           <span>Тип</span>
-          <select name="direction" defaultValue="expense" required style={{ display: "block", padding: 8, borderRadius: 8, border: "1px solid #ccc" }}>
+          <select
+            name="direction"
+            value={direction}
+            onChange={(e) => setDirection(e.target.value as "expense" | "income")}
+            required
+            style={{ display: "block", padding: 8, borderRadius: 8, border: "1px solid #ccc" }}
+          >
             <option value="expense">Расход</option>
             <option value="income">Доход</option>
           </select>
@@ -49,15 +69,17 @@ export default function TransactionForm({
 
         <label>
           <span>Категория</span>
-          <select name="category_id" style={{ display: "block", padding: 8, borderRadius: 8, border: "1px solid #ccc", minWidth: 200 }}>
+          <select
+            ref={categoryRef}
+            name="category_id"
+            style={{ display: "block", padding: 8, borderRadius: 8, border: "1px solid #ccc", minWidth: 200 }}
+          >
             <option value="">— не выбрана —</option>
-            {categories
-              .filter((c) => c.kind !== "transfer")
-              .map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
+            {options.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
           </select>
         </label>
 

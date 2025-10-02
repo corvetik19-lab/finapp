@@ -1,12 +1,19 @@
-export function formatMoney(amountMinor: number | bigint, currency: string) {
+export function formatMoney(
+  amountMinor: number | bigint,
+  currency: string,
+  options: Intl.NumberFormatOptions = {}
+) {
   const amount = Number(amountMinor) / 100;
   try {
     return new Intl.NumberFormat("ru-RU", {
       style: "currency",
       currency,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      ...options,
     }).format(amount);
   } catch {
-    return `${amount.toFixed(0)} ${currency}`;
+    const fractionDigits = options.maximumFractionDigits ?? options.minimumFractionDigits ?? 2;
+    return `${amount.toFixed(fractionDigits)} ${currency}`;
   }
 }

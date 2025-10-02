@@ -235,6 +235,7 @@ input[type=number].noSpin { -moz-appearance: textfield; appearance: textfield; -
 .icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: #eef2ff; color: var(--primary-color); font-weight: 700; }
 .icon.income { background: #e8f5e9; color: #2e7d32; box-shadow: 0 1px 0 rgba(0,0,0,0.02) inset; }
 .icon.expense { background: #ffebee; color: #c62828; box-shadow: 0 1px 0 rgba(0,0,0,0.02) inset; }
+.icon.transfer { background: #e3f2fd; color: #1565c0; box-shadow: 0 1px 0 rgba(0,0,0,0.02) inset; }
 .main { display: flex; flex-direction: column; }
 .title { font-weight: 600; }
 .subtitle { font-size: 12px; color: var(--text-secondary); }
@@ -247,9 +248,12 @@ input[type=number].noSpin { -moz-appearance: textfield; appearance: textfield; -
 .iconBtn.edit:hover { background: #f3f4f6; border-color: #e5e7eb; }
 .income { color: #2e7d32; }
 .expense { color: #c62828; }
+.transfer { color: #1565c0; }
 /* Colored backgrounds for better readability */
 .amount.income { background: #e8f5e9; }
 .amount.expense { background: #ffebee; }
+.amount.transfer { background: #e3f2fd; color: #0d47a1; }
+.amount.transfer::before { content: "↔"; margin-right: 4px; font-weight: 600; }
 .groupTotal { padding: 2px 8px; border-radius: 999px; }
 .groupTotal.income { background: #e8f5e9; color: #2e7d32; }
 .groupTotal.expense { background: #ffebee; color: #c62828; }

@@ -5,6 +5,7 @@ import styles from "@/components/transactions/Transactions.module.css";
 // Charts temporarily removed per design update
 // ExpenseStructure removed; using ExpenseDoughnut below transactions instead
 import AddTransactionButton from "./txn/AddTransactionButton";
+import TransferButton from "./txn/TransferButton";
 import SummaryWithPeriod from "@/components/transactions/SummaryWithPeriod";
 import TransactionsGroupedList, { type Txn as GroupTxn } from "@/components/transactions/TransactionsGroupedList";
 import FiltersAndSearch from "@/components/transactions/FiltersAndSearch";
@@ -50,7 +51,6 @@ export default async function TransactionsPage({
   const f_max = qp("max") || ""; // major units
   const f_from = qp("from") || ""; // YYYY-MM-DD
   const f_to = qp("to") || "";   // YYYY-MM-DD
-
   // Summary (top) custom period params
   const s_period = (qp("s_period") || "month").toString(); // month|prev|year|custom
   const s_from = qp("s_from") || "";
@@ -137,6 +137,8 @@ export default async function TransactionsPage({
     account_id: t.account_id,
     tags: t.tags,
     attachment_count: t.attachment_count,
+    transfer_id: t.transfer_id,
+    transfer_role: t.transfer_role,
   }));
 
   const hasAccount = (accounts?.length ?? 0) > 0;
@@ -258,6 +260,7 @@ export default async function TransactionsPage({
               to: f_to,
             }}
           />
+          {(accounts as Account[]).length >= 2 && <TransferButton accounts={accounts as Account[]} />}
           <AddTransactionButton accounts={accounts as Account[]} categories={categories as Category[]} />
         </div>
       </div>

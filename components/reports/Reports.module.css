@@ -62,6 +62,20 @@
   background: linear-gradient(135deg, #22c55e, #15803d);
   color: #fff;
 }
+.dangerAccent {
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25), 0 4px 16px rgba(239, 68, 68, 0.2);
+}
+.warningAccent {
+  box-shadow: 0 0 0 2px rgba(255, 159, 28, 0.2), 0 4px 16px rgba(255, 159, 28, 0.18);
+}
+.summaryHintAlert {
+  color: #ffe4e6;
+  font-weight: 600;
+}
+.summaryHintNotice {
+  color: #fff7d6;
+  font-weight: 500;
+}
 
 .summaryLabel {
   font-size: 13px;
@@ -139,6 +153,16 @@
   justify-content: space-between;
   align-items: baseline;
 }
+.breakdownItemOver {
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.08), rgba(239, 68, 68, 0));
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+.breakdownItemWarning {
+  background: linear-gradient(90deg, rgba(255, 159, 28, 0.08), rgba(255, 159, 28, 0));
+  border-radius: 10px;
+  padding: 8px 12px;
+}
 
 .breakdownName {
   display: flex;
@@ -159,6 +183,30 @@
 .breakdownValue {
   font-weight: 600;
   color: var(--text-primary, #0f172a);
+}
+.breakdownValueWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.breakdownStatusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.breakdownStatusBadgeOver {
+  background: rgba(239, 68, 68, 0.18);
+  color: #b91c1c;
+}
+.breakdownStatusBadgeWarning {
+  background: rgba(255, 159, 28, 0.18);
+  color: #c77800;
 }
 
 .emptyState {

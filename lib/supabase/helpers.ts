@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient, User, AuthError } from "@supabase/supabase-js";
 
 // Use in Server Components (read-only cookies context)
@@ -28,6 +29,22 @@ export async function createRSCClient(): Promise<SupabaseClient> {
       set(_name: string, _value: string, _options: CookieOptions) {},
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       remove(_name: string, _options: CookieOptions) {},
+    },
+  });
+}
+
+export function createAdminClient(): SupabaseClient {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !serviceKey) {
+    throw new Error("Supabase service credentials are not configured");
+  }
+
+  return createClient(url, serviceKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
     },
   });
 }

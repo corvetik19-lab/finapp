@@ -1,17 +1,16 @@
 import { createRSCClient } from "@/lib/supabase/helpers";
 import styles from "@/components/settings/Settings.module.css";
-import CategoriesManager, { type Cat } from "@/components/settings/CategoriesManager";
+import CategoriesManager, { type CategoryRecord } from "@/components/settings/CategoriesManager";
 
 export default async function SettingsPage() {
   const supabase = await createRSCClient();
 
   const { data: cats = [] } = await supabase
     .from("categories")
-    .select("id,name,kind")
+    .select("id,name,kind,parent_id")
     .order("name", { ascending: true });
 
-  const expense = (cats || []).filter((c) => c.kind === "expense") as Cat[];
-  const income = (cats || []).filter((c) => c.kind === "income") as Cat[];
+  const categories = (cats || []) as CategoryRecord[];
 
   return (
     <div>
@@ -39,7 +38,7 @@ export default async function SettingsPage() {
       </div>
 
       {/* Категории */}
-      <CategoriesManager expense={expense} income={income} />
+      <CategoriesManager categories={categories} />
     </div>
   );
 }

@@ -5,14 +5,19 @@ import {
   transactionSchema,
   transactionFormSchema,
   transactionEditFormSchema,
+  transferFormSchema,
   type TransactionFormValues,
   type TransactionEditFormValues,
+  type TransferFormValues,
 } from "@/lib/validation/transaction";
 import {
   createTransaction as createTransactionService,
   updateTransaction as updateTransactionService,
   deleteTransaction as deleteTransactionService,
+  createTransfer as createTransferService,
+  listTransactionsForSelectRoute,
 } from "@/lib/transactions/service";
+import type { TransactionSelectItem } from "@/lib/transactions/service";
 import type { CsvNormalizedRow } from "@/lib/csv/import-schema";
 import { buildExportCsv } from "@/lib/csv/export";
 import { z } from "zod";
@@ -42,6 +47,30 @@ export async function createDefaultAccount() {
   });
   if (error) throw error;
   revalidatePath("/transactions");
+}
+
+const transactionSelectParamsSchema = z
+  .object({
+    search: z.string().trim().min(1).optional(),
+    ids: z.array(z.string().uuid()).optional(),
+    limit: z.number().int().min(1).max(50).optional(),
+  })
+  .partial();
+
+export async function fetchTransactionsForSelectAction(
+  raw: unknown = {}
+): Promise<TransactionSelectItem[]> {
+  const parsed = transactionSelectParamsSchema.safeParse(raw ?? {});
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Некорректные параметры выбора транзакций");
+  }
+
+  const payload = parsed.data;
+
+  return listTransactionsForSelectRoute({
+    ...payload,
+    search: payload.search?.trim() || undefined,
+  });
 }
 
 const exportParamsSchema = z.object({
@@ -261,6 +290,57 @@ export async function createTransactionFromValues(values: TransactionFormValues)
     return { ok: true };
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Не удалось сохранить транзакцию";
+    return { ok: false, error: msg };
+  }
+}
+
+export type TransferActionState = { ok: boolean; error?: string };
+
+export async function createTransferAction(
+  _prev: TransferActionState,
+  formData: FormData
+): Promise<TransferActionState> {
+  try {
+    const raw = {
+      from_account_id: String(formData.get("from_account_id") || ""),
+      to_account_id: String(formData.get("to_account_id") || ""),
+      amount_major: String(formData.get("amount_major") || ""),
+      currency: String(formData.get("currency") || "RUB"),
+      occurred_at: (formData.get("occurred_at") as string) || undefined,
+      note: (formData.get("note") as string) || undefined,
+    } satisfies Record<string, unknown>;
+    const parsed = transferFormSchema.parse(raw);
+    await createTransferService({
+      from_account_id: parsed.from_account_id,
+      to_account_id: parsed.to_account_id,
+      amount_major: Number(parsed.amount_major.replace(/\s+/g, "").replace(",", ".")),
+      currency: parsed.currency,
+      occurred_at: parsed.occurred_at,
+      note: parsed.note ?? null,
+    });
+    revalidatePath("/transactions");
+    return { ok: true };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Не удалось выполнить перевод";
+    return { ok: false, error: msg };
+  }
+}
+
+export async function createTransferFromValues(values: TransferFormValues): Promise<TransferActionState> {
+  try {
+    const parsed = transferFormSchema.parse(values);
+    await createTransferService({
+      from_account_id: parsed.from_account_id,
+      to_account_id: parsed.to_account_id,
+      amount_major: Number(parsed.amount_major.replace(/\s+/g, "").replace(",", ".")),
+      currency: parsed.currency,
+      occurred_at: parsed.occurred_at,
+      note: parsed.note ?? null,
+    });
+    revalidatePath("/transactions");
+    return { ok: true };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Не удалось выполнить перевод";
     return { ok: false, error: msg };
   }
 }
