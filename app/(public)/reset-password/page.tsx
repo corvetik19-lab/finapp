@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -17,6 +17,14 @@ const schema = z
 type FormValues = z.infer<typeof schema>;
 
 export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<ResetPasswordSuspenseFallback />}>
+      <ResetPasswordPageContent />
+    </Suspense>
+  );
+}
+
+function ResetPasswordPageContent() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -39,7 +47,7 @@ export default function ResetPasswordPage() {
           // Wait a tick and retry (hash parsing is async)
           await new Promise((r) => setTimeout(r, 200));
         }
-      } catch (e) {
+      } catch {
         // Ignore; user can still see the form, updateUser will fail if нет сессии
       } finally {
         setReady(true);
@@ -119,6 +127,26 @@ export default function ResetPasswordPage() {
         .login-submit:disabled { opacity: .6; cursor: not-allowed; }
         .login-error { color: #c62828; font-size: 13px; }
         .login-success { color: #2e7d32; font-size: 13px; }
+      `}</style>
+    </main>
+  );
+}
+
+function ResetPasswordSuspenseFallback() {
+  return (
+    <main className="login-layout">
+      <div className="login-card">
+        <div className="login-header">
+          <h1>Сброс пароля</h1>
+          <p>Загружаем форму…</p>
+        </div>
+        <div>Пожалуйста, подождите.</div>
+      </div>
+      <style jsx>{`
+        .login-layout { display: grid; place-items: center; min-height: 100dvh; padding: 24px; background: #f3f4f6; }
+        .login-card { width: min(420px, 100%); background: #fff; padding: 32px; border-radius: 16px; box-shadow: 0 20px 40px rgba(15,23,42,.12); display: flex; flex-direction: column; gap: 18px; }
+        .login-header h1 { margin: 0 0 8px; font-size: 26px; font-weight: 600; color: #0f172a; }
+        .login-header p { margin: 0; color: #475569; font-size: 14px; }
       `}</style>
     </main>
   );
