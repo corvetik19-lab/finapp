@@ -37,7 +37,7 @@ async function applyMigration() {
     console.log('🚀 Применение миграции...');
     
     // Выполняем SQL
-    const { data, error } = await supabase.rpc('exec_sql', { sql_query: sql });
+    const { error } = await supabase.rpc('exec_sql', { sql_query: sql });
     
     if (error) {
       // Если функция exec_sql не существует, попробуем другой способ

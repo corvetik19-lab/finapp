@@ -31,6 +31,7 @@ export default function UsersManager({ users: initialUsers, roles }: UsersManage
   const router = useRouter();
   const [users, setUsers] = useState<UserRecord[]>(initialUsers);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -40,6 +41,12 @@ export default function UsersManager({ users: initialUsers, roles }: UsersManage
     password: "",
     full_name: "",
     role_id: "",
+  });
+
+  const [editForm, setEditForm] = useState({
+    email: "",
+    password: "",
+    full_name: "",
   });
 
   const [assignForm, setAssignForm] = useState({
@@ -79,6 +86,54 @@ export default function UsersManager({ users: initialUsers, roles }: UsersManage
     } catch (error) {
       console.error("Create user error:", error);
       alert(error instanceof Error ? error.message : "Ошибка при создании пользователя");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditUser = async () => {
+    if (!selectedUser) return;
+
+    if (!editForm.email.trim()) {
+      alert("Email обязателен");
+      return;
+    }
+
+    if (editForm.password && editForm.password.length < 6) {
+      alert("Пароль должен быть не менее 6 символов");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const res = await fetch(`/api/users/${selectedUser.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: editForm.email.trim(),
+          password: editForm.password || undefined,
+          full_name: editForm.full_name,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update user");
+      }
+
+      setUsers(users.map(u => 
+        u.id === selectedUser.id 
+          ? { ...u, email: editForm.email.trim(), full_name: editForm.full_name || null }
+          : u
+      ));
+      setShowEditModal(false);
+      setSelectedUser(null);
+      setEditForm({ email: "", password: "", full_name: "" });
+      router.refresh();
+      alert("Пользователь успешно обновлён");
+    } catch (error) {
+      console.error("Edit user error:", error);
+      alert(error instanceof Error ? error.message : "Ошибка при обновлении пользователя");
     } finally {
       setIsSaving(false);
     }
@@ -143,6 +198,16 @@ export default function UsersManager({ users: initialUsers, roles }: UsersManage
       console.error("Delete user error:", error);
       alert(error instanceof Error ? error.message : "Ошибка при удалении пользователя");
     }
+  };
+
+  const openEditModal = (user: UserRecord) => {
+    setSelectedUser(user);
+    setEditForm({ 
+      email: user.email, 
+      password: "",
+      full_name: user.full_name || "" 
+    });
+    setShowEditModal(true);
   };
 
   const openAssignModal = (user: UserRecord) => {
@@ -244,22 +309,29 @@ export default function UsersManager({ users: initialUsers, roles }: UsersManage
                 <td>
                   <div className={styles.actions}>
                     {!user.is_admin && (
-                      <button
-                        className={styles.btnIcon}
-                        onClick={() => openAssignModal(user)}
-                        title="Назначить роль"
-                      >
-                        <span className="material-icons">badge</span>
-                      </button>
-                    )}
-                    {!user.is_admin && (
-                      <button
-                        className={styles.btnIconDanger}
-                        onClick={() => handleDeleteUser(user)}
-                        title="Удалить"
-                      >
-                        <span className="material-icons">delete</span>
-                      </button>
+                      <>
+                        <button
+                          className={styles.btnIcon}
+                          onClick={() => openEditModal(user)}
+                          title="Редактировать"
+                        >
+                          <span className="material-icons">edit</span>
+                        </button>
+                        <button
+                          className={styles.btnIcon}
+                          onClick={() => openAssignModal(user)}
+                          title="Назначить роль"
+                        >
+                          <span className="material-icons">badge</span>
+                        </button>
+                        <button
+                          className={styles.btnIconDanger}
+                          onClick={() => handleDeleteUser(user)}
+                          title="Удалить"
+                        >
+                          <span className="material-icons">delete</span>
+                        </button>
+                      </>
                     )}
                     {user.is_admin && (
                       <span className={styles.adminProtected}>
@@ -361,6 +433,75 @@ export default function UsersManager({ users: initialUsers, roles }: UsersManage
                 disabled={isSaving}
               >
                 {isSaving ? "Создание..." : "Создать"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно редактирования пользователя */}
+      {showEditModal && selectedUser && (
+        <div className={styles.modalOverlay} onClick={() => setShowEditModal(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3>Редактировать пользователя</h3>
+              <button
+                className={styles.closeBtn}
+                onClick={() => setShowEditModal(false)}
+              >
+                <span className="material-icons">close</span>
+              </button>
+            </div>
+
+            <div className={styles.modalBody}>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Email *</label>
+                <input
+                  type="email"
+                  className={styles.formInput}
+                  value={editForm.email}
+                  onChange={e => setEditForm({ ...editForm, email: e.target.value })}
+                  placeholder="user@example.com"
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Новый пароль (оставьте пустым, чтобы не менять)</label>
+                <input
+                  type="password"
+                  className={styles.formInput}
+                  value={editForm.password}
+                  onChange={e => setEditForm({ ...editForm, password: e.target.value })}
+                  placeholder="Минимум 6 символов"
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Полное имя</label>
+                <input
+                  type="text"
+                  className={styles.formInput}
+                  value={editForm.full_name}
+                  onChange={e => setEditForm({ ...editForm, full_name: e.target.value })}
+                  placeholder="Иван Иванов"
+                />
+              </div>
+            </div>
+
+            <div className={styles.modalFooter}>
+              <button
+                className={styles.btnSecondary}
+                onClick={() => setShowEditModal(false)}
+                disabled={isSaving}
+              >
+                Отмена
+              </button>
+              <button
+                className={styles.btnPrimary}
+                onClick={handleEditUser}
+                disabled={isSaving}
+              >
+                {isSaving ? "Сохранение..." : "Сохранить"}
               </button>
             </div>
           </div>
