@@ -9,14 +9,21 @@ export function getPeriodDates(period: ReportPeriod, customFrom?: string, custom
   let to: Date;
 
   switch (period) {
+    case "today":
+      from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      to = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      break;
+
+    case "week":
+      const dayOfWeek = now.getDay();
+      const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
+      to = new Date(from.getFullYear(), from.getMonth(), from.getDate() + 6);
+      break;
+
     case "month":
       from = new Date(now.getFullYear(), now.getMonth(), 1);
       to = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      break;
-
-    case "last_month":
-      from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      to = new Date(now.getFullYear(), now.getMonth(), 0);
       break;
 
     case "quarter":
@@ -57,14 +64,16 @@ export function getPeriodDates(period: ReportPeriod, customFrom?: string, custom
  */
 export function formatPeriod(period: ReportPeriod, dateFrom?: string | null, dateTo?: string | null): string {
   switch (period) {
+    case "today":
+      return "Сегодня";
+    case "week":
+      return "Неделя";
     case "month":
-      return "Текущий месяц";
-    case "last_month":
-      return "Прошлый месяц";
+      return "Месяц";
     case "quarter":
-      return "Текущий квартал";
+      return "Квартал";
     case "year":
-      return "Текущий год";
+      return "Год";
     case "custom":
       if (dateFrom && dateTo) {
         return `${formatDate(dateFrom)} — ${formatDate(dateTo)}`;

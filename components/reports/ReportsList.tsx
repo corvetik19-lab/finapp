@@ -52,8 +52,9 @@ export default function ReportsList({ reports, onSelect, onDelete }: ReportsList
               </div>
               <div className={styles.filters}>
                 <span className={styles.badge}>
-                  {report.period === "month" ? "Текущий месяц" :
-                   report.period === "last_month" ? "Прошлый месяц" :
+                  {report.period === "today" ? "Сегодня" :
+                   report.period === "week" ? "Неделя" :
+                   report.period === "month" ? "Месяц" :
                    report.period === "quarter" ? "Квартал" :
                    report.period === "year" ? "Год" : "Произвольный"}
                 </span>

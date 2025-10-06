@@ -21,10 +21,11 @@ type ReportBuilderProps = {
 };
 
 const periodOptions: { value: ReportPeriod; label: string }[] = [
-  { value: "month", label: "Текущий месяц" },
-  { value: "last_month", label: "Прошлый месяц" },
-  { value: "quarter", label: "Текущий квартал" },
-  { value: "year", label: "Текущий год" },
+  { value: "today", label: "Сегодня" },
+  { value: "week", label: "Неделя" },
+  { value: "month", label: "Месяц" },
+  { value: "quarter", label: "Квартал" },
+  { value: "year", label: "Год" },
   { value: "custom", label: "Произвольный" },
 ];
 
