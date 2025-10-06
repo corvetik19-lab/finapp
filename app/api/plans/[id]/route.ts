@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createRouteClient } from "@/lib/supabase/helpers";
 
+// Force dynamic rendering to prevent caching issues
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
+// Context type for Next.js 15 dynamic route params
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
