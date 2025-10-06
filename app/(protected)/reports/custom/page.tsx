@@ -202,10 +202,10 @@ export default function CustomReportsPage() {
     
     // Создаем уникальное имя с периодом и временной меткой
     const periodLabel = currentConfig?.period === "today" ? "Сегодня" :
-                        currentConfig?.period === "week" ? "Неделя" :
-                        currentConfig?.period === "month" ? "Месяц" :
-                        currentConfig?.period === "quarter" ? "Квартал" :
-                        currentConfig?.period === "year" ? "Год" : "Произвольный";
+                        currentConfig?.period === "week" ? "Текущая неделя" :
+                        currentConfig?.period === "month" ? "Текущий месяц" :
+                        currentConfig?.period === "quarter" ? "Текущий квартал" :
+                        currentConfig?.period === "year" ? "Текущий год" : "Произвольный период";
     
     const reportName = currentConfig?.name && currentConfig.name !== "Без названия" 
       ? currentConfig.name 
@@ -512,10 +512,10 @@ export default function CustomReportsPage() {
                 <p>📌 Сохраняются все фильтры отчёта:</p>
                 <ul>
                   <li>Период: <strong>{currentConfig?.period === "today" ? "Сегодня" : 
-                               currentConfig?.period === "week" ? "Неделя" :
-                               currentConfig?.period === "month" ? "Месяц" :
-                               currentConfig?.period === "quarter" ? "Квартал" :
-                               currentConfig?.period === "year" ? "Год" : "Произвольный"}</strong></li>
+                               currentConfig?.period === "week" ? "Текущая неделя" :
+                               currentConfig?.period === "month" ? "Текущий месяц" :
+                               currentConfig?.period === "quarter" ? "Текущий квартал" :
+                               currentConfig?.period === "year" ? "Текущий год" : "Произвольный период"}</strong></li>
                   <li>Типы данных: <strong>{currentConfig?.dataTypes.map(t => 
                     t === "income" ? "Доходы" : t === "expense" ? "Расходы" : t
                   ).join(", ")}</strong></li>

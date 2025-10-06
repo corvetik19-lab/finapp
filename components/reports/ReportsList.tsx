@@ -53,10 +53,10 @@ export default function ReportsList({ reports, onSelect, onDelete }: ReportsList
               <div className={styles.filters}>
                 <span className={styles.badge}>
                   {report.period === "today" ? "Сегодня" :
-                   report.period === "week" ? "Неделя" :
-                   report.period === "month" ? "Месяц" :
-                   report.period === "quarter" ? "Квартал" :
-                   report.period === "year" ? "Год" : "Произвольный"}
+                   report.period === "week" ? "Текущая неделя" :
+                   report.period === "month" ? "Текущий месяц" :
+                   report.period === "quarter" ? "Текущий квартал" :
+                   report.period === "year" ? "Текущий год" : "Произвольный период"}
                 </span>
                 {report.dataTypes && report.dataTypes.length > 0 && (
                   <span className={styles.badge}>

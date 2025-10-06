@@ -67,13 +67,13 @@ export function formatPeriod(period: ReportPeriod, dateFrom?: string | null, dat
     case "today":
       return "Сегодня";
     case "week":
-      return "Неделя";
+      return "Текущая неделя";
     case "month":
-      return "Месяц";
+      return "Текущий месяц";
     case "quarter":
-      return "Квартал";
+      return "Текущий квартал";
     case "year":
-      return "Год";
+      return "Текущий год";
     case "custom":
       if (dateFrom && dateTo) {
         return `${formatDate(dateFrom)} — ${formatDate(dateTo)}`;
