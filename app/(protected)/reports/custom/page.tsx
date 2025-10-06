@@ -201,8 +201,9 @@ export default function CustomReportsPage() {
     }
     
     // Создаем уникальное имя с периодом и временной меткой
-    const periodLabel = currentConfig?.period === "month" ? "Текущий месяц" :
-                        currentConfig?.period === "last_month" ? "Прошлый месяц" :
+    const periodLabel = currentConfig?.period === "today" ? "Сегодня" :
+                        currentConfig?.period === "week" ? "Неделя" :
+                        currentConfig?.period === "month" ? "Месяц" :
                         currentConfig?.period === "quarter" ? "Квартал" :
                         currentConfig?.period === "year" ? "Год" : "Произвольный";
     
@@ -510,8 +511,9 @@ export default function CustomReportsPage() {
               <div className={styles.presetInfo}>
                 <p>📌 Сохраняются все фильтры отчёта:</p>
                 <ul>
-                  <li>Период: <strong>{currentConfig?.period === "month" ? "Текущий месяц" : 
-                               currentConfig?.period === "last_month" ? "Прошлый месяц" :
+                  <li>Период: <strong>{currentConfig?.period === "today" ? "Сегодня" : 
+                               currentConfig?.period === "week" ? "Неделя" :
+                               currentConfig?.period === "month" ? "Месяц" :
                                currentConfig?.period === "quarter" ? "Квартал" :
                                currentConfig?.period === "year" ? "Год" : "Произвольный"}</strong></li>
                   <li>Типы данных: <strong>{currentConfig?.dataTypes.map(t => 
