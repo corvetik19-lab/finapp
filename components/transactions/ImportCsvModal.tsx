@@ -241,10 +241,27 @@ export default function ImportCsvModal({ open, onClose, onImport }: Props) {
 
         <div className={styles.body}>
           <section className={styles.section}>
-            <p className={styles.helperText}>
-              Загрузите CSV-файл с транзакциями. Поддерживаются разделители `;` или `,`, обязательные колонки:
-              «Дата», «Тип», «Сумма», «Валюта».
-            </p>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem", marginBottom: "0.5rem" }}>
+              <p className={styles.helperText} style={{ margin: 0 }}>
+                Загрузите CSV-файл с транзакциями. Поддерживаются разделители `;` или `,`, обязательные колонки:
+                «Дата», «Тип», «Сумма», «Валюта».
+              </p>
+              <a
+                href="/api/transactions/template"
+                download="transactions_template.csv"
+                className={styles.secondaryButton}
+                style={{ 
+                  textDecoration: "none", 
+                  whiteSpace: "nowrap",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.25rem"
+                }}
+              >
+                <span className="material-icons" style={{ fontSize: "18px" }}>download</span>
+                Скачать шаблон
+              </a>
+            </div>
             <div
               className={clsx(styles.dropZone, dragState === "dragover" && styles.dragOver)}
               onDrop={handleDrop}
