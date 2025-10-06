@@ -1,6 +1,6 @@
 // Типы для работы с отчётами
 
-export type ReportPeriod = "month" | "last_month" | "quarter" | "year" | "custom";
+export type ReportPeriod = "today" | "week" | "month" | "quarter" | "year" | "custom";
 export type ReportDataType = "income" | "expense" | "loans" | "cards";
 export type ReportType = "table" | "chart" | "pie" | "combined";
 export type ReportFormat = "pdf" | "excel" | "preview";
