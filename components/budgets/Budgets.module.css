@@ -37,6 +37,14 @@
 .statusWarning .progressFill{background:#f9a825}
 .statusOver .progressFill{background:#c62828}
 .actions{display:flex;gap:8px}
-.deleteBtn{background:#fff;color:var(--danger);border:1px solid rgba(244,67,54,0.25);padding:8px 12px;border-radius:8px;cursor:pointer}
+.editBtn{background:#fff;color:var(--primary-color);border:1px solid rgba(21,101,192,0.25);padding:8px 12px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:14px}
+.editBtn:hover{background:rgba(21,101,192,0.05)}
+.deleteBtn{background:#fff;color:var(--danger);border:1px solid rgba(244,67,54,0.25);padding:8px 12px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:14px}
+.deleteBtn:hover{background:rgba(244,67,54,0.05)}
+.editForm{display:flex;flex-direction:column;gap:16px;padding:16px;background:rgba(241,245,249,0.5);border-radius:10px}
+.editFormGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.editFormActions{display:flex;justify-content:flex-end;gap:10px}
+.secondaryBtn{background:#fff;color:var(--text-secondary);border:1px solid #e0e0e0;padding:10px 16px;border-radius:8px;font-weight:500;cursor:pointer}
+.secondaryBtn:hover{background:rgba(0,0,0,0.02)}
 .empty{padding:24px;text-align:center;color:var(--text-secondary);background:var(--card-bg);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.05)}
 .note{font-size:12px;color:var(--text-secondary)}

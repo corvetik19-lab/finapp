@@ -21,11 +21,13 @@ export type TransactionRecord = {
   updated_at?: string;
   transfer_id?: string | null;
   transfer_role?: "expense" | "income" | null;
+  transfer_from_account_id?: string | null;
+  transfer_to_account_id?: string | null;
 };
 
 type TransactionSelectRow = Pick<
   TransactionRecord,
-  "id" | "amount" | "currency" | "direction" | "occurred_at" | "note" | "counterparty"
+  "id" | "amount" | "currency" | "direction" | "occurred_at" | "note" | "counterparty" | "account_id"
 >;
 
 export type TransactionSelectItem = {
@@ -33,12 +35,14 @@ export type TransactionSelectItem = {
   label: string;
   direction: TransactionDirection;
   occurred_at: string;
+  account_id: string;
 };
 
 export type ListTransactionsForSelectParams = {
   limit?: number;
   search?: string;
   ids?: string[];
+  excludeLinked?: boolean;
 };
 
 const transactionSelectDateFormatter = new Intl.DateTimeFormat("ru-RU", {
@@ -82,6 +86,7 @@ function mapTransactionSelectRow(row: TransactionSelectRow): TransactionSelectIt
     id: row.id,
     label: buildTransactionSelectLabel(row),
     direction: row.direction,
+    account_id: row.account_id,
     occurred_at: row.occurred_at,
   };
 }
@@ -94,11 +99,11 @@ async function queryTransactionsForSelect(
   client: SupabaseClientLike,
   params: ListTransactionsForSelectParams = {}
 ): Promise<TransactionSelectItem[]> {
-  const { limit = 20, search, ids } = params;
+  const { limit = 20, search, ids, excludeLinked = false } = params;
 
   let query = client
     .from("transactions")
-    .select("id,amount,currency,direction,occurred_at,counterparty,note")
+    .select("id,amount,currency,direction,occurred_at,counterparty,note,account_id")
     .order("occurred_at", { ascending: false });
 
   if (ids && ids.length > 0) {
@@ -112,7 +117,40 @@ async function queryTransactionsForSelect(
     query = query.or(`counterparty.ilike.${pattern},note.ilike.${pattern}`);
   }
 
-  const { data, error } = await query;
+  let data, error;
+  
+  // Исключаем транзакции уже привязанные к другим платежам
+  if (excludeLinked && (!ids || ids.length === 0)) {
+    const { data: linkedTxnIds } = await client
+      .from("upcoming_payments")
+      .select("paid_transaction_id")
+      .not("paid_transaction_id", "is", null);
+    
+    if (linkedTxnIds && linkedTxnIds.length > 0) {
+      const excludeIds = linkedTxnIds
+        .map(row => row.paid_transaction_id)
+        .filter((id): id is string => Boolean(id));
+      
+      if (excludeIds.length > 0) {
+        const result = await query.not("id", "in", `(${excludeIds.join(",")})`);
+        data = result.data;
+        error = result.error;
+      } else {
+        const result = await query;
+        data = result.data;
+        error = result.error;
+      }
+    } else {
+      const result = await query;
+      data = result.data;
+      error = result.error;
+    }
+  } else {
+    const result = await query;
+    data = result.data;
+    error = result.error;
+  }
+
   if (error) throw error;
 
   const rows = (data ?? []) as TransactionSelectRow[];
@@ -224,7 +262,7 @@ export async function listTransactions(
   } = params;
 
   const selectColumns =
-    "id,user_id,account_id,category_id,direction,amount,currency,occurred_at,note,counterparty,tags,attachment_count,created_at,updated_at";
+    "id,user_id,account_id,category_id,direction,amount,currency,occurred_at,note,counterparty,tags,attachment_count,created_at,updated_at,transfer_from_account_id,transfer_to_account_id";
 
   const selectOptions = opts.withCount ? { count: "exact" as const } : undefined;
 
@@ -361,17 +399,27 @@ export async function createTransaction(input: InsertTransactionInput): Promise<
   if (authError || !user) throw authError ?? new Error("Нет пользователя");
 
   const parsed = transactionSchema.parse(input);
+  const amountMinor = Math.round(parsed.amount_major * 100);
   const payload = {
     user_id: user.id,
     account_id: parsed.account_id,
     category_id: parsed.category_id ?? null,
     direction: parsed.direction,
-    amount: Math.round(parsed.amount_major * 100),
+    amount: amountMinor,
     currency: parsed.currency,
     occurred_at: parsed.occurred_at ?? new Date().toISOString(),
     note: parsed.note ?? null,
     counterparty: parsed.counterparty ?? null,
   };
+
+  // Получаем информацию о счёте для определения типа
+  const { data: accountData, error: accountError } = await supabase
+    .from("accounts")
+    .select("id, type, credit_limit")
+    .eq("id", parsed.account_id)
+    .single();
+
+  if (accountError) throw accountError;
 
   const { data, error } = await supabase
     .from("transactions")
@@ -381,6 +429,53 @@ export async function createTransaction(input: InsertTransactionInput): Promise<
     )
     .single();
   if (error) throw error;
+
+  // Обновляем баланс счёта
+  // Для кредитных карт (type='card' и есть credit_limit):
+  //   - расход УВЕЛИЧИВАЕТ задолженность (balance)
+  //   - доход УМЕНЬШАЕТ задолженность (balance)
+  // Для обычных счетов:
+  //   - расход УМЕНЬШАЕТ баланс
+  //   - доход УВЕЛИЧИВАЕТ баланс
+  const isCreditCard = accountData.type === "card" && accountData.credit_limit != null;
+  let balanceChange = 0;
+
+  if (isCreditCard) {
+    // Для кредитных карт
+    if (parsed.direction === "expense") {
+      balanceChange = amountMinor; // Задолженность увеличивается
+    } else if (parsed.direction === "income") {
+      balanceChange = -amountMinor; // Задолженность уменьшается
+    }
+  } else {
+    // Для обычных счетов
+    if (parsed.direction === "expense") {
+      balanceChange = -amountMinor; // Баланс уменьшается
+    } else if (parsed.direction === "income") {
+      balanceChange = amountMinor; // Баланс увеличивается
+    }
+  }
+
+  if (balanceChange !== 0) {
+    // Получаем текущий баланс
+    const { data: currentAccount, error: fetchError } = await supabase
+      .from("accounts")
+      .select("balance")
+      .eq("id", parsed.account_id)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    // Обновляем баланс
+    const newBalance = (currentAccount.balance || 0) + balanceChange;
+    const { error: updateError } = await supabase
+      .from("accounts")
+      .update({ balance: newBalance })
+      .eq("id", parsed.account_id);
+
+    if (updateError) throw updateError;
+  }
+
   return data as TransactionRecord;
 }
 
@@ -395,11 +490,23 @@ export async function updateTransaction(input: UpdateTransactionInput): Promise<
   } = await supabase.auth.getUser();
   if (authError || !user) throw authError ?? new Error("Нет пользователя");
 
+  // Получаем старые данные транзакции
+  const { data: oldTxn, error: fetchError } = await supabase
+    .from("transactions")
+    .select("id, account_id, direction, amount")
+    .eq("id", parsed.id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (fetchError) throw fetchError;
+
   const patch: Record<string, unknown> = {};
-  if (parsed.payload.account_id) patch.account_id = parsed.payload.account_id;
+  // Для переводов не меняем критичные поля (account_id, direction, amount)
+  // так как они управляются через transfer_from/to_account_id
+  if (parsed.payload.account_id && oldTxn.direction !== "transfer") patch.account_id = parsed.payload.account_id;
   if (parsed.payload.category_id !== undefined) patch.category_id = parsed.payload.category_id;
-  if (parsed.payload.direction) patch.direction = parsed.payload.direction;
-  if (parsed.payload.amount_major !== undefined) patch.amount = Math.round(parsed.payload.amount_major * 100);
+  if (parsed.payload.direction && oldTxn.direction !== "transfer") patch.direction = parsed.payload.direction;
+  if (parsed.payload.amount_major !== undefined && oldTxn.direction !== "transfer") patch.amount = Math.round(parsed.payload.amount_major * 100);
   if (parsed.payload.currency) patch.currency = parsed.payload.currency;
   if (parsed.payload.occurred_at) patch.occurred_at = parsed.payload.occurred_at;
   if (parsed.payload.note !== undefined) patch.note = parsed.payload.note;
@@ -416,7 +523,86 @@ export async function updateTransaction(input: UpdateTransactionInput): Promise<
     .single();
 
   if (error) throw error;
+
+  // Обновляем балансы если изменились критичные поля
+  const accountChanged = parsed.payload.account_id && parsed.payload.account_id !== oldTxn.account_id;
+  const directionChanged = parsed.payload.direction && parsed.payload.direction !== oldTxn.direction;
+  const amountChanged = parsed.payload.amount_major !== undefined && Math.round(parsed.payload.amount_major * 100) !== oldTxn.amount;
+
+  if (accountChanged || directionChanged || amountChanged) {
+    // Отменяем старое изменение баланса
+    await reverseBalanceChange(supabase, oldTxn.account_id, oldTxn.direction, oldTxn.amount);
+
+    // Применяем новое изменение баланса
+    const newAccountId = parsed.payload.account_id || oldTxn.account_id;
+    const newDirection = parsed.payload.direction || oldTxn.direction;
+    const newAmount = parsed.payload.amount_major !== undefined ? Math.round(parsed.payload.amount_major * 100) : oldTxn.amount;
+
+    await applyBalanceChange(supabase, newAccountId, newDirection, newAmount);
+  }
+
   return data as TransactionRecord;
+}
+
+async function applyBalanceChange(
+  supabase: Awaited<ReturnType<typeof createRouteClient>>,
+  accountId: string,
+  direction: string,
+  amount: number
+): Promise<void> {
+  // Получаем информацию о счёте
+  const { data: accountData, error: accountError } = await supabase
+    .from("accounts")
+    .select("type, credit_limit, balance")
+    .eq("id", accountId)
+    .single();
+
+  if (accountError) throw accountError;
+
+  const isCreditCard = accountData.type === "card" && accountData.credit_limit != null;
+  let balanceChange = 0;
+
+  if (isCreditCard) {
+    // Для кредитных карт
+    if (direction === "expense") {
+      balanceChange = amount; // Задолженность увеличивается
+    } else if (direction === "income") {
+      balanceChange = -amount; // Задолженность уменьшается
+    }
+  } else {
+    // Для обычных счетов
+    if (direction === "expense") {
+      balanceChange = -amount; // Баланс уменьшается
+    } else if (direction === "income") {
+      balanceChange = amount; // Баланс увеличивается
+    }
+  }
+
+  if (balanceChange !== 0) {
+    const newBalance = (accountData.balance || 0) + balanceChange;
+    const { error: updateError } = await supabase
+      .from("accounts")
+      .update({ balance: newBalance })
+      .eq("id", accountId);
+
+    if (updateError) throw updateError;
+  }
+}
+
+async function deletePlanTopupsForTransactions(
+  supabase: Awaited<ReturnType<typeof createRouteClient>>,
+  userId: string,
+  transactionIds: string[],
+): Promise<void> {
+  if (transactionIds.length === 0) return;
+
+  const { error: topupsError } = await supabase
+    .from("plan_topups")
+    .delete()
+    .in("transaction_id", transactionIds)
+    .eq("user_id", userId);
+
+  if (topupsError) throw topupsError;
 }
 
 export async function deleteTransaction(id: string): Promise<void> {
@@ -426,6 +612,16 @@ export async function deleteTransaction(id: string): Promise<void> {
     error: authError,
   } = await supabase.auth.getUser();
   if (authError || !user) throw authError ?? new Error("Нет пользователя");
+
+  // Получаем данные транзакции перед удалением для обновления баланса
+  const { data: txnToDelete, error: fetchError } = await supabase
+    .from("transactions")
+    .select("id, account_id, direction, amount")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (fetchError) throw fetchError;
 
   const { data: transfer, error: transferError } = await supabase
     .from("transaction_transfers")
@@ -437,12 +633,31 @@ export async function deleteTransaction(id: string): Promise<void> {
 
   if (transfer) {
     const relatedIds = [transfer.expense_txn_id, transfer.income_txn_id].filter(Boolean) as string[];
+
+    // Получаем все связанные транзакции для обновления балансов
+    const { data: relatedTxns, error: relatedError } = await supabase
+      .from("transactions")
+      .select("id, account_id, direction, amount")
+      .in("id", relatedIds)
+      .eq("user_id", user.id);
+
+    if (relatedError) throw relatedError;
+
+    await deletePlanTopupsForTransactions(supabase, user.id, relatedIds);
+
     const { error: deleteTxError } = await supabase
       .from("transactions")
       .delete()
       .in("id", relatedIds)
       .eq("user_id", user.id);
     if (deleteTxError) throw deleteTxError;
+
+    // Обновляем балансы для всех задействованных счетов
+    if (relatedTxns) {
+      for (const txn of relatedTxns) {
+        await reverseBalanceChange(supabase, txn.account_id, txn.direction, txn.amount);
+      }
+    }
 
     const { error: deleteTransferError } = await supabase
       .from("transaction_transfers")
@@ -453,8 +668,58 @@ export async function deleteTransaction(id: string): Promise<void> {
     return;
   }
 
+  await deletePlanTopupsForTransactions(supabase, user.id, [id]);
+
   const { error } = await supabase.from("transactions").delete().eq("id", id).eq("user_id", user.id);
   if (error) throw error;
+
+  // Обновляем баланс счёта (в обратную сторону)
+  await reverseBalanceChange(supabase, txnToDelete.account_id, txnToDelete.direction, txnToDelete.amount);
+}
+
+async function reverseBalanceChange(
+  supabase: Awaited<ReturnType<typeof createRouteClient>>,
+  accountId: string,
+  direction: string,
+  amount: number
+): Promise<void> {
+  // Получаем информацию о счёте
+  const { data: accountData, error: accountError } = await supabase
+    .from("accounts")
+    .select("type, credit_limit, balance")
+    .eq("id", accountId)
+    .single();
+
+  if (accountError) throw accountError;
+
+  const isCreditCard = accountData.type === "card" && accountData.credit_limit != null;
+  let balanceChange = 0;
+
+  if (isCreditCard) {
+    // Для кредитных карт (обратное действие)
+    if (direction === "expense") {
+      balanceChange = -amount; // Убираем задолженность
+    } else if (direction === "income") {
+      balanceChange = amount; // Возвращаем задолженность
+    }
+  } else {
+    // Для обычных счетов (обратное действие)
+    if (direction === "expense") {
+      balanceChange = amount; // Возвращаем деньги
+    } else if (direction === "income") {
+      balanceChange = -amount; // Убираем деньги
+    }
+  }
+
+  if (balanceChange !== 0) {
+    const newBalance = (accountData.balance || 0) + balanceChange;
+    const { error: updateError } = await supabase
+      .from("accounts")
+      .update({ balance: newBalance })
+      .eq("id", accountId);
+
+    if (updateError) throw updateError;
+  }
 }
 
 export type TransferInput = TransferInputSchemaType;

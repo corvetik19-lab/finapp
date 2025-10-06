@@ -26,7 +26,7 @@ export type Txn = {
   occurred_at: string;
   amount: number;
   currency: string;
-  direction: "income" | "expense" | string;
+  direction: "income" | "expense" | "transfer" | string;
   note: string | null;
   counterparty: string | null;
   category_id: string | null;
@@ -35,6 +35,8 @@ export type Txn = {
   attachment_count?: number | null;
   transfer_id?: string | null;
   transfer_role?: "expense" | "income" | null;
+  transfer_from_account_id?: string | null;
+  transfer_to_account_id?: string | null;
 };
 
 export type Category = { id: string; name: string; kind: "income" | "expense" | "transfer" };
@@ -67,15 +69,15 @@ export default function TransactionsGroupedList({
   const byDir = useMemo(() => {
     const buckets: Record<string, Txn[]> = {};
     for (const txn of txns) {
-      if (txn.direction !== "income" && txn.direction !== "expense") continue;
+      if (txn.direction !== "income" && txn.direction !== "expense" && txn.direction !== "transfer") continue;
       const key = `${txn.direction}|${txn.category_id || "uncat"}`;
       if (!buckets[key]) buckets[key] = [];
       buckets[key].push(txn);
     }
 
-    const grouped: Record<"income" | "expense", Group[]> = { income: [], expense: [] };
+    const grouped: Record<"income" | "expense" | "transfer", Group[]> = { income: [], expense: [], transfer: [] };
     for (const [key, list] of Object.entries(buckets)) {
-      const [dir, catId] = key.split("|") as ["income" | "expense", string];
+      const [dir, catId] = key.split("|") as ["income" | "expense" | "transfer", string];
       const sorted = [...list].sort(
         (a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime(),
       );
@@ -86,7 +88,7 @@ export default function TransactionsGroupedList({
       });
     }
 
-    for (const dir of ["income", "expense"] as const) {
+    for (const dir of ["income", "expense", "transfer"] as const) {
       grouped[dir].sort((a, b) => {
         const an = a.category?.name || "Без категории";
         const bn = b.category?.name || "Без категории";
@@ -99,8 +101,9 @@ export default function TransactionsGroupedList({
 
   const incomeTotal = useMemo(() => byDir.income.reduce((sum, group) => sum + group.total, 0), [byDir]);
   const expenseTotal = useMemo(() => byDir.expense.reduce((sum, group) => sum + group.total, 0), [byDir]);
+  const transferTotal = useMemo(() => byDir.transfer.reduce((sum, group) => sum + group.total, 0), [byDir]);
 
-  const [openDir, setOpenDir] = useState<{ income: boolean; expense: boolean }>({ income: true, expense: true });
+  const [openDir, setOpenDir] = useState<{ income: boolean; expense: boolean; transfer: boolean }>({ income: true, expense: true, transfer: true });
   const [openCats, setOpenCats] = useState<Record<string, boolean>>({});
   const [selected, setSelected] = useState<Txn | null>(null);
   const [editMode, setEditMode] = useState(false);
@@ -170,6 +173,7 @@ export default function TransactionsGroupedList({
         setOpenDir((prev) => ({
           income: typeof parsed.income === "boolean" ? parsed.income : prev.income,
           expense: typeof parsed.expense === "boolean" ? parsed.expense : prev.expense,
+          transfer: typeof parsed.transfer === "boolean" ? parsed.transfer : prev.transfer,
         }));
       }
     } catch {}
@@ -213,7 +217,7 @@ export default function TransactionsGroupedList({
     }
   }, [deleteState]);
 
-  function toggleDir(dir: "income" | "expense") {
+  function toggleDir(dir: "income" | "expense" | "transfer") {
     setOpenDir((prev) => {
       const next = { ...prev, [dir]: !prev[dir] } as typeof prev;
       try {
@@ -223,7 +227,7 @@ export default function TransactionsGroupedList({
     });
   }
 
-  function toggleCat(dir: "income" | "expense", catId: string) {
+  function toggleCat(dir: "income" | "expense" | "transfer", catId: string) {
     const key = `${dir}|${catId}`;
     setOpenCats((prev) => {
       const next = { ...prev, [key]: !prev[key] } as Record<string, boolean>;
@@ -270,13 +274,13 @@ export default function TransactionsGroupedList({
   });
 
   type DirBlockProps = {
-    dir: "income" | "expense";
+    dir: "income" | "expense" | "transfer";
     groups: Group[];
     total: number;
     open: boolean;
-    toggleDir: (dir: "income" | "expense") => void;
+    toggleDir: (dir: "income" | "expense" | "transfer") => void;
     openCats: Record<string, boolean>;
-    toggleCat: (dir: "income" | "expense", catId: string) => void;
+    toggleCat: (dir: "income" | "expense" | "transfer", catId: string) => void;
     setSelected: (txn: Txn | null) => void;
     setEditMode: (flag: boolean) => void;
     setEditKey: React.Dispatch<React.SetStateAction<number>>;
@@ -304,15 +308,15 @@ export default function TransactionsGroupedList({
     return (
       <div className={styles.groupBlock}>
         <div
-          className={`${styles.groupHeader} ${dir === "income" ? styles.income : styles.expense}`}
+          className={`${styles.groupHeader} ${dir === "income" ? styles.income : dir === "expense" ? styles.expense : styles.transfer}`}
           onClick={() => toggleDir(dir)}
         >
           <span className={styles.chevron}>{open ? "▾" : "▸"}</span>
-          <span className={styles.groupTitle}>{dir === "income" ? "Доход" : "Расход"}</span>
+          <span className={styles.groupTitle}>{dir === "income" ? "Доход" : dir === "expense" ? "Расход" : "Переводы"}</span>
           <span className={styles.spacer} />
-          <span className={`${styles.groupTotal} ${dir === "income" ? styles.income : styles.expense}`}>
-            {dir === "income" ? "+" : ""}
-            {formatMoney(dir === "income" ? total : -total, totalCurrency)}
+          <span className={`${styles.groupTotal} ${dir === "income" ? styles.income : dir === "expense" ? styles.expense : styles.transfer}`}>
+            {dir === "income" ? "+" : dir === "expense" ? "" : ""}
+            {formatMoney(dir === "income" ? total : dir === "expense" ? -total : total, totalCurrency)}
           </span>
         </div>
 
@@ -331,9 +335,9 @@ export default function TransactionsGroupedList({
                     <span className={styles.chevronSmall}>{catOpen ? "▾" : "▸"}</span>
                     <span className={styles.subTitle}>{catName}</span>
                     <span className={styles.spacer} />
-                    <span className={`${styles.subTotal} ${dir === "income" ? styles.income : styles.expense}`}>
-                      {dir === "income" ? "+" : ""}
-                      {formatMoney(dir === "income" ? group.total : -group.total, catCurrency)}
+                    <span className={`${styles.subTotal} ${dir === "income" ? styles.income : dir === "expense" ? styles.expense : styles.transfer}`}>
+                      {dir === "transfer" ? "" : dir === "income" ? "+" : ""}
+                      {formatMoney(dir === "transfer" ? group.total : dir === "income" ? group.total : -group.total, catCurrency)}
                     </span>
                   </div>
 
@@ -341,7 +345,7 @@ export default function TransactionsGroupedList({
                     <div className={styles.list}>
                       {group.txns.map((txn) => {
                         const signCls =
-                          txn.transfer_id && txn.transfer_role
+                          dir === "transfer"
                             ? styles.transfer
                             : dir === "income"
                               ? styles.income
@@ -358,35 +362,38 @@ export default function TransactionsGroupedList({
                             <div className={styles.left}>
                               <div className={`${styles.icon} ${signCls}`}>
                                 <span className="material-icons" aria-hidden>
-                                  {txn.transfer_id
-                                    ? txn.transfer_role === "expense"
+                                  {dir === "transfer"
+                                    ? "swap_horiz"
+                                    : txn.transfer_id
                                       ? "swap_horizontal_circle"
-                                      : "swap_horizontal_circle"
-                                    : dir === "income"
-                                      ? "arrow_upward"
-                                      : "arrow_downward"}
+                                      : dir === "income"
+                                        ? "arrow_upward"
+                                        : "arrow_downward"}
                                 </span>
                               </div>
                               <div className={styles.main}>
                                 <div className={styles.title}>
-                                  {txn.transfer_id
-                                    ? txn.transfer_role === "expense"
-                                      ? "Перевод (списание)"
-                                      : "Перевод (зачисление)"
-                                    : txn.counterparty || txn.note || "Без названия"}
+                                  {dir === "transfer"
+                                    ? "Перевод"
+                                    : txn.transfer_id
+                                      ? txn.transfer_role === "expense"
+                                        ? "Перевод (списание)"
+                                        : "Перевод (зачисление)"
+                                      : txn.counterparty || txn.note || "Без названия"}
                                 </div>
-                                <div className={styles.subtitle}>{new Date(txn.occurred_at).toLocaleString("ru-RU")}</div>
+                                <div className={styles.subtitle}>
+                                  {dir === "transfer" && txn.note
+                                    ? `${txn.note} • `
+                                    : ""}
+                                  {new Date(txn.occurred_at).toLocaleString("ru-RU")}
+                                </div>
                               </div>
                             </div>
 
                             <div className={styles.rowActions} onClick={(e) => e.stopPropagation()}>
                               <div className={`${styles.amount} ${signCls}`}>
-                                {txn.transfer_id
-                                  ? ""
-                                  : dir === "income"
-                                    ? "+"
-                                    : ""}
-                                {formatMoney(dir === "income" ? txn.amount : -txn.amount, txn.currency)}
+                                {dir === "transfer" ? "" : dir === "income" ? "+" : ""}
+                                {formatMoney(dir === "transfer" ? txn.amount : dir === "income" ? txn.amount : -txn.amount, txn.currency)}
                               </div>
 
                               <form
@@ -469,6 +476,22 @@ export default function TransactionsGroupedList({
         delAction={(fd) => deleteAction(fd)}
       />
 
+      <DirBlock
+        dir="transfer"
+        groups={byDir.transfer}
+        total={transferTotal}
+        open={openDir.transfer}
+        toggleDir={toggleDir}
+        openCats={openCats}
+        toggleCat={toggleCat}
+        setSelected={setSelected}
+        setEditMode={setEditMode}
+        setEditKey={setEditKey}
+        setRemovingIds={setRemovingIds}
+        removingIds={removingIds}
+        delAction={(fd) => deleteAction(fd)}
+      />
+
       {toast && (
         <div className={styles.toastWrap} onAnimationEnd={() => setToast(null)}>
           <div className={styles.toast}>{toast}</div>
@@ -486,11 +509,11 @@ export default function TransactionsGroupedList({
           >
             <div className={styles.modalBody}>
               <div className={styles.amountHero}>
-                <span className={`${styles.badgeAmount} ${selected.direction === "income" ? styles.badgeIncome : styles.badgeExpense}`}>
+                <span className={`${styles.badgeAmount} ${selected.direction === "income" ? styles.badgeIncome : selected.direction === "transfer" ? styles.badgeTransfer : styles.badgeExpense}`}>
                   <span className="material-icons" aria-hidden style={{ fontSize: 18 }}>
-                    {selected.direction === "income" ? "arrow_upward" : "arrow_downward"}
+                    {selected.direction === "income" ? "arrow_upward" : selected.direction === "transfer" ? "swap_horiz" : "arrow_downward"}
                   </span>
-                  {selected.direction === "income" ? "+" : "−"}
+                  {selected.direction === "income" ? "+" : selected.direction === "transfer" ? "" : "−"}
                   {formatMoney(selected.amount, selected.currency)}
                 </span>
               </div>
@@ -530,7 +553,7 @@ export default function TransactionsGroupedList({
                         <span className={styles.modalLabel}>
                           <span className={styles.iconMini}>
                             <span className="material-icons" aria-hidden>
-                              {selected.direction === "income" ? "arrow_upward" : "arrow_downward"}
+                              {selected.direction === "income" ? "arrow_upward" : selected.direction === "transfer" ? "swap_horiz" : "arrow_downward"}
                             </span>
                           </span>
                           Тип
@@ -540,6 +563,8 @@ export default function TransactionsGroupedList({
                             ? "Доход"
                             : selected.direction === "expense"
                             ? "Расход"
+                            : selected.direction === "transfer"
+                            ? "Перевод"
                             : selected.direction}
                         </span>
                       </div>
@@ -579,19 +604,56 @@ export default function TransactionsGroupedList({
                         <span className={styles.modalValue}>{new Date(selected.occurred_at).toLocaleString("ru-RU")}</span>
                       </div>
 
-                      <div className={styles.modalRow}>
-                        <span className={styles.modalLabel}>
-                          <span className={styles.iconMini}>
-                            <span className="material-icons" aria-hidden>
-                              account_balance_wallet
+                      {selected.direction === "transfer" ? (
+                        <>
+                          <div className={styles.modalRow}>
+                            <span className={styles.modalLabel}>
+                              <span className={styles.iconMini}>
+                                <span className="material-icons" aria-hidden>
+                                  call_made
+                                </span>
+                              </span>
+                              Со счёта
                             </span>
+                            <span className={styles.modalValue}>
+                              {selected.transfer_from_account_id 
+                                ? accMap[selected.transfer_from_account_id]?.name || "(удалённый счёт)" 
+                                : "—"}
+                            </span>
+                          </div>
+                          <div className={styles.modalRow}>
+                            <span className={styles.modalLabel}>
+                              <span className={styles.iconMini}>
+                                <span className="material-icons" aria-hidden>
+                                  call_received
+                                </span>
+                              </span>
+                              На счёт
+                            </span>
+                            <span className={styles.modalValue}>
+                              {selected.transfer_to_account_id 
+                                ? accMap[selected.transfer_to_account_id]?.name || "(удалённый счёт)" 
+                                : "—"}
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className={styles.modalRow}>
+                          <span className={styles.modalLabel}>
+                            <span className={styles.iconMini}>
+                              <span className="material-icons" aria-hidden>
+                                account_balance_wallet
+                              </span>
+                            </span>
+                            Счёт
                           </span>
-                          Счёт
-                        </span>
-                        <span className={styles.modalValue}>
-                          {selected.account_id ? accMap[selected.account_id!]?.name || "—" : "—"}
-                        </span>
-                      </div>
+                          <span className={styles.modalValue}>
+                            {selected.account_id 
+                              ? accMap[selected.account_id!]?.name || "(удалённый счёт)" 
+                              : "—"}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -612,16 +674,24 @@ export default function TransactionsGroupedList({
           >
             <div className={styles.modalBody}>
               <div className={styles.amountHero}>
-                <span className={`${styles.badgeAmount} ${selected.direction === "income" ? styles.badgeIncome : styles.badgeExpense}`}>
+                <span className={`${styles.badgeAmount} ${selected.direction === "income" ? styles.badgeIncome : selected.direction === "transfer" ? styles.badgeTransfer : styles.badgeExpense}`}>
                   <span className="material-icons" aria-hidden style={{ fontSize: 18 }}>
-                    {selected.direction === "income" ? "arrow_upward" : "arrow_downward"}
+                    {selected.direction === "income" ? "arrow_upward" : selected.direction === "transfer" ? "swap_horiz" : "arrow_downward"}
                   </span>
-                  {selected.direction === "income" ? "+" : "−"}
+                  {selected.direction === "income" ? "+" : selected.direction === "transfer" ? "" : "−"}
                   {formatMoney(selected.amount, selected.currency)}
                 </span>
               </div>
 
               <form key={editKey} onSubmit={handleEditSubmit} className={styles.modalForm}>
+                {selected.direction === "transfer" && (
+                  <div className={styles.infoMessage}>
+                    <span className="material-icons" aria-hidden style={{ fontSize: 20 }}>
+                      info
+                    </span>
+                    <span>Для переводов нельзя изменить тип, счёт и сумму. Можно изменить только дату и заметку.</span>
+                  </div>
+                )}
                 <div className={styles.modalGrid}>
                   <div className={styles.modalCol}>
                     <div className={styles.modalSectionTitle}>Основное</div>
@@ -631,15 +701,20 @@ export default function TransactionsGroupedList({
                           <span className={styles.modalLabel}>
                             <span className={styles.iconMini}>
                               <span className="material-icons" aria-hidden>
-                                {directionValue === "income" ? "arrow_upward" : "arrow_downward"}
+                                {directionValue === "income" ? "arrow_upward" : directionValue === "transfer" ? "swap_horiz" : "arrow_downward"}
                               </span>
                             </span>
                             Тип
                           </span>
                           <span className={styles.modalValue}>
-                            <select {...register("direction")} className={styles.select}>
+                            <select 
+                              {...register("direction")} 
+                              className={styles.select}
+                              disabled={selected.direction === "transfer"}
+                            >
                               <option value="income">Доход</option>
                               <option value="expense">Расход</option>
+                              <option value="transfer">Перевод</option>
                             </select>
                           </span>
                         </div>
@@ -682,6 +757,7 @@ export default function TransactionsGroupedList({
                               className={styles.input}
                               type="text"
                               inputMode="decimal"
+                              disabled={selected.direction === "transfer"}
                             />
                             {errors.amount_major && (
                               <div className={styles.fieldError}>{errors.amount_major.message}</div>
@@ -727,11 +803,15 @@ export default function TransactionsGroupedList({
                             Счёт
                           </span>
                           <span className={styles.modalValue}>
-                            <select {...register("account_id")} className={styles.select}>
+                            <select 
+                              {...register("account_id")} 
+                              className={styles.select}
+                              disabled={selected.direction === "transfer"}
+                            >
                               <option value="">— выберите —</option>
                               {accounts.map((account) => (
                                 <option key={account.id} value={account.id}>
-                                  {account.name} ({account.currency})
+                                  {account.name}
                                 </option>
                               ))}
                             </select>
@@ -745,13 +825,13 @@ export default function TransactionsGroupedList({
                           <span className={styles.modalLabel}>
                             <span className={styles.iconMini}>
                               <span className="material-icons" aria-hidden>
-                                notes
+                                description
                               </span>
                             </span>
-                            Заметка
+                            Название
                           </span>
                           <span className={styles.modalValue}>
-                            <input {...register("note")} type="text" className={styles.input} />
+                            <input {...register("counterparty")} type="text" className={styles.input} placeholder="Например: Магнит" />
                           </span>
                         </div>
 
@@ -759,13 +839,13 @@ export default function TransactionsGroupedList({
                           <span className={styles.modalLabel}>
                             <span className={styles.iconMini}>
                               <span className="material-icons" aria-hidden>
-                                store
+                                notes
                               </span>
                             </span>
-                            Контрагент
+                            Заметка
                           </span>
                           <span className={styles.modalValue}>
-                            <input {...register("counterparty")} type="text" className={styles.input} />
+                            <input {...register("note")} type="text" className={styles.input} placeholder="Комментарий" />
                           </span>
                         </div>
                       </div>

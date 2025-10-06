@@ -1,0 +1,76 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.titleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.addButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--primary-color);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 12px 30px rgba(21, 101, 192, 0.2);
+}
+
+.addButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(21, 101, 192, 0.3);
+}
+
+.addButton .material-icons {
+  font-size: 20px;
+}
+
+@media (max-width: 768px) {
+  .wrapper {
+    padding: 16px;
+    gap: 20px;
+  }
+
+  .title {
+    font-size: 26px;
+  }
+
+  .addButton {
+    width: 100%;
+    justify-content: center;
+  }
+}

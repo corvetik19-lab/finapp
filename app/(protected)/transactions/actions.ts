@@ -408,6 +408,7 @@ export async function importTransactionsAction(rows: CsvNormalizedRow[]): Promis
   const { data: accountsData, error: accountsError } = await supabase
     .from("accounts")
     .select("id,name,currency")
+    .is("deleted_at", null)
     .order("created_at", { ascending: true });
   if (accountsError) throw accountsError;
   if (!accountsData || accountsData.length === 0) {

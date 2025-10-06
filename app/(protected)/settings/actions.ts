@@ -20,6 +20,33 @@ async function requireUser() {
   return { supabase, userId: user.id } as const;
 }
 
+type PlanPriority = "Высокий" | "Средний" | "Низкий";
+
+function parseMoneyInput(value: FormDataEntryValue | null): number | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.replace(/\s+/g, "").replace(",", ".");
+  if (!normalized) return null;
+  const parsed = Number.parseFloat(normalized);
+  if (Number.isNaN(parsed)) return null;
+  return Math.round(parsed * 100);
+}
+
+function parseIntInput(value: FormDataEntryValue | null): number | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const parsed = Number.parseInt(trimmed, 10);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function normalizePriority(value: FormDataEntryValue | null): PlanPriority {
+  const allowed: PlanPriority[] = ["Высокий", "Средний", "Низкий"];
+  if (typeof value === "string" && allowed.includes(value as PlanPriority)) {
+    return value as PlanPriority;
+  }
+  return "Средний";
+}
+
 export async function addCategory(formData: FormData) {
   const { supabase, userId } = await requireUser();
 
@@ -44,6 +71,183 @@ export async function addCategory(formData: FormData) {
   const { error } = await supabase
     .from("categories")
     .insert({ user_id: userId, kind, name, parent_id: parentId });
+  if (error) throw error;
+  revalidatePath("/settings");
+}
+
+export async function addPlanType(formData: FormData) {
+  const { supabase, userId } = await requireUser();
+
+  const name = String(formData.get("name") || "").trim();
+  if (!name) throw new Error("Укажите название типа");
+
+  const icon = String(formData.get("icon") || "").trim() || null;
+  const color = String(formData.get("color") || "").trim() || null;
+  const sortOrder = parseIntInput(formData.get("sort_order")) ?? 0;
+
+  const { error } = await supabase
+    .from("plan_types")
+    .insert({
+      user_id: userId,
+      name,
+      icon,
+      color,
+      sort_order: sortOrder,
+    });
+  if (error) throw error;
+  revalidatePath("/settings");
+}
+
+export async function updatePlanType(formData: FormData) {
+  const { supabase, userId } = await requireUser();
+
+  const id = String(formData.get("id") || "").trim();
+  const name = String(formData.get("name") || "").trim();
+  if (!id || !name) throw new Error("Данные не полные");
+
+  const icon = String(formData.get("icon") || "").trim() || null;
+  const color = String(formData.get("color") || "").trim() || null;
+  const sortOrder = parseIntInput(formData.get("sort_order"));
+
+  const { error } = await supabase
+    .from("plan_types")
+    .update({
+      name,
+      icon,
+      color,
+      sort_order: sortOrder ?? 0,
+    })
+    .eq("id", id)
+    .eq("user_id", userId);
+
+  if (error) throw error;
+  revalidatePath("/settings");
+}
+
+export async function deletePlanType(formData: FormData) {
+  const { supabase, userId } = await requireUser();
+
+  const id = String(formData.get("id") || "").trim();
+  if (!id) throw new Error("Нет id");
+
+  const { data: existing, error: findErr } = await supabase
+    .from("plan_types")
+    .select("id")
+    .eq("id", id)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (findErr) throw findErr;
+  if (!existing) throw new Error("Тип плана не найден");
+
+  await supabase.from("plan_presets").update({ plan_type_id: null }).eq("plan_type_id", id).eq("user_id", userId);
+  await supabase.from("plans").update({ plan_type_id: null }).eq("plan_type_id", id).eq("user_id", userId);
+
+  const { error } = await supabase
+    .from("plan_types")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", userId);
+  if (error) throw error;
+  revalidatePath("/settings");
+}
+
+export async function addPlanPreset(formData: FormData) {
+  const { supabase, userId } = await requireUser();
+
+  const name = String(formData.get("name") || "").trim();
+  if (!name) throw new Error("Укажите название пресета");
+
+  const planTypeId = normalizeParent(formData.get("plan_type_id"));
+  if (planTypeId) {
+    const { data: typeCheck, error: typeErr } = await supabase
+      .from("plan_types")
+      .select("id")
+      .eq("id", planTypeId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (typeErr) throw typeErr;
+    if (!typeCheck) throw new Error("Тип плана не найден");
+  }
+
+  const goal = parseMoneyInput(formData.get("goal_amount"));
+  const monthly = parseMoneyInput(formData.get("monthly_contribution"));
+  const priority = normalizePriority(formData.get("priority"));
+  const note = String(formData.get("note") || "").trim() || null;
+  const icon = String(formData.get("icon") || "").trim() || null;
+  const sortOrder = parseIntInput(formData.get("sort_order")) ?? 0;
+
+  const { error } = await supabase
+    .from("plan_presets")
+    .insert({
+      user_id: userId,
+      name,
+      plan_type_id: planTypeId,
+      goal_amount: goal,
+      monthly_contribution: monthly,
+      priority,
+      note,
+      icon,
+      sort_order: sortOrder,
+    });
+  if (error) throw error;
+  revalidatePath("/settings");
+}
+
+export async function updatePlanPreset(formData: FormData) {
+  const { supabase, userId } = await requireUser();
+
+  const id = String(formData.get("id") || "").trim();
+  const name = String(formData.get("name") || "").trim();
+  if (!id || !name) throw new Error("Данные не полные");
+
+  const planTypeId = normalizeParent(formData.get("plan_type_id"));
+  if (planTypeId) {
+    const { data: typeCheck, error: typeErr } = await supabase
+      .from("plan_types")
+      .select("id")
+      .eq("id", planTypeId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (typeErr) throw typeErr;
+    if (!typeCheck) throw new Error("Тип плана не найден");
+  }
+
+  const goal = parseMoneyInput(formData.get("goal_amount"));
+  const monthly = parseMoneyInput(formData.get("monthly_contribution"));
+  const priority = normalizePriority(formData.get("priority"));
+  const note = String(formData.get("note") || "").trim() || null;
+  const icon = String(formData.get("icon") || "").trim() || null;
+  const sortOrder = parseIntInput(formData.get("sort_order")) ?? 0;
+
+  const { error } = await supabase
+    .from("plan_presets")
+    .update({
+      name,
+      plan_type_id: planTypeId,
+      goal_amount: goal,
+      monthly_contribution: monthly,
+      priority,
+      note,
+      icon,
+      sort_order: sortOrder,
+    })
+    .eq("id", id)
+    .eq("user_id", userId);
+  if (error) throw error;
+  revalidatePath("/settings");
+}
+
+export async function deletePlanPreset(formData: FormData) {
+  const { supabase, userId } = await requireUser();
+
+  const id = String(formData.get("id") || "").trim();
+  if (!id) throw new Error("Нет id");
+
+  const { error } = await supabase
+    .from("plan_presets")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", userId);
   if (error) throw error;
   revalidatePath("/settings");
 }

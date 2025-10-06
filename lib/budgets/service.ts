@@ -102,7 +102,7 @@ async function enrichBudgetWithUsage(
   if (txError) throw txError;
 
   const transactions = Array.isArray(txRows) ? txRows : [];
-  const spentMinor = transactions.reduce((acc, row) => acc + Number((row as { amount?: number }).amount ?? 0), 0);
+  const spentMinor = transactions.reduce((acc, row) => acc + Math.abs(Number((row as { amount?: number }).amount ?? 0)), 0);
   const remainingMinor = limitMinor - spentMinor;
   const progressRatio = limitMinor > 0 ? spentMinor / limitMinor : 0;
   const clampedProgress = Math.max(0, progressRatio);

@@ -2,13 +2,8 @@ import styles from "@/components/budgets/Budgets.module.css";
 import { createRSCClient } from "@/lib/supabase/helpers";
 import { listBudgetsWithUsage } from "@/lib/budgets/service";
 import { formatMoney } from "@/lib/utils/format";
-import { createBudget, deleteBudget } from "./actions";
-
-function formatDate(date: string) {
-  const d = new Date(date);
-  if (Number.isNaN(d.getTime())) return date;
-  return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "short", year: "numeric" });
-}
+import { createBudget } from "./actions";
+import BudgetsList from "@/components/budgets/BudgetsList";
 
 export default async function BudgetsPage() {
   const supabase = await createRSCClient();
@@ -95,87 +90,7 @@ export default async function BudgetsPage() {
       </section>
 
       <section className={styles.list}>
-        {budgets.length === 0 ? (
-          <div className={styles.empty}>Бюджеты ещё не настроены. Создайте первый лимит в форме выше.</div>
-        ) : (
-          budgets.map((budget) => {
-            const cardClass =
-              budget.status === "over"
-                ? `${styles.card} ${styles.statusOver}`
-                : budget.status === "warning"
-                  ? `${styles.card} ${styles.statusWarning}`
-                  : `${styles.card} ${styles.statusOk}`;
-
-            return (
-              <div key={budget.id} className={cardClass}>
-                <div className={styles.cardHeader}>
-                  <div>
-                    <div className={styles.cardTitle}>{budget.category?.name ?? "Без категории"}</div>
-                    <div className={styles.cardPeriod}>
-                      {formatDate(budget.period_start)} — {formatDate(budget.period_end)}
-                    </div>
-                  </div>
-                  <form action={deleteBudget} className={styles.actions}>
-                    <input type="hidden" name="id" value={budget.id} />
-                    <button type="submit" className={styles.deleteBtn}>
-                      <span className="material-icons" aria-hidden>
-                        delete
-                      </span>
-                      Удалить
-                    </button>
-                  </form>
-                </div>
-
-                <div className={styles.cardAmounts}>
-                  <div className={styles.amountItem}>
-                    <span className={styles.amountLabel}>Лимит</span>
-                    <span className={styles.amountValue}>{formatMoney(budget.limit_minor, budget.currency)}</span>
-                  </div>
-                  <div className={styles.amountItem}>
-                    <span className={styles.amountLabel}>Потрачено</span>
-                    <span className={styles.amountValue}>{formatMoney(budget.spent_minor, budget.currency)}</span>
-                  </div>
-                  <div className={styles.amountItem}>
-                    <span className={styles.amountLabel}>{budget.remaining_minor >= 0 ? "Остаток" : "Перерасход"}</span>
-                    <span className={styles.amountValue}>{formatMoney(budget.remaining_minor, budget.currency)}</span>
-                  </div>
-                </div>
-
-                <div className={styles.progressBar}>
-                  <div
-                    className={styles.progressFill}
-                    style={{ width: `${Math.min(Math.max(budget.progress, 0), 1) * 100}%` }}
-                  />
-                </div>
-
-                <div
-                  className={`${styles.statusLine} ${
-                    budget.status === "over"
-                      ? styles.statusLineOver
-                      : budget.status === "warning"
-                        ? styles.statusLineWarning
-                        : styles.statusLineOk
-                  }`}
-                >
-                  <span
-                    className={`${styles.statusDot} ${
-                      budget.status === "over"
-                        ? styles.statusDotOver
-                        : budget.status === "warning"
-                          ? styles.statusDotWarning
-                          : styles.statusDotOk
-                    }`}
-                  />
-                  {budget.status === "over"
-                    ? "Лимит превышен"
-                    : budget.status === "warning"
-                      ? "Осталось менее 15%"
-                      : "В пределах лимита"}
-                </div>
-              </div>
-            );
-          })
-        )}
+        <BudgetsList budgets={budgets} categories={categories} />
       </section>
     </div>
   );

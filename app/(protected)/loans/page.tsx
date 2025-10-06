@@ -1,8 +1,11 @@
-export default function LoansPage() {
-  return (
-    <div>
-      <h1 style={{ margin: "0 0 12px" }}>Кредиты</h1>
-      <p style={{ color: "#555" }}>Раздел для кредитов: графики платежей, напоминания и статусы.</p>
-    </div>
-  );
+import { loadLoans, loadLoansSummary } from "@/lib/loans/service";
+import LoansPageClient from "./LoansPageClient";
+
+export default async function LoansPage() {
+  const [loans, summary] = await Promise.all([
+    loadLoans(),
+    loadLoansSummary(),
+  ]);
+
+  return <LoansPageClient loans={loans} summary={summary} />;
 }

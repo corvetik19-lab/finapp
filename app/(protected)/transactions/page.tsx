@@ -1,5 +1,4 @@
 import { createRSCClient } from "@/lib/supabase/helpers";
-import { createDefaultAccount } from "./actions";
 import { formatMoney } from "@/lib/utils/format";
 import styles from "@/components/transactions/Transactions.module.css";
 // Charts temporarily removed per design update
@@ -13,7 +12,7 @@ import { listTransactions } from "@/lib/transactions/service";
 import ImportCsvTrigger from "@/components/transactions/ImportCsvTrigger";
 import ExportCsvButton from "@/components/transactions/ExportCsvButton";
 
-type Account = { id: string; name: string; currency: string };
+type Account = { id: string; name: string; currency: string; balance: number };
 type Category = { id: string; name: string; kind: "income" | "expense" | "transfer" };
 type Txn = GroupTxn;
 
@@ -28,7 +27,8 @@ export default async function TransactionsPage({
 
   const { data: accounts = [] } = await supabase
     .from("accounts")
-    .select("id,name,currency")
+    .select("id,name,currency,balance")
+    .is("deleted_at", null)
     .order("created_at", { ascending: true });
 
   const { data: categories = [] } = await supabase
@@ -139,6 +139,8 @@ export default async function TransactionsPage({
     attachment_count: t.attachment_count,
     transfer_id: t.transfer_id,
     transfer_role: t.transfer_role,
+    transfer_from_account_id: t.transfer_from_account_id,
+    transfer_to_account_id: t.transfer_to_account_id,
   }));
 
   const hasAccount = (accounts?.length ?? 0) > 0;
@@ -269,12 +271,12 @@ export default async function TransactionsPage({
       {hasAccount && (
         <section className={styles.accounts}>
           {(accounts as Account[]).slice(0, 3).map((a) => {
-            const delta = accountDeltaMinor.get(a.id) || 0;
-            const cls = delta >= 0 ? "positive" : "negative";
+            // Используем баланс напрямую из БД (balance уже актуальный)
+            const currentBalance = a.balance ?? 0;
             return (
               <div key={a.id} className={styles.accountCard}>
                 <div className={styles.accountName}>{a.name}</div>
-                <div className={`${styles.accountDelta} ${styles[cls]}`}>{formatMoney(delta, a.currency)}</div>
+                <div className={styles.accountBalance}>{formatMoney(currentBalance, a.currency)}</div>
               </div>
             );
           })}
@@ -283,37 +285,6 @@ export default async function TransactionsPage({
 
       {/* Период + Summary (меняется только сводка) */}
       <SummaryWithPeriod presets={summaryPresets} defaultKey={summaryDefaultKey} />
-
-      {/* Quick actions (UI only) */}
-      <section className={styles.quick}>
-        <div className={styles.quickCard}>
-          <div className={styles.quickIcon}><span className="material-icons">receipt_long</span></div>
-          <div className={styles.quickTitle}>Добавить чек</div>
-        </div>
-        <div className={styles.quickCard}>
-          <div className={styles.quickIcon}><span className="material-icons">swap_horiz</span></div>
-          <div className={styles.quickTitle}>Перевод</div>
-        </div>
-        <div className={styles.quickCard}>
-          <div className={styles.quickIcon}><span className="material-icons">label</span></div>
-          <div className={styles.quickTitle}>Категория</div>
-        </div>
-        <div className={styles.quickCard}>
-          <div className={styles.quickIcon}><span className="material-icons">backup</span></div>
-          <div className={styles.quickTitle}>Импорт CSV</div>
-        </div>
-      </section>
-
-      {!hasAccount && (
-        <div style={{ marginBottom: 12, padding: 12, background: "#fffbe6", border: "1px solid #ffe58f", borderRadius: 8 }}>
-          У вас пока нет ни одного счёта. Создадим стандартный счёт «Наличные»?
-          <form action={createDefaultAccount} style={{ display: "inline" }}>
-            <button type="submit" className={styles.primaryBtn} style={{ marginLeft: 10 }}>
-              Создать
-            </button>
-          </form>
-        </div>
-      )}
 
       {/* Filters and search (как в дизайне) */}
       <FiltersAndSearch

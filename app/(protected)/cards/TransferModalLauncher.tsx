@@ -30,11 +30,21 @@ type CurrencyFormatterConfig = {
 };
 
 function formatMoney({ value, currency }: CurrencyFormatterConfig) {
+  const major = value / 100;
+  
+  // Для рублей не показываем код валюты
+  if (currency === "RUB") {
+    return `${major.toLocaleString("ru-RU", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })} ₽`;
+  }
+  
   return new Intl.NumberFormat("ru-RU", {
     style: "currency",
     currency,
     maximumFractionDigits: 2,
-  }).format(value / 100);
+  }).format(major);
 }
 
 function SubmitButton({ mode }: { mode: Mode }) {

@@ -111,7 +111,16 @@ export default async function ReportsPage() {
   return (
     <div className={styles.page}>
       <section className={styles.header}>
-        <h1 className={styles.title}>Отчёты</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+          <h1 className={styles.title}>Отчёты</h1>
+          <a
+            href="/reports/custom"
+            className={styles.createReportBtn}
+          >
+            <span className="material-icons" style={{ fontSize: '20px' }}>add_chart</span>
+            Создать отчёт
+          </a>
+        </div>
         <p className={styles.subtitle}>
           Аналитика по доходам и расходам, структура затрат и динамика по периодам. Данные обновляются автоматически на основе ваших транзакций.
         </p>

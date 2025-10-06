@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const transactionSchema = z.object({
-  direction: z.enum(["income", "expense"]).default("expense"),
+  direction: z.enum(["income", "expense", "transfer"]).default("expense"),
   account_id: z.string().uuid({ message: "Выберите счёт" }),
   category_id: z.string().uuid().optional().nullable(),
   amount_major: z
@@ -27,7 +27,7 @@ const amountStringSchema = z
 const optionalUuid = z.union([z.string().uuid(), z.literal(""), z.null()]);
 
 export const transactionFormSchema = z.object({
-  direction: z.enum(["income", "expense"]),
+  direction: z.enum(["income", "expense", "transfer"]),
   account_id: z.string().uuid({ message: "Выберите счёт" }),
   category_id: optionalUuid.optional(),
   amount_major: amountStringSchema,

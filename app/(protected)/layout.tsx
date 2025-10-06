@@ -13,5 +13,11 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
     redirect("/login");
   }
 
-  return <ProtectedShell>{children}</ProtectedShell>;
+  const userData = {
+    email: user.email || "",
+    fullName: user.user_metadata?.full_name || "",
+    avatar: user.user_metadata?.avatar_url || null,
+  };
+
+  return <ProtectedShell userData={userData}>{children}</ProtectedShell>;
 }

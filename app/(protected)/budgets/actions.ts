@@ -40,6 +40,44 @@ export async function createBudget(formData: FormData) {
   revalidatePath("/budgets");
 }
 
+export async function updateBudget(formData: FormData) {
+  const supabase = await createRouteClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user) throw authError ?? new Error("Нет пользователя");
+
+  const id = String(formData.get("id") ?? "").trim();
+  if (!id) throw new Error("Нет идентификатора бюджета");
+
+  const raw = toObject(formData);
+  const parsed = budgetFormSchema.parse({
+    category_id: raw.category_id,
+    period_start: raw.period_start,
+    period_end: raw.period_end,
+    limit_amount: raw.limit_amount,
+    currency: (raw.currency as string) || "RUB",
+  });
+
+  const limitMinor = Math.round(parsed.limit_amount * 100);
+
+  const { error } = await supabase
+    .from("budgets")
+    .update({
+      category_id: parsed.category_id,
+      period_start: parsed.period_start,
+      period_end: parsed.period_end,
+      limit_amount: limitMinor,
+      currency: parsed.currency,
+    })
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) throw error;
+
+  revalidatePath("/budgets");
+}
+
 export async function deleteBudget(formData: FormData) {
   const supabase = await createRouteClient();
   const {

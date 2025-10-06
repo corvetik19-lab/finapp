@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createRSCClient, createRouteClient } from "@/lib/supabase/helpers";
 
 export type PlanSelectItem = {
@@ -171,4 +172,176 @@ export async function listPlansForSelectRoute(
 ): Promise<PlanSelectItem[]> {
   const supabase = await createRouteClient();
   return queryPlansForSelect(supabase, params);
+}
+
+export type PlanActivityItem = {
+  id: string;
+  date: string;
+  description: string;
+  amount: number;
+  type: "topup" | "withdraw";
+};
+
+export type PlanWithActivity = {
+  id: string;
+  name: string;
+  goalAmount: number;
+  currentAmount: number;
+  targetDate: string | null;
+  category: string;
+  account: string;
+  monthlyContribution: number;
+  status: "active" | "ahead" | "behind";
+  description: string;
+  createdAt: string | null;
+  currency: string;
+  activity: PlanActivityItem[];
+};
+
+type PlanRow = {
+  id: string;
+  name: string;
+  description: string | null;
+  goal_amount: number;
+  current_amount: number;
+  monthly_contribution: number;
+  currency: string;
+  target_date: string | null;
+  status: string;
+  created_at: string | null;
+  plan_type: {
+    id: string;
+    name: string;
+  } | null;
+  account: {
+    id: string;
+    name: string;
+  } | null;
+  category: {
+    id: string;
+    name: string;
+  } | null;
+  plan_topups: {
+    id: string;
+    amount: number;
+    type: "topup" | "withdrawal" | null;
+    description: string | null;
+    occurred_at: string | null;
+  }[] | null;
+};
+
+function computeStatus(row: PlanRow, goalAmountMinor: number, currentAmountMinor: number): "active" | "ahead" | "behind" {
+  if (goalAmountMinor <= 0) {
+    return currentAmountMinor >= 0 ? "active" : "behind";
+  }
+
+  const now = Date.now();
+  const createdAt = row.created_at ? new Date(row.created_at).getTime() : null;
+  const targetAt = row.target_date ? new Date(row.target_date).getTime() : null;
+
+  if (!createdAt || !targetAt || targetAt <= createdAt) {
+    return currentAmountMinor >= goalAmountMinor ? "ahead" : "active";
+  }
+
+  if (now >= targetAt) {
+    return currentAmountMinor >= goalAmountMinor ? "ahead" : "behind";
+  }
+
+  const totalDuration = targetAt - createdAt;
+  const elapsed = now - createdAt;
+  const expectedProgress = (goalAmountMinor * elapsed) / totalDuration;
+  const tolerance = goalAmountMinor * 0.1;
+
+  if (currentAmountMinor >= expectedProgress + tolerance) {
+    return "ahead";
+  }
+  if (currentAmountMinor + tolerance < expectedProgress) {
+    return "behind";
+  }
+  return "active";
+}
+
+function mapPlanRow(row: PlanRow): PlanWithActivity {
+  const goalAmountMinor = row.goal_amount ?? 0;
+  const currentAmountMinor = row.current_amount ?? 0;
+  const monthlyContributionMinor = row.monthly_contribution ?? 0;
+
+  const activityItems: PlanActivityItem[] = (row.plan_topups ?? []).map((item) => {
+    const amountMinor = item.amount ?? 0;
+    const amountMajor = amountMinor / 100;
+    const occurredAt = item.occurred_at ? new Date(item.occurred_at).toISOString() : new Date().toISOString();
+    const type = item.type === "withdrawal" ? "withdraw" : "topup";
+
+    return {
+      id: item.id,
+      date: occurredAt,
+      description: item.description ?? "Взнос по плану",
+      amount: amountMajor,
+      type,
+    } satisfies PlanActivityItem;
+  });
+
+  const status = (row.status === "ahead" || row.status === "behind" || row.status === "active"
+    ? row.status
+    : computeStatus(row, goalAmountMinor, currentAmountMinor)) as "active" | "ahead" | "behind";
+
+  return {
+    id: row.id,
+    name: row.name,
+    goalAmount: goalAmountMinor / 100,
+    currentAmount: currentAmountMinor / 100,
+    targetDate: row.target_date,
+    category: row.category?.name ?? row.plan_type?.name ?? "—",
+    account: row.account?.name ?? "—",
+    monthlyContribution: monthlyContributionMinor / 100,
+    status,
+    description: row.description ?? "",
+    createdAt: row.created_at,
+    currency: row.currency ?? "RUB",
+    activity: activityItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+  } satisfies PlanWithActivity;
+}
+
+export async function listPlansWithActivity(): Promise<PlanWithActivity[]> {
+  const supabase = (await createRSCClient()) as SupabaseClient;
+  if (typeof supabase?.from !== "function") {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("plans")
+    .select(
+      `
+        id,
+        name,
+        description,
+        goal_amount,
+        current_amount,
+        monthly_contribution,
+        currency,
+        target_date,
+        status,
+        created_at,
+        plan_type:plan_types(id, name),
+        account:accounts(id, name),
+        category:categories(id, name),
+        plan_topups(
+          id,
+          amount,
+          type,
+          description,
+          occurred_at
+        )
+      `
+    )
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("listPlansWithActivity", error);
+    return [];
+  }
+
+  const rows = (data ?? []) as unknown as PlanRow[];
+  return rows.map(mapPlanRow);
 }

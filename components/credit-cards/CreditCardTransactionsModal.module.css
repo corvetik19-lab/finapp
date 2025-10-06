@@ -1,0 +1,278 @@
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.modal {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: 700px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modalHeader {
+  padding: 24px 28px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modalTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.modalTitle .material-icons {
+  font-size: 24px;
+  color: var(--primary-color);
+}
+
+.closeButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+  background: rgba(148, 163, 184, 0.2);
+  color: var(--primary-dark);
+}
+
+.modalBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 28px;
+}
+
+.loading,
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.loading .material-icons,
+.emptyState .material-icons {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.3;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(21, 101, 192, 0.1);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error {
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.error .material-icons {
+  font-size: 24px;
+}
+
+.transactionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.transactionItem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(241, 245, 249, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  transition: all 0.2s ease;
+}
+
+.transactionItem:hover {
+  background: rgba(241, 245, 249, 0.8);
+  border-color: rgba(148, 163, 184, 0.25);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.transactionIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.expense .transactionIcon {
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+}
+
+.income .transactionIcon {
+  background: rgba(34, 197, 94, 0.12);
+  color: #15803d;
+}
+
+.transfer .transactionIcon {
+  background: rgba(21, 101, 192, 0.12);
+  color: #1565c0;
+}
+
+.transactionIcon .material-icons {
+  font-size: 20px;
+}
+
+.transactionInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.transactionMain {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.transactionCounterparty {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--primary-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.transactionCategory {
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(148, 163, 184, 0.12);
+  flex-shrink: 0;
+}
+
+.transactionDate {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.transactionAmount {
+  flex-shrink: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.amountExpense {
+  color: #b91c1c;
+}
+
+.amountIncome {
+  color: #15803d;
+}
+
+.amountTransfer {
+  color: #1565c0;
+}
+
+.modalFooter {
+  padding: 20px 28px;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.btnSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: white;
+  color: var(--text-secondary);
+}
+
+.btnSecondary:hover {
+  background: rgba(241, 245, 249, 0.8);
+  border-color: rgba(148, 163, 184, 0.4);
+  color: var(--primary-dark);
+}
+
+@media (max-width: 768px) {
+  .modal {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .modalHeader,
+  .modalBody,
+  .modalFooter {
+    padding: 20px;
+  }
+
+  .transactionItem {
+    padding: 12px;
+  }
+
+  .transactionCounterparty {
+    font-size: 14px;
+  }
+
+  .transactionAmount {
+    font-size: 15px;
+  }
+}

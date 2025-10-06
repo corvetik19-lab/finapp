@@ -139,7 +139,7 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
                     <option value="">— выберите —</option>
                     {accounts.map((a) => (
                       <option key={a.id} value={a.id}>
-                        {a.name} ({a.currency})
+                        {a.name}
                       </option>
                     ))}
                   </select>
@@ -156,7 +156,7 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
                     <option value="">— выберите —</option>
                     {accounts.map((a) => (
                       <option key={a.id} value={a.id}>
-                        {a.name} ({a.currency})
+                        {a.name}
                       </option>
                     ))}
                   </select>

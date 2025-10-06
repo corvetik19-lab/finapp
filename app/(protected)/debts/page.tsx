@@ -1,8 +1,9 @@
-export default function DebtsPage() {
-  return (
-    <div>
-      <h1 style={{ margin: "0 0 12px" }}>Долги</h1>
-      <p style={{ color: "#555" }}>Учёт долгов (вы должны/вам должны), напоминания.</p>
-    </div>
-  );
+import { loadDebts, loadDebtsSummary } from "@/lib/debts/service";
+import DebtsPageClient from "@/components/debts/DebtsPageClient";
+
+export default async function DebtsPage() {
+  const debts = await loadDebts();
+  const summary = await loadDebtsSummary();
+
+  return <DebtsPageClient debts={debts} summary={summary} />;
 }

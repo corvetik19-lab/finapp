@@ -54,6 +54,15 @@ export async function addFundsAction(formData: FormData): Promise<void> {
     throw new Error(insertError.message);
   }
 
+  // Обновляем баланс счёта
+  const { error: updateBalanceError } = await supabase.rpc("increment_account_balance", {
+    p_account_id: parsed.data.account_id,
+    p_amount: amountMinor,
+  });
+  if (updateBalanceError) {
+    console.error("Failed to update account balance:", updateBalanceError);
+  }
+
   revalidatePath("/cards");
 }
 
@@ -86,6 +95,11 @@ const addCardSchema = z.object({
   name: z.string().min(1),
   currency: currencySchema,
   card_type: z.enum(["debit", "credit"]),
+});
+
+const updateCardSchema = z.object({
+  id: uuidSchema,
+  name: z.string().min(1),
 });
 
 const addFundsSchema = z.object({
@@ -145,6 +159,7 @@ export async function addCardAction(formData: FormData): Promise<void> {
       name: parsed.data.name,
       type: "card",
       currency: parsed.data.currency,
+      balance: initialBalanceMinor, // Сохраняем начальный баланс прямо в счёт
     })
     .select("id")
     .single();
@@ -152,22 +167,7 @@ export async function addCardAction(formData: FormData): Promise<void> {
     throw new Error(insertError.message);
   }
 
-  if (initialBalanceMinor > 0) {
-    const { error: initialTxError } = await supabase.from("transactions").insert({
-      user_id: user.id,
-      account_id: account.id,
-      amount: initialBalanceMinor,
-      currency: parsed.data.currency,
-      direction: "income",
-      occurred_at: new Date().toISOString(),
-      note: "Начальный баланс карты",
-      attachment_count: 0,
-      tags: [],
-    });
-    if (initialTxError) {
-      throw new Error(initialTxError.message);
-    }
-  }
+  // Не создаём транзакцию для начального баланса - он уже сохранён в поле balance
 
   if (createStash) {
     const { error: stashError } = await supabase.from("account_stashes").insert({
@@ -181,6 +181,57 @@ export async function addCardAction(formData: FormData): Promise<void> {
     if (stashError) {
       throw new Error(stashError.message);
     }
+  }
+
+  revalidatePath("/cards");
+}
+
+export async function updateCardAction(formData: FormData): Promise<void> {
+  const parsed = updateCardSchema.safeParse({
+    id: formData.get("id"),
+    name: formData.get("name"),
+  });
+  if (!parsed.success) {
+    throw new Error("Некорректные данные карты");
+  }
+
+  const supabase = await getSupabase();
+  const {
+    data: { user },
+    error: userErr,
+  } = await supabase.auth.getUser();
+  if (userErr || !user) {
+    throw new Error("Не удалось получить пользователя");
+  }
+
+  // Проверяем что карта принадлежит пользователю и это дебетовая карта
+  const { data: card, error: cardErr } = await supabase
+    .from("accounts")
+    .select("id, type, credit_limit")
+    .eq("id", parsed.data.id)
+    .eq("user_id", user.id)
+    .eq("type", "card")
+    .single();
+
+  if (cardErr || !card) {
+    throw new Error("Карта не найдена");
+  }
+
+  // Проверяем что это дебетовая карта (без credit_limit)
+  if (card.credit_limit != null) {
+    throw new Error("Редактирование кредитных карт не поддерживается");
+  }
+
+  const { error: updateError } = await supabase
+    .from("accounts")
+    .update({
+      name: parsed.data.name,
+    })
+    .eq("id", parsed.data.id)
+    .eq("user_id", user.id);
+
+  if (updateError) {
+    throw new Error(updateError.message);
   }
 
   revalidatePath("/cards");

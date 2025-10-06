@@ -1,0 +1,130 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px;
+  border-radius: 8px;
+  background-color: #f5f7fa;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #e3f2fd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon .material-icons {
+  font-size: 20px;
+  color: var(--primary-color);
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.name {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.meta {
+  font-size: 14px;
+  color: #666;
+}
+
+.filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 8px;
+  font-size: 12px;
+  background-color: #e3f2fd;
+  color: #1976d2;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.date {
+  font-size: 14px;
+  color: #666;
+}
+
+.deleteBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #ffcdd2;
+  background: white;
+  color: #f44336;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.deleteBtn:hover {
+  background: #ffebee;
+}
+
+.deleteBtn .material-icons {
+  font-size: 18px;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.empty .material-icons {
+  font-size: 64px;
+  color: #ddd;
+  margin-bottom: 12px;
+}
+
+.empty p {
+  margin: 0;
+  font-size: 16px;
+}

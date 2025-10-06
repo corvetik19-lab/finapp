@@ -48,26 +48,6 @@
   color: #ffffff;
 }
 
-.bottom {
-  margin-top: auto;
-  padding: 8px;
-  border-top: 1px solid rgba(255,255,255,0.15);
-}
-
-.signout {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #ffe1e1;
-  text-decoration: none;
-  padding: 10px 12px;
-  border-radius: 8px;
-}
-
-.signout:hover {
-  background: rgba(255,255,255,0.10);
-}
-
 .content {
   flex: 1;
   display: flex;
@@ -75,15 +55,36 @@
 }
 
 .header {
-  height: 56px;
-  background: var(--card-bg);
-  border-bottom: 1px solid #eaeef3;
+  height: 70px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  justify-content: space-between;
+  padding: 0 24px;
   position: sticky;
   top: 0;
   z-index: 10;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
 }
 
 .main {

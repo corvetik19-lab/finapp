@@ -1,15 +1,20 @@
-.topBar{display:flex;justify-content:space-between;align-items:center;padding:15px 20px;background:var(--card-bg);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.05);margin-bottom:16px}
+.container{display:flex;flex-direction:column;gap:16px}
+.topBar{display:flex;justify-content:space-between;align-items:center;padding:15px 20px;background:var(--card-bg);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.05)}
 .pageTitle{font-size:24px;font-weight:500;color:var(--primary-dark)}
 
-.tabs{background:var(--card-bg);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.05);padding:6px;display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
-.tab{padding:10px 14px;border-radius:8px;font-weight:500;cursor:pointer;color:var(--text-primary)}
+.tabs{background:var(--card-bg);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.05);padding:6px;display:flex;gap:6px;flex-wrap:wrap}
+.tab{padding:10px 14px;border-radius:8px;font-weight:500;cursor:pointer;color:var(--text-primary);background:transparent;border:0;display:flex;align-items:center}
 .tabActive{background:var(--primary-light);color:var(--primary-color)}
 
-.card{background:var(--card-bg);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.05);padding:16px}
+.content{display:flex;flex-direction:column;gap:16px}
+
+.card{background:var(--card-bg);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.05);padding:16px;width:100%;overflow:hidden}
 .sectionTitle{font-size:18px;font-weight:500;color:var(--primary-dark);margin-bottom:12px}
+.sectionSubtitle{font-size:14px;color:var(--text-secondary);margin-bottom:16px}
 .toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px}
 .input{padding:8px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px}
 .select{padding:8px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;min-width:160px;background:#fff}
+.textarea{padding:8px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;min-height:80px;resize:vertical}
 .btn{padding:8px 12px;border-radius:8px;border:0;background:var(--primary-color);color:#fff;cursor:pointer}
 .btn.secondary{background:var(--primary-light);color:var(--primary-color)}
 .btnSecondary{background:var(--primary-light);color:var(--primary-color)}
@@ -18,6 +23,40 @@
 .item{display:flex;align-items:center;gap:8px;justify-content:space-between;background:var(--background);border-radius:8px;padding:8px 10px}
 .itemForm{display:flex;gap:8px;align-items:center}
 .del{background:#fff;color:var(--danger);border:1px solid rgba(244,67,54,0.25);padding:6px 8px;border-radius:8px;cursor:pointer}
+
+.cardStack{display:flex;flex-direction:column;gap:16px}
+.formWrap{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
+.actionsRow{display:flex;gap:8px;align-items:center}
+.empty{font-size:14px;color:var(--text-secondary);padding:8px 0}
+.hint{font-size:12px;color:var(--text-secondary)}
+.itemBlock{display:flex;flex-direction:column;gap:12px;background:var(--background);border-radius:8px;padding:16px}
+.itemHeader{display:flex;align-items:flex-start;gap:16px;justify-content:space-between;flex-wrap:wrap}
+.meta{font-size:12px;color:var(--text-secondary);margin-top:4px}
+.planForm{display:flex;flex-wrap:wrap;gap:10px;width:100%;align-items:flex-end}
+.planForm>*{flex:1 1 200px;min-width:150px}
+.planForm button{flex:0 0 auto;white-space:nowrap}
+.planSubmitBtn{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;border-radius:8px;border:0;background:var(--primary-color);color:#fff;font-weight:600;font-size:14px;cursor:pointer;transition:transform 0.2s ease,box-shadow 0.2s ease}
+.planSubmitBtn:hover{transform:translateY(-1px);box-shadow:0 8px 16px rgba(21,101,192,0.25)}
+.planSubmitBtn:active{transform:translateY(0)}
+.planSubmitBtn .material-icons{font-size:18px}
+.planInput,.planSelect,.planTextarea{width:100%;box-sizing:border-box}
+.planTextarea{min-height:80px}
+.planItemBlock{width:100%;overflow:hidden}
+.planItemContent{flex:1;min-width:0}
+.planItemTitle{font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.planItemMeta{font-size:12px;color:var(--text-secondary);line-height:1.5}
+.planActionsRow{display:flex;gap:12px;align-items:flex-start;width:100%}
+.planItemForm{display:flex;flex-wrap:wrap;gap:8px;flex:1}
+.planItemForm>input,.planItemForm>select{flex:1 1 160px;min-width:140px}
+.planItemForm>textarea{flex:1 1 100%;width:100%}
+.planItemForm>button{flex:0 0 auto;align-self:flex-end}
+.planDeleteForm{flex:0 0 auto}
+.planDeleteBtn{background:#fff;color:#f44336;border:1px solid rgba(244,67,54,0.3);padding:8px 12px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all 0.2s}
+.planDeleteBtn:hover{background:rgba(244,67,54,0.05);border-color:#f44336}
+
+.placeholderCard{background:var(--card-bg);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.05);padding:24px;text-align:center}
+.placeholderTitle{font-size:18px;font-weight:500;color:var(--primary-dark);margin-bottom:8px}
+.placeholderText{font-size:14px;color:var(--text-secondary)}
 
 .tree{display:flex;flex-direction:column;gap:6px}
 .treeGroup{display:flex;flex-direction:column;gap:6px}

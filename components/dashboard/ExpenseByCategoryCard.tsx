@@ -49,7 +49,7 @@ export default function ExpenseByCategoryCard({
   const handleRemove = onRemove ?? noop;
   const [isPending, startTransition] = useTransition();
   const [mode, setMode] = useState<"months" | "custom">("months");
-  const [selectedMonths, setSelectedMonths] = useState(12);
+  const [selectedMonths, setSelectedMonths] = useState(1);
   const [customRange, setCustomRange] = useState(() => {
     if (range) {
       return {

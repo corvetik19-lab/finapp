@@ -225,3 +225,21 @@
   font-size: 18px;
   color: #0f172a;
 }
+
+.createReportBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background-color: var(--primary-color, #1565c0);
+  color: white;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.createReportBtn:hover {
+  background-color: #0d47a1;
+}

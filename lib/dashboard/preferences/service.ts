@@ -2,8 +2,12 @@ import { createRSCClient, createRouteClient } from "@/lib/supabase/helpers";
 import { logger } from "@/lib/logger";
 import {
   CATEGORY_WIDGET_KEY,
+  WIDGET_VISIBILITY_KEY,
   normalizeWidgetVisibleIds,
+  normalizeHiddenWidgets,
   type CategoryWidgetPreferencesState,
+  type WidgetVisibilityState,
+  type DashboardWidgetKey,
 } from "./shared";
 
 const DEFAULT_PREFERENCES: CategoryWidgetPreferencesState = { visibleIds: [] };
@@ -73,4 +77,82 @@ export async function saveCategoryWidgetPreferences(
   } catch (unknownError) {
     logger.error("saveCategoryWidgetPreferences unexpected", { error: unknownError });
   }
+}
+
+// Загрузка настроек видимости виджетов
+const DEFAULT_WIDGET_VISIBILITY: WidgetVisibilityState = { hidden: [] };
+
+export async function loadWidgetVisibility(): Promise<WidgetVisibilityState> {
+  const supabase = await createRSCClient();
+
+  try {
+    const { data, error } = await supabase
+      .from("dashboard_widget_preferences")
+      .select("state")
+      .eq("widget", WIDGET_VISIBILITY_KEY)
+      .maybeSingle();
+
+    if (error) {
+      logger.warn("loadWidgetVisibility error", { error });
+      return DEFAULT_WIDGET_VISIBILITY;
+    }
+
+    const rawState = (data?.state ?? {}) as Record<string, unknown>;
+    const hidden = normalizeHiddenWidgets(rawState.hidden);
+
+    return { hidden };
+  } catch (unknownError) {
+    logger.error("loadWidgetVisibility unexpected", { error: unknownError });
+    return DEFAULT_WIDGET_VISIBILITY;
+  }
+}
+
+// Сохранение настроек видимости виджетов
+export async function saveWidgetVisibility(
+  state: WidgetVisibilityState
+): Promise<void> {
+  const supabase = await createRouteClient();
+
+  try {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError) {
+      logger.warn("saveWidgetVisibility auth", { error: userError });
+      return;
+    }
+
+    if (!user) {
+      logger.warn("saveWidgetVisibility no user");
+      return;
+    }
+
+    const payload = {
+      user_id: user.id,
+      widget: WIDGET_VISIBILITY_KEY,
+      state: {
+        hidden: normalizeHiddenWidgets(state.hidden),
+      },
+    };
+
+    const { error } = await supabase
+      .from("dashboard_widget_preferences")
+      .upsert(payload, { onConflict: "user_id,widget" });
+
+    if (error) {
+      logger.warn("saveWidgetVisibility upsert", { error });
+    }
+  } catch (unknownError) {
+    logger.error("saveWidgetVisibility unexpected", { error: unknownError });
+  }
+}
+
+// Утилита для проверки видимости виджета
+export function isWidgetVisible(
+  widgetKey: DashboardWidgetKey,
+  visibility: WidgetVisibilityState
+): boolean {
+  return !visibility.hidden.includes(widgetKey);
 }

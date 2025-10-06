@@ -9,12 +9,6 @@ type AddCardModalProps = {
   triggerClassName?: string;
 };
 
-const currencies = [
-  { value: "RUB", label: "Российский рубль" },
-  { value: "USD", label: "Доллар США" },
-  { value: "EUR", label: "Евро" },
-];
-
 const colors = [
   { value: "blue", style: { background: "linear-gradient(135deg, #1565c0, #03a9f4)" } },
   { value: "red", style: { background: "linear-gradient(135deg, #c62828, #f44336)" } },
@@ -33,7 +27,6 @@ function SubmitButton() {
 
 export default function AddCardModal({ triggerClassName }: AddCardModalProps) {
   const [open, setOpen] = useState(false);
-  const [currency, setCurrency] = useState<string>(currencies[0]?.value ?? "RUB");
   const [color, setColor] = useState<string>(colors[0]?.value ?? "blue");
   const titleId = useId();
 
@@ -75,23 +68,7 @@ export default function AddCardModal({ triggerClassName }: AddCardModalProps) {
 
                 <input type="hidden" name="card_type" value="debit" />
                 <input type="hidden" name="card_color" value={color} />
-
-                <div className={styles.formField}>
-                  <label htmlFor="card-currency">Валюта карты</label>
-                  <select
-                    id="card-currency"
-                    name="currency"
-                    value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
-                    required
-                  >
-                    {currencies.map((item) => (
-                      <option key={item.value} value={item.value}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <input type="hidden" name="currency" value="RUB" />
 
                 <div className={styles.formField}>
                   <label htmlFor="card-balance">Начальный баланс (₽)</label>

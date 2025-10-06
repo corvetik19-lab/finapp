@@ -115,6 +115,7 @@ input[type=number].noSpin { -moz-appearance: textfield; appearance: textfield; -
 .groupHeader { display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer; background: #f8fafc; border-bottom: 1px solid #eef0f6; }
 .groupHeader.income { background: #f2fbf5; }
 .groupHeader.expense { background: #fff5f5; }
+.groupHeader.transfer { background: #f0f7ff; }
 .chevron { width: 16px; text-align: center; color: var(--text-secondary); }
 .groupTitle { font-weight: 700; }
 .spacer { flex: 1; }
@@ -134,9 +135,10 @@ input[type=number].noSpin { -moz-appearance: textfield; appearance: textfield; -
 
 /* Accounts widget */
 .accounts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 12px 0 16px; }
-.accountCard { background: var(--card-bg); border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 12px; display: flex; align-items: center; justify-content: space-between; }
-.accountName { font-weight: 600; font-size: 14px; color: var(--primary-dark); }
-.accountDelta { font-weight: 700; }
+.accountCard { background: var(--card-bg); border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 12px; display: flex; flex-direction: column; }
+.accountName { font-weight: 600; font-size: 14px; color: var(--primary-dark); margin-bottom: 8px; }
+.accountBalance { font-weight: 700; font-size: 20px; color: var(--text-primary); margin-bottom: 4px; }
+.accountDelta { font-weight: 600; }
 .accountDelta.positive { color: var(--success); }
 .accountDelta.negative { color: var(--danger); }
 
@@ -172,6 +174,7 @@ input[type=number].noSpin { -moz-appearance: textfield; appearance: textfield; -
 .badgeAmount { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; font-weight: 700; }
 .badgeIncome { background: #dff5e2; color: #2e7d32; }
 .badgeExpense { background: #ffdfe3; color: #c62828; }
+.badgeTransfer { background: #e3f2fd; color: #1565c0; }
 .amountHero { display: flex; align-items: center; justify-content: center; padding: 10px 12px; }
 .amountHero .badgeAmount { font-size: 22px; padding: 10px 16px; }
 .iconMini { width: 22px; height: 22px; display: inline-grid; place-items: center; border-radius: 50%; background: #eef2ff; color: var(--primary-color); box-shadow: 0 1px 0 rgba(0,0,0,0.02) inset; }
@@ -257,9 +260,11 @@ input[type=number].noSpin { -moz-appearance: textfield; appearance: textfield; -
 .groupTotal { padding: 2px 8px; border-radius: 999px; }
 .groupTotal.income { background: #e8f5e9; color: #2e7d32; }
 .groupTotal.expense { background: #ffebee; color: #c62828; }
+.groupTotal.transfer { background: #e3f2fd; color: #1565c0; }
 .subTotal { padding: 2px 8px; border-radius: 999px; }
 .subTotal.income { background: #e8f5e9; color: #2e7d32; }
 .subTotal.expense { background: #ffebee; color: #c62828; }
+.subTotal.transfer { background: #e3f2fd; color: #1565c0; }
 
 /* Reusable primary button for transactions page */
 .primaryBtn { background: var(--primary-color); color: #fff; border: 0; border-radius: 8px; padding: 8px 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
@@ -286,3 +291,6 @@ input[type=number].noSpin { -moz-appearance: textfield; appearance: textfield; -
 .analyticsBadge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: #f1f5f9; color: var(--text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
 .analyticsPlaceholder { background: #f8fafc; border-radius: 10px; border: 1px dashed #d2dbe8; padding: 16px; color: #64748b; font-size: 14px; display: flex; flex-direction: column; gap: 8px; }
 .analyticsPlaceholder strong { color: #1e293b; }
+
+/* Info message for transfers */
+.infoMessage { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; background: rgba(21, 101, 192, 0.08); border: 1px solid rgba(21, 101, 192, 0.2); border-radius: 10px; color: #1565c0; font-size: 14px; line-height: 1.5; margin-bottom: 16px; }

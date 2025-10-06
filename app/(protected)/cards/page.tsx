@@ -3,11 +3,14 @@ import styles from "./cards.module.css";
 import AddCardModal from "./AddCardModal";
 import AddFundsModal from "./AddFundsModal";
 import TransferModalLauncher from "./TransferModalLauncher";
+import DeleteDebitCardButton from "@/components/cards/DeleteDebitCardButton";
+import EditDebitCardButton from "@/components/cards/EditDebitCardButton";
 
 type CardRow = {
   id: string;
   name: string;
   currency: string;
+  balance: number;
 };
 
 type StashRow = {
@@ -16,12 +19,6 @@ type StashRow = {
   target_amount: number | null;
   balance: number;
   currency: string;
-};
-
-type TxRow = {
-  account_id: string;
-  direction: "income" | "expense" | "transfer";
-  amount: number;
 };
 
 type TransferOption = {
@@ -43,9 +40,19 @@ type FundsOption = {
 
 function formatCurrency(minor: number | null | undefined, currency: string) {
   const major = (minor ?? 0) / 100;
+  
+  // Для рублей не показываем код валюты
+  if (currency === "RUB") {
+    return `${major.toLocaleString("ru-RU", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })} ₽`;
+  }
+  
   return new Intl.NumberFormat("ru-RU", {
     style: "currency",
     currency,
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(major);
 }
@@ -63,13 +70,14 @@ export default async function CardsPage() {
 
   const { data: accountsRaw } = await supabase
     .from("accounts")
-    .select("id,name,currency")
+    .select("id,name,currency,balance")
     .eq("type", "card")
+    .is("credit_limit", null) // Только дебетовые карты (без кредитного лимита)
+    .is("deleted_at", null)
     .order("created_at", { ascending: true });
   const accountsData: CardRow[] = (accountsRaw ?? []) as CardRow[];
 
   let stashes: StashRow[] = [];
-  let transactions: TxRow[] = [];
 
   if (userId) {
     const { data: stashRows } = await supabase
@@ -77,18 +85,12 @@ export default async function CardsPage() {
       .select("id,account_id,target_amount,balance,currency")
       .eq("user_id", userId);
     stashes = (stashRows ?? []) as StashRow[];
-
-    const { data: txRows } = await supabase
-      .from("transactions")
-      .select("account_id,direction,amount")
-      .eq("user_id", userId);
-    transactions = (txRows ?? []) as TxRow[];
   }
 
+  // Используем баланс напрямую из БД (balance уже актуальный)
   const balanceByAccount = new Map<string, number>();
-  for (const tx of transactions) {
-    const delta = tx.direction === "income" ? tx.amount : tx.direction === "expense" ? -tx.amount : 0;
-    balanceByAccount.set(tx.account_id, (balanceByAccount.get(tx.account_id) ?? 0) + delta);
+  for (const card of accountsData) {
+    balanceByAccount.set(card.id, card.balance ?? 0);
   }
 
   const stashByAccount = new Map<string, StashRow>();
@@ -135,24 +137,45 @@ export default async function CardsPage() {
 
           return (
             <div key={card.id} className={`${styles.debitCard}${idx === 0 ? " " + styles.debitCardActive : ""}`}>
-              <div className={styles.cardBalance}>{formatCurrency(balance, card.currency)}</div>
-              <div className={styles.cardType}>{card.name}</div>
+              {/* Верхняя часть с балансом и кнопками действий */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+                <div style={{ flex: 1 }}>
+                  <div className={styles.cardBalance}>{formatCurrency(balance, card.currency)}</div>
+                  <div className={styles.cardType}>{card.name}</div>
+                </div>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <EditDebitCardButton 
+                    cardId={card.id} 
+                    cardName={card.name}
+                    className={styles.editCardBtn}
+                  />
+                  <DeleteDebitCardButton 
+                    cardId={card.id} 
+                    cardName={card.name}
+                    className={styles.deleteCardBtn}
+                  />
+                </div>
+              </div>
 
+              {/* Информация о кубышке */}
               {stash ? (
                 <div className={styles.kubyshkaInfo}>
-                  <div>Кубышка: {formatCurrency(stash.balance, stash.currency)}</div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontWeight: 600 }}>💰 Кубышка</span>
+                    <span style={{ fontSize: "14px", fontWeight: 700 }}>{formatCurrency(stash.balance, stash.currency)}</span>
+                  </div>
                   <div className={styles.progressContainer}>
                     <div className={styles.progressBar}>
                       <div className={styles.progressFill} style={{ width: stash.target_amount ? `${percent}%` : "0%" }} />
                     </div>
                   </div>
-                  <div>
-                    Доступно: {formatCurrency(stash.balance, stash.currency)} из {stash.target_amount ? formatCurrency(stash.target_amount, stash.currency) : "—"}
+                  <div style={{ fontSize: "12px", opacity: 0.9 }}>
+                    Цель: {stash.target_amount ? formatCurrency(stash.target_amount, stash.currency) : "—"} • {percent}% выполнено
                   </div>
                 </div>
               ) : (
                 <div className={styles.kubyshkaInfo}>
-                  <div>Кубышка ещё не настроена</div>
+                  <div style={{ opacity: 0.8, textAlign: "center" }}>💭 Кубышка ещё не настроена</div>
                 </div>
               )}
             </div>

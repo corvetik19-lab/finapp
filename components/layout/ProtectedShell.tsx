@@ -1,12 +1,21 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import UserProfileDropdown from "./UserProfileDropdown";
+import { NotificationProvider } from "@/contexts/NotificationContext";
+import NotificationBell from "@/components/notifications/NotificationBell";
 import styles from "./ProtectedShell.module.css";
 
 type NavItem = {
   label: string;
   href: string;
   icon: string; // material icon name
+};
+
+type UserData = {
+  email: string;
+  fullName: string;
+  avatar: string | null;
 };
 
 const nav: NavItem[] = [
@@ -17,53 +26,58 @@ const nav: NavItem[] = [
   { label: "Платежи", href: "/payments", icon: "receipt_long" },
   { label: "Планы", href: "/plans", icon: "flag" },
   { label: "Отчёты", href: "/reports", icon: "query_stats" },
+  { label: "AI Аналитика", href: "/ai-analytics", icon: "psychology" },
+  { label: "Дебетовые карты", href: "/cards", icon: "payment" },
+  { label: "Кредитные карты", href: "/credit-cards", icon: "credit_card" },
   { label: "Настройки", href: "/settings", icon: "settings" },
   { label: "Кредиты", href: "/loans", icon: "account_balance" },
-  { label: "Карты", href: "/cards", icon: "credit_card" },
   { label: "Долги", href: "/debts", icon: "account_balance_wallet" },
 ];
 
-export default function ProtectedShell({ children }: { children: React.ReactNode }) {
+type ProtectedShellProps = {
+  children: React.ReactNode;
+  userData: UserData;
+};
+
+export default function ProtectedShell({ children, userData }: ProtectedShellProps) {
   const pathname = usePathname();
   return (
-    <div className={styles.root}>
-      <aside className={styles.sidebar}>
-        <div className={styles.brand}>
-          <span className="material-icons" aria-hidden>
-            account_balance
-          </span>
-          <span>Finapp</span>
-        </div>
-        <nav className={styles.nav} aria-label="Основная навигация">
-          {nav.map((item) => {
-            const active = pathname === item.href || pathname?.startsWith(item.href + "/");
-            return (
-              <Link key={item.href} href={item.href} className={active ? styles.active : undefined}>
-                <span className="material-icons" aria-hidden>
-                  {item.icon}
-                </span>
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-        <div className={styles.bottom}>
-          <Link href="/auth/signout" className={styles.signout}>
+    <NotificationProvider>
+      <div className={styles.root}>
+        <aside className={styles.sidebar}>
+          <div className={styles.brand}>
             <span className="material-icons" aria-hidden>
-              logout
+              account_balance
             </span>
-            <span>Выйти</span>
-          </Link>
-        </div>
-      </aside>
-      <div className={styles.content}>
-        <header className={styles.header}>
-          <div className={styles.headerRight}>
-            {/* место под профиль/смену периода/поиск */}
+            <span>Finapp</span>
           </div>
-        </header>
-        <main className={styles.main}>{children}</main>
+          <nav className={styles.nav} aria-label="Основная навигация">
+            {nav.map((item) => {
+              const active = pathname === item.href || pathname?.startsWith(item.href + "/");
+              return (
+                <Link key={item.href} href={item.href} className={active ? styles.active : undefined}>
+                  <span className="material-icons" aria-hidden>
+                    {item.icon}
+                  </span>
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </aside>
+        <div className={styles.content}>
+          <header className={styles.header}>
+            <div className={styles.headerLeft}>
+              <h1 className={styles.pageTitle}>Финансовый учёт</h1>
+            </div>
+            <div className={styles.headerRight}>
+              <NotificationBell />
+              <UserProfileDropdown userData={userData} />
+            </div>
+          </header>
+          <main className={styles.main}>{children}</main>
+        </div>
       </div>
-    </div>
+    </NotificationProvider>
   );
 }

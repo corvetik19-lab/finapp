@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -9,6 +9,33 @@ import {
   upcomingPaymentFormSchema,
   type UpcomingPaymentFormInput,
 } from "@/lib/dashboard/upcoming-payments/schema";
+
+type Account = {
+  id: string;
+  name: string;
+  type: string;
+  credit_limit?: number | null;
+};
+
+const getAccountTypeLabel = (account: Account): string => {
+  if (account.type === "card") {
+    // Различаем дебетовые и кредитные карты
+    if (account.credit_limit && account.credit_limit > 0) {
+      return "💳 Кредитная карта";
+    }
+    return "💳 Дебетовая карта";
+  }
+  
+  const accountTypeLabels: Record<string, string> = {
+    cash: "💵 Наличные",
+    bank: "🏦 Банковский счёт",
+    savings: "🏦 Накопительный счёт",
+    investment: "📈 Инвестиционный счёт",
+    loan: "💰 Кредит",
+    other: "📊 Другой счёт",
+  };
+  return accountTypeLabels[account.type] || "📊 Счёт";
+};
 
 export type UpcomingPaymentFormModalProps = {
   open: boolean;
@@ -19,6 +46,10 @@ export type UpcomingPaymentFormModalProps = {
   subtitle?: string;
   defaultValues?: Partial<UpcomingPaymentFormInput>;
   error?: string | null;
+  isPaid?: boolean;
+  hasLinkedTransaction?: boolean;
+  onUnlinkTransaction?: () => Promise<void> | void;
+  unlinkPending?: boolean;
 };
 
 const DEFAULT_VALUES: UpcomingPaymentFormInput = {
@@ -28,7 +59,6 @@ const DEFAULT_VALUES: UpcomingPaymentFormInput = {
   amountMajor: 0,
   direction: "expense",
   accountName: undefined,
-  description: undefined,
 };
 
 export default function UpcomingPaymentFormModal({
@@ -40,7 +70,13 @@ export default function UpcomingPaymentFormModal({
   subtitle = "Создайте напоминание о предстоящем платеже",
   defaultValues,
   error,
+  isPaid = false,
+  hasLinkedTransaction = false,
+  onUnlinkTransaction,
+  unlinkPending = false,
 }: UpcomingPaymentFormModalProps) {
+  const [accounts, setAccounts] = useState<Account[]>([]);
+
   const form = useForm<UpcomingPaymentFormInput>({
     resolver: zodResolver(upcomingPaymentFormSchema),
     defaultValues: {
@@ -48,6 +84,25 @@ export default function UpcomingPaymentFormModal({
       ...defaultValues,
     },
   });
+
+  // Загружаем список счетов
+  useEffect(() => {
+    const loadAccounts = async () => {
+      try {
+        const response = await fetch("/api/accounts");
+        if (response.ok) {
+          const data = await response.json();
+          setAccounts(data.accounts || []);
+        }
+      } catch (error) {
+        console.error("Failed to load accounts:", error);
+      }
+    };
+
+    if (open) {
+      loadAccounts();
+    }
+  }, [open]);
 
   useEffect(() => {
     if (open) {
@@ -76,118 +131,125 @@ export default function UpcomingPaymentFormModal({
   };
 
   const handleClose = () => {
-    if (pending) return;
+    if (pending || unlinkPending) return;
     onClose();
   };
 
   return (
-    <div className={styles.modalRoot} role="dialog" aria-modal>
-      <div className={styles.modalOverlay}>
+    <div className={styles.modalRoot} role="presentation" onClick={handleClose}>
+      <div className={styles.modal} role="dialog" aria-modal onClick={(e) => e.stopPropagation()}>
         <header className={styles.modalHeader}>
           <div>
             <div className={styles.modalTitle}>{title}</div>
             <div className={styles.modalSubtitle}>{subtitle}</div>
           </div>
-          <button type="button" className={styles.modalCloseButton} onClick={handleClose} aria-label="Закрыть">
+          <button type="button" className={styles.modalClose} onClick={handleClose} aria-label="Закрыть">
             <span className="material-icons" aria-hidden>
               close
             </span>
           </button>
         </header>
-        <div className={styles.modalBody}>
+        <div className={styles.modalContent}>
           {error && <div className={styles.modalError}>{error}</div>}
-          <form id="upcomingPaymentForm" className={styles.upcomingForm} onSubmit={submitForm} noValidate>
+          <form id="upcomingPaymentForm" className={styles.modalForm} onSubmit={submitForm} noValidate>
             <input type="hidden" {...form.register("id")} />
-            <div className={styles.upcomingFormGrid}>
-              <label className={styles.upcomingFormField}>
-                <span className={styles.upcomingFormLabel}>Название</span>
+            <div className={styles.modalFormGrid}>
+              <label className={styles.formGroup}>
+                <span className={styles.formLabel}>Название</span>
                 <input
                   type="text"
-                  className={styles.upcomingFormInput}
+                  className={styles.formInput}
                   placeholder="Например, аренда"
                   {...form.register("name")}
                   autoFocus
                   disabled={pending}
                 />
                 {form.formState.errors.name && (
-                  <span className={styles.upcomingFormError}>{form.formState.errors.name.message}</span>
+                  <span className={styles.fieldError}>{form.formState.errors.name.message}</span>
                 )}
               </label>
-              <label className={styles.upcomingFormField}>
-                <span className={styles.upcomingFormLabel}>Дата</span>
+              <label className={styles.formGroup}>
+                <span className={styles.formLabel}>Дата</span>
                 <input
                   type="date"
-                  className={styles.upcomingFormInput}
+                  className={styles.formInput}
                   {...form.register("dueDate")}
                   disabled={pending}
                 />
                 {form.formState.errors.dueDate && (
-                  <span className={styles.upcomingFormError}>{form.formState.errors.dueDate.message}</span>
+                  <span className={styles.fieldError}>{form.formState.errors.dueDate.message}</span>
                 )}
                 <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>Формат: ГГГГ-ММ-ДД</span>
               </label>
-              <label className={styles.upcomingFormField}>
-                <span className={styles.upcomingFormLabel}>Сумма</span>
+              <label className={styles.formGroup}>
+                <span className={styles.formLabel}>Сумма</span>
                 <input
                   type="number"
                   step="0.01"
                   min="0"
-                  className={styles.upcomingFormInput}
+                  className={styles.formInput}
                   placeholder="0.00"
                   {...form.register("amountMajor")}
                   disabled={pending}
                 />
                 {form.formState.errors.amountMajor && (
-                  <span className={styles.upcomingFormError}>{form.formState.errors.amountMajor.message}</span>
+                  <span className={styles.fieldError}>{form.formState.errors.amountMajor.message}</span>
                 )}
               </label>
-              <label className={styles.upcomingFormField}>
-                <span className={styles.upcomingFormLabel}>Тип</span>
-                <select className={styles.upcomingFormSelect} {...form.register("direction")}
- disabled={pending}>
+              <label className={styles.formGroup}>
+                <span className={styles.formLabel}>Тип</span>
+                <select className={styles.formSelect} {...form.register("direction")} disabled={pending}>
                   <option value="expense">Расход</option>
                   <option value="income">Доход</option>
                 </select>
                 {form.formState.errors.direction && (
-                  <span className={styles.upcomingFormError}>{form.formState.errors.direction.message}</span>
+                  <span className={styles.fieldError}>{form.formState.errors.direction.message}</span>
                 )}
               </label>
-              <label className={styles.upcomingFormField}>
-                <span className={styles.upcomingFormLabel}>Счёт</span>
-                <input
-                  type="text"
-                  className={styles.upcomingFormInput}
-                  placeholder="Кошелёк, карта и т.д."
-                  {...form.register("accountName")}
-                  disabled={pending}
-                />
-                {form.formState.errors.accountName && (
-                  <span className={styles.upcomingFormError}>{form.formState.errors.accountName.message}</span>
-                )}
-              </label>
-            </div>
-            <label className={styles.upcomingFormField}>
-              <span className={styles.upcomingFormLabel}>Описание</span>
-              <textarea
-                rows={3}
-                className={styles.upcomingFormTextarea}
-                placeholder="Дополнительные детали"
-                {...form.register("description")}
-                disabled={pending}
-              />
-              {form.formState.errors.description && (
-                <span className={styles.upcomingFormError}>{form.formState.errors.description.message}</span>
+              {isPaid && hasLinkedTransaction && (
+                <label className={styles.formGroupFull}>
+                  <span className={styles.formLabel}>Счёт</span>
+                  <select
+                    className={styles.formSelect}
+                    {...form.register("accountName")}
+                    disabled={true}
+                  >
+                    <option value="">Не выбран</option>
+                    {accounts.map((account) => (
+                      <option key={account.id} value={account.name}>
+                        {getAccountTypeLabel(account)} — {account.name}
+                      </option>
+                    ))}
+                  </select>
+                  {form.formState.errors.accountName && (
+                    <span className={styles.fieldError}>{form.formState.errors.accountName.message}</span>
+                  )}
+                  <span style={{ fontSize: 12, color: "var(--primary-color)", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span className="material-icons" style={{ fontSize: 16 }}>info</span>
+                    Счёт указан из связанной транзакции
+                  </span>
+                </label>
               )}
-            </label>
-            <div className={styles.upcomingFormActions}>
-              <button type="button" className={styles.upcomingFormSecondary} onClick={handleClose} disabled={pending}>
+            </div>
+            <div className={styles.modalFooter}>
+              <button type="button" className={styles.btnSecondary} onClick={handleClose} disabled={pending}>
                 Отмена
               </button>
+              {isPaid && (
+                <button
+                  type="button"
+                  className={styles.btnDanger}
+                  onClick={() => onUnlinkTransaction?.()}
+                  disabled={pending || unlinkPending || !onUnlinkTransaction || !hasLinkedTransaction}
+                >
+                  {unlinkPending ? "Отменяем связь…" : "Убрать связь с транзакцией"}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleSubmitClick}
-                className={styles.upcomingFormPrimary}
-                disabled={pending}
+                className={styles.btnPrimary}
+                disabled={pending || unlinkPending}
               >
                 {pending ? "Сохраняем…" : "Сохранить"}
               </button>
