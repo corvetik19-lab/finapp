@@ -81,7 +81,7 @@ export default function ForecastChart({ forecast }: Props) {
             labels: {
               font: {
                 size: 13,
-                weight: "500",
+                weight: 500,
               },
               padding: 15,
               usePointStyle: true,
