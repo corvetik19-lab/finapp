@@ -13,20 +13,19 @@ export default function CustomReportsPage() {
   const router = useRouter();
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [savedReports, setSavedReports] = useState<Report[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [currentConfig, setCurrentConfig] = useState<ReportBuilderConfig | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [saveForm, setSaveForm] = useState({
     name: "",
-    category: "Пользовательские",
+    category: "custom" as const,
     reportType: "table" as const,
-    format: "preview" as const,
+    format: "screen" as const,
   });
 
   // Для сравнения отчётов
   const [comparisonReports, setComparisonReports] = useState<Array<{ name: string; data: ReportData }>>([]);
-
   useEffect(() => {
     loadSavedReports();
   }, []);
@@ -147,6 +146,7 @@ export default function CustomReportsPage() {
   }, [comparisonReports]);
 
   const loadSavedReports = async () => {
+    setIsLoading(true);
     try {
       const res = await fetch("/api/reports");
       if (res.ok) {
@@ -264,15 +264,15 @@ export default function CustomReportsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: saveForm.name,
-          category: saveForm.category,
+          category: saveForm.category as "income_expense" | "cash_flow" | "balance" | "budget" | "category" | "custom",
           period: currentConfig.period,
           dateFrom: currentConfig.dateFrom,
           dateTo: currentConfig.dateTo,
           dataTypes: currentConfig.dataTypes,
           categories: currentConfig.categories,
           accounts: currentConfig.accounts,
-          reportType: saveForm.reportType,
-          format: saveForm.format,
+          reportType: saveForm.reportType as "table" | "chart" | "summary",
+          format: saveForm.format as "screen" | "pdf" | "excel" | "csv",
         }),
       });
 
@@ -541,13 +541,15 @@ export default function CustomReportsPage() {
                 <label>Категория</label>
                 <select
                   value={saveForm.category}
-                  onChange={(e) => setSaveForm({...saveForm, category: e.target.value})}
+                  onChange={(e) => setSaveForm({...saveForm, category: e.target.value as typeof saveForm.category})}
                   className={styles.input}
                 >
-                  <option>Пользовательские</option>
-                  <option>Финансовые отчеты</option>
-                  <option>Доходы/Расходы</option>
-                  <option>Отчеты по картам</option>
+                  <option value="custom">Пользовательские</option>
+                  <option value="income_expense">Доходы/Расходы</option>
+                  <option value="cash_flow">Денежный поток</option>
+                  <option value="balance">Баланс</option>
+                  <option value="budget">Бюджет</option>
+                  <option value="category">По категориям</option>
                 </select>
               </div>
             </div>

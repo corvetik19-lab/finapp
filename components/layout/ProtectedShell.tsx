@@ -26,6 +26,7 @@ const nav: NavItem[] = [
   { label: "Платежи", href: "/payments", icon: "receipt_long" },
   { label: "Планы", href: "/plans", icon: "flag" },
   { label: "Отчёты", href: "/reports", icon: "query_stats" },
+  { label: "AI Чат", href: "/ai-chat", icon: "smart_toy" },
   { label: "AI Аналитика", href: "/ai-analytics", icon: "psychology" },
   { label: "Дебетовые карты", href: "/cards", icon: "payment" },
   { label: "Кредитные карты", href: "/credit-cards", icon: "credit_card" },

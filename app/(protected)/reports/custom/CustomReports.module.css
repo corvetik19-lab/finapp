@@ -282,11 +282,17 @@
   padding: 12px;
   background: #f8f9fa;
   font-weight: 600;
-  color: #64748b;
+  color: #4a5568;
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 2px solid #e2e8f0;
+}
+
+.detailsTable th:nth-child(2),
+.detailsTable th:nth-child(3),
+.detailsTable th:nth-child(4) {
+  text-align: right;
 }
 
 .detailsTable td {
@@ -294,7 +300,6 @@
   border-bottom: 1px solid #f1f5f9;
   font-size: 14px;
 }
-
 .detailsTable tr:hover {
   background-color: #f8fafc;
 }

@@ -59,6 +59,14 @@ export async function POST(req: Request) {
     const body = await req.json();
     const validatedData = reportFormSchema.parse(body);
 
+    // Конвертируем даты в формат date для БД (если они есть)
+    const dateFrom = validatedData.dateFrom 
+      ? new Date(validatedData.dateFrom).toISOString().split('T')[0] 
+      : null;
+    const dateTo = validatedData.dateTo 
+      ? new Date(validatedData.dateTo).toISOString().split('T')[0] 
+      : null;
+
     const { data, error } = await supabase
       .from("reports")
       .insert({
@@ -66,8 +74,8 @@ export async function POST(req: Request) {
         name: validatedData.name,
         category: validatedData.category,
         period: validatedData.period,
-        date_from: validatedData.dateFrom || null,
-        date_to: validatedData.dateTo || null,
+        date_from: dateFrom,
+        date_to: dateTo,
         data_types: validatedData.dataTypes,
         categories: validatedData.categories || [],
         accounts: validatedData.accounts || [],
