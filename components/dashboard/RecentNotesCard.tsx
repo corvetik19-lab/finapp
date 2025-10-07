@@ -157,7 +157,7 @@ export default function RecentNotesCard({
   const toggleLabel = isFormOpen && !isEditing ? "Закрыть форму" : "Новая заметка";
 
   return (
-    <section className={styles.chartCard}>
+    <section className={`${styles.chartCard} ${styles.notesCard}`}>
       <header className={styles.chartHeader}>
         <div>
           <div className={styles.chartTitle}>{cardTitle}</div>

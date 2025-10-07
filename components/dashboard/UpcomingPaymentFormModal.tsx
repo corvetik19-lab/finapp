@@ -52,11 +52,10 @@ export type UpcomingPaymentFormModalProps = {
   unlinkPending?: boolean;
 };
 
-const DEFAULT_VALUES: UpcomingPaymentFormInput = {
+const DEFAULT_VALUES: Partial<UpcomingPaymentFormInput> = {
   id: undefined,
   name: "",
   dueDate: new Date().toISOString().slice(0, 10),
-  amountMajor: 0,
   direction: "expense",
   accountName: undefined,
 };
@@ -114,11 +113,17 @@ export default function UpcomingPaymentFormModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, defaultValues?.id, defaultValues?.dueDate]);
 
-  if (!open) {
-    return null;
-  }
+  const handleSubmitClick = () => {
+    form.handleSubmit((values) => {
+      const normalized: UpcomingPaymentFormInput = {
+        ...values,
+        id: values.id && values.id.length > 0 ? values.id : undefined,
+      };
+      onSubmit(normalized);
+    })();
+  };
 
-  const submitForm = form.handleSubmit((values) => {
+  const handleFormSubmit = form.handleSubmit((values) => {
     const normalized: UpcomingPaymentFormInput = {
       ...values,
       id: values.id && values.id.length > 0 ? values.id : undefined,
@@ -126,14 +131,14 @@ export default function UpcomingPaymentFormModal({
     onSubmit(normalized);
   });
 
-  const handleSubmitClick = () => {
-    submitForm();
-  };
-
   const handleClose = () => {
     if (pending || unlinkPending) return;
     onClose();
   };
+
+  if (!open) {
+    return null;
+  }
 
   return (
     <div className={styles.modalRoot} role="presentation" onClick={handleClose}>
@@ -151,7 +156,7 @@ export default function UpcomingPaymentFormModal({
         </header>
         <div className={styles.modalContent}>
           {error && <div className={styles.modalError}>{error}</div>}
-          <form id="upcomingPaymentForm" className={styles.modalForm} onSubmit={submitForm} noValidate>
+          <form id="upcomingPaymentForm" className={styles.modalForm} onSubmit={handleFormSubmit} noValidate>
             <input type="hidden" {...form.register("id")} />
             <div className={styles.modalFormGrid}>
               <label className={styles.formGroup}>
@@ -186,11 +191,12 @@ export default function UpcomingPaymentFormModal({
                 <input
                   type="number"
                   step="0.01"
-                  min="0"
+                  min="0.01"
                   className={styles.formInput}
-                  placeholder="0.00"
+                  placeholder="Введите сумму"
                   {...form.register("amountMajor")}
                   disabled={pending}
+                  required
                 />
                 {form.formState.errors.amountMajor && (
                   <span className={styles.fieldError}>{form.formState.errors.amountMajor.message}</span>

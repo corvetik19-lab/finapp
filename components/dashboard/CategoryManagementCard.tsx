@@ -244,35 +244,34 @@ export default function CategoryManagementCard({
     setVisibleIds(data.items.map((item) => item.id));
   };
 
-  const handleOpenModal = (categoryId: string, categoryName: string) => {
+  const handleOpenModal = async (categoryId: string, categoryName: string) => {
     setModalCategory({ id: categoryId, name: categoryName });
     setModalOpen(true);
     setModalError(null);
     setModalTransactions([]);
     setModalLoading(true);
 
-    void loadCategoryTransactionsAction({
-      categoryId,
-      from: data.from,
-      to: data.to,
-      limit: 50,
-    })
-      .then((result) => {
-        if (!result.success) {
-          setModalError(result.error);
-          setModalTransactions([]);
-        } else {
-          setModalTransactions(result.data);
-        }
-      })
-      .catch((loadError) => {
-        console.error("CategoryManagementCard: load transactions", loadError);
-        setModalError("Не удалось загрузить транзакции");
-        setModalTransactions([]);
-      })
-      .finally(() => {
-        setModalLoading(false);
+    try {
+      const result = await loadCategoryTransactionsAction({
+        categoryId,
+        from: data.from,
+        to: data.to,
+        limit: 50,
       });
+      
+      if (!result.success) {
+        setModalError(result.error);
+        setModalTransactions([]);
+      } else {
+        setModalTransactions(result.data);
+      }
+    } catch (loadError) {
+      console.error("CategoryManagementCard: load transactions", loadError);
+      setModalError("Не удалось загрузить транзакции");
+      setModalTransactions([]);
+    } finally {
+      setModalLoading(false);
+    }
   };
 
   const handleCloseModal = () => {
@@ -285,7 +284,7 @@ export default function CategoryManagementCard({
   const onCardKeyDown = (event: KeyboardEvent<HTMLElement>, categoryId: string, categoryName: string) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      handleOpenModal(categoryId, categoryName);
+      void handleOpenModal(categoryId, categoryName);
     }
   };
 
@@ -431,7 +430,7 @@ export default function CategoryManagementCard({
                     }`}
                     role="button"
                     tabIndex={0}
-                    onClick={() => handleOpenModal(item.id, item.name)}
+                    onClick={() => void handleOpenModal(item.id, item.name)}
                     onKeyDown={(event) => onCardKeyDown(event, item.id, item.name)}
                   >
                     <div className={styles.categoryCardHeaderRow}>

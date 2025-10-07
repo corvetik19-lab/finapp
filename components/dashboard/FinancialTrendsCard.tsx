@@ -42,7 +42,7 @@ export default function FinancialTrendsCard({
   income,
   expense,
   currency,
-  initialMonths = 12,
+  initialMonths = 1,
   onRemove,
 }: FinancialTrendsCardProps) {
   const handleRemove = onRemove ?? noop;

@@ -20,6 +20,8 @@ import { listPlansWithActivity } from "@/lib/plans/service";
 import DashboardClient from "@/components/dashboard/DashboardClient";
 import { DASHBOARD_WIDGETS } from "@/lib/dashboard/preferences/shared";
 
+const FINANCIAL_TRENDS_DEFAULT_MONTHS = 1;
+
 export default async function DashboardPage() {
   const supabase = await createRSCClient();
 
@@ -28,9 +30,10 @@ export default async function DashboardPage() {
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Пользователь';
 
   const overview = await loadDashboardOverview(8);
-  const trendLabels = overview.trend.map((point) => point.label);
-  const trendIncome = overview.trend.map((point) => point.income);
-  const trendExpense = overview.trend.map((point) => point.expense);
+  const trendsOverview = await loadDashboardOverview(FINANCIAL_TRENDS_DEFAULT_MONTHS);
+  const trendLabels = trendsOverview.trend.map((point) => point.label);
+  const trendIncome = trendsOverview.trend.map((point) => point.income);
+  const trendExpense = trendsOverview.trend.map((point) => point.expense);
 
   const breakdownTotal = overview.breakdown.reduce((sum, item) => sum + item.amount, 0);
   const budgets = await listBudgetsWithUsage();
@@ -194,8 +197,8 @@ export default async function DashboardPage() {
             labels={trendLabels}
             income={trendIncome}
             expense={trendExpense}
-            currency={overview.currency}
-            initialMonths={12}
+            currency={trendsOverview.currency}
+            initialMonths={FINANCIAL_TRENDS_DEFAULT_MONTHS}
           />
         )}
         {isWidgetVisible(DASHBOARD_WIDGETS.EXPENSE_BY_CATEGORY, widgetVisibility) && (

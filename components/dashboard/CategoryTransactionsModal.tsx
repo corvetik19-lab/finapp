@@ -51,7 +51,7 @@ export default function CategoryTransactionsModal({
   return (
     <div className={styles.modalRoot} role="presentation" onClick={onClose}>
       <div
-        className={styles.modalOverlay}
+        className={styles.modal}
         role="dialog"
         aria-modal
         aria-labelledby="category-transactions-title"
@@ -66,14 +66,14 @@ export default function CategoryTransactionsModal({
             </div>
             {categoryName && <div className={styles.modalSubtitle}>{categoryName}</div>}
           </div>
-          <button type="button" className={styles.modalCloseButton} onClick={onClose} aria-label="Закрыть">
+          <button type="button" className={styles.modalClose} onClick={onClose} aria-label="Закрыть">
             <span className="material-icons" aria-hidden>
               close
             </span>
           </button>
         </header>
 
-        <div className={styles.modalBody}>
+        <div className={styles.modalContent}>
           {loading && <div className={styles.modalStatus}>Загрузка транзакций…</div>}
           {error && <div className={styles.modalError}>{error}</div>}
           {!loading && !error && transactions.length === 0 && (

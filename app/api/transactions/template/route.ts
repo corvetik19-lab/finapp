@@ -16,17 +16,29 @@ export async function GET() {
       OPTIONAL_HEADERS.tags,
     ];
 
-    // Строка с инструкцией (будет как первая строка данных с пояснением)
-    const instructionRow = {
-      [REQUIRED_HEADERS.occurredAt]: "ОБЯЗАТЕЛЬНО: Дата в формате ДД.ММ.ГГГГ или ISO",
-      [REQUIRED_HEADERS.direction]: "ОБЯЗАТЕЛЬНО: расход/доход/перевод",
-      [REQUIRED_HEADERS.amountMajor]: "ОБЯЗАТЕЛЬНО: число (например 1500.50)",
-      [OPTIONAL_HEADERS.accountName]: "Опционально: название счёта",
-      [OPTIONAL_HEADERS.categoryName]: "Опционально: категория",
-      [OPTIONAL_HEADERS.counterparty]: "Опционально: контрагент",
-      [OPTIONAL_HEADERS.note]: "Опционально: заметка",
-      [OPTIONAL_HEADERS.tags]: "Опционально: теги через запятую",
-    };
+    // Комментарии и инструкции
+    const commentRows = [
+      {
+        [REQUIRED_HEADERS.occurredAt]: "# ИНСТРУКЦИЯ: Дата в формате ДД.ММ.ГГГГ ЧЧ:ММ или ISO (2025-01-15T12:00:00Z)",
+        [REQUIRED_HEADERS.direction]: "# Тип: расход, доход или перевод (expense, income, transfer)",
+        [REQUIRED_HEADERS.amountMajor]: "# Сумма: число без пробелов или с пробелами (1500 или 1 500)",
+        [OPTIONAL_HEADERS.accountName]: "# Счёт: название вашего счёта",
+        [OPTIONAL_HEADERS.categoryName]: "# Категория: название категории",
+        [OPTIONAL_HEADERS.counterparty]: "# Контрагент: кому платили/от кого получили",
+        [OPTIONAL_HEADERS.note]: "# Заметка: комментарий",
+        [OPTIONAL_HEADERS.tags]: "# Теги: через запятую",
+      },
+      {
+        [REQUIRED_HEADERS.occurredAt]: "# ПРИМЕРЫ (можно удалить строки с примерами):",
+        [REQUIRED_HEADERS.direction]: "",
+        [REQUIRED_HEADERS.amountMajor]: "",
+        [OPTIONAL_HEADERS.accountName]: "",
+        [OPTIONAL_HEADERS.categoryName]: "",
+        [OPTIONAL_HEADERS.counterparty]: "",
+        [OPTIONAL_HEADERS.note]: "",
+        [OPTIONAL_HEADERS.tags]: "",
+      },
+    ];
 
     // Примеры транзакций
     const exampleRows = [
@@ -74,7 +86,7 @@ export async function GET() {
       [OPTIONAL_HEADERS.tags]: "",
     }));
 
-    const allRows = [instructionRow, ...exampleRows, ...emptyRows];
+    const allRows = [...commentRows, ...exampleRows, ...emptyRows];
 
     // Формируем CSV-строку
     const csvLines = [

@@ -202,7 +202,7 @@ export async function loadCategoryTransactions(
   const supabase = await createRSCClient();
   const { data, error } = await supabase
     .from("transactions")
-    .select("id,occurred_at,amount,currency,direction,note,account:accounts(name)")
+    .select("id,occurred_at,amount,currency,direction,note,account:accounts!transactions_account_id_fkey(name)")
     .eq("category_id", categoryId)
     .gte("occurred_at", from)
     .lte("occurred_at", to)

@@ -14,7 +14,11 @@ const optionalText = (max: number, message: string) =>
     .transform((value) => (value && value.length > 0 ? value : undefined));
 
 export const upcomingPaymentFormSchema = z.object({
-  id: z.string().uuid().optional(),
+  id: z
+    .string()
+    .optional()
+    .transform((val) => (val && val.length > 0 ? val : undefined))
+    .pipe(z.string().uuid().optional()),
   name: z.string().trim().min(1, "Укажите название"),
   dueDate: z
     .string()
