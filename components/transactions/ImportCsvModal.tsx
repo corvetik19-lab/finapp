@@ -244,7 +244,7 @@ export default function ImportCsvModal({ open, onClose, onImport }: Props) {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem", marginBottom: "0.5rem" }}>
               <p className={styles.helperText} style={{ margin: 0 }}>
                 Загрузите CSV-файл с транзакциями. Поддерживаются разделители `;` или `,`, обязательные колонки:
-                «Дата», «Тип», «Сумма», «Валюта».
+                «Дата», «Тип», «Сумма». Валюта по умолчанию — RUB.
               </p>
               <a
                 href="/api/transactions/template"
@@ -306,8 +306,7 @@ export default function ImportCsvModal({ open, onClose, onImport }: Props) {
                       <th>#</th>
                       <th>Дата (UTC)</th>
                       <th>Тип</th>
-                      <th>Сумма</th>
-                      <th>Валюта</th>
+                      <th>Сумма (₽)</th>
                       <th>Счёт</th>
                       <th>Категория</th>
                       <th>Контрагент</th>
@@ -320,7 +319,6 @@ export default function ImportCsvModal({ open, onClose, onImport }: Props) {
                         <td>{row.occurredAt}</td>
                         <td>{row.direction}</td>
                         <td>{(row.amountMinor / 100).toLocaleString("ru-RU", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
-                        <td>{row.currency}</td>
                         <td>{row.accountName ?? "—"}</td>
                         <td>{row.categoryName ?? "—"}</td>
                         <td>{row.counterparty ?? "—"}</td>

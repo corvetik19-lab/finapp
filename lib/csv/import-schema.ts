@@ -5,11 +5,11 @@ export const REQUIRED_HEADERS = {
   occurredAt: "Дата",
   direction: "Тип",
   amountMajor: "Сумма",
-  currency: "Валюта",
 } as const;
 
 export const OPTIONAL_HEADERS = {
   externalId: "ID",
+  currency: "Валюта",
   accountName: "Счёт",
   categoryName: "Категория",
   counterparty: "Контрагент",
@@ -167,7 +167,7 @@ export function validateCsvRow(input: CsvRowInput): CsvRowValidationResult {
   const occurredAtRaw = pickValue(raw, REQUIRED_HEADERS.occurredAt) ?? "";
   const directionRaw = pickValue(raw, REQUIRED_HEADERS.direction) ?? "";
   const amountRaw = pickValue(raw, REQUIRED_HEADERS.amountMajor) ?? "";
-  const currencyRaw = pickValue(raw, REQUIRED_HEADERS.currency) ?? "";
+  const currencyRaw = pickValue(raw, OPTIONAL_HEADERS.currency) ?? "RUB"; // По умолчанию RUB
 
   const dateResult = parseDate(occurredAtRaw);
   const occurredAtISO = dateResult.success ? dateResult.data : undefined;
@@ -181,9 +181,12 @@ export function validateCsvRow(input: CsvRowInput): CsvRowValidationResult {
   const amountMinor = amountResult.success ? amountResult.data : undefined;
   if (!amountResult.success) issues.push(amountResult.message);
 
+  // Валюта опциональна, если не указана - используется RUB
   const currencyResult = parseCurrency(currencyRaw);
-  const currency = currencyResult.success ? currencyResult.data : undefined;
-  if (!currencyResult.success) issues.push(currencyResult.message);
+  const currency = currencyResult.success ? currencyResult.data : "RUB";
+  if (!currencyResult.success && currencyRaw !== "RUB") {
+    issues.push(currencyResult.message);
+  }
 
   if (issues.length > 0) {
     return { rowNumber, issues };
