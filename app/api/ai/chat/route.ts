@@ -307,7 +307,7 @@ export async function POST(req: Request) {
 
   const { messages } = await req.json();
 
-  const result = streamText({
+  const result = await streamText({
     model: openai("gpt-4o-mini"),
     messages,
     tools,
@@ -335,5 +335,5 @@ export async function POST(req: Request) {
 - "Покажи последние 5 транзакций"`,
   });
 
-  return result.toTextStreamResponse();
+  return result.toDataStreamResponse();
 }
