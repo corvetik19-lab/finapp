@@ -37,7 +37,8 @@ export async function GET(request: Request) {
         description,
         amount,
         direction,
-        categories!inner(name)
+        category_id,
+        categories(name)
       `)
       .eq("user_id", user.id)
       .gte("date", startDate)
