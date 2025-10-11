@@ -1,0 +1,33 @@
+name: Generate AI Embeddings
+
+# Запускается каждую ночь в 2:00 UTC (5:00 МСК)
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  
+  # Можно запустить вручную
+  workflow_dispatch:
+
+jobs:
+  generate-embeddings:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Generate embeddings via API
+        run: |
+          response=$(curl -s -w "\n%{http_code}" \
+            -X GET "${{ secrets.VERCEL_APP_URL }}/api/ai/generate-embeddings" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+          
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n-1)
+          
+          echo "HTTP Status: $http_code"
+          echo "Response: $body"
+          
+          if [ "$http_code" != "200" ]; then
+            echo "❌ Error: Failed to generate embeddings"
+            exit 1
+          fi
+          
+          echo "✅ Embeddings generated successfully"
