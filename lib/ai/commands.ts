@@ -108,9 +108,17 @@ function simpleParse(text: string): ParsedCommand {
     const amountMatch = text.match(/(\d+)\s*(р|руб|₽)?/);
     const amount = amountMatch ? parseInt(amountMatch[1]) * 100 : undefined;
 
-    // Ищем категорию (слова после "на")
-    const categoryMatch = text.match(/на\s+([а-яё]+)/i);
-    const category = categoryMatch ? categoryMatch[1] : undefined;
+    // Ищем категорию (слова после "на" или после суммы)
+    let categoryMatch = text.match(/на\s+([а-яёА-ЯЁ\s]+)/i);
+    if (!categoryMatch && amountMatch) {
+      // Ищем слова после суммы (для "/add 500 кофе")
+      const afterAmount = text.substring(amountMatch.index! + amountMatch[0].length).trim();
+      const words = afterAmount.match(/([а-яёА-ЯЁ]+)/i);
+      if (words) {
+        categoryMatch = words;
+      }
+    }
+    const category = categoryMatch ? categoryMatch[1].trim() : undefined;
 
     return {
       type: "add_transaction",
