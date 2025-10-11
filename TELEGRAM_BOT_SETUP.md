@@ -32,27 +32,16 @@ curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook" \
 
 ## 4. Привязка Telegram к аккаунту
 
-### Способ 1: Через настройки приложения (TODO)
+### ✅ Через настройки приложения (Рекомендуется)
 1. Войдите в FinApp
-2. Перейдите в Настройки → Telegram
-3. Введите ваш Telegram User ID
+2. Перейдите в **Настройки → Telegram** (`/settings/telegram`)
+3. Нажмите **"Сгенерировать код"**
+4. Скопируйте полученный 6-значный код
+5. Откройте бота в Telegram
+6. Отправьте команду: `/start ВАШ_КОД`
+7. Готово! ✅
 
-### Способ 2: Через SQL (временно)
-```sql
--- Получите ваш user_id из таблицы auth.users
-SELECT id FROM auth.users WHERE email = 'ваш@email.com';
-
--- Обновите notification_preferences
-UPDATE notification_preferences 
-SET telegram_user_id = 'ваш_telegram_user_id',
-    telegram_username = 'ваш_username',
-    telegram_linked_at = NOW()
-WHERE user_id = 'user_id_из_первого_запроса';
-```
-
-**Как узнать свой Telegram User ID:**
-1. Напишите боту [@userinfobot](https://t.me/userinfobot)
-2. Он пришлёт ваш ID (например: 123456789)
+**Код действует 10 минут!**
 
 ## 5. Доступные команды
 
@@ -92,9 +81,24 @@ curl "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getWebhookInfo"
 Логи webhook доступны в Vercel:
 - Dashboard → Your Project → Functions → `/api/telegram/webhook`
 
-## 8. Будущие улучшения
+## 8. Миграция базы данных
 
-- [ ] UI для привязки Telegram в настройках
+После деплоя выполните миграцию для таблицы кодов привязки:
+
+```sql
+-- Выполните в Supabase SQL Editor
+-- Файл: db/migrations/20251012_telegram_link_codes.sql
+```
+
+Или через Supabase CLI:
+```bash
+supabase db push
+```
+
+## 9. Будущие улучшения
+
+- [x] UI для привязки Telegram в настройках
+- [x] Автоматическая привязка через код
 - [ ] Отправка уведомлений о превышении бюджета
 - [ ] Напоминания о платежах
 - [ ] Еженедельная сводка
