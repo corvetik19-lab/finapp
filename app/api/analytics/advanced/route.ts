@@ -61,34 +61,31 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const period = searchParams.get("period") || "month"; // month, quarter, year
+    const startDate = searchParams.get("startDate") || new Date().toISOString().split("T")[0];
     const endDate = searchParams.get("endDate") || new Date().toISOString().split("T")[0];
 
     // Calculate date ranges
-    const end = new Date(endDate);
-    let currentStart = new Date(end);
-    let previousStart = new Date(end);
-    let previousEnd = new Date(end);
+    const currentStart = new Date(startDate);
+    const previousStart = new Date(startDate);
+    const previousEnd = new Date(endDate);
 
     switch (period) {
       case "month":
         currentStart.setMonth(currentStart.getMonth() - 1);
         previousStart.setMonth(previousStart.getMonth() - 2);
-        previousEnd.setMonth(previousEnd.getMonth() - 1);
         break;
       case "quarter":
         currentStart.setMonth(currentStart.getMonth() - 3);
         previousStart.setMonth(previousStart.getMonth() - 6);
-        previousEnd.setMonth(previousEnd.getMonth() - 3);
         break;
       case "year":
         currentStart.setFullYear(currentStart.getFullYear() - 1);
         previousStart.setFullYear(previousStart.getFullYear() - 2);
-        previousEnd.setFullYear(previousEnd.getFullYear() - 1);
         break;
     }
 
     const currentStartStr = currentStart.toISOString().split("T")[0];
-    const currentEndStr = end.toISOString().split("T")[0];
+    const currentEndStr = endDate;
     const previousStartStr = previousStart.toISOString().split("T")[0];
     const previousEndStr = previousEnd.toISOString().split("T")[0];
 
@@ -102,13 +99,13 @@ export async function GET(request: Request) {
         .lte("date", currentEndStr),
       supabase
         .from("transactions")
-        .select("direction, amount")
+        .select("*")
         .eq("user_id", user.id)
         .gte("date", previousStartStr)
         .lte("date", previousEndStr),
     ]);
 
-    const calculatePeriodStats = (data: any[]) => {
+    const calculatePeriodStats = (data: Array<{ direction: string; amount: number }>) => {
       const income = data
         .filter((t) => t.direction === "income")
         .reduce((sum, t) => sum + t.amount, 0);
@@ -154,7 +151,7 @@ export async function GET(request: Request) {
       .order("amount", { ascending: false })
       .limit(5);
 
-    const top5: TopTransaction[] = (topTransactions || []).map((t: any) => ({
+    const top5: TopTransaction[] = (topTransactions || []).map((t: { id: string; date: string; amount: number; description?: string; categories?: Array<{ name: string }>; direction: "income" | "expense" | "transfer" }) => ({
       id: t.id,
       date: t.date,
       amount: t.amount,
@@ -178,7 +175,7 @@ export async function GET(request: Request) {
 
     const categoryMap = new Map<string, { count: number; total: number; name: string }>();
 
-    (categoryData || []).forEach((t: any) => {
+    (categoryData || []).forEach((t: { category_id: string; amount: number; categories?: Array<{ name: string }> }) => {
       const catId = t.category_id;
       const catName = t.categories?.[0]?.name || "Без категории";
       if (!categoryMap.has(catId)) {
@@ -212,7 +209,7 @@ export async function GET(request: Request) {
 
     const monthlyMap = new Map<string, { income: number; expense: number }>();
 
-    (trendData || []).forEach((t: any) => {
+    (trendData || []).forEach((t: { date: string; direction: string; amount: number }) => {
       const month = t.date.substring(0, 7); // YYYY-MM
       if (!monthlyMap.has(month)) {
         monthlyMap.set(month, { income: 0, expense: 0 });

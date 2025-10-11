@@ -7,6 +7,14 @@
     {
       "path": "/api/ai/monthly-insights",
       "schedule": "0 9 1 * *"
+    },
+    {
+      "path": "/api/cron/smart-notifications",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/auto-backup",
+      "schedule": "0 2 * * 0"
     }
   ]
 }

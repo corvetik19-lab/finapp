@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import QuickCommands from "@/components/chat/QuickCommands";
 import styles from "./Chat.module.css";
 
 interface ChatMessage {
@@ -44,10 +45,42 @@ export default function Chat() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const currentInput = input;
     setInput("");
     setIsLoading(true);
 
     try {
+      // Сначала проверяем, является ли это командой
+      const commandCheck = await fetch("/api/chat/commands", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: currentInput, execute: true }),
+      });
+
+      if (commandCheck.ok) {
+        const commandData = await commandCheck.json();
+        
+        // Если команда распознана с хорошей уверенностью и выполнена
+        if (
+          commandData.executed &&
+          commandData.parsed.confidence >= 70 &&
+          commandData.result.success
+        ) {
+          // Добавляем результат команды как ответ ассистента
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: (Date.now() + 1).toString(),
+              role: "assistant",
+              content: commandData.result.message,
+            },
+          ]);
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // Если команда не распознана или не выполнена, отправляем в обычный AI чат
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -145,34 +178,40 @@ export default function Chat() {
       </div>
 
       <div className={styles.chatMessages}>
-        {messages.length === 0 ? (
-          <div className={styles.welcomeScreen}>
-            <div className={styles.welcomeIcon}>💬</div>
-            <h3 className={styles.welcomeTitle}>
-              Привет! Я ваш финансовый помощник
-            </h3>
-            <p className={styles.welcomeText}>
-              Я могу помочь вам с анализом расходов, планированием бюджета и
-              ответить на вопросы о ваших финансах.
-            </p>
-
-            <div className={styles.quickQuestions}>
-              <p className={styles.quickQuestionsTitle}>
-                Попробуйте спросить:
+        {messages.length === 0 && (
+          <>
+            <div className={styles.welcomeScreen}>
+              <div className={styles.welcomeIcon}>💬</div>
+              <h3 className={styles.welcomeTitle}>
+                Привет! Я ваш финансовый помощник
+              </h3>
+              <p className={styles.welcomeText}>
+                Я могу помочь вам с анализом расходов, планированием бюджета и
+                ответить на вопросы о ваших финансах.
               </p>
-              {quickQuestions.map((question, idx) => (
-                <button
-                  key={idx}
-                  className={styles.quickQuestionBtn}
-                  onClick={() => setInput(question)}
-                  disabled={isLoading}
-                >
-                  {question}
-                </button>
-              ))}
+
+              <div className={styles.quickQuestions}>
+                <p className={styles.quickQuestionsTitle}>
+                  Попробуйте спросить:
+                </p>
+                {quickQuestions.map((question, idx) => (
+                  <button
+                    key={idx}
+                    className={styles.quickQuestionBtn}
+                    onClick={() => setInput(question)}
+                    disabled={isLoading}
+                  >
+                    {question}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        ) : (
+            
+            <QuickCommands onCommandSelect={setInput} />
+          </>
+        )}
+        
+        {messages.length > 0 && (
           messages.map((message: ChatMessage) => (
             <div
               key={message.id}
