@@ -1,5 +1,5 @@
 import { offlineQueue, PendingOperation } from "./queue";
-import { createClient } from "@/lib/supabase/client";
+import { getSupabaseClient } from "@/lib/supabase/client";
 
 /**
  * Сервис синхронизации офлайн-операций
@@ -71,7 +71,7 @@ class SyncService {
 
       console.log(`[Sync] Syncing ${operations.length} operations...`);
 
-      const supabase = createClient();
+      const supabase = getSupabaseClient();
 
       // Синхронизировать операции по очереди
       for (const operation of operations) {
@@ -112,20 +112,20 @@ class SyncService {
   /**
    * Синхронизировать одну операцию
    */
-  private async syncOperation(supabase: ReturnType<typeof createClient>, operation: PendingOperation): Promise<void> {
+  private async syncOperation(supabase: ReturnType<typeof getSupabaseClient>, operation: PendingOperation): Promise<void> {
     const { type, entity, data } = operation;
 
     switch (entity) {
       case "transactions":
         if (type === "create") {
-          const { error } = await supabase.from("transactions").insert(data as any);
+          const { error } = await supabase.from("transactions").insert(data as Record<string, unknown>);
           if (error) throw error;
         } else if (type === "update") {
-          const { id, ...updateData } = data as any;
+          const { id, ...updateData } = data as Record<string, unknown>;
           const { error } = await supabase.from("transactions").update(updateData).eq("id", id);
           if (error) throw error;
         } else if (type === "delete") {
-          const { id } = data as any;
+          const { id } = data as { id: string };
           const { error } = await supabase.from("transactions").delete().eq("id", id);
           if (error) throw error;
         }
@@ -133,14 +133,14 @@ class SyncService {
 
       case "budgets":
         if (type === "create") {
-          const { error } = await supabase.from("budgets").insert(data as any);
+          const { error } = await supabase.from("budgets").insert(data as Record<string, unknown>);
           if (error) throw error;
         } else if (type === "update") {
-          const { id, ...updateData } = data as any;
+          const { id, ...updateData } = data as Record<string, unknown>;
           const { error } = await supabase.from("budgets").update(updateData).eq("id", id);
           if (error) throw error;
         } else if (type === "delete") {
-          const { id } = data as any;
+          const { id } = data as { id: string };
           const { error } = await supabase.from("budgets").delete().eq("id", id);
           if (error) throw error;
         }
@@ -148,14 +148,14 @@ class SyncService {
 
       case "categories":
         if (type === "create") {
-          const { error } = await supabase.from("categories").insert(data as any);
+          const { error } = await supabase.from("categories").insert(data as Record<string, unknown>);
           if (error) throw error;
         } else if (type === "update") {
-          const { id, ...updateData } = data as any;
+          const { id, ...updateData } = data as Record<string, unknown>;
           const { error } = await supabase.from("categories").update(updateData).eq("id", id);
           if (error) throw error;
         } else if (type === "delete") {
-          const { id } = data as any;
+          const { id } = data as { id: string };
           const { error } = await supabase.from("categories").delete().eq("id", id);
           if (error) throw error;
         }
@@ -163,14 +163,14 @@ class SyncService {
 
       case "plans":
         if (type === "create") {
-          const { error } = await supabase.from("plans").insert(data as any);
+          const { error } = await supabase.from("plans").insert(data as Record<string, unknown>);
           if (error) throw error;
         } else if (type === "update") {
-          const { id, ...updateData } = data as any;
+          const { id, ...updateData } = data as Record<string, unknown>;
           const { error } = await supabase.from("plans").update(updateData).eq("id", id);
           if (error) throw error;
         } else if (type === "delete") {
-          const { id } = data as any;
+          const { id } = data as { id: string };
           const { error } = await supabase.from("plans").delete().eq("id", id);
           if (error) throw error;
         }

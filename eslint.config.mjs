@@ -19,6 +19,8 @@ const eslintConfig = [
       "build/**",
       "next-env.d.ts",
       "lib/supabase/server.ts",
+      "public/sw.js",
+      "public/workbox-*.js",
     ],
   },
 ];
