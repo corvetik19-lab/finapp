@@ -2,7 +2,18 @@
   "crons": [
     {
       "path": "/api/cron/auto-payments",
-      "schedule": "0 9 * * *"
+      "schedule": "0 9 * * *",
+      "description": "Автосоздание платежей по кредитам и картам (каждый день в 9:00)"
+    },
+    {
+      "path": "/api/ai/generate-embeddings",
+      "schedule": "0 2 * * *",
+      "description": "Генерация embeddings для новых транзакций (каждую ночь в 2:00)"
+    },
+    {
+      "path": "/api/ai/monthly-insights",
+      "schedule": "0 9 1 * *",
+      "description": "Ежемесячные AI инсайты (1-го числа каждого месяца в 9:00)"
     }
   ]
 }

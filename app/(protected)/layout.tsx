@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { createRSCClient } from "@/lib/supabase/helpers";
 import ProtectedShell from "@/components/layout/ProtectedShell";
+import OfflineIndicator from "@/components/offline/OfflineIndicator";
 
 export default async function ProtectedLayout({ children }: { children: ReactNode }) {
   const supabase = await createRSCClient();
@@ -19,5 +20,10 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
     avatar: user.user_metadata?.avatar_url || null,
   };
 
-  return <ProtectedShell userData={userData}>{children}</ProtectedShell>;
+  return (
+    <>
+      <OfflineIndicator />
+      <ProtectedShell userData={userData}>{children}</ProtectedShell>
+    </>
+  );
 }

@@ -57,9 +57,12 @@ function formatCurrency(minor: number | null | undefined, currency: string) {
   }).format(major);
 }
 
-function progressPercent(balance: number, target: number | null | undefined) {
-  if (!target || target <= 0) return 0;
-  return Math.max(0, Math.min(100, Math.round((balance / target) * 100)));
+function usagePercent(available: number, limit: number | null | undefined) {
+  if (!limit || limit <= 0) return 0;
+  // Кубышка - виртуальный лимит. available = сколько доступно
+  // Использовано = limit - available
+  const used = limit - available;
+  return Math.max(0, Math.min(100, Math.round((used / limit) * 100)));
 }
 
 export default async function CardsPage() {
@@ -133,7 +136,12 @@ export default async function CardsPage() {
         {accountsData.map((card, idx) => {
           const stash = stashByAccount.get(card.id);
           const balance = balanceByAccount.get(card.id) ?? 0;
-          const percent = progressPercent(stash?.balance ?? 0, stash?.target_amount);
+          
+          // Кубышка - виртуальный лимит от банка
+          const stashLimit = stash?.target_amount ?? 0;
+          const stashAvailable = stash?.balance ?? 0;
+          const stashUsed = stashLimit - stashAvailable;
+          const usedPercent = usagePercent(stashAvailable, stashLimit);
 
           return (
             <div key={card.id} className={`${styles.debitCard}${idx === 0 ? " " + styles.debitCardActive : ""}`}>
@@ -161,16 +169,16 @@ export default async function CardsPage() {
               {stash ? (
                 <div className={styles.kubyshkaInfo}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontWeight: 600 }}>💰 Кубышка</span>
-                    <span style={{ fontSize: "14px", fontWeight: 700 }}>{formatCurrency(stash.balance, stash.currency)}</span>
+                    <span style={{ fontWeight: 600 }}>💰 Кубышка (виртуальный лимит)</span>
+                    <span style={{ fontSize: "14px", fontWeight: 700 }}>{formatCurrency(stashAvailable, stash.currency)}</span>
                   </div>
                   <div className={styles.progressContainer}>
                     <div className={styles.progressBar}>
-                      <div className={styles.progressFill} style={{ width: stash.target_amount ? `${percent}%` : "0%" }} />
+                      <div className={styles.progressFill} style={{ width: `${usedPercent}%` }} />
                     </div>
                   </div>
                   <div style={{ fontSize: "12px", opacity: 0.9 }}>
-                    Цель: {stash.target_amount ? formatCurrency(stash.target_amount, stash.currency) : "—"} • {percent}% выполнено
+                    Лимит: {formatCurrency(stashLimit, stash.currency)} • Использовано: {formatCurrency(stashUsed, stash.currency)} ({usedPercent}%)
                   </div>
                 </div>
               ) : (

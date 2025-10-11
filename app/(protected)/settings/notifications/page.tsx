@@ -110,22 +110,6 @@ export default function NotificationSettingsPage() {
     });
   };
 
-  const toggleCategory = (category: NotificationCategory) => {
-    const allTypesInCategory = category.types.map((t) => t.id);
-    const allEnabled = allTypesInCategory.every((id) => enabledTypes.has(id));
-
-    setEnabledTypes((prev) => {
-      const next = new Set(prev);
-      if (allEnabled) {
-        // Отключить все в категории
-        allTypesInCategory.forEach((id) => next.delete(id));
-      } else {
-        // Включить все в категории
-        allTypesInCategory.forEach((id) => next.add(id));
-      }
-      return next;
-    });
-  };
 
   const handleSave = () => {
     setIsSaving(true);
@@ -198,15 +182,11 @@ export default function NotificationSettingsPage() {
           onClick={clearAll}
         >
           <span className="material-icons">delete_sweep</span>
-          Очистить историю
         </button>
       </div>
 
       <div className={styles.categories}>
         {NOTIFICATION_CATEGORIES.map((category) => {
-          const allEnabled = category.types.every((t) => enabledTypes.has(t.id));
-          const someEnabled = category.types.some((t) => enabledTypes.has(t.id));
-
           return (
             <div key={category.id} className={styles.category}>
               <div className={styles.categoryHeader}>
@@ -216,19 +196,6 @@ export default function NotificationSettingsPage() {
                       {category.icon}
                     </span>
                     <h2 className={styles.categoryTitle}>{category.label}</h2>
-                    <label className={styles.categoryToggle}>
-                      <input
-                        type="checkbox"
-                        checked={allEnabled}
-                        onChange={() => toggleCategory(category)}
-                        className={styles.toggleInput}
-                      />
-                      <span
-                        className={`${styles.toggleSwitch} ${
-                          allEnabled ? styles.toggleActive : ""
-                        } ${someEnabled && !allEnabled ? styles.togglePartial : ""}`}
-                      />
-                    </label>
                   </div>
                   <p className={styles.categoryDescription}>{category.description}</p>
                 </div>
@@ -244,19 +211,20 @@ export default function NotificationSettingsPage() {
                         <h3 className={styles.typeTitle}>{type.label}</h3>
                         <p className={styles.typeDescription}>{type.description}</p>
                       </div>
-                      <label className={styles.toggle}>
-                        <input
-                          type="checkbox"
-                          checked={isEnabled}
-                          onChange={() => toggleType(type.id)}
-                          className={styles.toggleInput}
-                        />
+                      <div
+                        className={styles.toggle}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          toggleType(type.id);
+                        }}
+                      >
                         <span
                           className={`${styles.toggleSwitch} ${
                             isEnabled ? styles.toggleActive : ""
                           }`}
                         />
-                      </label>
+                      </div>
                     </div>
                   );
                 })}

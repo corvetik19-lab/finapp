@@ -38,7 +38,7 @@ export default async function ReportsPage() {
       .gte("occurred_at", getStartRangeISO(now))
       .order("occurred_at", { ascending: true })
       .limit(1500),
-    supabase.from("categories").select("id,name").order("name", { ascending: true }),
+    supabase.from("categories").select("id,name").is("deleted_at", null).order("name", { ascending: true }),
   ]);
 
   if (txnError) throw txnError;

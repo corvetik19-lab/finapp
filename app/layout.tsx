@@ -14,8 +14,25 @@ import { ToastProvider } from "@/components/toast/ToastContext";
 import ToastContainer from "@/components/toast/ToastContainer";
 
 export const metadata: Metadata = {
-  title: "Finapp — учёт финансов",
-  description: "Личный финансовый трекер: транзакции, бюджеты, отчёты и планы",
+  title: "FinApp — Финансовый Трекер",
+  description: "Умный финансовый трекер с AI аналитикой, бюджетами и отчётами",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "FinApp",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#4F46E5",
 };
 
 export default function RootLayout({

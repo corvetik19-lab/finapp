@@ -91,3 +91,27 @@
   flex: 1;
   padding: 16px;
 }
+
+/* Стили для печати - скрываем всё лишнее */
+@media print {
+  .root {
+    display: block;
+    background: white;
+  }
+
+  .sidebar {
+    display: none !important;
+  }
+
+  .header {
+    display: none !important;
+  }
+
+  .content {
+    display: block;
+  }
+
+  .main {
+    padding: 0;
+  }
+}

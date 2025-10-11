@@ -476,6 +476,45 @@ export async function createTransaction(input: InsertTransactionInput): Promise<
     if (updateError) throw updateError;
   }
 
+  // Создаём embedding для семантического поиска (async, не блокируем ответ)
+  if (process.env.OPENAI_API_KEY) {
+    // Запускаем в фоне, не ждём результата
+    (async () => {
+      try {
+        const { createEmbedding, buildTransactionText } = await import("@/lib/ai/embeddings");
+        
+        // Получаем название категории, если есть
+        let categoryName: string | null = null;
+        if (parsed.category_id) {
+          const { data: category } = await supabase
+            .from("categories")
+            .select("name")
+            .eq("id", parsed.category_id)
+            .single();
+          categoryName = category?.name || null;
+        }
+
+        const text = buildTransactionText({
+          description: parsed.note || parsed.counterparty || "Транзакция",
+          category: categoryName,
+          amount_minor: amountMinor,
+          direction: parsed.direction,
+        });
+
+        const embedding = await createEmbedding(text);
+        
+        // Сохраняем embedding в БД
+        await supabase
+          .from("transactions")
+          .update({ embedding })
+          .eq("id", data.id);
+      } catch (err) {
+        console.error("Error creating embedding:", err);
+        // Не бросаем ошибку, чтобы не сломать основной flow
+      }
+    })();
+  }
+
   return data as TransactionRecord;
 }
 

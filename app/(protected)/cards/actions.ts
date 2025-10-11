@@ -39,28 +39,106 @@ export async function addFundsAction(formData: FormData): Promise<void> {
     throw new Error("Не удалось получить пользователя");
   }
 
-  const { error: insertError } = await supabase.from("transactions").insert({
-    user_id: user.id,
-    account_id: parsed.data.account_id,
-    amount: amountMinor,
-    currency: parsed.data.currency,
-    direction: "income",
-    occurred_at: new Date().toISOString(),
-    note: parsed.data.note ?? "Пополнение карты",
-    attachment_count: 0,
-    tags: [],
-  });
-  if (insertError) {
-    throw new Error(insertError.message);
+  // Проверяем есть ли кубышка у этой карты
+  const { data: stash } = await supabase
+    .from("account_stashes")
+    .select("id, balance, target_amount")
+    .eq("account_id", parsed.data.account_id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  let amountToCard = amountMinor;
+  let amountToStash = 0;
+
+  // Если есть кубышка с лимитом
+  if (stash && stash.target_amount && stash.target_amount > 0) {
+    const currentStashBalance = stash.balance ?? 0;
+    const stashLimit = stash.target_amount;
+
+    // Кубышка = виртуальный лимит банка
+    // balance = сколько доступно
+    // Использовано = limit - balance
+    
+    // Если кубышка использовалась (balance < limit) - сначала возвращаем долг
+    if (currentStashBalance < stashLimit) {
+      const stashDebt = stashLimit - currentStashBalance; // Сколько должны вернуть
+      
+      // Возвращаем долг (сколько можем)
+      amountToStash = Math.min(amountMinor, stashDebt);
+      // Остаток на карту
+      amountToCard = amountMinor - amountToStash;
+
+      // Увеличиваем доступный баланс кубышки (возвращаем долг)
+      const newStashBalance = currentStashBalance + amountToStash;
+      const { error: stashUpdateErr } = await supabase
+        .from("account_stashes")
+        .update({ balance: newStashBalance })
+        .eq("id", stash.id);
+      
+      if (stashUpdateErr) {
+        console.error("Failed to update stash balance:", stashUpdateErr);
+      }
+    }
   }
 
-  // Обновляем баланс счёта
-  const { error: updateBalanceError } = await supabase.rpc("increment_account_balance", {
-    p_account_id: parsed.data.account_id,
-    p_amount: amountMinor,
-  });
-  if (updateBalanceError) {
-    console.error("Failed to update account balance:", updateBalanceError);
+  // Создаём транзакцию только на сумму которая идёт на карту
+  if (amountToCard > 0) {
+    const { error: insertError } = await supabase.from("transactions").insert({
+      user_id: user.id,
+      account_id: parsed.data.account_id,
+      amount: amountToCard,
+      currency: parsed.data.currency,
+      direction: "income",
+      occurred_at: new Date().toISOString(),
+      note: parsed.data.note ?? (amountToStash > 0 ? "Пополнение карты (после кубышки)" : "Пополнение карты"),
+      attachment_count: 0,
+      tags: [],
+    });
+    if (insertError) {
+      throw new Error(insertError.message);
+    }
+
+    // Обновляем баланс счёта
+    const { error: updateBalanceError } = await supabase.rpc("increment_account_balance", {
+      p_account_id: parsed.data.account_id,
+      p_amount: amountToCard,
+    });
+    if (updateBalanceError) {
+      console.error("Failed to update account balance:", updateBalanceError);
+    }
+  }
+
+  // Если вся сумма пошла в кубышку, создаём транзакцию для истории
+  if (amountToStash > 0 && amountToCard === 0) {
+    const { data: txIns, error: txErr } = await supabase
+      .from("transactions")
+      .insert({
+        user_id: user.id,
+        account_id: parsed.data.account_id,
+        amount: amountToStash,
+        currency: parsed.data.currency,
+        direction: "expense", // Расход с карты в кубышку
+        occurred_at: new Date().toISOString(),
+        note: "Автоматическое пополнение кубышки",
+        attachment_count: 0,
+        tags: [],
+      })
+      .select("id")
+      .single();
+
+    if (!txErr && txIns) {
+      // Записываем в историю переводов кубышки
+      await supabase
+        .from("account_stash_transfers")
+        .insert({
+          user_id: user.id,
+          stash_id: stash!.id,
+          transaction_id: txIns.id,
+          direction: "to_stash",
+          amount: amountToStash,
+          occurred_at: new Date().toISOString(),
+        });
+    }
   }
 
   revalidatePath("/cards");

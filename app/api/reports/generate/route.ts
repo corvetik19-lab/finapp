@@ -35,7 +35,8 @@ export async function POST(req: Request) {
         amount,
         direction,
         category_id,
-        account_id
+        account_id,
+        description
       `)
       .gte("occurred_at", from)
       .lte("occurred_at", to)
@@ -96,10 +97,10 @@ export async function POST(req: Request) {
       })));
     }
 
-    // Загружаем категории и счета отдельно
+    // Загружаем категории и счета отдельно (только не удалённые)
     const [categoriesRes, accountsRes] = await Promise.all([
-      supabase.from("categories").select("id, name"),
-      supabase.from("accounts").select("id, name"),
+      supabase.from("categories").select("id, name").is("deleted_at", null),
+      supabase.from("accounts").select("id, name").is("deleted_at", null),
     ]);
 
     if (categoriesRes.error) {

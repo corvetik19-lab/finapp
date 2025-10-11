@@ -154,8 +154,12 @@
 }
 
 .categoryToggle {
+  position: relative;
   flex-shrink: 0;
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
 }
 
 .types {
@@ -199,6 +203,7 @@
 }
 
 .toggle {
+  position: relative;
   display: flex;
   align-items: center;
   cursor: pointer;
@@ -206,7 +211,18 @@
 }
 
 .toggleInput {
-  display: none;
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: none;
+  z-index: -1;
+  left: 0;
+  top: 0;
 }
 
 .toggleSwitch {

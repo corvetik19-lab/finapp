@@ -42,6 +42,7 @@ next-env.d.ts
 
 # keep example envs in repo
 !.env.example
+!.env*.example
 
 # editors / IDEs
 .vscode/
@@ -62,3 +63,13 @@ test-results/
 supabase/.temp/
 supabase/.branches/
 supabase/.snapshots/
+
+# PWA generated files
+public/sw.js
+public/workbox-*.js
+public/sw.js.map
+public/workbox-*.js.map
+
+# Files with secrets (should never be committed)
+VERCEL_ENV.txt
+SENTRY_CONFIG.txt
