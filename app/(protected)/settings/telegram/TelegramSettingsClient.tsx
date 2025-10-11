@@ -8,6 +8,8 @@ interface TelegramSettings {
   telegram_username: string | null;
   telegram_linked_at: string | null;
   telegram_chat_id: number | null;
+  active_code: string | null;
+  code_expires_at: string | null;
 }
 
 export default function TelegramSettingsClient() {
@@ -27,6 +29,10 @@ export default function TelegramSettingsClient() {
       if (res.ok) {
         const data = await res.json();
         setSettings(data);
+        // Если есть активный код, показываем его
+        if (data.active_code) {
+          setLinkCode(data.active_code);
+        }
       }
     } catch (error) {
       console.error("Failed to load settings:", error);
@@ -50,7 +56,9 @@ export default function TelegramSettingsClient() {
       setLinkCode(data.code);
       setMessage({
         type: "success",
-        text: "Код сгенерирован! Отправьте его боту в течение 10 минут.",
+        text: data.reused 
+          ? "Ваш код ещё действителен! Отправьте его боту." 
+          : "Код сгенерирован! Отправьте его боту в течение 10 минут.",
       });
     } catch {
       setMessage({

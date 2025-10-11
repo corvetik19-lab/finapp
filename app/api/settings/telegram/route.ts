@@ -23,11 +23,26 @@ export async function GET() {
       .eq("user_id", user.id)
       .single();
 
-    return NextResponse.json(data || {
-      telegram_user_id: null,
-      telegram_username: null,
-      telegram_linked_at: null,
-      telegram_chat_id: null,
+    // Проверяем, есть ли активный код привязки
+    const { data: activeCode } = await supabase
+      .from("telegram_link_codes")
+      .select("code, expires_at")
+      .eq("user_id", user.id)
+      .is("used_at", null)
+      .gte("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    return NextResponse.json({
+      ...(data || {
+        telegram_user_id: null,
+        telegram_username: null,
+        telegram_linked_at: null,
+        telegram_chat_id: null,
+      }),
+      active_code: activeCode?.code || null,
+      code_expires_at: activeCode?.expires_at || null,
     });
   } catch (error) {
     console.error("Get Telegram settings error:", error);

@@ -17,7 +17,28 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Генерируем 6-значный код
+    // Проверяем, есть ли уже активный код
+    const { data: existingCode } = await supabase
+      .from("telegram_link_codes")
+      .select("code, expires_at")
+      .eq("user_id", user.id)
+      .is("used_at", null)
+      .gte("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    // Если активный код уже есть, возвращаем его
+    if (existingCode) {
+      return NextResponse.json({
+        success: true,
+        code: existingCode.code,
+        expires_at: existingCode.expires_at,
+        reused: true,
+      });
+    }
+
+    // Генерируем новый 6-значный код
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
     
     // Срок действия - 10 минут
@@ -38,6 +59,7 @@ export async function POST() {
       success: true,
       code,
       expires_at: expiresAt,
+      reused: false,
     });
   } catch (error) {
     console.error("Generate link code error:", error);
