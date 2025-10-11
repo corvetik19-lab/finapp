@@ -15,6 +15,7 @@ export default function BackupClient() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
@@ -113,6 +114,33 @@ export default function BackupClient() {
     }
   }
 
+  async function deleteBackup(path: string, name: string) {
+    if (!confirm(`Удалить резервную копию "${name}"?\n\nЭто действие нельзя отменить.`)) {
+      return;
+    }
+
+    setDeleting(path);
+    setMessage(null);
+
+    try {
+      const res = await fetch(`/api/backup?path=${encodeURIComponent(path)}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error("Failed to delete backup");
+
+      setMessage({
+        type: "success",
+        text: "Резервная копия успешно удалена",
+      });
+      loadBackups();
+    } catch {
+      setMessage({ type: "error", text: "Ошибка удаления" });
+    } finally {
+      setDeleting(null);
+    }
+  }
+
   function formatSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -195,13 +223,22 @@ export default function BackupClient() {
                     </div>
                   </div>
                 </div>
-                <button
-                  className={styles.restoreBtn}
-                  onClick={() => restoreBackup(backup.path)}
-                  disabled={restoring}
-                >
-                  {restoring ? "Восстанавливаем..." : "🔄 Восстановить"}
-                </button>
+                <div className={styles.backupActions}>
+                  <button
+                    className={styles.restoreBtn}
+                    onClick={() => restoreBackup(backup.path)}
+                    disabled={restoring || deleting !== null}
+                  >
+                    {restoring ? "Восстанавливаем..." : "🔄 Восстановить"}
+                  </button>
+                  <button
+                    className={styles.deleteBtn}
+                    onClick={() => deleteBackup(backup.path, backup.name)}
+                    disabled={deleting !== null || restoring}
+                  >
+                    {deleting === backup.path ? "Удаляем..." : "🗑️"}
+                  </button>
+                </div>
               </div>
             ))}
           </div>

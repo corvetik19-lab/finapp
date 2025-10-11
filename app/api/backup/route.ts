@@ -8,7 +8,6 @@ import {
   restoreFromBackup,
   type BackupData,
 } from "@/lib/backup/backup";
-
 export const dynamic = "force-dynamic";
 export const maxDuration = 300; // 5 minutes для больших backup'ов
 
@@ -174,6 +173,64 @@ export async function PUT(request: Request) {
     });
   } catch (error) {
     console.error("Restore backup error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE - удалить backup из Storage
+ */
+export async function DELETE(request: Request) {
+  try {
+    const supabase = await createRSCClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const path = searchParams.get("path");
+
+    if (!path) {
+      return NextResponse.json(
+        { error: "Missing path parameter" },
+        { status: 400 }
+      );
+    }
+
+    // Проверяем, что путь принадлежит текущему пользователю
+    if (!path.startsWith(user.id + "/")) {
+      return NextResponse.json(
+        { error: "Forbidden" },
+        { status: 403 }
+      );
+    }
+
+    // Удаляем файл из Storage
+    const { error } = await supabase.storage
+      .from("backups")
+      .remove([path]);
+
+    if (error) {
+      console.error("Delete backup error:", error);
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Backup deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete backup error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
