@@ -5,10 +5,6 @@
       "schedule": "0 9 * * *"
     },
     {
-      "path": "/api/ai/generate-embeddings",
-      "schedule": "0 2 * * *"
-    },
-    {
       "path": "/api/ai/monthly-insights",
       "schedule": "0 9 1 * *"
     }
