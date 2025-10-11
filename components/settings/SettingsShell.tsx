@@ -12,7 +12,7 @@ import RolesManager, { type RoleRecord } from "@/components/settings/RolesManage
 import UsersManager, { type UserRecord, type RoleOption } from "@/components/settings/UsersManager";
 import styles from "@/components/settings/Settings.module.css";
 
-const TAB_KEYS = ["profile", "categories", "plans", "users", "roles", "notifications", "backup", "theme"] as const;
+const TAB_KEYS = ["profile", "categories", "plans", "users", "roles", "notifications", "telegram", "backup", "theme"] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
 type ProfileData = {
@@ -40,6 +40,7 @@ const TAB_LABELS: Record<TabKey, { icon: string; label: string }> = {
   users: { icon: "people", label: "Пользователи" },
   roles: { icon: "admin_panel_settings", label: "Роли" },
   notifications: { icon: "notifications", label: "Уведомления" },
+  telegram: { icon: "send", label: "Telegram" },
   backup: { icon: "backup", label: "Резервные копии" },
   theme: { icon: "palette", label: "Тема" },
 };
@@ -51,6 +52,10 @@ export default function SettingsShell({ profile, categories, planTypes, planPres
   const handleTabClick = (tab: TabKey) => {
     if (tab === "notifications") {
       router.push("/settings/notifications");
+      return;
+    }
+    if (tab === "telegram") {
+      router.push("/settings/telegram");
       return;
     }
     setActiveTab(tab);
