@@ -33,7 +33,9 @@ export default function Chat() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading || connectionStatus === "error") return;
+    if (!input.trim() || isLoading) return;
+    
+    console.log("Отправка сообщения:", input);
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -163,7 +165,7 @@ export default function Chat() {
                   key={idx}
                   className={styles.quickQuestionBtn}
                   onClick={() => setInput(question)}
-                  disabled={isLoading || connectionStatus === "error"}
+                  disabled={isLoading}
                 >
                   {question}
                 </button>
@@ -244,17 +246,13 @@ export default function Chat() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            disabled={isLoading || connectionStatus === "error"}
-            placeholder={
-              connectionStatus === "error"
-                ? "Ошибка соединения..."
-                : "Напишите сообщение..."
-            }
+            disabled={isLoading}
+            placeholder="Напишите сообщение..."
             className={styles.chatInput}
           />
           <button
             type="submit"
-            disabled={isLoading || !input.trim() || connectionStatus === "error"}
+            disabled={isLoading || !input.trim()}
             className={styles.sendButton}
           >
             {isLoading ? "⏳" : "📤"}
