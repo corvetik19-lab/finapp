@@ -14,6 +14,7 @@
   font-weight: 700;
   margin: 0 0 12px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -233,8 +234,10 @@
   color: #1f2937;
 }
 
-.budgetChart > div {
-  height: 250px;
+.budgetChartContainer {
+  position: relative;
+  height: 300px;
+  max-height: 300px;
 }
 
 .budgetRecommendations {

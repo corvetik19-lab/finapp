@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 import styles from "./AIAdvisor.module.css";
+
+// Регистрируем компоненты Chart.js
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 interface HealthScore {
   overall_score: number;
@@ -301,29 +305,47 @@ export default function AIAdvisorClient() {
         <div className={styles.budgetComparison}>
           <div className={styles.budgetChart}>
             <h3>Идеальный</h3>
-            <Doughnut
-              data={budgetChartData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: { position: "bottom" },
-                },
-              }}
-            />
+            <div className={styles.budgetChartContainer}>
+              <Doughnut
+                data={budgetChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: { 
+                      position: "bottom",
+                      labels: {
+                        boxWidth: 12,
+                        padding: 10,
+                        font: { size: 12 }
+                      }
+                    },
+                  },
+                }}
+              />
+            </div>
           </div>
           <div className={styles.budgetChart}>
             <h3>Ваш бюджет</h3>
-            <Doughnut
-              data={userBudgetChartData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: { position: "bottom" },
-                },
-              }}
-            />
+            <div className={styles.budgetChartContainer}>
+              <Doughnut
+                data={userBudgetChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: { 
+                      position: "bottom",
+                      labels: {
+                        boxWidth: 12,
+                        padding: 10,
+                        font: { size: 12 }
+                      }
+                    },
+                  },
+                }}
+              />
+            </div>
           </div>
         </div>
         <div className={styles.budgetRecommendations}>
