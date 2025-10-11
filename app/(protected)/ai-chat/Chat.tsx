@@ -1,8 +1,6 @@
 "use client";
 
-// @ts-expect-error - useChat from ai package
-import { useChat } from "ai/react";
-import { useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import styles from "./Chat.module.css";
 
 interface ChatMessage {
@@ -12,16 +10,88 @@ interface ChatMessage {
 }
 
 export default function Chat() {
-  const { messages, input, setInput, handleSubmit, isLoading, stop } = useChat({
-    api: "/api/chat",
-  });
-
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Автоскролл вниз при новых сообщениях
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: "user",
+      content: input,
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [...messages, userMessage].map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to fetch");
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      const assistantMessageId = (Date.now() + 1).toString();
+      let assistantContent = "";
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: assistantMessageId,
+          role: "assistant",
+          content: "",
+        },
+      ]);
+
+      while (reader) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        assistantContent += chunk;
+
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMessageId
+              ? { ...m, content: assistantContent }
+              : m
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Chat error:", error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          role: "assistant",
+          content: "Извините, произошла ошибка. Попробуйте ещё раз.",
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const quickQuestions = [
     "💰 Какой у меня баланс?",
@@ -111,12 +181,6 @@ export default function Chat() {
       </div>
 
       <div className={styles.chatInputContainer}>
-        {isLoading && (
-          <button className={styles.stopButton} onClick={() => stop()}>
-            ⏹️ Остановить
-          </button>
-        )}
-
         <form onSubmit={handleSubmit} className={styles.chatForm}>
           <input
             type="text"
