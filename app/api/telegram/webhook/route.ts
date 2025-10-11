@@ -51,14 +51,26 @@ export async function POST(request: Request) {
       .eq("telegram_user_id", telegramUserId.toString())
       .single();
 
+    // Обрабатываем команды
+    const { command, args } = parseTelegramCommand(text);
+
+    // Если пользователь не привязан и это команда /start с кодом
+    if (!userPrefs && command === "start" && args && args.length > 0) {
+      await handleLinkAccount(botToken, chatId, telegramUserId, message.from.username, args[0], supabase);
+      return NextResponse.json({ ok: true });
+    }
+
     // Если пользователь не привязан
     if (!userPrefs) {
       await sendTelegramMessage(botToken, {
         chat_id: chatId,
         text: formatErrorMessage(
-          "Ваш Telegram не привязан к аккаунту.\n\nЧтобы привязать:\n1. Войдите в приложение\n2. Перейдите в Настройки\n3. Введите ваш Telegram ID: `" +
-            telegramUserId +
-            "`"
+          "❌ Ваш Telegram не привязан к аккаунту.\n\n" +
+          "🔗 Чтобы привязать:\n" +
+          "1. Откройте приложение FinApp\n" +
+          "2. Перейдите в Настройки → Telegram\n" +
+          "3. Сгенерируйте код привязки\n" +
+          "4. Отправьте мне: /start ВАШ_КОД"
         ),
         parse_mode: "Markdown",
       });
@@ -66,9 +78,6 @@ export async function POST(request: Request) {
     }
 
     const userId = userPrefs.user_id;
-
-    // Обрабатываем команды
-    const { command, args } = parseTelegramCommand(text);
 
     switch (command) {
       case "start":
@@ -324,6 +333,98 @@ async function handleNaturalCommand(
     text: result.message,
     parse_mode: "Markdown",
   });
+}
+
+async function handleLinkAccount(
+  botToken: string,
+  chatId: number,
+  telegramUserId: number,
+  telegramUsername: string | undefined,
+  code: string,
+  supabase: SupabaseClient
+) {
+  try {
+    // Ищем код в базе
+    const { data: linkCode } = await supabase
+      .from("telegram_link_codes")
+      .select("user_id, expires_at, used_at")
+      .eq("code", code.toUpperCase())
+      .single();
+
+    if (!linkCode) {
+      await sendTelegramMessage(botToken, {
+        chat_id: chatId,
+        text: formatErrorMessage(
+          "❌ Неверный код привязки.\n\n" +
+          "Убедитесь, что вы правильно ввели код из приложения."
+        ),
+      });
+      return;
+    }
+
+    // Проверяем срок действия
+    if (new Date(linkCode.expires_at) < new Date()) {
+      await sendTelegramMessage(botToken, {
+        chat_id: chatId,
+        text: formatErrorMessage(
+          "❌ Код истёк.\n\n" +
+          "Сгенерируйте новый код в приложении."
+        ),
+      });
+      return;
+    }
+
+    // Проверяем, не использован ли код
+    if (linkCode.used_at) {
+      await sendTelegramMessage(botToken, {
+        chat_id: chatId,
+        text: formatErrorMessage(
+          "❌ Код уже использован.\n\n" +
+          "Сгенерируйте новый код в приложении."
+        ),
+      });
+      return;
+    }
+
+    // Привязываем аккаунт
+    const { error: updateError } = await supabase
+      .from("notification_preferences")
+      .update({
+        telegram_user_id: telegramUserId.toString(),
+        telegram_username: telegramUsername || null,
+        telegram_chat_id: chatId,
+        telegram_linked_at: new Date().toISOString(),
+      })
+      .eq("user_id", linkCode.user_id);
+
+    if (updateError) throw updateError;
+
+    // Отмечаем код как использованный
+    await supabase
+      .from("telegram_link_codes")
+      .update({ used_at: new Date().toISOString() })
+      .eq("code", code.toUpperCase());
+
+    await sendTelegramMessage(botToken, {
+      chat_id: chatId,
+      text: "✅ Аккаунт успешно привязан!\n\n" +
+        "Теперь вы можете использовать бота для управления финансами.\n\n" +
+        "Доступные команды:\n" +
+        "/balance - показать баланс\n" +
+        "/stats - статистика за месяц\n" +
+        "/budgets - состояние бюджетов\n" +
+        "/add 500 кофе - добавить расход\n\n" +
+        "Также поддерживаются естественные команды, например:\n" +
+        "\"Покажи баланс\" или \"Добавь 1000р на продукты\"",
+      parse_mode: "Markdown",
+    });
+  } catch (error) {
+    console.error("Link account error:", error);
+    await sendTelegramMessage(botToken, {
+      chat_id: chatId,
+      text: formatErrorMessage("Ошибка при привязке аккаунта. Попробуйте позже."),
+    });
+  }
 }
 
 function formatMoney(amount: number): string {
