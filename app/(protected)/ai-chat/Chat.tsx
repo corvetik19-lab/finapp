@@ -13,7 +13,18 @@ export default function Chat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<
+    "checking" | "connected" | "error"
+  >("checking");
+  const [errorMessage, setErrorMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Устанавливаем статус подключения при загрузке
+  useEffect(() => {
+    // По умолчанию считаем что соединение есть
+    // Ошибку покажем только если реальный запрос не удастся
+    setConnectionStatus("connected");
+  }, []);
 
   // Автоскролл вниз при новых сообщениях
   useEffect(() => {
@@ -22,7 +33,7 @@ export default function Chat() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || connectionStatus === "error") return;
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -80,12 +91,18 @@ export default function Chat() {
       }
     } catch (error) {
       console.error("Chat error:", error);
+      setConnectionStatus("error");
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Ошибка при отправке сообщения"
+      );
       setMessages((prev) => [
         ...prev,
         {
           id: Date.now().toString(),
           role: "assistant",
-          content: "Извините, произошла ошибка. Попробуйте ещё раз.",
+          content: "❌ Извините, произошла ошибка. Проверьте подключение и попробуйте ещё раз.",
         },
       ]);
     } finally {
@@ -100,6 +117,19 @@ export default function Chat() {
     "💡 Как мне сэкономить?",
   ];
 
+  const getStatusBadge = () => {
+    if (connectionStatus === "checking") {
+      return <span className={styles.statusChecking}>🔄 Подключение...</span>;
+    }
+    if (connectionStatus === "error") {
+      return <span className={styles.statusError}>❌ Ошибка соединения</span>;
+    }
+    if (isLoading) {
+      return <span className={styles.statusLoading}>💬 Печатает...</span>;
+    }
+    return <span className={styles.statusConnected}>✅ Подключено</span>;
+  };
+
   return (
     <div className={styles.chatContainer}>
       <div className={styles.chatHeader}>
@@ -107,9 +137,7 @@ export default function Chat() {
           <div className={styles.headerIcon}>🤖</div>
           <div>
             <h2 className={styles.headerTitle}>Финансовый помощник</h2>
-            <p className={styles.headerSubtitle}>
-              {isLoading ? "Печатает..." : "Онлайн"}
-            </p>
+            <p className={styles.headerSubtitle}>{getStatusBadge()}</p>
           </div>
         </div>
       </div>
@@ -135,7 +163,7 @@ export default function Chat() {
                   key={idx}
                   className={styles.quickQuestionBtn}
                   onClick={() => setInput(question)}
-                  disabled={isLoading}
+                  disabled={isLoading || connectionStatus === "error"}
                 >
                   {question}
                 </button>
@@ -164,6 +192,36 @@ export default function Chat() {
           ))
         )}
 
+        {connectionStatus === "error" && (
+          <div className={styles.errorContainer}>
+            <div className={styles.errorIcon}>⚠️</div>
+            <div className={styles.errorContent}>
+              <h3 className={styles.errorTitle}>Ошибка подключения к AI</h3>
+              <p className={styles.errorText}>{errorMessage}</p>
+              <div className={styles.errorHelp}>
+                <p><strong>Возможные причины:</strong></p>
+                <ul>
+                  <li>OpenAI API ключ не настроен в Vercel</li>
+                  <li>Проблемы с интернет-соединением</li>
+                  <li>API ключ недействителен или исчерпан лимит</li>
+                </ul>
+                <p><strong>Как исправить:</strong></p>
+                <ol>
+                  <li>Проверьте переменную окружения <code>OPENAI_API_KEY</code> в Vercel</li>
+                  <li>Убедитесь что у API ключа есть баланс</li>
+                  <li>Попробуйте перезагрузить страницу</li>
+                </ol>
+              </div>
+              <button 
+                onClick={() => window.location.reload()} 
+                className={styles.retryButton}
+              >
+                🔄 Попробовать снова
+              </button>
+            </div>
+          </div>
+        )}
+
         {isLoading && (
           <div className={`${styles.message} ${styles.assistantMessage}`}>
             <div className={styles.messageAvatar}>🤖</div>
@@ -186,13 +244,17 @@ export default function Chat() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            disabled={isLoading}
-            placeholder="Напишите сообщение..."
+            disabled={isLoading || connectionStatus === "error"}
+            placeholder={
+              connectionStatus === "error"
+                ? "Ошибка соединения..."
+                : "Напишите сообщение..."
+            }
             className={styles.chatInput}
           />
           <button
             type="submit"
-            disabled={isLoading || !input.trim()}
+            disabled={isLoading || !input.trim() || connectionStatus === "error"}
             className={styles.sendButton}
           >
             {isLoading ? "⏳" : "📤"}

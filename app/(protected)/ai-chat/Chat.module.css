@@ -44,6 +44,36 @@
   opacity: 0.9;
 }
 
+.statusChecking {
+  color: #fbbf24;
+  font-weight: 500;
+  animation: pulse 2s infinite;
+}
+
+.statusConnected {
+  color: #10b981;
+  font-weight: 500;
+}
+
+.statusError {
+  color: #ef4444;
+  font-weight: 500;
+}
+
+.statusLoading {
+  color: #3b82f6;
+  font-weight: 500;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
 .chatMessages {
   flex: 1;
   overflow-y: auto;
@@ -286,6 +316,95 @@
 .sendButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Error Container */
+.errorContainer {
+  background: #fee;
+  border: 2px solid #f87171;
+  border-radius: 12px;
+  padding: 24px;
+  margin: 20px;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.errorIcon {
+  font-size: 48px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.errorContent {
+  text-align: left;
+}
+
+.errorTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #dc2626;
+  margin: 0 0 12px;
+}
+
+.errorText {
+  font-size: 15px;
+  color: #991b1b;
+  margin: 0 0 16px;
+  font-weight: 500;
+}
+
+.errorHelp {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.errorHelp p {
+  margin: 12px 0 8px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.errorHelp strong {
+  color: #1f2937;
+}
+
+.errorHelp ul,
+.errorHelp ol {
+  margin: 8px 0;
+  padding-left: 24px;
+}
+
+.errorHelp li {
+  margin: 4px 0;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.errorHelp code {
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 13px;
+  color: #dc2626;
+}
+
+.retryButton {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.retryButton:hover {
+  transform: scale(1.02);
 }
 
 /* Responsive */
