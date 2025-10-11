@@ -40,3 +40,9 @@ COMMENT ON TABLE telegram_link_codes IS 'Одноразовые коды для 
 COMMENT ON COLUMN telegram_link_codes.code IS '6-символьный уникальный код';
 COMMENT ON COLUMN telegram_link_codes.expires_at IS 'Срок действия кода (обычно 10 минут)';
 COMMENT ON COLUMN telegram_link_codes.used_at IS 'Когда код был использован';
+
+-- Добавляем поле telegram_chat_id в notification_preferences
+ALTER TABLE notification_preferences
+ADD COLUMN IF NOT EXISTS telegram_chat_id bigint;
+
+COMMENT ON COLUMN notification_preferences.telegram_chat_id IS 'Telegram Chat ID для отправки сообщений';
