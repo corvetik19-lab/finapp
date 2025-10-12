@@ -1,5 +1,5 @@
-import { openai } from "@ai-sdk/openai";
 import { generateText } from "ai";
+import { getAnalyticsModel } from "./openrouter";
 
 /**
  * Анализ паттернов трат пользователя через AI
@@ -74,7 +74,7 @@ export async function detectSpendingAnomaly(
 Рекомендация: [текст]`;
 
     const { text } = await generateText({
-      model: openai("gpt-4o-mini"),
+      model: getAnalyticsModel(),
       prompt,
       temperature: 0.7,
     });
@@ -242,7 +242,7 @@ export async function generateFinancialInsight(
 Дай позитивный и мотивирующий совет. Без лишнего текста, сразу по делу.`;
 
     const { text } = await generateText({
-      model: openai("gpt-4o-mini"),
+      model: getAnalyticsModel(),
       prompt,
       temperature: 0.8,
     });

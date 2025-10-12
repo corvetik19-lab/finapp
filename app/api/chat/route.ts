@@ -1,4 +1,4 @@
-import { openai } from "@ai-sdk/openai";
+import { getCommandsModel } from "@/lib/ai/openrouter";
 import { streamText } from "ai";
 import { createRSCClient } from "@/lib/supabase/server";
 import type { CoreMessage } from "ai";
@@ -137,7 +137,7 @@ ${contextInfo}
 `;
 
     const result = await streamText({
-      model: openai("gpt-4o-mini"),
+      model: getCommandsModel(),
       system: systemPrompt,
       messages: messages,
       temperature: 0.7,

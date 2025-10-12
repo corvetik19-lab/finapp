@@ -2,8 +2,8 @@
  * AI прогнозирование расходов
  */
 
-import { openai } from "@ai-sdk/openai";
 import { generateText } from "ai";
+import { getAnalyticsModel } from "./openrouter";
 
 /**
  * AI прогнозирование расходов и финансовые сценарии
@@ -302,7 +302,7 @@ ${savingsGoal ? `- Цель накоплений: ${(savingsGoal / 100).toFixed(
 Дай практический совет как оптимизировать бюджет.`;
 
     const { text } = await generateText({
-      model: openai("gpt-4o-mini"),
+      model: getAnalyticsModel(),
       prompt,
       temperature: 0.7,
     });

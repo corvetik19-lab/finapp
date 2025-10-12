@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
-import { openai } from "@ai-sdk/openai";
 import { generateText } from "ai";
+import { getAnalyticsModel } from "@/lib/ai/openrouter";
 import { createRouteClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
@@ -105,7 +105,7 @@ export async function GET() {
 
     // Генерируем анализ через OpenAI
     const { text } = await generateText({
-      model: openai("gpt-4o-mini"),
+      model: getAnalyticsModel(),
       prompt: `Ты — финансовый аналитик. Проанализируй финансовые данные пользователя и дай персональные рекомендации.
 
 Данные пользователя:

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
-import { openai } from "@ai-sdk/openai";
+import { getCommandsModel } from '@/lib/ai/openrouter';
 import { streamText, tool } from "ai";
 import { z } from "zod";
 import { createRouteClient } from "@/lib/supabase/server";
@@ -308,7 +308,7 @@ export async function POST(req: Request) {
   const { messages } = await req.json();
 
   const result = await streamText({
-    model: openai("gpt-4o-mini"),
+    model: getCommandsModel(),
     messages,
     tools,
     system: `Ты — финансовый ассистент для приложения "Finapp". 

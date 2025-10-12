@@ -1,6 +1,6 @@
-import { openai } from "@ai-sdk/openai";
 import { generateText } from "ai";
 import { SupabaseClient } from "@supabase/supabase-js";
+import { getCommandsModel } from "./openrouter";
 
 /**
  * AI команды через естественный язык
@@ -66,7 +66,7 @@ export async function parseCommand(text: string): Promise<ParsedCommand> {
 Только JSON, без пояснений.`;
 
     const { text: response } = await generateText({
-      model: openai("gpt-4o-mini"),
+      model: getCommandsModel(),
       prompt,
       temperature: 0.3,
     });
