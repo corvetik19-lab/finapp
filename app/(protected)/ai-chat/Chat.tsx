@@ -119,49 +119,18 @@ export default function Chat() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const assistantMessageId = (Date.now() + 1).toString();
-      
-      // Добавляем пустое сообщение ассистента
+      // Читаем полный текст ответа
+      const text = await response.text();
+
+      // Добавляем ответ ассистента
       setMessages((prev) => [
         ...prev,
         {
-          id: assistantMessageId,
+          id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: "",
+          content: text,
         },
       ]);
-
-      // Правильно читаем Vercel AI SDK stream
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      
-      if (!reader) {
-        throw new Error("No reader available");
-      }
-
-      let fullText = "";
-      
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          // Декодируем chunk
-          const chunk = decoder.decode(value, { stream: true });
-          fullText += chunk;
-
-          // Обновляем UI в реальном времени
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantMessageId
-                ? { ...m, content: fullText }
-                : m
-            )
-          );
-        }
-      } finally {
-        reader.releaseLock();
-      }
     } catch (error) {
       console.error("Chat error:", error);
       setConnectionStatus("error");

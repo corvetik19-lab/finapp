@@ -1,5 +1,5 @@
 import { openrouter } from "@/lib/ai/openrouter";
-import { streamText } from "ai";
+import { streamText, generateText } from "ai";
 import { createRSCClient } from "@/lib/supabase/server";
 import type { CoreMessage } from "ai";
 
@@ -136,14 +136,19 @@ ${contextInfo}
 - "Какой у меня баланс?"
 `;
 
-    const result = await streamText({
+    // Временно используем generateText для отладки
+    const result = await generateText({
       model: openrouter(model || "openai/gpt-4o-mini"),
       system: systemPrompt,
       messages: messages,
       temperature: 0.7,
     });
 
-    return result.toTextStreamResponse();
+    return new Response(result.text, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+      },
+    });
   } catch (error) {
     console.error("Chat API error:", error);
     return new Response("Internal Server Error", { status: 500 });
