@@ -332,9 +332,11 @@ async function addTransaction(
     account_id: accounts[0].id,
     category_id: categoryId,
     amount,
+    currency: "RUB",
     direction: direction || "expense",
-    description: description || `Добавлено через чат: ${command.original}`,
-    date: new Date().toISOString().split("T")[0],
+    note: description || `Добавлено через чат: ${command.original}`,
+    occurred_at: new Date().toISOString(),
+    tags: [],
   });
 
   if (error) throw error;
