@@ -55,32 +55,25 @@ export default function Chat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Обработчик отправки с проверкой команд и стримингом
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("handleSubmit вызван, input:", input, "isLoading:", isLoading);
     
-    if (!input.trim() || isLoading) {
-      console.log("Отмена: поле пустое или идёт загрузка");
-      return;
-    }
-    
-    console.log("✅ Отправка сообщения:", input);
+    if (!input.trim() || isLoading) return;
 
+    const currentInput = input;
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: "user",
-      content: input,
+      content: currentInput,
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    const currentInput = input;
-    console.log("🧹 Очищаю поле ввода");
     setInput("");
     setIsLoading(true);
-    console.log("⏳ isLoading установлен в true");
 
     try {
-      // Сначала проверяем, является ли это командой
+      // Проверяем, является ли это командой
       const commandCheck = await fetch("/api/chat/commands", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -90,13 +83,12 @@ export default function Chat() {
       if (commandCheck.ok) {
         const commandData = await commandCheck.json();
         
-        // Если команда распознана с хорошей уверенностью и выполнена
+        // Если команда выполнена успешно
         if (
           commandData.executed &&
           commandData.parsed.confidence >= 70 &&
           commandData.result.success
         ) {
-          // Добавляем результат команды как ответ ассистента
           setMessages((prev) => [
             ...prev,
             {
@@ -110,7 +102,7 @@ export default function Chat() {
         }
       }
 
-      // Если команда не распознана или не выполнена, отправляем в обычный AI чат
+      // Если не команда, используем обычный AI чат со стримингом
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -119,18 +111,26 @@ export default function Chat() {
             role: m.role,
             content: m.content,
           })),
-          model: selectedModel, // Передаём выбранную модель
+          model: selectedModel,
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to fetch");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
+      // Читаем stream правильно
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
+      
+      if (!reader) {
+        throw new Error("No reader available");
+      }
 
       const assistantMessageId = (Date.now() + 1).toString();
-      let assistantContent = "";
+      let fullContent = "";
 
+      // Добавляем пустое сообщение ассистента
       setMessages((prev) => [
         ...prev,
         {
@@ -140,17 +140,19 @@ export default function Chat() {
         },
       ]);
 
-      while (reader) {
+      // Читаем stream
+      while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value);
-        assistantContent += chunk;
+        const text = decoder.decode(value, { stream: true });
+        fullContent += text;
 
+        // Обновляем сообщение
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantMessageId
-              ? { ...m, content: assistantContent }
+              ? { ...m, content: fullContent }
               : m
           )
         );
@@ -159,16 +161,14 @@ export default function Chat() {
       console.error("Chat error:", error);
       setConnectionStatus("error");
       setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Ошибка при отправке сообщения"
+        error instanceof Error ? error.message : "Ошибка при отправке сообщения"
       );
       setMessages((prev) => [
         ...prev,
         {
           id: Date.now().toString(),
           role: "assistant",
-          content: "❌ Извините, произошла ошибка. Проверьте подключение и попробуйте ещё раз.",
+          content: "❌ Извините, произошла ошибка. Попробуйте ещё раз.",
         },
       ]);
     } finally {
