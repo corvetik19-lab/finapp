@@ -386,18 +386,20 @@ async function handleLinkAccount(
       return;
     }
 
-    // Привязываем аккаунт
-    const { error: updateError } = await supabase
+    // Привязываем аккаунт (UPSERT - создаём если нет)
+    const { error: upsertError } = await supabase
       .from("notification_preferences")
-      .update({
+      .upsert({
+        user_id: linkCode.user_id,
         telegram_user_id: telegramUserId.toString(),
         telegram_username: telegramUsername || null,
         telegram_chat_id: chatId,
         telegram_linked_at: new Date().toISOString(),
-      })
-      .eq("user_id", linkCode.user_id);
+      }, {
+        onConflict: 'user_id'
+      });
 
-    if (updateError) throw updateError;
+    if (upsertError) throw upsertError;
 
     // Отмечаем код как использованный
     await supabase
