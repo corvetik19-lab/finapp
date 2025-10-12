@@ -1,10 +1,12 @@
-import { createOpenAI } from "@ai-sdk/openai";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
 /**
  * OpenRouter - агрегатор AI моделей
- * Документация: https://openrouter.ai/docs
+ * Официальная интеграция с Vercel AI SDK
  * 
+ * Документация: https://openrouter.ai/docs/community/vercel-ai-sdk
  * Доступные модели: https://openrouter.ai/models
+ * 
  * Примеры популярных моделей:
  * - openai/gpt-4o - GPT-4 Optimized
  * - openai/gpt-4o-mini - GPT-4 Mini (быстрая и дешёвая)
@@ -24,11 +26,11 @@ if (!OPENROUTER_API_KEY) {
 }
 
 /**
- * Клиент OpenRouter (совместим с OpenAI SDK)
+ * Официальный клиент OpenRouter для Vercel AI SDK
+ * Использует @openrouter/ai-sdk-provider
  */
-export const openrouter = createOpenAI({
+export const openrouter = createOpenRouter({
   apiKey: OPENROUTER_API_KEY,
-  baseURL: "https://openrouter.ai/api/v1",
   headers: {
     "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "https://finappka.vercel.app",
     "X-Title": "FinApp - Финансовый трекер",

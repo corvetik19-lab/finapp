@@ -10,6 +10,12 @@ interface ChatMessage {
   content: string;
 }
 
+interface AIModel {
+  id: string;
+  name: string;
+  is_free: boolean;
+}
+
 export default function Chat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -18,12 +24,29 @@ export default function Chat() {
     "checking" | "connected" | "error"
   >("checking");
   const [errorMessage, setErrorMessage] = useState("");
+  const [selectedModel, setSelectedModel] = useState("openai/gpt-4o-mini");
+  const [models, setModels] = useState<{ recommended: AIModel[]; free: AIModel[]; all: AIModel[] }>({ 
+    recommended: [], 
+    free: [],
+    all: []
+  });
+  const [showModelSelector, setShowModelSelector] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Устанавливаем статус подключения при загрузке
+  // Загружаем список моделей при загрузке
   useEffect(() => {
-    // По умолчанию считаем что соединение есть
-    // Ошибку покажем только если реальный запрос не удастся
+    async function loadModels() {
+      try {
+        const res = await fetch("/api/ai/models");
+        if (res.ok) {
+          const data = await res.json();
+          setModels(data);
+        }
+      } catch (error) {
+        console.error("Failed to load models:", error);
+      }
+    }
+    loadModels();
     setConnectionStatus("connected");
   }, []);
 
@@ -34,9 +57,14 @@ export default function Chat() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    console.log("handleSubmit вызван, input:", input, "isLoading:", isLoading);
     
-    console.log("Отправка сообщения:", input);
+    if (!input.trim() || isLoading) {
+      console.log("Отмена: поле пустое или идёт загрузка");
+      return;
+    }
+    
+    console.log("✅ Отправка сообщения:", input);
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -46,8 +74,10 @@ export default function Chat() {
 
     setMessages((prev) => [...prev, userMessage]);
     const currentInput = input;
+    console.log("🧹 Очищаю поле ввода");
     setInput("");
     setIsLoading(true);
+    console.log("⏳ isLoading установлен в true");
 
     try {
       // Сначала проверяем, является ли это командой
@@ -89,6 +119,7 @@ export default function Chat() {
             role: m.role,
             content: m.content,
           })),
+          model: selectedModel, // Передаём выбранную модель
         }),
       });
 
@@ -175,6 +206,77 @@ export default function Chat() {
             <p className={styles.headerSubtitle}>{getStatusBadge()}</p>
           </div>
         </div>
+        <div className={styles.modelSelector}>
+          <button 
+            className={styles.modelButton}
+            onClick={() => setShowModelSelector(!showModelSelector)}
+            disabled={isLoading}
+          >
+            🎯 {models.all.find(m => m.id === selectedModel)?.name || 
+                models.recommended.find(m => m.id === selectedModel)?.name || 
+                models.free.find(m => m.id === selectedModel)?.name || 
+                "GPT-4o Mini"}
+          </button>
+          {showModelSelector && (
+            <div className={styles.modelDropdown}>
+              <div className={styles.modelGroup}>
+                <div className={styles.modelGroupTitle}>⭐ Рекомендованные</div>
+                {models.recommended.map((model) => (
+                  <button
+                    key={model.id}
+                    className={`${styles.modelOption} ${selectedModel === model.id ? styles.modelOptionActive : ''}`}
+                    onClick={() => {
+                      setSelectedModel(model.id);
+                      setShowModelSelector(false);
+                    }}
+                  >
+                    <div className={styles.modelName}>
+                      {model.name}
+                      {model.is_free && <span className={styles.freeBadge}>FREE</span>}
+                    </div>
+                  </button>
+                ))}
+              </div>
+              {models.free.length > 0 && (
+                <div className={styles.modelGroup}>
+                  <div className={styles.modelGroupTitle}>🆓 Бесплатные</div>
+                  {models.free.map((model) => (
+                    <button
+                      key={model.id}
+                      className={`${styles.modelOption} ${selectedModel === model.id ? styles.modelOptionActive : ''}`}
+                      onClick={() => {
+                        setSelectedModel(model.id);
+                        setShowModelSelector(false);
+                      }}
+                    >
+                      <div className={styles.modelName}>{model.name}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {models.all.length > 0 && (
+                <div className={styles.modelGroup}>
+                  <div className={styles.modelGroupTitle}>📋 Все модели ({models.all.length})</div>
+                  {models.all.map((model) => (
+                    <button
+                      key={model.id}
+                      className={`${styles.modelOption} ${selectedModel === model.id ? styles.modelOptionActive : ''}`}
+                      onClick={() => {
+                        setSelectedModel(model.id);
+                        setShowModelSelector(false);
+                      }}
+                    >
+                      <div className={styles.modelName}>
+                        {model.name}
+                        {model.is_free && <span className={styles.freeBadge}>FREE</span>}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className={styles.chatMessages}>
@@ -242,14 +344,14 @@ export default function Chat() {
               <div className={styles.errorHelp}>
                 <p><strong>Возможные причины:</strong></p>
                 <ul>
-                  <li>OpenAI API ключ не настроен в Vercel</li>
+                  <li>OpenRouter API ключ не настроен</li>
                   <li>Проблемы с интернет-соединением</li>
                   <li>API ключ недействителен или исчерпан лимит</li>
                 </ul>
                 <p><strong>Как исправить:</strong></p>
                 <ol>
-                  <li>Проверьте переменную окружения <code>OPENAI_API_KEY</code> в Vercel</li>
-                  <li>Убедитесь что у API ключа есть баланс</li>
+                  <li>Проверьте переменную окружения <code>OPENROUTER_API_KEY</code> в .env.local</li>
+                  <li>Убедитесь что у API ключа есть баланс на https://openrouter.ai/</li>
                   <li>Попробуйте перезагрузить страницу</li>
                 </ol>
               </div>

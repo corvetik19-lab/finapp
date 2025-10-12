@@ -1,4 +1,4 @@
-import { getCommandsModel } from "@/lib/ai/openrouter";
+import { openrouter } from "@/lib/ai/openrouter";
 import { streamText } from "ai";
 import { createRSCClient } from "@/lib/supabase/server";
 import type { CoreMessage } from "ai";
@@ -27,7 +27,7 @@ export const maxDuration = 30;
 
 export async function POST(req: Request) {
   try {
-    const { messages }: { messages: CoreMessage[] } = await req.json();
+    const { messages, model }: { messages: CoreMessage[]; model?: string } = await req.json();
 
     // Получаем данные пользователя для контекста
     const supabase = await createRSCClient();
@@ -137,7 +137,7 @@ ${contextInfo}
 `;
 
     const result = await streamText({
-      model: getCommandsModel(),
+      model: openrouter(model || "openai/gpt-4o-mini"),
       system: systemPrompt,
       messages: messages,
       temperature: 0.7,

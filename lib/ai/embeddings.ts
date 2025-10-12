@@ -1,13 +1,14 @@
 /**
- * OpenAI Embeddings для семантического поиска транзакций
+ * OpenRouter Embeddings для семантического поиска транзакций
  * Преобразует текст транзакций в векторы для поиска по смыслу
  */
 
 import OpenAI from "openai";
 
-// Инициализация клиента OpenAI (только на сервере!)
+// Инициализация клиента OpenRouter (совместим с OpenAI SDK)
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENROUTER_API_KEY,
+  baseURL: "https://openrouter.ai/api/v1",
 });
 
 /**
@@ -46,13 +47,13 @@ export function buildTransactionText(transaction: {
  * @returns массив чисел (вектор размерностью 1536)
  */
 export async function createEmbedding(text: string): Promise<number[]> {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error("OPENAI_API_KEY not configured");
+  if (!process.env.OPENROUTER_API_KEY) {
+    throw new Error("OPENROUTER_API_KEY not configured");
   }
 
   try {
     const response = await openai.embeddings.create({
-      model: "text-embedding-3-small", // Быстрая и дешёвая модель
+      model: "openai/text-embedding-3-small", // Быстрая и дешёвая модель
       input: text,
       encoding_format: "float",
     });
@@ -68,15 +69,15 @@ export async function createEmbedding(text: string): Promise<number[]> {
  * Создаёт embeddings для нескольких текстов за один запрос (эффективнее)
  */
 export async function createEmbeddings(texts: string[]): Promise<number[][]> {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error("OPENAI_API_KEY not configured");
+  if (!process.env.OPENROUTER_API_KEY) {
+    throw new Error("OPENROUTER_API_KEY not configured");
   }
 
   if (texts.length === 0) return [];
 
   try {
     const response = await openai.embeddings.create({
-      model: "text-embedding-3-small",
+      model: "openai/text-embedding-3-small",
       input: texts,
       encoding_format: "float",
     });
@@ -95,8 +96,8 @@ export async function suggestCategory(
   description: string,
   availableCategories: { id: string; name: string; type: string }[]
 ): Promise<{ categoryId: string; categoryName: string; confidence: number; explanation: string }> {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error("OPENAI_API_KEY not configured");
+  if (!process.env.OPENROUTER_API_KEY) {
+    throw new Error("OPENROUTER_API_KEY not configured");
   }
 
   try {
@@ -105,7 +106,7 @@ export async function suggestCategory(
       .join("\n");
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "openai/gpt-4o-mini",
       messages: [
         {
           role: "system",
