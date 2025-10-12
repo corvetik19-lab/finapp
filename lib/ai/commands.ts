@@ -317,7 +317,7 @@ async function addTransaction(
         .insert({
           user_id: userId,
           name: category,
-          type: direction || "expense",
+          kind: direction || "expense",
         })
         .select()
         .single();
