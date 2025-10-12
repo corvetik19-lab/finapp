@@ -17,17 +17,17 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
  * - qwen/qwen-2.5-72b-instruct - Qwen 2.5 72B
  */
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-
-if (!OPENROUTER_API_KEY) {
-  console.warn(
-    "⚠️ OPENROUTER_API_KEY не найден. AI функции не будут работать."
-  );
-}
+/**
+ * Получаем API ключ только на сервере
+ * На клиенте это будет undefined (что нормально, т.к. клиент не должен делать прямые запросы к OpenRouter)
+ */
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 
 /**
  * Официальный клиент OpenRouter для Vercel AI SDK
  * Использует @openrouter/ai-sdk-provider
+ * 
+ * ВАЖНО: Этот клиент должен использоваться ТОЛЬКО на сервере (в API routes)
  */
 export const openrouter = createOpenRouter({
   apiKey: OPENROUTER_API_KEY,
