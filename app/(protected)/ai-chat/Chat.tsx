@@ -157,28 +157,11 @@ export default function Chat() {
     "💡 Как мне сэкономить?",
   ];
 
-  const getStatusBadge = () => {
-    if (connectionStatus === "checking") {
-      return <span className={styles.statusChecking}>🔄 Подключение...</span>;
-    }
-    if (connectionStatus === "error") {
-      return <span className={styles.statusError}>❌ Ошибка соединения</span>;
-    }
-    if (isLoading) {
-      return <span className={styles.statusLoading}>💬 Печатает...</span>;
-    }
-    return <span className={styles.statusConnected}>✅ Подключено</span>;
-  };
-
   return (
     <div className={styles.chatContainer}>
       <div className={styles.chatHeader}>
         <div className={styles.headerContent}>
-          <div className={styles.headerIcon}>🤖</div>
-          <div>
-            <h2 className={styles.headerTitle}>Финансовый помощник</h2>
-            <p className={styles.headerSubtitle}>{getStatusBadge()}</p>
-          </div>
+          <h2 className={styles.headerTitle}>ChatGPT</h2>
         </div>
         <div className={styles.modelSelector}>
           <button 
@@ -186,10 +169,10 @@ export default function Chat() {
             onClick={() => setShowModelSelector(!showModelSelector)}
             disabled={isLoading}
           >
-            🎯 {models.all.find(m => m.id === selectedModel)?.name || 
+            {models.all.find(m => m.id === selectedModel)?.name || 
                 models.recommended.find(m => m.id === selectedModel)?.name || 
                 models.free.find(m => m.id === selectedModel)?.name || 
-                "GPT-4o Mini"}
+                "GPT-4o-mini"}
           </button>
           {showModelSelector && (
             <div className={styles.modelDropdown}>
@@ -356,23 +339,26 @@ export default function Chat() {
       </div>
 
       <div className={styles.chatInputContainer}>
-        <form onSubmit={handleSubmit} className={styles.chatForm}>
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            disabled={isLoading}
-            placeholder="Напишите сообщение..."
-            className={styles.chatInput}
-          />
-          <button
-            type="submit"
-            disabled={isLoading || !input.trim()}
-            className={styles.sendButton}
-          >
-            {isLoading ? "⏳" : "📤"}
-          </button>
-        </form>
+        <div className={styles.inputWrapper}>
+          <form onSubmit={handleSubmit} className={styles.chatForm}>
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              disabled={isLoading}
+              placeholder="Сообщение ChatGPT"
+              className={styles.chatInput}
+            />
+            <button
+              type="submit"
+              disabled={isLoading || !input.trim()}
+              className={styles.sendButton}
+              aria-label="Отправить сообщение"
+            >
+              {isLoading ? "⏳" : "↑"}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
