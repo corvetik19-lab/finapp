@@ -7,8 +7,9 @@ import OpenAI from "openai";
 
 // Инициализация клиента OpenRouter (совместим с OpenAI SDK)
 const openai = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY,
+  apiKey: process.env.OPENROUTER_API_KEY || "dummy-key-for-build",
   baseURL: "https://openrouter.ai/api/v1",
+  dangerouslyAllowBrowser: false,
 });
 
 /**
