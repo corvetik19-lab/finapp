@@ -128,34 +128,6 @@ export const CommonNotifications = {
       icon: "flag",
     }),
 
-  // Долги
-  debtCreated: (): NotificationInput =>
-    notifySuccess({
-      title: "Долг добавлен",
-      message: "Новый долг успешно зарегистрирован",
-      actionUrl: "/debts",
-      actionLabel: "Посмотреть долги",
-      icon: "account_balance_wallet",
-    }),
-
-  debtPaid: (name: string): NotificationInput =>
-    notifySuccess({
-      title: "Долг оплачен",
-      message: `Долг "${name}" полностью погашен`,
-      actionUrl: "/debts",
-      actionLabel: "Посмотреть долги",
-      icon: "check_circle",
-    }),
-
-  debtOverdue: (name: string): NotificationInput =>
-    notifyError({
-      title: "Просроченный долг",
-      message: `Долг "${name}" просрочен!`,
-      actionUrl: "/debts",
-      actionLabel: "Посмотреть долги",
-      icon: "warning",
-    }),
-
   // Общие
   saveError: (): NotificationInput =>
     notifyError({

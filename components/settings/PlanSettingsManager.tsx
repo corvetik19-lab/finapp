@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useTransition } from "react";
+import { useToast } from "@/components/toast/ToastContext";
 import styles from "./Settings.module.css";
 import {
   addPlanType,
@@ -42,9 +43,88 @@ type PlanSettingsManagerProps = {
 };
 
 export default function PlanSettingsManager({ planTypes, planPresets }: PlanSettingsManagerProps) {
+  const [isPending, startTransition] = useTransition();
+  const { show } = useToast();
+
   const typeOptions = useMemo(() => {
     return planTypes.map((t) => ({ id: t.id, label: t.name }));
   }, [planTypes]);
+
+  const handleUpdatePlanType = async (formData: FormData) => {
+    startTransition(async () => {
+      try {
+        await updatePlanType(formData);
+        show("Тип плана сохранён!", { type: "success" });
+      } catch (error) {
+        show("Ошибка сохранения", { type: "error" });
+        console.error(error);
+      }
+    });
+  };
+
+  const handleUpdatePlanPreset = async (formData: FormData) => {
+    startTransition(async () => {
+      try {
+        await updatePlanPreset(formData);
+        show("Пресет сохранён!", { type: "success" });
+      } catch (error) {
+        show("Ошибка сохранения", { type: "error" });
+        console.error(error);
+      }
+    });
+  };
+
+  const handleAddPlanType = async (formData: FormData) => {
+    startTransition(async () => {
+      try {
+        await addPlanType(formData);
+        show("Тип плана добавлен!", { type: "success" });
+      } catch (error) {
+        show("Ошибка добавления", { type: "error" });
+        console.error(error);
+      }
+    });
+  };
+
+  const handleAddPlanPreset = async (formData: FormData) => {
+    startTransition(async () => {
+      try {
+        await addPlanPreset(formData);
+        show("Пресет добавлен!", { type: "success" });
+      } catch (error) {
+        show("Ошибка добавления", { type: "error" });
+        console.error(error);
+      }
+    });
+  };
+
+  const handleDeletePlanType = async (formData: FormData) => {
+    if (!confirm("Удалить тип плана? Это действие нельзя отменить.")) return;
+    
+    startTransition(async () => {
+      try {
+        await deletePlanType(formData);
+        show("Тип плана удалён!", { type: "success" });
+      } catch (error) {
+        show("Ошибка удаления", { type: "error" });
+        console.error(error);
+      }
+    });
+  };
+
+  const handleDeletePlanPreset = async (formData: FormData) => {
+    if (!confirm("Удалить пресет? Это действие нельзя отменить.")) return;
+    
+    startTransition(async () => {
+      try {
+        await deletePlanPreset(formData);
+        show("Пресет удалён!", { type: "success" });
+      } catch (error) {
+        show("Ошибка удаления", { type: "error" });
+        console.error(error);
+      }
+    });
+  };
 
   return (
     <div className={styles.cardStack}>
@@ -55,15 +135,21 @@ export default function PlanSettingsManager({ planTypes, planPresets }: PlanSett
           Настройте категории планов (Накопление, Погашение и др.)
         </div>
 
-        <form action={addPlanType} className={`${styles.formWrap} ${styles.planForm}`}>
+        <form
+          className={`${styles.formWrap} ${styles.planForm}`}
+          onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            handleAddPlanType(formData);
+            e.currentTarget.reset();
+          }}
+        >
           <input
             className={`${styles.input} ${styles.grow}`}
             name="name"
             placeholder="Название типа"
             required
           />
-          <input className={styles.input} name="icon" placeholder="Иконка (savings)" />
-          <input className={styles.input} name="color" placeholder="Цвет (#1565C0)" />
           <input
             className={styles.input}
             name="sort_order"
@@ -72,11 +158,15 @@ export default function PlanSettingsManager({ planTypes, planPresets }: PlanSett
             defaultValue="0"
             style={{ width: "100px" }}
           />
-          <button className={`${styles.btn} ${styles.planSubmitBtn}`} type="submit">
+          <button
+            className={`${styles.btn} ${styles.planSubmitBtn}`}
+            type="submit"
+            disabled={isPending}
+          >
             <span className="material-icons" aria-hidden>
               add
             </span>
-            Добавить
+            {isPending ? "Добавление..." : "Добавить"}
           </button>
         </form>
 
@@ -86,19 +176,21 @@ export default function PlanSettingsManager({ planTypes, planPresets }: PlanSett
             <div key={type.id} className={`${styles.itemBlock} ${styles.planItemBlock}`}>
               <div className={styles.planItemContent}>
                 <div className={styles.planItemTitle}>
-                  {type.icon && (
-                    <span className="material-icons" style={{ fontSize: 18 }}>
-                      {type.icon}
-                    </span>
-                  )}
                   {type.name}
                 </div>
                 <div className={styles.planItemMeta}>
-                  Цвет: {type.color || "—"} • Порядок: {type.sort_order}
+                  Порядок: {type.sort_order}
                 </div>
               </div>
               <div className={styles.planActionsRow}>
-                <form action={updatePlanType} className={styles.planItemForm}>
+                <form
+                  className={styles.planItemForm}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
+                    handleUpdatePlanType(formData);
+                  }}
+                >
                   <input type="hidden" name="id" value={type.id} />
                   <input
                     className={styles.input}
@@ -109,30 +201,29 @@ export default function PlanSettingsManager({ planTypes, planPresets }: PlanSett
                   />
                   <input
                     className={styles.input}
-                    name="icon"
-                    defaultValue={type.icon ?? ""}
-                    placeholder="Иконка"
-                  />
-                  <input
-                    className={styles.input}
-                    name="color"
-                    defaultValue={type.color ?? ""}
-                    placeholder="Цвет"
-                  />
-                  <input
-                    className={styles.input}
                     name="sort_order"
                     type="number"
                     defaultValue={type.sort_order}
                     placeholder="Порядок"
                   />
-                  <button className={`${styles.btn} ${styles.btnSecondary}`} type="submit">
-                    Сохранить
+                  <button
+                    className={`${styles.btn} ${styles.btnSecondary}`}
+                    type="submit"
+                    disabled={isPending}
+                  >
+                    {isPending ? "Сохранение..." : "Сохранить"}
                   </button>
                 </form>
-                <form action={deletePlanType} className={styles.planDeleteForm}>
+                <form
+                  className={styles.planDeleteForm}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
+                    handleDeletePlanType(formData);
+                  }}
+                >
                   <input type="hidden" name="id" value={type.id} />
-                  <button type="submit" className={styles.planDeleteBtn} title="Удалить">
+                  <button type="submit" className={styles.planDeleteBtn} title="Удалить" disabled={isPending}>
                     <span className="material-icons" aria-hidden style={{ fontSize: 18 }}>
                       delete
                     </span>
@@ -151,7 +242,15 @@ export default function PlanSettingsManager({ planTypes, planPresets }: PlanSett
           Создайте шаблоны для быстрого добавления типовых планов
         </div>
 
-        <form action={addPlanPreset} className={`${styles.formWrap} ${styles.planForm}`}>
+        <form
+          className={`${styles.formWrap} ${styles.planForm}`}
+          onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            handleAddPlanPreset(formData);
+            e.currentTarget.reset();
+          }}
+        >
           <input
             className={`${styles.input} ${styles.grow}`}
             name="name"
@@ -175,7 +274,6 @@ export default function PlanSettingsManager({ planTypes, planPresets }: PlanSett
               </option>
             ))}
           </select>
-          <input className={styles.input} name="icon" placeholder="Иконка" />
           <input
             className={styles.input}
             name="sort_order"
@@ -184,11 +282,15 @@ export default function PlanSettingsManager({ planTypes, planPresets }: PlanSett
             defaultValue="0"
             style={{ width: "100px" }}
           />
-          <button className={`${styles.btn} ${styles.planSubmitBtn}`} type="submit">
+          <button
+            className={`${styles.btn} ${styles.planSubmitBtn}`}
+            type="submit"
+            disabled={isPending}
+          >
             <span className="material-icons" aria-hidden>
               add
             </span>
-            Добавить
+            {isPending ? "Добавление..." : "Добавить"}
           </button>
         </form>
 
@@ -205,11 +307,6 @@ export default function PlanSettingsManager({ planTypes, planPresets }: PlanSett
               <div key={preset.id} className={`${styles.itemBlock} ${styles.planItemBlock}`}>
                 <div className={styles.planItemContent}>
                   <div className={styles.planItemTitle}>
-                    {preset.icon && (
-                      <span className="material-icons" style={{ fontSize: 18 }}>
-                        {preset.icon}
-                      </span>
-                    )}
                     {preset.name}
                   </div>
                   <div className={styles.planItemMeta}>
@@ -219,7 +316,14 @@ export default function PlanSettingsManager({ planTypes, planPresets }: PlanSett
                   {preset.note && <div className={styles.hint}>{preset.note}</div>}
                 </div>
                 <div className={styles.planActionsRow}>
-                  <form action={updatePlanPreset} className={styles.planItemForm}>
+                  <form
+                    className={styles.planItemForm}
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.currentTarget);
+                      handleUpdatePlanPreset(formData);
+                    }}
+                  >
                     <input type="hidden" name="id" value={preset.id} />
                     <input
                       className={styles.input}
@@ -263,12 +367,6 @@ export default function PlanSettingsManager({ planTypes, planPresets }: PlanSett
                     </select>
                     <input
                       className={styles.input}
-                      name="icon"
-                      defaultValue={preset.icon ?? ""}
-                      placeholder="Иконка"
-                    />
-                    <input
-                      className={styles.input}
                       name="sort_order"
                       type="number"
                       defaultValue={preset.sort_order}
@@ -280,13 +378,24 @@ export default function PlanSettingsManager({ planTypes, planPresets }: PlanSett
                       defaultValue={preset.note ?? ""}
                       placeholder="Заметка"
                     />
-                    <button className={`${styles.btn} ${styles.btnSecondary}`} type="submit">
-                      Сохранить
+                    <button
+                      className={`${styles.btn} ${styles.btnSecondary}`}
+                      type="submit"
+                      disabled={isPending}
+                    >
+                      {isPending ? "Сохранение..." : "Сохранить"}
                     </button>
                   </form>
-                  <form action={deletePlanPreset} className={styles.planDeleteForm}>
+                  <form
+                    className={styles.planDeleteForm}
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.currentTarget);
+                      handleDeletePlanPreset(formData);
+                    }}
+                  >
                     <input type="hidden" name="id" value={preset.id} />
-                    <button type="submit" className={styles.planDeleteBtn} title="Удалить">
+                    <button type="submit" className={styles.planDeleteBtn} title="Удалить" disabled={isPending}>
                       <span className="material-icons" aria-hidden style={{ fontSize: 18 }}>
                         delete
                       </span>

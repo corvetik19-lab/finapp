@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import QuickCommands from "@/components/chat/QuickCommands";
 import styles from "./Chat.module.css";
 
 interface ChatMessage {
@@ -150,13 +149,6 @@ export default function Chat() {
     }
   };
 
-  const quickQuestions = [
-    "💰 Какой у меня баланс?",
-    "📊 На что я больше трачу?",
-    "💸 Сколько я потратил в этом месяце?",
-    "💡 Как мне сэкономить?",
-  ];
-
   return (
     <div className={styles.chatContainer}>
       <div className={styles.chatHeader}>
@@ -248,25 +240,7 @@ export default function Chat() {
                 Я могу помочь вам с анализом расходов, планированием бюджета и
                 ответить на вопросы о ваших финансах.
               </p>
-
-              <div className={styles.quickQuestions}>
-                <p className={styles.quickQuestionsTitle}>
-                  Попробуйте спросить:
-                </p>
-                {quickQuestions.map((question, idx) => (
-                  <button
-                    key={idx}
-                    className={styles.quickQuestionBtn}
-                    onClick={() => setInput(question)}
-                    disabled={isLoading}
-                  >
-                    {question}
-                  </button>
-                ))}
-              </div>
             </div>
-            
-            <QuickCommands onCommandSelect={setInput} />
           </>
         )}
         

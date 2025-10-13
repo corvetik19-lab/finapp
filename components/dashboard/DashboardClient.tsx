@@ -31,12 +31,6 @@ export default function DashboardClient({
             </span>
             Настроить виджеты
           </button>
-          <i className="material-icons" aria-hidden>
-            search
-          </i>
-          <i className="material-icons" aria-hidden>
-            notifications
-          </i>
         </div>
       </div>
 

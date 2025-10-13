@@ -174,31 +174,6 @@ export default function TestNotificationsPage() {
             Прогресс плана
           </button>
         </div>
-
-        <h3>Долги</h3>
-        <div className={styles.grid}>
-          <button
-            type="button"
-            className={styles.button}
-            onClick={() => addNotification(CommonNotifications.debtCreated())}
-          >
-            Долг добавлен
-          </button>
-          <button
-            type="button"
-            className={styles.button}
-            onClick={() => addNotification(CommonNotifications.debtPaid("Иван"))}
-          >
-            Долг оплачен
-          </button>
-          <button
-            type="button"
-            className={styles.button}
-            onClick={() => addNotification(CommonNotifications.debtOverdue("Петр"))}
-          >
-            Долг просрочен
-          </button>
-        </div>
       </div>
 
       <div className={styles.section}>

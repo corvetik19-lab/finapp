@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import CategoriesManager, { type CategoryRecord } from "@/components/settings/CategoriesManager";
 import PlanSettingsManager, {
   type PlanPresetRecord,
@@ -10,9 +9,13 @@ import PlanSettingsManager, {
 import ProfileManager from "@/components/settings/ProfileManager";
 import RolesManager, { type RoleRecord } from "@/components/settings/RolesManager";
 import UsersManager, { type UserRecord, type RoleOption } from "@/components/settings/UsersManager";
+import NotificationsManager from "@/components/settings/NotificationsManager";
+import TelegramManager from "@/components/settings/TelegramManager";
+import BackupManager from "@/components/settings/BackupManager";
+import APIKeysManager from "@/components/settings/APIKeysManager";
 import styles from "@/components/settings/Settings.module.css";
 
-const TAB_KEYS = ["profile", "categories", "plans", "users", "roles", "notifications", "telegram", "backup", "theme"] as const;
+const TAB_KEYS = ["profile", "categories", "plans", "users", "roles", "notifications", "telegram", "backup", "api", "theme"] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
 type ProfileData = {
@@ -42,24 +45,12 @@ const TAB_LABELS: Record<TabKey, { icon: string; label: string }> = {
   notifications: { icon: "notifications", label: "Уведомления" },
   telegram: { icon: "send", label: "Telegram" },
   backup: { icon: "backup", label: "Резервные копии" },
+  api: { icon: "key", label: "API Keys" },
   theme: { icon: "palette", label: "Тема" },
 };
 
 export default function SettingsShell({ profile, categories, planTypes, planPresets, users, roles, roleOptions }: SettingsShellProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("profile");
-  const router = useRouter();
-
-  const handleTabClick = (tab: TabKey) => {
-    if (tab === "notifications") {
-      router.push("/settings/notifications");
-      return;
-    }
-    if (tab === "telegram") {
-      router.push("/settings/telegram");
-      return;
-    }
-    setActiveTab(tab);
-  };
 
   const tabContent = useMemo(() => {
     if (activeTab === "profile") {
@@ -80,6 +71,22 @@ export default function SettingsShell({ profile, categories, planTypes, planPres
 
     if (activeTab === "roles") {
       return <RolesManager roles={roles} />;
+    }
+
+    if (activeTab === "notifications") {
+      return <NotificationsManager />;
+    }
+
+    if (activeTab === "telegram") {
+      return <TelegramManager />;
+    }
+
+    if (activeTab === "backup") {
+      return <BackupManager />;
+    }
+
+    if (activeTab === "api") {
+      return <APIKeysManager />;
     }
 
     return (
@@ -104,7 +111,7 @@ export default function SettingsShell({ profile, categories, planTypes, planPres
             key={tab}
             type="button"
             className={`${styles.tab} ${activeTab === tab ? styles.tabActive : ""}`}
-            onClick={() => handleTabClick(tab)}
+            onClick={() => setActiveTab(tab)}
           >
             <span className="material-icons" aria-hidden>
               {TAB_LABELS[tab].icon}

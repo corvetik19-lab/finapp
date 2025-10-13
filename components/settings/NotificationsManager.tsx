@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useNotifications } from "@/contexts/NotificationContext";
-import styles from "./NotificationSettings.module.css";
+import styles from "../../app/(protected)/settings/notifications/NotificationSettings.module.css";
 
 type NotificationCategory = {
   id: string;

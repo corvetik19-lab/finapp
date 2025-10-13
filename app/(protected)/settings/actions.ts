@@ -96,6 +96,7 @@ export async function addPlanType(formData: FormData) {
     });
   if (error) throw error;
   revalidatePath("/settings");
+  return { success: true };
 }
 
 export async function updatePlanType(formData: FormData) {
@@ -122,6 +123,7 @@ export async function updatePlanType(formData: FormData) {
 
   if (error) throw error;
   revalidatePath("/settings");
+  return { success: true };
 }
 
 export async function deletePlanType(formData: FormData) {
@@ -149,6 +151,7 @@ export async function deletePlanType(formData: FormData) {
     .eq("user_id", userId);
   if (error) throw error;
   revalidatePath("/settings");
+  return { success: true };
 }
 
 export async function addPlanPreset(formData: FormData) {
@@ -191,6 +194,7 @@ export async function addPlanPreset(formData: FormData) {
     });
   if (error) throw error;
   revalidatePath("/settings");
+  return { success: true };
 }
 
 export async function updatePlanPreset(formData: FormData) {
@@ -235,6 +239,7 @@ export async function updatePlanPreset(formData: FormData) {
     .eq("user_id", userId);
   if (error) throw error;
   revalidatePath("/settings");
+  return { success: true };
 }
 
 export async function deletePlanPreset(formData: FormData) {
@@ -250,6 +255,7 @@ export async function deletePlanPreset(formData: FormData) {
     .eq("user_id", userId);
   if (error) throw error;
   revalidatePath("/settings");
+  return { success: true };
 }
 
 export async function renameCategory(formData: FormData) {
