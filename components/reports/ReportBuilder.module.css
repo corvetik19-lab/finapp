@@ -104,7 +104,7 @@
 .customPeriod {
   display: flex;
   gap: 12px;
-  align-items: end;
+  align-items: flex-end;
   margin-top: 10px;
 }
 

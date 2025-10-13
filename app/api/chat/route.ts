@@ -1,5 +1,5 @@
 import { openrouter } from "@/lib/ai/openrouter";
-import { streamText, generateText } from "ai";
+import { generateText } from "ai";
 import { createRSCClient } from "@/lib/supabase/server";
 import type { CoreMessage } from "ai";
 
