@@ -5,6 +5,9 @@ import { formatMoney } from "@/lib/utils/format";
 import { createBudget } from "./actions";
 import BudgetsList from "@/components/budgets/BudgetsList";
 
+// Делаем страницу динамической
+export const dynamic = 'force-dynamic';
+
 export default async function BudgetsPage() {
   const supabase = await createRSCClient();
 
