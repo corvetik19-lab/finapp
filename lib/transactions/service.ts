@@ -477,7 +477,7 @@ export async function createTransaction(input: InsertTransactionInput): Promise<
   }
 
   // Создаём embedding для семантического поиска (async, не блокируем ответ)
-  if (process.env.OPENAI_API_KEY) {
+  if (process.env.OPENROUTER_API_KEY) {
     // Запускаем в фоне, не ждём результата
     (async () => {
       try {
