@@ -3,6 +3,9 @@ import styles from "./page.module.css";
 import { createRSCClient } from "@/lib/supabase/helpers";
 import PaymentsPageClient from "@/components/payments/PaymentsPageClient";
 
+// Делаем страницу динамической
+export const dynamic = 'force-dynamic';
+
 function toUpcomingPayment(record: PaymentRecord): UpcomingPayment {
   return {
     id: record.id,

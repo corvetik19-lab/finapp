@@ -6,6 +6,9 @@ import TransferModalLauncher from "./TransferModalLauncher";
 import DeleteDebitCardButton from "@/components/cards/DeleteDebitCardButton";
 import EditDebitCardButton from "@/components/cards/EditDebitCardButton";
 
+// Делаем страницу динамической
+export const dynamic = 'force-dynamic';
+
 type CardRow = {
   id: string;
   name: string;

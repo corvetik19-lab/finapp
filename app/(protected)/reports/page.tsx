@@ -6,6 +6,9 @@ import ExpenseBreakdownDonut from "@/components/reports/ExpenseBreakdownDonut";
 import styles from "@/components/reports/Reports.module.css";
 import { formatMoney } from "@/lib/utils/format";
 
+// Делаем страницу динамической
+export const dynamic = 'force-dynamic';
+
 type CategoryRow = { id: string; name: string };
 
 type ChartTransaction = {

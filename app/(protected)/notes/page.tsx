@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import NotesPageClient from "@/components/notes/NotesPageClient";
 import { listNotes, listNoteLabels } from "@/lib/notes/service";
 
+// Делаем страницу динамической
+export const dynamic = 'force-dynamic';
+
 const PAGE_SIZE = 10;
 
 type SearchParams = Promise<{

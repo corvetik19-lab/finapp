@@ -5,6 +5,9 @@ import type { PlanPresetRecord, PlanTypeRecord } from "@/components/settings/Pla
 import type { RoleRecord } from "@/components/settings/RolesManager";
 import type { UserRecord, RoleOption } from "@/components/settings/UsersManager";
 
+// Делаем страницу динамической
+export const dynamic = 'force-dynamic';
+
 export default async function SettingsPage() {
   const supabase = await createRSCClient();
   

@@ -8,6 +8,9 @@ import TransferButton from "./txn/TransferButton";
 import SummaryWithPeriod from "@/components/transactions/SummaryWithPeriod";
 import TransactionsGroupedList, { type Txn as GroupTxn } from "@/components/transactions/TransactionsGroupedList";
 import FiltersAndSearch from "@/components/transactions/FiltersAndSearch";
+
+// Делаем страницу динамической
+export const dynamic = 'force-dynamic';
 import { listTransactions } from "@/lib/transactions/service";
 import ImportCsvTrigger from "@/components/transactions/ImportCsvTrigger";
 import ExportCsvButton from "@/components/transactions/ExportCsvButton";

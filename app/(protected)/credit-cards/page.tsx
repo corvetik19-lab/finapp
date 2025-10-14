@@ -1,5 +1,9 @@
 import CreditCardsPageClient from "@/components/credit-cards/CreditCardsPageClient";
-import { createRSCClient } from "@/lib/supabase/helpers";
+import { createRSCClient } from "@/lib/supabase/server";
+import styles from "./credit-cards.module.css";
+
+// Делаем страницу динамической
+export const dynamic = 'force-dynamic';
 
 export default async function CreditCardsPage() {
   const supabase = await createRSCClient();

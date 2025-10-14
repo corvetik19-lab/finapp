@@ -13,6 +13,9 @@ import CategoryManagementCard from "@/components/dashboard/CategoryManagementCar
 import { loadCategoryWidgetPreferences, loadWidgetVisibility, isWidgetVisible } from "@/lib/dashboard/preferences/service";
 import RecentNotesCard from "@/components/dashboard/RecentNotesCard";
 import UpcomingPaymentsCard from "@/components/dashboard/UpcomingPaymentsCard";
+
+// Делаем страницу динамической
+export const dynamic = 'force-dynamic';
 import PlansWidget from "@/components/dashboard/PlansWidget";
 import NetWorthWidget from "@/components/dashboard/NetWorthWidget";
 import { loadUpcomingPayments } from "@/lib/dashboard/upcoming-payments";
