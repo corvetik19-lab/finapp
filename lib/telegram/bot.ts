@@ -20,6 +20,23 @@ export interface TelegramUpdate {
     date: number;
     text?: string;
   };
+  callback_query?: {
+    id: string;
+    from: {
+      id: number;
+      is_bot: boolean;
+      first_name: string;
+      username?: string;
+    };
+    message?: {
+      message_id: number;
+      chat: {
+        id: number;
+        type: string;
+      };
+    };
+    data?: string;
+  };
 }
 
 export interface TelegramMessage {
@@ -160,4 +177,67 @@ export function getQuickCommandsKeyboard() {
  */
 export function formatErrorMessage(error: string): string {
   return `❌ *Ошибка*\n\n${error}\n\nИспользуйте /help для справки.`;
+}
+
+/**
+ * Ответ на callback query (нажатие кнопки)
+ */
+export async function answerCallbackQuery(
+  botToken: string,
+  callbackQueryId: string,
+  text?: string,
+  showAlert?: boolean
+): Promise<boolean> {
+  try {
+    const response = await fetch(
+      `https://api.telegram.org/bot${botToken}/answerCallbackQuery`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          callback_query_id: callbackQueryId,
+          text,
+          show_alert: showAlert,
+        }),
+      }
+    );
+    return response.ok;
+  } catch (error) {
+    console.error("Answer callback query error:", error);
+    return false;
+  }
+}
+
+/**
+ * Редактирование сообщения
+ */
+export async function editMessageText(
+  botToken: string,
+  chatId: number,
+  messageId: number,
+  text: string,
+  replyMarkup?: {
+    inline_keyboard?: Array<Array<{ text: string; callback_data: string }>>;
+  }
+): Promise<boolean> {
+  try {
+    const response = await fetch(
+      `https://api.telegram.org/bot${botToken}/editMessageText`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          message_id: messageId,
+          text,
+          parse_mode: "Markdown",
+          reply_markup: replyMarkup,
+        }),
+      }
+    );
+    return response.ok;
+  } catch (error) {
+    console.error("Edit message error:", error);
+    return false;
+  }
 }

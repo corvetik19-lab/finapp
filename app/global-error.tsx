@@ -2,7 +2,6 @@
 
 import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
-import type { Metadata } from "next";
 
 export default function GlobalError({
   error,

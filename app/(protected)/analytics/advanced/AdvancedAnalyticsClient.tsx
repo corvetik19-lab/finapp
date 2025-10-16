@@ -15,6 +15,10 @@ import {
 } from "chart.js";
 import { Line, Bar } from "react-chartjs-2";
 import styles from "./AdvancedAnalytics.module.css";
+import PeriodComparisonView from "@/components/analytics/PeriodComparisonView";
+import SeasonalityView from "@/components/analytics/SeasonalityView";
+import TrendsView from "@/components/analytics/TrendsView";
+import FinancialHealthView from "@/components/analytics/FinancialHealthView";
 
 ChartJS.register(
   CategoryScale,
@@ -84,6 +88,7 @@ export default function AdvancedAnalyticsClient() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<"month" | "quarter" | "year">("month");
+  const [activeTab, setActiveTab] = useState<"comparison" | "seasonality" | "trends" | "health" | "overview">("comparison");
 
   useEffect(() => {
     async function fetchData() {
@@ -202,27 +207,74 @@ export default function AdvancedAnalyticsClient() {
           <h1 className={styles.title}>Расширенная аналитика</h1>
           <p className={styles.subtitle}>Детальный анализ ваших финансов</p>
         </div>
-        <div className={styles.periodSelector}>
-          <button
-            className={period === "month" ? styles.active : ""}
-            onClick={() => setPeriod("month")}
-          >
-            Месяц
-          </button>
-          <button
-            className={period === "quarter" ? styles.active : ""}
-            onClick={() => setPeriod("quarter")}
-          >
-            Квартал
-          </button>
-          <button
-            className={period === "year" ? styles.active : ""}
-            onClick={() => setPeriod("year")}
-          >
-            Год
-          </button>
+        <div className={styles.tabsContainer}>
+          <div className={styles.tabs}>
+            <button
+              className={activeTab === "comparison" ? styles.activeTab : ""}
+              onClick={() => setActiveTab("comparison")}
+            >
+              📊 Сравнение периодов
+            </button>
+            <button
+              className={activeTab === "seasonality" ? styles.activeTab : ""}
+              onClick={() => setActiveTab("seasonality")}
+            >
+              🌡️ Сезонность
+            </button>
+            <button
+              className={activeTab === "trends" ? styles.activeTab : ""}
+              onClick={() => setActiveTab("trends")}
+            >
+              📈 Тренды
+            </button>
+            <button
+              className={activeTab === "health" ? styles.activeTab : ""}
+              onClick={() => setActiveTab("health")}
+            >
+              💊 Финансовое здоровье
+            </button>
+            <button
+              className={activeTab === "overview" ? styles.activeTab : ""}
+              onClick={() => setActiveTab("overview")}
+            >
+              📋 Обзор
+            </button>
+          </div>
+          {activeTab === "overview" && (
+            <div className={styles.periodSelector}>
+              <button
+                className={period === "month" ? styles.active : ""}
+                onClick={() => setPeriod("month")}
+              >
+                Месяц
+              </button>
+              <button
+                className={period === "quarter" ? styles.active : ""}
+                onClick={() => setPeriod("quarter")}
+              >
+                Квартал
+              </button>
+              <button
+                className={period === "year" ? styles.active : ""}
+                onClick={() => setPeriod("year")}
+              >
+                Год
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      {activeTab === "comparison" && <PeriodComparisonView />}
+
+      {activeTab === "seasonality" && <SeasonalityView />}
+
+      {activeTab === "trends" && <TrendsView />}
+
+      {activeTab === "health" && <FinancialHealthView />}
+
+      {activeTab === "overview" && (
+        <>
 
       {/* Period Comparison */}
       <section className={styles.section}>
@@ -377,6 +429,8 @@ export default function AdvancedAnalyticsClient() {
           />
         </div>
       </section>
+        </>
+      )}
     </div>
   );
 }

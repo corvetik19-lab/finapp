@@ -6,6 +6,8 @@ import {
   formatFinancialMessage,
   getQuickCommandsKeyboard,
   formatErrorMessage,
+  answerCallbackQuery,
+  editMessageText,
   type TelegramUpdate,
 } from "@/lib/telegram/bot";
 import { parseCommand, executeCommand } from "@/lib/ai/commands";
@@ -34,6 +36,14 @@ export async function POST(request: Request) {
     const update: TelegramUpdate = await request.json();
     console.log("Telegram update:", update);
 
+    const supabase = getServiceClient();
+
+    // Обрабатываем callback query (нажатие на кнопку)
+    if (update.callback_query) {
+      await handleCallbackQuery(botToken, update.callback_query, supabase);
+      return NextResponse.json({ ok: true });
+    }
+
     const message = update.message;
     if (!message || !message.text) {
       return NextResponse.json({ ok: true });
@@ -44,7 +54,6 @@ export async function POST(request: Request) {
     const telegramUserId = message.from.id;
 
     // Получаем пользователя по telegram_user_id
-    const supabase = getServiceClient();
     const { data: userPrefs } = await supabase
       .from("notification_preferences")
       .select("user_id")
@@ -104,6 +113,10 @@ export async function POST(request: Request) {
         await handleAdd(botToken, chatId, supabase, userId, args.join(" "));
         break;
 
+      case "settings":
+        await handleSettings(botToken, chatId, supabase, userId);
+        break;
+
       default:
         // Пытаемся распарсить как естественную команду
         await handleNaturalCommand(botToken, chatId, supabase, userId, text);
@@ -142,6 +155,7 @@ async function handleHelp(botToken: string, chatId: number) {
 /stats - Статистика трат за месяц
 /budgets - Состояние бюджетов
 /add <сумма> <категория> - Добавить расход
+/settings - ⚙️ Настройки уведомлений
 /help - Эта справка
 
 *💬 Естественные команды:*
@@ -427,6 +441,219 @@ async function handleLinkAccount(
       text: formatErrorMessage("Ошибка при привязке аккаунта. Попробуйте позже."),
     });
   }
+}
+
+/**
+ * Показать настройки уведомлений
+ */
+async function handleSettings(
+  botToken: string,
+  chatId: number,
+  supabase: SupabaseClient,
+  userId: string
+) {
+  const { data: settings } = await supabase
+    .from("notification_preferences")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
+
+  if (!settings) {
+    await sendTelegramMessage(botToken, {
+      chat_id: chatId,
+      text: "Настройки не найдены",
+    });
+    return;
+  }
+
+  const emoji = (enabled: boolean) => (enabled ? "✅" : "❌");
+  const days = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+  const selectedDays = (settings.schedule_days || [])
+    .map((d: number) => days[d - 1])
+    .join(", ");
+
+  const text = `⚙️ *Настройки уведомлений*\n\n` +
+    `📱 *Telegram:* ${emoji(settings.telegram_enabled)}\n` +
+    `⏰ *Расписание:* ${emoji(settings.schedule_enabled)}\n` +
+    `🕐 *Время:* ${settings.schedule_time || "09:00"}\n` +
+    `📅 *Дни:* ${selectedDays || "Все"}\n\n` +
+    `*Типы уведомлений:*\n` +
+    `${emoji(settings.overspend_alerts)} Превышение трат\n` +
+    `${emoji(settings.budget_warnings)} Бюджеты\n` +
+    `${emoji(settings.missing_transaction_reminders)} Напоминания\n` +
+    `${emoji(settings.upcoming_payment_reminders)} Платежи\n` +
+    `${emoji(settings.ai_insights)} AI инсайты\n` +
+    `${emoji(settings.ai_recommendations)} AI рекомендации`;
+
+  await sendTelegramMessage(botToken, {
+    chat_id: chatId,
+    text,
+    parse_mode: "Markdown",
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: settings.telegram_enabled ? "🔕 Telegram OFF" : "🔔 Telegram ON", callback_data: "toggle_telegram" },
+          { text: settings.schedule_enabled ? "⏰ Расписание OFF" : "⏰ Расписание ON", callback_data: "toggle_schedule" },
+        ],
+        [
+          { text: settings.overspend_alerts ? "💰 Траты OFF" : "💰 Траты ON", callback_data: "toggle_spending" },
+          { text: settings.budget_warnings ? "🎯 Бюджеты OFF" : "🎯 Бюджеты ON", callback_data: "toggle_budgets" },
+        ],
+        [
+          { text: settings.missing_transaction_reminders ? "📝 Напоминания OFF" : "📝 Напоминания ON", callback_data: "toggle_reminders" },
+          { text: settings.upcoming_payment_reminders ? "💳 Платежи OFF" : "💳 Платежи ON", callback_data: "toggle_payments" },
+        ],
+        [
+          { text: settings.ai_insights ? "🤖 AI Инсайты OFF" : "🤖 AI Инсайты ON", callback_data: "toggle_insights" },
+          { text: settings.ai_recommendations ? "💡 AI Рекомендации OFF" : "💡 AI Рекомендации ON", callback_data: "toggle_recommendations" },
+        ],
+        [
+          { text: "🌐 Открыть в приложении", callback_data: "open_web" },
+        ],
+      ],
+    },
+  });
+}
+
+/**
+ * Обработка нажатий на кнопки
+ */
+async function handleCallbackQuery(
+  botToken: string,
+  query: NonNullable<TelegramUpdate["callback_query"]>,
+  supabase: SupabaseClient
+) {
+  const callbackData = query.data;
+  const telegramUserId = query.from.id;
+  const chatId = query.message?.chat.id;
+  const messageId = query.message?.message_id;
+
+  if (!callbackData || !chatId || !messageId) {
+    await answerCallbackQuery(botToken, query.id, "Ошибка", true);
+    return;
+  }
+
+  // Получаем пользователя
+  const { data: userPrefs } = await supabase
+    .from("notification_preferences")
+    .select("user_id")
+    .eq("telegram_user_id", telegramUserId.toString())
+    .single();
+
+  if (!userPrefs) {
+    await answerCallbackQuery(botToken, query.id, "Telegram не привязан", true);
+    return;
+  }
+
+  const userId = userPrefs.user_id;
+
+  // Обрабатываем действия
+  if (callbackData === "open_web") {
+    await answerCallbackQuery(
+      botToken,
+      query.id,
+      "Откройте приложение для детальных настроек",
+      true
+    );
+    return;
+  }
+
+  // Маппинг кнопок на поля БД
+  const fieldMap: Record<string, string> = {
+    toggle_telegram: "telegram_enabled",
+    toggle_schedule: "schedule_enabled",
+    toggle_spending: "overspend_alerts",
+    toggle_budgets: "budget_warnings",
+    toggle_reminders: "missing_transaction_reminders",
+    toggle_payments: "upcoming_payment_reminders",
+    toggle_insights: "ai_insights",
+    toggle_recommendations: "ai_recommendations",
+  };
+
+  const field = fieldMap[callbackData];
+  if (!field) {
+    await answerCallbackQuery(botToken, query.id, "Неизвестная команда");
+    return;
+  }
+
+  // Получаем текущие настройки
+  const { data: currentSettings } = await supabase
+    .from("notification_preferences")
+    .select(field)
+    .eq("user_id", userId)
+    .single();
+
+  if (!currentSettings) {
+    await answerCallbackQuery(botToken, query.id, "Ошибка загрузки", true);
+    return;
+  }
+
+  // Переключаем значение
+  const newValue = !currentSettings[field as keyof typeof currentSettings];
+
+  const { error } = await supabase
+    .from("notification_preferences")
+    .update({ [field]: newValue })
+    .eq("user_id", userId);
+
+  if (error) {
+    await answerCallbackQuery(botToken, query.id, "Ошибка сохранения", true);
+    return;
+  }
+
+  // Обновляем сообщение
+  const { data: updatedSettings } = await supabase
+    .from("notification_preferences")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
+
+  if (updatedSettings) {
+    const emoji = (enabled: boolean) => (enabled ? "✅" : "❌");
+    const days = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+    const selectedDays = (updatedSettings.schedule_days || [])
+      .map((d: number) => days[d - 1])
+      .join(", ");
+
+    const text = `⚙️ *Настройки уведомлений*\n\n` +
+      `📱 *Telegram:* ${emoji(updatedSettings.telegram_enabled)}\n` +
+      `⏰ *Расписание:* ${emoji(updatedSettings.schedule_enabled)}\n` +
+      `🕐 *Время:* ${updatedSettings.schedule_time || "09:00"}\n` +
+      `📅 *Дни:* ${selectedDays || "Все"}\n\n` +
+      `*Типы уведомлений:*\n` +
+      `${emoji(updatedSettings.overspend_alerts)} Превышение трат\n` +
+      `${emoji(updatedSettings.budget_warnings)} Бюджеты\n` +
+      `${emoji(updatedSettings.missing_transaction_reminders)} Напоминания\n` +
+      `${emoji(updatedSettings.upcoming_payment_reminders)} Платежи\n` +
+      `${emoji(updatedSettings.ai_insights)} AI инсайты\n` +
+      `${emoji(updatedSettings.ai_recommendations)} AI рекомендации`;
+
+    await editMessageText(botToken, chatId, messageId, text, {
+      inline_keyboard: [
+        [
+          { text: updatedSettings.telegram_enabled ? "🔕 Telegram OFF" : "🔔 Telegram ON", callback_data: "toggle_telegram" },
+          { text: updatedSettings.schedule_enabled ? "⏰ Расписание OFF" : "⏰ Расписание ON", callback_data: "toggle_schedule" },
+        ],
+        [
+          { text: updatedSettings.overspend_alerts ? "💰 Траты OFF" : "💰 Траты ON", callback_data: "toggle_spending" },
+          { text: updatedSettings.budget_warnings ? "🎯 Бюджеты OFF" : "🎯 Бюджеты ON", callback_data: "toggle_budgets" },
+        ],
+        [
+          { text: updatedSettings.missing_transaction_reminders ? "📝 Напоминания OFF" : "📝 Напоминания ON", callback_data: "toggle_reminders" },
+          { text: updatedSettings.upcoming_payment_reminders ? "💳 Платежи OFF" : "💳 Платежи ON", callback_data: "toggle_payments" },
+        ],
+        [
+          { text: updatedSettings.ai_insights ? "🤖 AI Инсайты OFF" : "🤖 AI Инсайты ON", callback_data: "toggle_insights" },
+          { text: updatedSettings.ai_recommendations ? "💡 AI Рекомендации OFF" : "💡 AI Рекомендации ON", callback_data: "toggle_recommendations" },
+        ],
+        [
+          { text: "🌐 Открыть в приложении", callback_data: "open_web" },
+        ],
+      ],
+    });
+  }
+
+  await answerCallbackQuery(botToken, query.id, newValue ? "✅ Включено" : "❌ Выключено");
 }
 
 function formatMoney(amount: number): string {

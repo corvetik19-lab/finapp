@@ -8,6 +8,7 @@ import {
   type WhatIfScenario,
   type MonthlyData,
 } from "@/lib/ai/forecasting";
+import { generateEnhancedForecast } from "@/lib/ai/forecast-enhanced";
 
 export const dynamic = "force-dynamic";
 
@@ -31,15 +32,15 @@ export async function GET(request: Request) {
 
     const { data: transactions } = await supabase
       .from("transactions")
-      .select("date, direction, amount")
+      .select("occurred_at, direction, amount")
       .eq("user_id", user.id)
-      .gte("date", twelveMonthsAgo.toISOString().split("T")[0]);
+      .gte("occurred_at", twelveMonthsAgo.toISOString().split("T")[0]);
 
     // Группируем по месяцам
     const monthlyMap = new Map<string, { income: number; expense: number }>();
 
-    (transactions || []).forEach((t: { date: string; amount: number; direction: string }) => {
-      const month = t.date.substring(0, 7); // YYYY-MM
+    (transactions || []).forEach((t: { occurred_at: string; amount: number; direction: string }) => {
+      const month = t.occurred_at.substring(0, 7); // YYYY-MM
       if (!monthlyMap.has(month)) {
         monthlyMap.set(month, { income: 0, expense: 0 });
       }
@@ -60,8 +61,19 @@ export async function GET(request: Request) {
       }))
       .sort((a, b) => a.month.localeCompare(b.month));
 
-    if (type === "expense") {
-      // Прогноз расходов
+    if (type === "expense" || type === "enhanced") {
+      // Улучшенный прогноз расходов
+      const months = parseInt(searchParams.get("months") || "6");
+      const enhancedForecast = await generateEnhancedForecast(supabase, user.id, months);
+
+      return NextResponse.json({
+        enhanced: enhancedForecast,
+        type: "enhanced",
+      });
+    }
+    
+    if (type === "expense_simple") {
+      // Простой прогноз расходов (старый)
       if (monthlyData.length < 2) {
         return NextResponse.json({
           error: "Недостаточно данных для прогноза",

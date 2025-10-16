@@ -6,6 +6,8 @@ export const metadata: Metadata = {
   description: "AI прогнозы расходов и сценарии 'Что если?'",
 };
 
+export const dynamic = 'force-dynamic';
+
 export default function ForecastsPage() {
   return <ForecastsClient />;
 }

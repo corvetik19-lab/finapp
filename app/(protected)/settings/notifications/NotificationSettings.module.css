@@ -311,6 +311,201 @@
   }
 }
 
+/* Новые элементы для расширенных настроек */
+.section {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  margin: 0 0 20px 0;
+}
+
+.sectionTitle .material-icons {
+  font-size: 28px;
+  color: var(--primary-color);
+}
+
+.settingRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 16px;
+  background: rgba(248, 250, 252, 0.5);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.settingRow:last-child {
+  margin-bottom: 0;
+}
+
+.settingInfo h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--primary-dark);
+  margin: 0 0 4px 0;
+}
+
+.settingInfo p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.timeInput {
+  padding: 10px 16px;
+  border: 2px solid rgba(148, 163, 184, 0.3);
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--primary-dark);
+  background: white;
+  min-width: 120px;
+  transition: all 0.2s ease;
+}
+
+.timeInput:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.daysSelector {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dayButton {
+  width: 40px;
+  height: 40px;
+  border: 2px solid rgba(148, 163, 184, 0.3);
+  border-radius: 10px;
+  background: white;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dayButton:hover {
+  border-color: var(--primary-color);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.dayButton.dayActive {
+  background: linear-gradient(135deg, var(--primary-color), #22d3ee);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.telegramStatus {
+  margin-bottom: 16px;
+}
+
+.telegramConnected,
+.telegramDisconnected {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 2px solid;
+}
+
+.telegramConnected {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #15803d;
+}
+
+.telegramConnected .material-icons {
+  color: #15803d;
+  font-size: 28px;
+}
+
+.telegramDisconnected {
+  background: rgba(251, 191, 36, 0.1);
+  border-color: rgba(251, 191, 36, 0.3);
+  color: #92400e;
+}
+
+.telegramDisconnected .material-icons {
+  color: #92400e;
+  font-size: 28px;
+}
+
+.telegramConnected strong,
+.telegramDisconnected strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.telegramConnected p,
+.telegramDisconnected p {
+  font-size: 13px;
+  margin: 0;
+  opacity: 0.8;
+}
+
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 18px;
+  color: var(--text-secondary);
+}
+
+.error {
+  text-align: center;
+  padding: 40px 20px;
+  font-size: 16px;
+  color: #c62828;
+}
+
+.errorBanner,
+.successBanner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  font-weight: 600;
+}
+
+.errorBanner {
+  background: rgba(239, 68, 68, 0.1);
+  border: 2px solid rgba(239, 68, 68, 0.3);
+  color: #c62828;
+}
+
+.successBanner {
+  background: rgba(34, 197, 94, 0.1);
+  border: 2px solid rgba(34, 197, 94, 0.3);
+  color: #15803d;
+}
+
+.errorBanner .material-icons,
+.successBanner .material-icons {
+  font-size: 24px;
+}
+
 @media (max-width: 768px) {
   .header {
     flex-direction: column;
@@ -342,5 +537,24 @@
 
   .toggle {
     align-self: flex-end;
+  }
+
+  .settingRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .timeInput,
+  .toggle {
+    align-self: flex-end;
+  }
+
+  .daysSelector {
+    width: 100%;
+  }
+
+  .dayButton {
+    flex: 1;
+    min-width: 45px;
   }
 }

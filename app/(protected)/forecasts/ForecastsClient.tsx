@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
 import styles from "./Forecasts.module.css";
+import EnhancedForecastView from "@/components/forecasts/EnhancedForecastView";
+import GoalForecastView from "@/components/forecasts/GoalForecastView";
+import SpendingAlertsView from "@/components/forecasts/SpendingAlertsView";
+import OptimizationView from "@/components/forecasts/OptimizationView";
 
 interface ExpenseForecast {
   month: string;
@@ -31,14 +35,20 @@ interface ScenarioResult {
 }
 
 export default function ForecastsClient() {
+  const [mounted, setMounted] = useState(false);
   const [forecast, setForecast] = useState<ExpenseForecast | null>(null);
   const [insights, setInsights] = useState<string>("");
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"forecast" | "scenarios">("forecast");
+  const [activeTab, setActiveTab] = useState<"enhanced" | "forecast" | "scenarios" | "goals" | "risks" | "optimization">("enhanced");
   
   // Сценарии
   const [selectedScenario, setSelectedScenario] = useState<WhatIfScenario | null>(null);
   const [scenarioResult, setScenarioResult] = useState<ScenarioResult | null>(null);
+
+  // Устанавливаем флаг после монтирования на клиенте
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const predefinedScenarios: WhatIfScenario[] = [
     {
@@ -76,7 +86,7 @@ export default function ForecastsClient() {
 
   async function fetchForecast() {
     try {
-      const res = await fetch("/api/ai/forecast?type=expense");
+      const res = await fetch("/api/ai/forecast?type=expense_simple");
       if (res.ok) {
         const data = await res.json();
         setForecast(data.forecast);
@@ -134,22 +144,6 @@ export default function ForecastsClient() {
     }
   }
 
-  if (loading) {
-    return <div className={styles.loading}>Анализируем ваши финансы...</div>;
-  }
-
-  if (!forecast) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.error}>
-          <div className={styles.errorIcon}>📊</div>
-          <h2>Недостаточно данных</h2>
-          <p>Для создания прогноза необходимо минимум 2 месяца транзакций</p>
-        </div>
-      </div>
-    );
-  }
-
   // Данные для графика сценариев
   const scenarioChartData = scenarioResult ? {
     labels: scenarioResult.timeline.map(t => t.month),
@@ -174,6 +168,11 @@ export default function ForecastsClient() {
     ],
   } : null;
 
+  // Показываем загрузку до монтирования на клиенте (избегаем hydration mismatch)
+  if (!mounted) {
+    return <div className={styles.loading}>Загрузка...</div>;
+  }
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -185,53 +184,94 @@ export default function ForecastsClient() {
 
       <div className={styles.tabs}>
         <button
-          className={activeTab === "forecast" ? styles.activeTab : ""}
-          onClick={() => setActiveTab("forecast")}
+          className={activeTab === "enhanced" ? styles.active : ""}
+          onClick={() => setActiveTab("enhanced")}
         >
-          📊 Прогноз расходов
+          🔮 Улучшенный прогноз
         </button>
         <button
-          className={activeTab === "scenarios" ? styles.activeTab : ""}
+          className={activeTab === "forecast" ? styles.active : ""}
+          onClick={() => setActiveTab("forecast")}
+        >
+          📊 Простой прогноз
+        </button>
+        <button
+          className={activeTab === "scenarios" ? styles.active : ""}
           onClick={() => setActiveTab("scenarios")}
         >
           🎯 Сценарии &quot;Что если?&quot;
         </button>
+        <button
+          className={activeTab === "goals" ? styles.active : ""}
+          onClick={() => setActiveTab("goals")}
+        >
+          🎯 Прогноз целей
+        </button>
+        <button
+          className={activeTab === "risks" ? styles.active : ""}
+          onClick={() => setActiveTab("risks")}
+        >
+          ⚠️ Риски перерасхода
+        </button>
+        <button
+          className={activeTab === "optimization" ? styles.active : ""}
+          onClick={() => setActiveTab("optimization")}
+        >
+          💡 Оптимизация
+        </button>
       </div>
+
+      {activeTab === "enhanced" && <EnhancedForecastView />}
+
+      {activeTab === "goals" && <GoalForecastView />}
+
+      {activeTab === "risks" && <SpendingAlertsView />}
+
+      {activeTab === "optimization" && <OptimizationView />}
 
       {activeTab === "forecast" && (
         <div className={styles.content}>
-          {/* Основной прогноз */}
-          <div className={styles.forecastCard}>
-            <div className={styles.forecastHeader}>
-              <h2>Прогноз на {forecast.month}</h2>
-              <div className={styles.confidence}>
-                Уверенность: {forecast.confidence}%
+          {loading ? (
+            <div className={styles.loading}>Анализируем ваши финансы...</div>
+          ) : !forecast ? (
+            <div className={styles.error}>
+              <div className={styles.errorIcon}>📊</div>
+              <h2>Недостаточно данных</h2>
+              <p>Для создания прогноза необходимо минимум 2 месяца транзакций</p>
+            </div>
+          ) : (
+            <div className={styles.forecastCard}>
+              <div className={styles.forecastHeader}>
+                <h2>Прогноз на {forecast.month}</h2>
+                <div className={styles.confidence}>
+                  Уверенность: {forecast.confidence}%
+                </div>
+              </div>
+
+              <div className={styles.forecastAmount}>
+                {formatMoney(forecast.predicted_expense)}
+                <span className={styles.trend}>
+                  {getTrendIcon(forecast.trend)} {getTrendText(forecast.trend)}
+                </span>
+              </div>
+
+              {insights && (
+                <div className={styles.insights}>
+                  <div className={styles.insightsIcon}>💡</div>
+                  <div className={styles.insightsText}>{insights}</div>
+                </div>
+              )}
+
+              <div className={styles.factors}>
+                <h3>Факторы влияния:</h3>
+                <ul>
+                  {forecast.factors.map((factor, idx) => (
+                    <li key={idx}>{factor}</li>
+                  ))}
+                </ul>
               </div>
             </div>
-
-            <div className={styles.forecastAmount}>
-              {formatMoney(forecast.predicted_expense)}
-              <span className={styles.trend}>
-                {getTrendIcon(forecast.trend)} {getTrendText(forecast.trend)}
-              </span>
-            </div>
-
-            {insights && (
-              <div className={styles.insights}>
-                <div className={styles.insightsIcon}>💡</div>
-                <div className={styles.insightsText}>{insights}</div>
-              </div>
-            )}
-
-            <div className={styles.factors}>
-              <h3>Факторы влияния:</h3>
-              <ul>
-                {forecast.factors.map((factor, idx) => (
-                  <li key={idx}>{factor}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -264,6 +304,65 @@ export default function ForecastsClient() {
                   </div>
                 </button>
               ))}
+
+              <div className={styles.customScenario}>
+                <h3>Создать свой сценарий</h3>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
+                    const customScenario: WhatIfScenario = {
+                      name: formData.get("name") as string,
+                      description: formData.get("description") as string,
+                      monthly_change: Number(formData.get("amount")) * 100,
+                      affects: formData.get("type") as "income" | "expense",
+                    };
+                    simulateScenario(customScenario);
+                    e.currentTarget.reset();
+                  }}
+                  className={styles.customForm}
+                >
+                  <div className={styles.formGroup}>
+                    <label>Название сценария</label>
+                    <input
+                      type="text"
+                      name="name"
+                      placeholder="Например: Фриланс"
+                      required
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Описание</label>
+                    <input
+                      type="text"
+                      name="description"
+                      placeholder="Дополнительный доход от проектов"
+                      required
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Тип</label>
+                    <select name="type" required>
+                      <option value="income">Доход</option>
+                      <option value="expense">Расход</option>
+                    </select>
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Сумма в месяц (₽)</label>
+                    <input
+                      type="number"
+                      name="amount"
+                      placeholder="10000"
+                      min="0"
+                      step="100"
+                      required
+                    />
+                  </div>
+                  <button type="submit" className={styles.simulateBtn}>
+                    🎯 Симулировать
+                  </button>
+                </form>
+              </div>
             </div>
 
             {scenarioResult && (
@@ -295,8 +394,8 @@ export default function ForecastsClient() {
                   {scenarioResult.difference > 0 ? "+" : ""}
                   {formatMoney(scenarioResult.difference)}/мес
                   <span className={styles.percentage}>
-                    ({scenarioResult.impact_percentage > 0 ? "+" : ""}
-                    {scenarioResult.impact_percentage.toFixed(1)}%)
+                    ({(scenarioResult.impact_percentage || 0) > 0 ? "+" : ""}
+                    {(scenarioResult.impact_percentage || 0).toFixed(1)}%)
                   </span>
                 </div>
 
