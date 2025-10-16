@@ -6,8 +6,6 @@
  */
 
 import { SupabaseClient } from "@supabase/supabase-js";
-import { generateText } from "ai";
-import { getCommandsModel } from "./openrouter";
 
 interface Transaction {
   amount: number;
@@ -242,10 +240,15 @@ function generateReasoning(trend: string, months: number, confidence: number): s
 
 /**
  * Генерация AI советов
+ * 
+ * @param _forecast - Результат прогноза (планируется использовать для AI-анализа)
+ * @param _history - Исторические данные (планируется использовать для AI-анализа)
  */
 export async function generateAIAdvice(
-  forecast: ForecastResult,
-  history: MonthlyData[]
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _forecast: ForecastResult,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _history: MonthlyData[]
 ): Promise<string[]> {
   // Fallback советы (временно отключаем AI из-за проблем с кодировкой кириллицы)
   const fallbackAdvice = [

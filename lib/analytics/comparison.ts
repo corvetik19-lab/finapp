@@ -10,6 +10,17 @@
 
 import { SupabaseClient } from "@supabase/supabase-js";
 
+interface Transaction {
+  id: string;
+  amount: number;
+  direction: "income" | "expense" | "transfer";
+  category_id: string | null;
+  date: string;
+  categories?: {
+    name: string;
+  } | null;
+}
+
 export interface PeriodComparison {
   period_type: "month" | "quarter" | "year" | "custom";
   current_period: {
@@ -188,7 +199,7 @@ async function getTransactionsForPeriod(
   return data || [];
 }
 
-function calculatePeriodMetrics(transactions: any[]) {
+function calculatePeriodMetrics(transactions: Transaction[]) {
   const income = transactions
     .filter((t) => t.direction === "income")
     .reduce((sum, t) => sum + t.amount, 0);
@@ -230,8 +241,8 @@ function getTrend(current: number, previous: number, higherIsBetter: boolean = f
 }
 
 function compareCategoriesBetweenPeriods(
-  currentTransactions: any[],
-  previousTransactions: any[]
+  currentTransactions: Transaction[],
+  previousTransactions: Transaction[]
 ): CategoryComparison[] {
   const categories = new Map<string, { current: number; previous: number }>();
 

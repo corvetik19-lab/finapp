@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
  * 
  * Возвращает оценку финансового здоровья
  */
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const supabase = await createRSCClient();
     const {

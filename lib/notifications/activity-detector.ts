@@ -103,14 +103,26 @@ export async function detectLowActivity(
   userId: string
 ): Promise<ActivityAlert | null> {
   const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  // Транзакции текущего месяца
-  const { data: currentMonthTransactions, count: currentCount } = await supabase
+  // Получаем транзакции за последние 2 месяца
+  const twoMonthsAgo = new Date();
+  twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+
+  const { data: transactions } = await supabase
     .from("transactions")
-    .select("*", { count: "exact", head: true })
+    .select("id, date, amount")
     .eq("user_id", userId)
-    .gte("occurred_at", monthStart.toISOString());
+    .gte("date", twoMonthsAgo.toISOString().slice(0, 10));
+
+  if (!transactions || transactions.length === 0) {
+    return null;
+  }
+
+  // Транзакции за текущий месяц
+  const currentMonthStart = new Date();
+  currentMonthStart.setDate(1);
+  const currentMonthTransactions = transactions.filter((t) => new Date(t.date) >= currentMonthStart);
+  const currentCount = currentMonthTransactions.length;
 
   // Транзакции прошлого месяца
   const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -124,7 +136,7 @@ export async function detectLowActivity(
     .lte("occurred_at", lastMonthEnd.toISOString());
 
   // Если активность снизилась более чем в 2 раза
-  if (lastMonthCount && currentCount !== null && currentCount < lastMonthCount / 2 && lastMonthCount >= 10) {
+  if (lastMonthCount && currentCount < lastMonthCount / 2 && lastMonthCount >= 10) {
     const dayOfMonth = now.getDate();
     
     // Только после 10 числа месяца

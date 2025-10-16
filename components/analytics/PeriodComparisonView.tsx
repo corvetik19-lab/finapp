@@ -18,6 +18,7 @@ export default function PeriodComparisonView() {
 
   useEffect(() => {
     loadComparison();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [comparisonType]);
 
   async function loadComparison() {

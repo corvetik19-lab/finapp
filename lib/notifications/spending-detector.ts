@@ -10,6 +10,16 @@
 
 import { SupabaseClient } from "@supabase/supabase-js";
 
+interface Transaction {
+  id: string;
+  amount: number;
+  category_id: string | null;
+  date: string;
+  categories?: {
+    name: string;
+  } | null;
+}
+
 export interface SpendingAlert {
   type: "overspending" | "unusual_category" | "high_frequency" | "large_transaction";
   severity: "high" | "medium" | "low";
@@ -113,8 +123,8 @@ export async function detectSpendingAnomalies(
 }
 
 function analyzeSpendingPatterns(
-  currentMonth: any[],
-  historical: any[]
+  currentMonth: Transaction[],
+  historical: Transaction[]
 ): SpendingPattern[] {
   const patterns: SpendingPattern[] = [];
 
@@ -181,7 +191,7 @@ function analyzeSpendingPatterns(
   return patterns.sort((a, b) => b.difference_percentage - a.difference_percentage);
 }
 
-function detectLargeTransactions(currentMonth: any[], historical: any[]): SpendingAlert[] {
+function detectLargeTransactions(currentMonth: Transaction[], historical: Transaction[]): SpendingAlert[] {
   const alerts: SpendingAlert[] = [];
 
   // Средняя транзакция из истории
@@ -216,7 +226,7 @@ function detectLargeTransactions(currentMonth: any[], historical: any[]): Spendi
   return alerts.slice(0, 3); // максимум 3 алерта
 }
 
-function detectHighFrequency(currentMonth: any[], historical: any[]): SpendingAlert[] {
+function detectHighFrequency(currentMonth: Transaction[], historical: Transaction[]): SpendingAlert[] {
   const alerts: SpendingAlert[] = [];
 
   // Группируем по категориям
@@ -273,7 +283,7 @@ function detectHighFrequency(currentMonth: any[], historical: any[]): SpendingAl
   return alerts.slice(0, 2);
 }
 
-function detectUnusualCategories(currentMonth: any[], historical: any[]): SpendingAlert[] {
+function detectUnusualCategories(currentMonth: Transaction[], historical: Transaction[]): SpendingAlert[] {
   const alerts: SpendingAlert[] = [];
 
   // Категории из истории
@@ -313,11 +323,11 @@ function detectUnusualCategories(currentMonth: any[], historical: any[]): Spendi
   return alerts.slice(0, 2);
 }
 
-function groupByMonth(transactions: any[]): any[][] {
-  const monthMap = new Map<string, any[]>();
+function groupByMonth(transactions: Transaction[]): Transaction[][] {
+  const monthMap = new Map<string, Transaction[]>();
 
   transactions.forEach((t) => {
-    const month = new Date(t.occurred_at).toISOString().slice(0, 7); // YYYY-MM
+    const month = new Date(t.date).toISOString().slice(0, 7); // YYYY-MM
     if (!monthMap.has(month)) {
       monthMap.set(month, []);
     }

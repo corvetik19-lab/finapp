@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import styles from "./Forecasts.module.css";
 import {
   type OptimizationReport,
-  type OptimizationOpportunity,
-  type MoneyLeak,
   getPriorityColor,
   getImpactColor,
 } from "@/lib/ai/optimization-advisor";
@@ -219,7 +217,7 @@ export default function OptimizationView() {
         <div className={styles.leaksSection}>
           <h2>🚰 Денежные утечки</h2>
           <p className={styles.sectionSubtitle}>
-            Регулярные мелкие траты, которые незаметно "съедают" ваш бюджет
+            Регулярные мелкие траты, которые незаметно &quot;съедают&quot; ваш бюджет
           </p>
           <div className={styles.leaksList}>
             {report.money_leaks.map((leak, idx) => (

@@ -9,6 +9,36 @@
 
 import { SupabaseClient } from "@supabase/supabase-js";
 
+interface Transaction {
+  id: string;
+  amount: number;
+  direction: "income" | "expense" | "transfer";
+  category_id: string | null;
+  date: string;
+  occurred_at: string;
+  description?: string | null;
+  categories?: {
+    name: string;
+  } | null;
+}
+
+interface Plan {
+  id: string;
+  goal_amount: number;
+  current_amount: number;
+  status: string;
+}
+
+interface Budget {
+  id: string;
+  amount: number;
+  amount_limit: number;
+  category_id: string | null;
+  categories?: {
+    name: string;
+  } | null;
+}
+
 export interface FinancialHealthReport {
   overall_score: number; // 0-100
   grade: "excellent" | "good" | "fair" | "poor"; // A, B, C, D
@@ -134,7 +164,7 @@ export async function analyzeFinancialHealth(
 function calculateSavingsScore(
   totalIncome: number,
   totalExpenses: number,
-  plans: any[]
+  plans: Plan[]
 ): CategoryScore {
   const weight = 0.35; // 35% от общего score
 
@@ -186,7 +216,7 @@ function calculateSavingsScore(
   return { score: Math.round(score), weight, status, details };
 }
 
-function calculateBudgetScore(expenses: any[], budgets: any[]): CategoryScore {
+function calculateBudgetScore(expenses: Transaction[], budgets: Budget[]): CategoryScore {
   const weight = 0.25; // 25% от общего score
 
   if (budgets.length === 0) {
@@ -216,7 +246,7 @@ function calculateBudgetScore(expenses: any[], budgets: any[]): CategoryScore {
 
   budgets.forEach((budget) => {
     totalBudgets++;
-    const spent = expensesByCategory.get(budget.category_id) || 0;
+    const spent = expensesByCategory.get(budget.category_id || "") || 0;
     const limit = budget.amount_limit;
 
     if (spent <= limit) {
@@ -251,7 +281,7 @@ function calculateBudgetScore(expenses: any[], budgets: any[]): CategoryScore {
   };
 }
 
-function calculateDebtScore(expenses: any[]): CategoryScore {
+function calculateDebtScore(expenses: Transaction[]): CategoryScore {
   const weight = 0.2; // 20% от общего score
 
   // Ищем категории, связанные с долгами/кредитами
@@ -291,7 +321,7 @@ function calculateDebtScore(expenses: any[]): CategoryScore {
   return { score: Math.round(score), weight, status, details };
 }
 
-function calculateStabilityScore(transactions: any[]): CategoryScore {
+function calculateStabilityScore(transactions: Transaction[]): CategoryScore {
   const weight = 0.2; // 20% от общего score
 
   // Группируем по месяцам

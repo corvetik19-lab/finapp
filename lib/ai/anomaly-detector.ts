@@ -10,6 +10,16 @@
 
 import { SupabaseClient } from "@supabase/supabase-js";
 
+interface Transaction {
+  id: string;
+  amount: number;
+  category_id: string | null;
+  date: string;
+  categories?: {
+    name: string;
+  } | null;
+}
+
 export interface SpendingAlert {
   id: string;
   type: "overspending" | "large_transaction" | "category_spike" | "budget_risk";
@@ -241,8 +251,8 @@ export async function detectSpendingAnomalies(
  * Анализирует изменения трат по категориям
  */
 async function analyzeCategorySpikes(
-  currentMonthTransactions: any[],
-  previousMonthsTransactions: any[]
+  currentMonthTransactions: Transaction[],
+  previousMonthsTransactions: Transaction[]
 ): Promise<CategorySpending[]> {
   const categories = new Map<string, CategorySpending>();
 

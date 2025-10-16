@@ -75,7 +75,7 @@ export default function GoalForecastView() {
       <div className={styles.error}>
         <div className={styles.errorIcon}>📊</div>
         <h2>Нет финансовых планов</h2>
-        <p>Создайте финансовый план на странице "Планы" для просмотра прогноза достижения целей</p>
+        <p>Создайте финансовый план на странице &quot;Планы&quot; для просмотра прогноза достижения целей</p>
       </div>
     );
   }
@@ -122,7 +122,7 @@ export default function GoalForecastView() {
       },
       tooltip: {
         callbacks: {
-          label: (context: any) => {
+          label: (context: { dataset: { label?: string }; parsed: { y: number } }) => {
             return `${context.dataset.label}: ${context.parsed.y.toLocaleString("ru-RU")} ₽`;
           },
         },
@@ -132,7 +132,7 @@ export default function GoalForecastView() {
       y: {
         beginAtZero: true,
         ticks: {
-          callback: (value: any) => `${value.toLocaleString("ru-RU")} ₽`,
+          callback: (value: string | number) => `${Number(value).toLocaleString("ru-RU")} ₽`,
         },
       },
     },

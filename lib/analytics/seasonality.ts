@@ -10,6 +10,17 @@
 
 import { SupabaseClient } from "@supabase/supabase-js";
 
+interface Transaction {
+  id: string;
+  amount: number;
+  date: string;
+  occurred_at: string;
+  category_id: string | null;
+  categories?: {
+    name: string;
+  } | null;
+}
+
 export interface SeasonalityReport {
   by_month: MonthlyPattern[];
   by_season: SeasonPattern[];
@@ -121,7 +132,7 @@ export async function analyzeSeasonality(
   };
 }
 
-function analyzeByMonth(transactions: any[]): MonthlyPattern[] {
+function analyzeByMonth(transactions: Transaction[]): MonthlyPattern[] {
   const monthData = new Map<number, { total: number; count: number; categories: Map<string, number> }>();
 
   transactions.forEach((t) => {
@@ -176,7 +187,7 @@ function analyzeByMonth(transactions: any[]): MonthlyPattern[] {
   return result.sort((a, b) => a.month - b.month);
 }
 
-function analyzeBySeason(transactions: any[]): SeasonPattern[] {
+function analyzeBySeason(transactions: Transaction[]): SeasonPattern[] {
   const seasons: Array<{
     season: "winter" | "spring" | "summer" | "autumn";
     season_name: string;
@@ -227,7 +238,7 @@ function analyzeBySeason(transactions: any[]): SeasonPattern[] {
   return result;
 }
 
-function analyzeByWeekday(transactions: any[]): WeekdayPattern[] {
+function analyzeByWeekday(transactions: Transaction[]): WeekdayPattern[] {
   const weekdayData = new Map<number, { total: number; count: number; hours: Map<number, number> }>();
 
   transactions.forEach((t) => {
@@ -279,7 +290,7 @@ function analyzeByWeekday(transactions: any[]): WeekdayPattern[] {
   return result.sort((a, b) => a.weekday - b.weekday);
 }
 
-function analyzeByDayOfMonth(transactions: any[]): DayOfMonthPattern[] {
+function analyzeByDayOfMonth(transactions: Transaction[]): DayOfMonthPattern[] {
   const ranges = [
     { range: "1-10", days: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
     { range: "11-20", days: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
@@ -327,7 +338,7 @@ function analyzeByDayOfMonth(transactions: any[]): DayOfMonthPattern[] {
   return result;
 }
 
-function generateHeatmapData(transactions: any[]): HeatmapData {
+function generateHeatmapData(transactions: Transaction[]): HeatmapData {
   const monthNames = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
   
   // Группируем по категориям и месяцам

@@ -10,6 +10,17 @@
 
 import { SupabaseClient } from "@supabase/supabase-js";
 
+interface Transaction {
+  id: string;
+  amount: number;
+  date: string;
+  occurred_at: string;
+  category_id: string | null;
+  categories?: {
+    name: string;
+  } | null;
+}
+
 export interface TrendsReport {
   categories: CategoryTrend[];
   overall_trend: OverallTrend;
@@ -81,10 +92,10 @@ export async function analyzeTrends(
   const categoryData = groupByCategory(transactions);
 
   // Анализируем тренды по категориям
-  const categories = analyzeCategoryTrends(categoryData, monthsBack);
+  const categories = analyzeCategoryTrends(categoryData);
 
   // Общий тренд
-  const overallTrend = analyzeOverallTrend(transactions, monthsBack);
+  const overallTrend = analyzeOverallTrend(transactions);
 
   // Инсайты
   const insights = generateInsights(categories, overallTrend);
@@ -100,8 +111,8 @@ export async function analyzeTrends(
   };
 }
 
-function groupByCategory(transactions: any[]): Map<string, any[]> {
-  const map = new Map<string, any[]>();
+function groupByCategory(transactions: Transaction[]): Map<string, Transaction[]> {
+  const map = new Map<string, Transaction[]>();
 
   transactions.forEach((t) => {
     const category = t.categories?.name || "Без категории";
@@ -115,8 +126,7 @@ function groupByCategory(transactions: any[]): Map<string, any[]> {
 }
 
 function analyzeCategoryTrends(
-  categoryData: Map<string, any[]>,
-  monthsBack: number
+  categoryData: Map<string, Transaction[]>
 ): CategoryTrend[] {
   const trends: CategoryTrend[] = [];
 
@@ -144,7 +154,7 @@ function analyzeCategoryTrends(
   return trends;
 }
 
-function groupByMonth(transactions: any[]): MonthlyData[] {
+function groupByMonth(transactions: Transaction[]): MonthlyData[] {
   const monthMap = new Map<string, { amounts: number[]; count: number }>();
 
   transactions.forEach((t) => {
@@ -221,7 +231,7 @@ function calculateTrend(history: MonthlyData[]): CategoryTrend["trend"] {
   };
 }
 
-function analyzeOverallTrend(transactions: any[], monthsBack: number): OverallTrend {
+function analyzeOverallTrend(transactions: Transaction[]): OverallTrend {
   const totalAmount = transactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
   const avgPerTransaction = totalAmount / transactions.length;
 

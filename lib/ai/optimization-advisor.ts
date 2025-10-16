@@ -10,6 +10,16 @@
 
 import { SupabaseClient } from "@supabase/supabase-js";
 
+interface Transaction {
+  id: string;
+  amount: number;
+  category_id: string | null;
+  date: string;
+  categories?: {
+    name: string;
+  } | null;
+}
+
 export interface OptimizationOpportunity {
   id: string;
   category: string;
@@ -157,16 +167,16 @@ function getEmptyReport(): OptimizationReport {
 /**
  * Группирует транзакции по категориям и считает статистику
  */
-function analyzeCategorySpending(transactions: any[]): Record<
+function analyzeCategorySpending(transactions: Transaction[]): Record<
   string,
   {
     total: number;
     count: number;
     average: number;
-    transactions: any[];
+    transactions: Transaction[];
   }
 > {
-  const stats: Record<string, any> = {};
+  const stats: Record<string, { total: number; count: number; average: number; transactions: Transaction[] }> = {};
 
   transactions.forEach((t) => {
     const categoryName = t.categories?.name || "Без категории";
@@ -247,7 +257,7 @@ function calculateRecommendedLimits(monthlyIncome: number): Record<string, numbe
  * Находит возможности оптимизации
  */
 function findOptimizationOpportunities(
-  categoryStats: Record<string, any>,
+  categoryStats: Record<string, { total: number; count: number; average: number; transactions: Transaction[] }>,
   recommendedLimits: Record<string, number>
 ): OptimizationOpportunity[] {
   const opportunities: OptimizationOpportunity[] = [];
@@ -287,9 +297,9 @@ function findOptimizationOpportunities(
 /**
  * Детектит "денежные утечки"
  */
-function detectMoneyLeaks(transactions: any[]): MoneyLeak[] {
+function detectMoneyLeaks(transactions: Transaction[]): MoneyLeak[] {
   const leaks: MoneyLeak[] = [];
-  const categoryGroups: Record<string, any[]> = {};
+  const categoryGroups: Record<string, Transaction[]> = {};
 
   transactions.forEach((t) => {
     const cat = t.categories?.name || "Без категории";

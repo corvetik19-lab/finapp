@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createRSCClient } from "@/lib/supabase/server";
-import { compareMonthToMonth, compareYearToYear, compareCustomPeriods } from "@/lib/analytics/comparison";
+import { compareMonthToMonth, compareYearToYear } from "@/lib/analytics/comparison";
 
 export const dynamic = "force-dynamic";
 
