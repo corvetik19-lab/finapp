@@ -3,15 +3,41 @@
 import { getCommandsModel } from '@/lib/ai/openrouter';
 import { streamText, tool } from "ai";
 import { z } from "zod";
+
 export const runtime = "edge";
 export const maxDuration = 60;
 
-// ВАЖНО: tools без execute - модель сама вызывает их
-// Мы обрабатываем вызовы через API endpoint /api/chat/commands
+// Вспомогательная функция для вызова tool handlers через API (edge runtime)
+async function callToolHandler(toolName: string, parameters: Record<string, unknown>) {
+  try {
+    // На production используем VERCEL_URL, локально - localhost
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3000';
+    
+    const response = await fetch(`${baseUrl}/api/ai/tools`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ toolName, parameters }),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Tool ${toolName} error:`, errorText);
+      return { success: false, error: `HTTP ${response.status}` };
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error(`Error executing tool ${toolName}:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
 
 // Определяем инструменты (tools) для AI
-// TODO: Включить tools после настройки правильной обработки в edge runtime
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const tools = {
   // === УПРАВЛЕНИЕ КАРТАМИ ===
   addDebitCard: tool({
@@ -273,7 +299,7 @@ export async function POST(req: Request) {
     const result = streamText({
       model: getCommandsModel(),
       messages,
-      // tools, // Временно отключено
+      tools,
       system: `Ты — финансовый ассистент для приложения "Finapp". 
       
 Твоя задача — ПОЛНОЕ управление личными финансами и фитнесом пользователя через чат:
