@@ -142,6 +142,9 @@ export async function addFundsAction(formData: FormData): Promise<void> {
   }
 
   revalidatePath("/cards");
+  revalidatePath("/transactions");
+  revalidatePath("/reports");
+  revalidatePath("/dashboard");
 }
 
 function parseMoneyField(
@@ -262,6 +265,9 @@ export async function addCardAction(formData: FormData): Promise<void> {
   }
 
   revalidatePath("/cards");
+  revalidatePath("/transactions");
+  revalidatePath("/reports");
+  revalidatePath("/dashboard");
 }
 
 export async function updateCardAction(formData: FormData): Promise<void> {
@@ -313,6 +319,9 @@ export async function updateCardAction(formData: FormData): Promise<void> {
   }
 
   revalidatePath("/cards");
+  revalidatePath("/transactions");
+  revalidatePath("/reports");
+  revalidatePath("/dashboard");
 }
 
 export async function upsertStashAction(formData: FormData): Promise<void> {
@@ -374,6 +383,9 @@ export async function upsertStashAction(formData: FormData): Promise<void> {
   }
 
   revalidatePath("/cards");
+  revalidatePath("/transactions");
+  revalidatePath("/reports");
+  revalidatePath("/dashboard");
 }
 
 export async function transferStashAction(formData: FormData): Promise<void> {
@@ -461,4 +473,7 @@ export async function transferStashAction(formData: FormData): Promise<void> {
   }
 
   revalidatePath("/cards");
+  revalidatePath("/transactions");
+  revalidatePath("/reports");
+  revalidatePath("/dashboard");
 }

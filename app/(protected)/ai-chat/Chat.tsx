@@ -2,6 +2,13 @@
 
 import { useState, useRef, useEffect } from "react";
 import styles from "./Chat.module.css";
+import ChatSidebar from "./ChatSidebar";
+import {
+  getChatMessagesAction,
+  createChatAction,
+  saveMessageAction,
+  updateChatTitleAction,
+} from "./actions";
 
 interface ChatMessage {
   id: string;
@@ -30,24 +37,74 @@ export default function Chat() {
     all: []
   });
   const [showModelSelector, setShowModelSelector] = useState(false);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Загружаем список моделей при загрузке
+  // Создание нового чата
+  const handleNewChat = async () => {
+    try {
+      const chatId = await createChatAction(selectedModel);
+      if (chatId) {
+        setCurrentChatId(chatId);
+        setMessages([]);
+        setRefreshKey(prev => prev + 1);
+      }
+    } catch (error) {
+      console.error("Failed to create new chat:", error);
+    }
+  };
+
+  // Загружаем список моделей при загрузке (БЕЗ автосоздания чата)
   useEffect(() => {
-    async function loadModels() {
+    async function initialize() {
       try {
+        // Загружаем модели
         const res = await fetch("/api/ai/models");
         if (res.ok) {
           const data = await res.json();
           setModels(data);
         }
+        
+        setConnectionStatus("connected");
       } catch (error) {
-        console.error("Failed to load models:", error);
+        console.error("Failed to initialize:", error);
+        setConnectionStatus("error");
       }
     }
-    loadModels();
-    setConnectionStatus("connected");
+    initialize();
   }, []);
+
+  // Переключение на другой чат
+  const handleSelectChat = async (chatId: string | null) => {
+    if (chatId === currentChatId) return;
+
+    // Если null - сбрасываем выбор (все чаты удалены)
+    if (chatId === null) {
+      setCurrentChatId(null);
+      setMessages([]);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setCurrentChatId(chatId);
+      
+      // Загружаем историю сообщений
+      const history = await getChatMessagesAction(chatId);
+      const loadedMessages: ChatMessage[] = history.map((msg) => ({
+        id: msg.id,
+        role: msg.role as "user" | "assistant",
+        content: msg.content,
+      }));
+      
+      setMessages(loadedMessages);
+    } catch (error) {
+      console.error("Failed to load chat history:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Автоскролл вниз при новых сообщениях
   useEffect(() => {
@@ -60,6 +117,20 @@ export default function Chat() {
     
     if (!input.trim() || isLoading) return;
 
+    // Если нет активного чата, создаем новый
+    let chatId = currentChatId;
+    if (!chatId) {
+      try {
+        chatId = await createChatAction(selectedModel);
+        if (!chatId) return;
+        setCurrentChatId(chatId);
+        setRefreshKey(prev => prev + 1);
+      } catch (error) {
+        console.error("Failed to create chat:", error);
+        return;
+      }
+    }
+
     const currentInput = input;
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -70,6 +141,19 @@ export default function Chat() {
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
+
+    // Сохраняем сообщение пользователя в БД
+    await saveMessageAction(chatId, "user", currentInput);
+
+    // Обновляем название чата из первого сообщения
+    if (messages.length === 0) {
+      const title = currentInput.length > 50 
+        ? currentInput.substring(0, 50) + "..." 
+        : currentInput;
+      await updateChatTitleAction(chatId, title);
+      // Обновляем список чатов в боковой панели
+      setRefreshKey(prev => prev + 1);
+    }
 
     try {
       // Проверяем, является ли это командой
@@ -102,7 +186,7 @@ export default function Chat() {
       }
 
       // Если не команда, используем обычный AI чат со стримингом
-      const response = await fetch("/api/chat", {
+      const response = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -118,18 +202,45 @@ export default function Chat() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      // Читаем полный текст ответа
-      const text = await response.text();
-
-      // Добавляем ответ ассистента
+      // Создаем временное сообщение для AI
+      const assistantMessageId = (Date.now() + 1).toString();
       setMessages((prev) => [
         ...prev,
         {
-          id: (Date.now() + 1).toString(),
+          id: assistantMessageId,
           role: "assistant",
-          content: text,
+          content: "",
         },
       ]);
+
+      // Читаем потоковый ответ
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedText = "";
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          accumulatedText += chunk;
+
+          // Обновляем сообщение по мере получения данных
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === assistantMessageId
+                ? { ...msg, content: accumulatedText }
+                : msg
+            )
+          );
+        }
+
+        // Сохраняем ответ AI в БД после завершения стрима
+        if (accumulatedText && chatId) {
+          await saveMessageAction(chatId, "assistant", accumulatedText);
+        }
+      }
     } catch (error) {
       console.error("Chat error:", error);
       setConnectionStatus("error");
@@ -150,12 +261,22 @@ export default function Chat() {
   };
 
   return (
-    <div className={styles.chatContainer}>
-      <div className={styles.chatHeader}>
-        <div className={styles.headerContent}>
-          <h2 className={styles.headerTitle}>ChatGPT</h2>
-        </div>
-        <div className={styles.modelSelector}>
+    <div className={styles.chatLayout}>
+      {/* Боковая панель со списком чатов */}
+      <ChatSidebar
+        currentChatId={currentChatId}
+        onSelectChat={handleSelectChat}
+        onNewChat={handleNewChat}
+        refreshKey={refreshKey}
+      />
+
+      {/* Основная область чата */}
+      <div className={styles.chatContainer}>
+        <div className={styles.chatHeader}>
+          <div className={styles.headerContent}>
+            <h2 className={styles.headerTitle}>ChatGPT</h2>
+          </div>
+          <div className={styles.modelSelector}>
           <button 
             className={styles.modelButton}
             onClick={() => setShowModelSelector(!showModelSelector)}
@@ -226,9 +347,11 @@ export default function Chat() {
             </div>
           )}
         </div>
+        {/* Конец modelSelector */}
       </div>
+      {/* Конец chatHeader */}
 
-      <div className={styles.chatMessages}>
+        <div className={styles.chatMessages}>
         {messages.length === 0 && (
           <>
             <div className={styles.welcomeScreen}>
@@ -334,6 +457,7 @@ export default function Chat() {
           </form>
         </div>
       </div>
+    </div>
     </div>
   );
 }

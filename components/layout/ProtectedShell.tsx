@@ -48,6 +48,8 @@ type ProtectedShellProps = {
 
 export default function ProtectedShell({ children, userData }: ProtectedShellProps) {
   const pathname = usePathname();
+  const isAiChatPage = pathname === "/ai-chat";
+  
   return (
     <NotificationProvider>
       <OnboardingTour />
@@ -61,7 +63,20 @@ export default function ProtectedShell({ children, userData }: ProtectedShellPro
           </div>
           <nav className={styles.nav} aria-label="Основная навигация">
             {nav.map((item) => {
-              const active = pathname === item.href || pathname?.startsWith(item.href + "/");
+              // Определяем активный пункт
+              let active = false;
+              if (pathname === item.href) {
+                // Точное совпадение
+                active = true;
+              } else if (pathname && pathname.startsWith(item.href + "/")) {
+                // Подстраница - только для определенных разделов
+                // НЕ активируем /settings для /settings/notifications
+                // НЕ активируем /notifications для /notifications/...
+                if (item.href !== "/settings" && item.href !== "/notifications") {
+                  active = true;
+                }
+              }
+              
               return (
                 <Link key={item.href} href={item.href} className={active ? styles.active : undefined}>
                   <span className="material-icons" aria-hidden>
@@ -83,7 +98,9 @@ export default function ProtectedShell({ children, userData }: ProtectedShellPro
               <UserProfileDropdown userData={userData} />
             </div>
           </header>
-          <main className={styles.main}>{children}</main>
+          <main className={isAiChatPage ? styles.mainNoScroll : styles.main}>
+            {children}
+          </main>
         </div>
       </div>
     </NotificationProvider>

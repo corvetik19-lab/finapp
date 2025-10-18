@@ -13,7 +13,6 @@ export async function GET() {
       OPTIONAL_HEADERS.categoryName,
       OPTIONAL_HEADERS.counterparty,
       OPTIONAL_HEADERS.note,
-      OPTIONAL_HEADERS.tags,
     ];
 
     // Комментарии и инструкции
@@ -26,7 +25,6 @@ export async function GET() {
         [OPTIONAL_HEADERS.categoryName]: "# Категория: название категории",
         [OPTIONAL_HEADERS.counterparty]: "# Контрагент: кому платили/от кого получили",
         [OPTIONAL_HEADERS.note]: "# Заметка: комментарий",
-        [OPTIONAL_HEADERS.tags]: "# Теги: через запятую",
       },
       {
         [REQUIRED_HEADERS.occurredAt]: "# ПРИМЕРЫ (можно удалить строки с примерами):",
@@ -36,41 +34,19 @@ export async function GET() {
         [OPTIONAL_HEADERS.categoryName]: "",
         [OPTIONAL_HEADERS.counterparty]: "",
         [OPTIONAL_HEADERS.note]: "",
-        [OPTIONAL_HEADERS.tags]: "",
       },
     ];
 
-    // Примеры транзакций
+    // Пример транзакции (один для ориентира)
     const exampleRows = [
       {
-        [REQUIRED_HEADERS.occurredAt]: "01.01.2025 12:00",
+        [REQUIRED_HEADERS.occurredAt]: "17.10.2025 14:30:00",
         [REQUIRED_HEADERS.direction]: "расход",
-        [REQUIRED_HEADERS.amountMajor]: "1500.50",
+        [REQUIRED_HEADERS.amountMajor]: "1250.50",
         [OPTIONAL_HEADERS.accountName]: "Основная карта",
         [OPTIONAL_HEADERS.categoryName]: "Продукты",
-        [OPTIONAL_HEADERS.counterparty]: "Магазин Пятёрочка",
-        [OPTIONAL_HEADERS.note]: "Покупки на неделю",
-        [OPTIONAL_HEADERS.tags]: "еда, дом",
-      },
-      {
-        [REQUIRED_HEADERS.occurredAt]: "02.01.2025",
-        [REQUIRED_HEADERS.direction]: "доход",
-        [REQUIRED_HEADERS.amountMajor]: "50000",
-        [OPTIONAL_HEADERS.accountName]: "Зарплатная карта",
-        [OPTIONAL_HEADERS.categoryName]: "Зарплата",
-        [OPTIONAL_HEADERS.counterparty]: "ООО Рога и Копыта",
-        [OPTIONAL_HEADERS.note]: "Аванс за январь",
-        [OPTIONAL_HEADERS.tags]: "работа",
-      },
-      {
-        [REQUIRED_HEADERS.occurredAt]: "2025-01-03T10:30:00Z",
-        [REQUIRED_HEADERS.direction]: "expense",
-        [REQUIRED_HEADERS.amountMajor]: "2500.00",
-        [OPTIONAL_HEADERS.accountName]: "",
-        [OPTIONAL_HEADERS.categoryName]: "Транспорт",
-        [OPTIONAL_HEADERS.counterparty]: "Яндекс Такси",
-        [OPTIONAL_HEADERS.note]: "",
-        [OPTIONAL_HEADERS.tags]: "",
+        [OPTIONAL_HEADERS.counterparty]: "Пятёрочка",
+        [OPTIONAL_HEADERS.note]: "Продукты на неделю",
       },
     ];
 
@@ -83,7 +59,6 @@ export async function GET() {
       [OPTIONAL_HEADERS.categoryName]: "",
       [OPTIONAL_HEADERS.counterparty]: "",
       [OPTIONAL_HEADERS.note]: "",
-      [OPTIONAL_HEADERS.tags]: "",
     }));
 
     const allRows = [...commentRows, ...exampleRows, ...emptyRows];

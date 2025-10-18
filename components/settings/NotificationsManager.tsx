@@ -133,6 +133,26 @@ export default function NotificationSettingsPage() {
           <p className={styles.subtitle}>
             Управляйте типами уведомлений, которые вы хотите получать
           </p>
+          <a 
+            href="/settings/notifications" 
+            className={styles.advancedLink}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              marginTop: "12px",
+              padding: "8px 16px",
+              background: "#4CAF50",
+              color: "white",
+              borderRadius: "6px",
+              textDecoration: "none",
+              fontSize: "14px",
+              fontWeight: "500"
+            }}
+          >
+            <span className="material-icons" style={{ fontSize: "18px" }}>settings</span>
+            Расширенные настройки (Telegram, расписание)
+          </a>
         </div>
         <div className={styles.stats}>
           <div className={styles.stat}>
@@ -141,7 +161,7 @@ export default function NotificationSettingsPage() {
           </div>
           <div className={styles.stat}>
             <span className={styles.statValue}>
-              {notifications.filter((n) => !n.read).length}
+              {notifications.filter((n: { read: boolean }) => !n.read).length}
             </span>
             <span className={styles.statLabel}>Непрочитанных</span>
           </div>

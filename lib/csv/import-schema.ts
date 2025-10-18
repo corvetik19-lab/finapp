@@ -104,15 +104,16 @@ function parseDate(value: string): ParseResult<string> {
     return { success: true, data: direct.toISOString() };
   }
 
-  const dotFormatMatch = trimmed.match(/^([0-3]\d)\.([0-1]\d)\.(\d{4})(?:\s+([0-2]\d):([0-5]\d))?$/);
+  const dotFormatMatch = trimmed.match(/^([0-3]\d)\.([0-1]\d)\.(\d{4})(?:\s+([0-2]\d):([0-5]\d)(?::([0-5]\d))?)?$/);
   if (dotFormatMatch) {
-    const [, dd, mm, yyyy, hh = "00", min = "00"] = dotFormatMatch;
+    const [, dd, mm, yyyy, hh = "00", min = "00", sec = "00"] = dotFormatMatch;
     const day = Number.parseInt(dd, 10);
     const monthIndex = Number.parseInt(mm, 10) - 1;
     const year = Number.parseInt(yyyy, 10);
     const hours = Number.parseInt(hh, 10);
     const minutes = Number.parseInt(min, 10);
-    const iso = new Date(Date.UTC(year, monthIndex, day, hours, minutes, 0, 0));
+    const seconds = Number.parseInt(sec, 10);
+    const iso = new Date(Date.UTC(year, monthIndex, day, hours, minutes, seconds, 0));
     if (!Number.isNaN(iso.getTime())) {
       return { success: true, data: iso.toISOString() };
     }

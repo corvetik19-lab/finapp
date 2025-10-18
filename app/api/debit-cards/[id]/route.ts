@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createRouteClient } from "@/lib/supabase/helpers";
 
 type RouteContext = {
@@ -85,6 +86,12 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
         { status: 500 }
       );
     }
+
+    // Обновляем кэш всех зависимых страниц
+    revalidatePath("/cards");
+    revalidatePath("/transactions");
+    revalidatePath("/reports");
+    revalidatePath("/dashboard");
 
     return NextResponse.json({ success: true });
   } catch (error) {

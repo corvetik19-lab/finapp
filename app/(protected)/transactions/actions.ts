@@ -233,6 +233,9 @@ export async function deleteTransactionAction(
     if (!id) throw new Error("Нет id транзакции");
     await deleteTransactionService(id);
     revalidatePath("/transactions");
+    revalidatePath("/cards");
+    revalidatePath("/reports");
+    revalidatePath("/dashboard");
     return { ok: true };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Ошибка удаления";
@@ -276,6 +279,9 @@ export async function createTransaction(formData: FormData) {
   await createTransactionService(parsed.data);
 
   revalidatePath("/transactions");
+  revalidatePath("/cards");
+  revalidatePath("/reports");
+  revalidatePath("/dashboard");
 }
 
 export async function createTransactionFromValues(values: TransactionFormValues): Promise<TxnActionState> {
@@ -287,6 +293,9 @@ export async function createTransactionFromValues(values: TransactionFormValues)
       amount_major: Number(parsed.amount_major.replace(/\s+/g, "").replace(",", ".")),
     });
     revalidatePath("/transactions");
+    revalidatePath("/cards");
+    revalidatePath("/reports");
+    revalidatePath("/dashboard");
     return { ok: true };
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Не удалось сохранить транзакцию";
@@ -319,6 +328,9 @@ export async function createTransferAction(
       note: parsed.note ?? null,
     });
     revalidatePath("/transactions");
+    revalidatePath("/cards");
+    revalidatePath("/reports");
+    revalidatePath("/dashboard");
     return { ok: true };
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Не удалось выполнить перевод";
@@ -338,6 +350,9 @@ export async function createTransferFromValues(values: TransferFormValues): Prom
       note: parsed.note ?? null,
     });
     revalidatePath("/transactions");
+    revalidatePath("/cards");
+    revalidatePath("/reports");
+    revalidatePath("/dashboard");
     return { ok: true };
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Не удалось выполнить перевод";
@@ -362,6 +377,9 @@ export async function updateTransactionFromValues(values: TransactionEditFormVal
       },
     });
     revalidatePath("/transactions");
+    revalidatePath("/cards");
+    revalidatePath("/reports");
+    revalidatePath("/dashboard");
     return { ok: true };
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Ошибка обновления";
@@ -530,7 +548,9 @@ export async function importTransactionsAction(rows: CsvNormalizedRow[]): Promis
     const { error: insertError } = await supabase.from("transactions").insert(recordsToInsert);
     if (insertError) throw insertError;
     revalidatePath("/transactions");
+    revalidatePath("/cards");
     revalidatePath("/reports");
+    revalidatePath("/dashboard");
   }
 
   const messageParts: string[] = [];

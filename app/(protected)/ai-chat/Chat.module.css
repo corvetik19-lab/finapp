@@ -1,10 +1,21 @@
-/* ChatGPT-style Modern Design */
+/* ChatGPT-style Modern Design - Полностью фиксированный layout */
+
+.chatLayout {
+  display: flex;
+  flex: 1 1 0%; /* Важно: 0% чтобы не зависеть от контента */
+  width: 100%;
+  min-height: 0; /* Важно для flex */
+  overflow: hidden;
+}
+
 .chatContainer {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 80px);
+  flex: 1 1 0%; /* Важно: 0% чтобы не зависеть от контента */
+  min-height: 0; /* Важно для flex */
   background: #ffffff;
   position: relative;
+  overflow: hidden;
 }
 
 /* Убираем старый header, добавляем минимальный топбар */
@@ -15,9 +26,8 @@
   padding: 12px 24px;
   background: #ffffff;
   border-bottom: 1px solid #ececf1;
-  position: sticky;
-  top: 0;
   z-index: 10;
+  flex-shrink: 0;
 }
 
 .headerContent {
@@ -70,7 +80,10 @@
 /* Область сообщений - центрированная */
 .chatMessages {
   flex: 1;
+  min-height: 0; /* Важно для правильной работы overflow */
+  max-height: 100%; /* Не превышает доступную высоту */
   overflow-y: auto;
+  overflow-x: hidden;
   background: #ffffff;
   scroll-behavior: smooth;
   display: flex;
@@ -269,15 +282,16 @@
   }
 }
 
-/* Input area - ChatGPT style */
+/* Input area - ChatGPT style - всегда внизу */
 .chatInputContainer {
-  padding: 0 16px 24px;
+  padding: 16px 16px 24px;
   background: #ffffff;
   display: flex;
   justify-content: center;
-  position: sticky;
-  bottom: 0;
   border-top: 1px solid #ececf1;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
 }
 
 .inputWrapper {

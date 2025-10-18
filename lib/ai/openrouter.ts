@@ -33,7 +33,7 @@ export const openrouter = createOpenRouter({
   apiKey: OPENROUTER_API_KEY,
   headers: {
     "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "https://finappka.vercel.app",
-    "X-Title": "FinApp - Финансовый трекер",
+    "X-Title": "FinApp - Financial Tracker",
   },
 });
 
