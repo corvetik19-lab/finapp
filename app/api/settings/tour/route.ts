@@ -27,9 +27,34 @@ export async function GET() {
       .eq("user_id", user.id)
       .single();
 
+    // Если записи нет - создаём её с дефолтными значениями
+    if (preferencesError && preferencesError.code === 'PGRST116') {
+      const { data: newPrefs, error: insertError } = await supabase
+        .from("user_preferences")
+        .insert({
+          user_id: user.id,
+          tour_enabled: true,
+          tour_completed: { ...DEFAULT_TOUR_STATUS },
+        })
+        .select("tour_enabled, tour_completed")
+        .single();
+      
+      if (insertError) {
+        console.error("Error creating tour settings:", insertError);
+        return NextResponse.json({
+          enabled: true,
+          completedTours: { ...DEFAULT_TOUR_STATUS },
+        });
+      }
+      
+      return NextResponse.json({
+        enabled: newPrefs.tour_enabled,
+        completedTours: newPrefs.tour_completed,
+      });
+    }
+
     if (preferencesError) {
       console.error("Error fetching tour settings:", preferencesError);
-      // Возвращаем дефолтные настройки
       return NextResponse.json({
         enabled: true,
         completedTours: { ...DEFAULT_TOUR_STATUS },
@@ -65,18 +90,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Сохраняем настройки тура в user_preferences
-    const { error: updateError } = await supabase
+    // Сохраняем настройки тура в user_preferences (upsert создаст запись если её нет)
+    const { error: upsertError } = await supabase
       .from("user_preferences")
-      .update({
+      .upsert({
+        user_id: user.id,
         tour_enabled: enabled,
         tour_completed: completedTours ?? { ...DEFAULT_TOUR_STATUS },
         updated_at: new Date().toISOString(),
-      })
-      .eq("user_id", user.id);
+      }, {
+        onConflict: 'user_id'
+      });
 
-    if (updateError) {
-      console.error("Error updating tour settings:", updateError);
+    if (upsertError) {
+      console.error("Error updating tour settings:", upsertError);
       return NextResponse.json(
         { error: "Failed to update tour settings" },
         { status: 500 }

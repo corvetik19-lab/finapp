@@ -6,6 +6,7 @@ import UserProfileDropdown from "./UserProfileDropdown";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import OnboardingTour from "@/components/onboarding/OnboardingTour";
+import TourWrapper from "@/components/onboarding/TourWrapper";
 import styles from "./ProtectedShell.module.css";
 
 type NavItem = {
@@ -131,9 +132,10 @@ export default function ProtectedShell({ children, userData }: ProtectedShellPro
   };
   
   return (
-    <NotificationProvider>
-      <OnboardingTour />
-      <div className={styles.root}>
+    <TourWrapper>
+      <NotificationProvider>
+        <OnboardingTour />
+        <div className={styles.root}>
         <aside className={styles.sidebar}>
           <div className={styles.brand}>
             <span className="material-icons" aria-hidden>
@@ -275,5 +277,6 @@ export default function ProtectedShell({ children, userData }: ProtectedShellPro
         </nav>
       </div>
     </NotificationProvider>
+    </TourWrapper>
   );
 }

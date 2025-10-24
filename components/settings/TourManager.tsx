@@ -119,7 +119,29 @@ export default function TourManager() {
               <input
                 type="checkbox"
                 checked={enabled}
-                onChange={(e) => setEnabled(e.target.checked)}
+                onChange={async (e) => {
+                  const newValue = e.target.checked;
+                  setEnabled(newValue);
+                  
+                  // Автоматически сохраняем при изменении
+                  try {
+                    await fetch("/api/settings/tour", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        enabled: newValue,
+                        completedTours,
+                      }),
+                    });
+                    setMessage({ 
+                      type: "success", 
+                      text: newValue ? "Туры включены" : "Туры отключены" 
+                    });
+                  } catch (error) {
+                    console.error("Error saving tour settings:", error);
+                    setMessage({ type: "error", text: "Не удалось сохранить настройки" });
+                  }
+                }}
                 style={{ 
                   width: "20px", 
                   height: "20px",
