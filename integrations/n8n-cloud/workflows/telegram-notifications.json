@@ -1,0 +1,186 @@
+{
+  "name": "Finappka: Telegram Notifications",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Every 5 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.FINAPPKA_BASE_URL}}/api/v1/transactions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "limit",
+              "value": "5"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-get-transactions",
+      "name": "Get Recent Transactions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [470, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Finappka API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Фильтруем только транзакции за последние 5 минут\nconst transactions = $input.all()[0].json.transactions || [];\nconst fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);\n\nconst recentTx = transactions.filter(tx => {\n  const txDate = new Date(tx.created_at);\n  return txDate > fiveMinutesAgo;\n});\n\nreturn recentTx.map(tx => ({\n  json: {\n    id: tx.id,\n    amount_rub: (tx.amount / 100).toFixed(2),\n    direction: tx.direction,\n    direction_emoji: tx.direction === 'expense' ? '💸' : '💰',\n    category: tx.category?.name || 'Без категории',\n    account: tx.account?.name || 'Без счёта',\n    note: tx.note || 'Без заметки',\n    date: new Date(tx.occurred_at).toLocaleString('ru-RU')\n  }\n}));"
+      },
+      "id": "code-filter",
+      "name": "Filter Last 5 Minutes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-items",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-has-transactions",
+      "name": "Has New Transactions?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [910, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$env.TELEGRAM_CHAT_ID}}",
+        "text": "={{$json.direction_emoji}} **Новая транзакция!**\n\n💵 **Сумма:** {{$json.amount_rub}}₽\n📁 **Категория:** {{$json.category}}\n💳 **Счёт:** {{$json.account}}\n📝 **Заметка:** {{$json.note}}\n📅 **Дата:** {{$json.date}}",
+        "additionalFields": {
+          "parseMode": "Markdown"
+        }
+      },
+      "id": "telegram",
+      "name": "Send to Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1130, 200],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "no-op",
+      "name": "No New Transactions",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1130, 400]
+    }
+  ],
+  "connections": {
+    "Every 5 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Get Recent Transactions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Recent Transactions": {
+      "main": [
+        [
+          {
+            "node": "Filter Last 5 Minutes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Last 5 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Has New Transactions?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has New Transactions?": {
+      "main": [
+        [
+          {
+            "node": "Send to Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No New Transactions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {},
+  "tags": [
+    {
+      "createdAt": "2024-10-23T00:00:00.000Z",
+      "updatedAt": "2024-10-23T00:00:00.000Z",
+      "id": "finappka",
+      "name": "finappka"
+    }
+  ],
+  "triggerCount": 0,
+  "updatedAt": "2024-10-23T00:00:00.000Z",
+  "versionId": "1"
+}

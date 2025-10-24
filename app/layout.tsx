@@ -41,14 +41,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru">
+    <html lang="ru" className="light-theme">
       <head>
         <link
           href="https://fonts.googleapis.com/icon?family=Material+Icons"
           rel="stylesheet"
         />
       </head>
-      <body className={styles.fonts}>
+      <body className={`antialiased ${styles.fonts}`}>
         <ToastProvider>
           {children}
           <ToastContainer />

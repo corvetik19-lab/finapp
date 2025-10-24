@@ -10,9 +10,9 @@
   align-items: flex-start;
   gap: 16px;
   padding: 20px 24px;
-  background: var(--card-bg);
-  border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
 }
 
 .titleGroup {
@@ -22,9 +22,9 @@
 }
 
 .title {
-  font-size: 26px;
+  font-size: 20px;
   font-weight: 600;
-  color: var(--primary-dark);
+  color: #111827;
 }
 
 .subtitle {
@@ -41,22 +41,20 @@
 .addButton {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
-  border-radius: 10px;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
   border: none;
-  background: var(--primary-color);
+  background: #3b82f6;
   color: #fff;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  box-shadow: 0 12px 24px rgba(21, 101, 192, 0.2);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .addButton:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 16px 28px rgba(21, 101, 192, 0.28);
+  background: #2563eb;
 }
 
 .secondaryButton {

@@ -9,6 +9,7 @@ import {
   saveMessageAction,
   updateChatTitleAction,
 } from "./actions";
+import { getQuickCommands } from "@/lib/ai/commands";
 
 interface ChatMessage {
   id: string;
@@ -31,15 +32,20 @@ export default function Chat() {
   >("checking");
   const [errorMessage, setErrorMessage] = useState("");
   const [selectedModel, setSelectedModel] = useState("openai/gpt-4o-mini");
-  const [models, setModels] = useState<{ recommended: AIModel[]; free: AIModel[]; all: AIModel[] }>({ 
+  const [models, setModels] = useState<{ recommended: AIModel[]; free: AIModel[]; all: AIModel[]; other?: AIModel[] }>({ 
     recommended: [], 
     free: [],
-    all: []
+    all: [],
+    other: []
   });
   const [showModelSelector, setShowModelSelector] = useState(false);
+  const [modelSearchQuery, setModelSearchQuery] = useState("");
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const modelSelectorRef = useRef<HTMLDivElement>(null);
 
   // Создание нового чата
   const handleNewChat = async () => {
@@ -55,17 +61,24 @@ export default function Chat() {
     }
   };
 
-  // Загружаем список моделей при загрузке (БЕЗ автосоздания чата)
+  // Монтирование компонента и загрузка состояния из localStorage
+  useEffect(() => {
+    setIsMounted(true);
+    const saved = localStorage.getItem('aiChatSidebarCollapsed');
+    if (saved !== null) {
+      setIsSidebarCollapsed(saved === 'true');
+    }
+  }, []);
+
+  // Загружаем список моделей при загрузке
   useEffect(() => {
     async function initialize() {
       try {
-        // Загружаем модели
         const res = await fetch("/api/ai/models");
         if (res.ok) {
           const data = await res.json();
           setModels(data);
         }
-        
         setConnectionStatus("connected");
       } catch (error) {
         console.error("Failed to initialize:", error);
@@ -75,11 +88,138 @@ export default function Chat() {
     initialize();
   }, []);
 
+  // Сохраняем состояние сворачивания в localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('aiChatSidebarCollapsed', String(isSidebarCollapsed));
+    }
+  }, [isSidebarCollapsed]);
+
+  // Закрываем селектор моделей при клике вне его
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (modelSelectorRef.current && !modelSelectorRef.current.contains(event.target as Node)) {
+        setShowModelSelector(false);
+      }
+    }
+
+    if (showModelSelector) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [showModelSelector]);
+
+  // Фильтрация моделей по поисковому запросу
+  const filterModels = (modelList: AIModel[]) => {
+    if (!modelSearchQuery.trim()) return modelList;
+    
+    const query = modelSearchQuery.toLowerCase();
+    return modelList.filter(model => 
+      model.name.toLowerCase().includes(query) ||
+      model.id.toLowerCase().includes(query)
+    );
+  };
+
+  // Форматирование ответа ассистента без markdown-звёздочек
+  const parseAssistantMessage = (content: string) => {
+    const cleaned = content
+      .replace(/\*\*/g, "")
+      .replace(/^[-•]\s*/gm, "")
+      .trim();
+
+    const lines = cleaned
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    const items: { icon: string; title: string; description: string }[] = [];
+    const paragraphs: string[] = [];
+
+    const isIcon = (value: string) => {
+      if (!value) return false;
+      const icon = Array.from(value)[0];
+      if (!icon) return false;
+      const codePoint = icon.codePointAt(0);
+      if (!codePoint) return false;
+      return (
+        (codePoint >= 0x1f300 && codePoint <= 0x1f9ff) ||
+        (codePoint >= 0x1fa70 && codePoint <= 0x1faff) ||
+        (codePoint >= 0x2600 && codePoint <= 0x26ff) ||
+        (codePoint >= 0x2700 && codePoint <= 0x27bf) ||
+        icon === "•"
+      );
+    };
+
+    lines.forEach((line) => {
+      const structuredMatch = line.match(/^(\S+)\s+([^:]+):\s*(.+)$/);
+      if (structuredMatch) {
+        const iconCandidate = Array.from(structuredMatch[1])[0] || "";
+        if (isIcon(iconCandidate)) {
+          items.push({
+            icon: iconCandidate,
+            title: structuredMatch[2].trim(),
+            description: structuredMatch[3].trim(),
+          });
+          return;
+        }
+      }
+
+      const iconMatch = line.match(/^(\S+)\s+(.+)$/);
+      if (iconMatch) {
+        const iconCandidate = Array.from(iconMatch[1])[0] || "";
+        if (isIcon(iconCandidate)) {
+          items.push({
+            icon: iconCandidate,
+            title: iconMatch[2].trim(),
+            description: "",
+          });
+          return;
+        }
+      }
+
+      paragraphs.push(line);
+    });
+
+    return { items, paragraphs };
+  };
+
+  const renderAssistantMessage = (content: string) => {
+    const { items, paragraphs } = parseAssistantMessage(content);
+
+    if (!items.length && !paragraphs.length) {
+      return <p>{content}</p>;
+    }
+
+    return (
+      <div className={styles.assistantMessageWrapper}>
+        {paragraphs.map((text, index) => (
+          <p key={`paragraph-${index}`}>{text}</p>
+        ))}
+        {items.length > 0 && (
+          <div className={styles.assistantList}>
+            {items.map((item, index) => (
+              <div className={styles.assistantListItem} key={`item-${index}`}>
+                <div className={styles.assistantListIcon}>{item.icon}</div>
+                <div className={styles.assistantListContent}>
+                  <div className={styles.assistantListTitle}>{item.title}</div>
+                  {item.description && (
+                    <div className={styles.assistantListDescription}>{item.description}</div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Переключение на другой чат
   const handleSelectChat = async (chatId: string | null) => {
     if (chatId === currentChatId) return;
 
-    // Если null - сбрасываем выбор (все чаты удалены)
     if (chatId === null) {
       setCurrentChatId(null);
       setMessages([]);
@@ -87,37 +227,31 @@ export default function Chat() {
     }
 
     try {
-      setIsLoading(true);
       setCurrentChatId(chatId);
-      
-      // Загружаем историю сообщений
       const history = await getChatMessagesAction(chatId);
       const loadedMessages: ChatMessage[] = history.map((msg) => ({
         id: msg.id,
         role: msg.role as "user" | "assistant",
         content: msg.content,
       }));
-      
       setMessages(loadedMessages);
     } catch (error) {
       console.error("Failed to load chat history:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  // Автоскролл вниз при новых сообщениях
+  // Автоскролл
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Обработчик отправки с проверкой команд и стримингом
+  // Обработчик отправки
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!input.trim() || isLoading) return;
 
-    // Если нет активного чата, создаем новый
+    // Создаем чат если нужно
     let chatId = currentChatId;
     if (!chatId) {
       try {
@@ -142,50 +276,59 @@ export default function Chat() {
     setInput("");
     setIsLoading(true);
 
-    // Сохраняем сообщение пользователя в БД
     await saveMessageAction(chatId, "user", currentInput);
 
-    // Обновляем название чата из первого сообщения
+    // Обновляем название чата
     if (messages.length === 0) {
       const title = currentInput.length > 50 
         ? currentInput.substring(0, 50) + "..." 
         : currentInput;
       await updateChatTitleAction(chatId, title);
-      // Обновляем список чатов в боковой панели
       setRefreshKey(prev => prev + 1);
     }
 
     try {
-      // Проверяем, является ли это командой
-      const commandCheck = await fetch("/api/chat/commands", {
+      // НОВОЕ: Проверяем, является ли это командой
+      const commandResponse = await fetch("/api/chat/execute-command", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: currentInput, execute: true }),
+        body: JSON.stringify({ command: currentInput }),
       });
 
-      if (commandCheck.ok) {
-        const commandData = await commandCheck.json();
+      if (commandResponse.ok) {
+        const commandResult = await commandResponse.json();
         
-        // Если команда выполнена успешно
-        if (
-          commandData.executed &&
-          commandData.parsed.confidence >= 70 &&
-          commandData.result.success
-        ) {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: (Date.now() + 1).toString(),
-              role: "assistant",
-              content: commandData.result.message,
-            },
-          ]);
+        // Если команда успешно выполнена
+        if (commandResult.success) {
+          const assistantMessage: ChatMessage = {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: commandResult.message,
+          };
+          
+          setMessages((prev) => [...prev, assistantMessage]);
+          await saveMessageAction(chatId, "assistant", commandResult.message);
+          setIsLoading(false);
+          return; // Завершаем, не отправляя в AI
+        }
+        
+        // Если команда не распознана (isUnknown), продолжаем в AI
+        if (!commandResult.isUnknown) {
+          // Команда распознана но произошла ошибка
+          const assistantMessage: ChatMessage = {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: commandResult.message || "Ошибка при выполнении команды",
+          };
+          
+          setMessages((prev) => [...prev, assistantMessage]);
+          await saveMessageAction(chatId, "assistant", assistantMessage.content);
           setIsLoading(false);
           return;
         }
       }
 
-      // Если не команда, используем обычный AI чат со стримингом
+      // Если команда не распознана или произошла ошибка - отправляем запрос к AI
       const response = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -194,7 +337,6 @@ export default function Chat() {
             role: m.role,
             content: m.content,
           })),
-          model: selectedModel,
         }),
       });
 
@@ -226,7 +368,7 @@ export default function Chat() {
           const chunk = decoder.decode(value, { stream: true });
           accumulatedText += chunk;
 
-          // Обновляем сообщение по мере получения данных
+          // Обновляем сообщение
           setMessages((prev) =>
             prev.map((msg) =>
               msg.id === assistantMessageId
@@ -236,7 +378,7 @@ export default function Chat() {
           );
         }
 
-        // Сохраняем ответ AI в БД после завершения стрима
+        // Сохраняем ответ AI в БД
         if (accumulatedText && chatId) {
           await saveMessageAction(chatId, "assistant", accumulatedText);
         }
@@ -247,217 +389,381 @@ export default function Chat() {
       setErrorMessage(
         error instanceof Error ? error.message : "Ошибка при отправке сообщения"
       );
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          role: "assistant",
-          content: "❌ Извините, произошла ошибка. Попробуйте ещё раз.",
-        },
-      ]);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className={styles.chatLayout}>
-      {/* Боковая панель со списком чатов */}
-      <ChatSidebar
-        currentChatId={currentChatId}
-        onSelectChat={handleSelectChat}
-        onNewChat={handleNewChat}
-        refreshKey={refreshKey}
-      />
+    <div className={styles.container}>
+      {isMounted && (
+        <ChatSidebar
+          currentChatId={currentChatId}
+          onSelectChat={handleSelectChat}
+          onNewChat={handleNewChat}
+          refreshKey={refreshKey}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        />
+      )}
 
-      {/* Основная область чата */}
-      <div className={styles.chatContainer}>
-        <div className={styles.chatHeader}>
-          <div className={styles.headerContent}>
-            <h2 className={styles.headerTitle}>ChatGPT</h2>
-          </div>
-          <div className={styles.modelSelector}>
-          <button 
+      <div className={styles.chatArea}>
+        {/* Header */}
+        <div className={styles.header}>
+          <h2>ChatGPT</h2>
+          <button
             className={styles.modelButton}
             onClick={() => setShowModelSelector(!showModelSelector)}
             disabled={isLoading}
           >
-            {models.all.find(m => m.id === selectedModel)?.name || 
-                models.recommended.find(m => m.id === selectedModel)?.name || 
-                models.free.find(m => m.id === selectedModel)?.name || 
-                "GPT-4o-mini"}
+            <span>{selectedModel.split("/")[1] || selectedModel}</span>
+            <span className={styles.totalModelsCount}>
+              {models.all.length}
+            </span>
+            <span style={{ marginLeft: '6px', fontSize: '12px' }}>
+              {showModelSelector ? '▲' : '▼'}
+            </span>
           </button>
-          {showModelSelector && (
-            <div className={styles.modelDropdown}>
-              <div className={styles.modelGroup}>
-                <div className={styles.modelGroupTitle}>⭐ Рекомендованные</div>
-                {models.recommended.map((model) => (
+        </div>
+
+        {/* Model Selector */}
+        {showModelSelector && (
+          <div className={styles.modelSelector} ref={modelSelectorRef}>
+            {/* Поиск */}
+            <div className={styles.modelSearch}>
+              <input
+                type="text"
+                placeholder="🔍 Поиск моделей..."
+                value={modelSearchQuery}
+                onChange={(e) => setModelSearchQuery(e.target.value)}
+                className={styles.modelSearchInput}
+              />
+              {modelSearchQuery && (
+                <button
+                  className={styles.clearSearchBtn}
+                  onClick={() => setModelSearchQuery("")}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {filterModels(models.recommended).length > 0 && (
+              <>
+                <h3>
+                  🌟 Рекомендуемые
+                  <span className={styles.modelCount}>{filterModels(models.recommended).length}</span>
+                </h3>
+                {filterModels(models.recommended).map((model) => (
+              <button
+                key={model.id}
+                onClick={() => {
+                  setSelectedModel(model.id);
+                  setShowModelSelector(false);
+                }}
+                className={selectedModel === model.id ? styles.selected : ""}
+              >
+                <div className={styles.modelInfo}>
+                  <div className={styles.modelName}>
+                    {model.name}
+                    {model.is_free && (
+                      <span className={`${styles.modelBadge} ${styles.badgeFree}`}>
+                        FREE
+                      </span>
+                    )}
+                    <span className={`${styles.modelBadge} ${styles.badgeRecommended}`}>
+                      TOP
+                    </span>
+                  </div>
+                  <div className={styles.modelDescription}>
+                    {model.id.includes('gpt-4o-mini') && 'Быстрая и доступная модель'}
+                    {model.id.includes('gpt-4o') && !model.id.includes('mini') && 'Самая мощная модель'}
+                    {model.id.includes('gpt-3.5') && 'Классическая модель'}
+                  </div>
+                </div>
+                {selectedModel === model.id && <span>✓</span>}
+              </button>
+            ))}
+              </>
+            )}
+            
+            {filterModels(models.free).length > 0 && (
+              <>
+                <h3>
+                  🆓 Бесплатные
+                  <span className={styles.modelCount}>{filterModels(models.free).length}</span>
+                </h3>
+                {filterModels(models.free).map((model) => (
+              <button
+                key={model.id}
+                onClick={() => {
+                  setSelectedModel(model.id);
+                  setShowModelSelector(false);
+                }}
+                className={selectedModel === model.id ? styles.selected : ""}
+              >
+                <div className={styles.modelInfo}>
+                  <div className={styles.modelName}>
+                    {model.name}
+                    <span className={`${styles.modelBadge} ${styles.badgeFree}`}>
+                      FREE
+                    </span>
+                  </div>
+                  <div className={styles.modelDescription}>
+                    {model.id.includes('llama') && 'Open-source модель Meta'}
+                    {model.id.includes('mixtral') && 'Быстрая модель Mistral AI'}
+                    {model.id.includes('gemma') && 'Модель от Google'}
+                  </div>
+                </div>
+                {selectedModel === model.id && <span>✓</span>}
+              </button>
+            ))}
+              </>
+            )}
+            
+            {models.other && filterModels(models.other).length > 0 && (
+              <>
+                <h3>
+                  💎 Премиум
+                  <span className={styles.modelCount}>{filterModels(models.other).length}</span>
+                </h3>
+                {filterModels(models.other).map((model) => (
                   <button
                     key={model.id}
-                    className={`${styles.modelOption} ${selectedModel === model.id ? styles.modelOptionActive : ''}`}
                     onClick={() => {
                       setSelectedModel(model.id);
                       setShowModelSelector(false);
                     }}
+                    className={selectedModel === model.id ? styles.selected : ""}
                   >
-                    <div className={styles.modelName}>
-                      {model.name}
-                      {model.is_free && <span className={styles.freeBadge}>FREE</span>}
-                    </div>
-                  </button>
-                ))}
-              </div>
-              {models.free.length > 0 && (
-                <div className={styles.modelGroup}>
-                  <div className={styles.modelGroupTitle}>🆓 Бесплатные</div>
-                  {models.free.map((model) => (
-                    <button
-                      key={model.id}
-                      className={`${styles.modelOption} ${selectedModel === model.id ? styles.modelOptionActive : ''}`}
-                      onClick={() => {
-                        setSelectedModel(model.id);
-                        setShowModelSelector(false);
-                      }}
-                    >
-                      <div className={styles.modelName}>{model.name}</div>
-                    </button>
-                  ))}
-                </div>
-              )}
-              {models.all.length > 0 && (
-                <div className={styles.modelGroup}>
-                  <div className={styles.modelGroupTitle}>📋 Все модели ({models.all.length})</div>
-                  {models.all.map((model) => (
-                    <button
-                      key={model.id}
-                      className={`${styles.modelOption} ${selectedModel === model.id ? styles.modelOptionActive : ''}`}
-                      onClick={() => {
-                        setSelectedModel(model.id);
-                        setShowModelSelector(false);
-                      }}
-                    >
+                    <div className={styles.modelInfo}>
                       <div className={styles.modelName}>
                         {model.name}
-                        {model.is_free && <span className={styles.freeBadge}>FREE</span>}
+                        {!model.is_free && (
+                          <span className={`${styles.modelBadge} ${styles.badgePremium}`}>
+                            PRO
+                          </span>
+                        )}
                       </div>
+                      <div className={styles.modelDescription}>
+                        Продвинутая модель
+                      </div>
+                    </div>
+                    {selectedModel === model.id && <span>✓</span>}
+                  </button>
+                ))}
+              </>
+            )}
+
+            {/* Сообщение если ничего не найдено */}
+            {modelSearchQuery && 
+             filterModels(models.recommended).length === 0 &&
+             filterModels(models.free).length === 0 &&
+             filterModels(models.other || []).length === 0 && (
+              <div className={styles.noResults}>
+                <div className={styles.noResultsIcon}>🔍</div>
+                <div className={styles.noResultsText}>
+                  Модели не найдены
+                </div>
+                <div className={styles.noResultsHint}>
+                  Попробуйте изменить запрос
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Messages */}
+        <div className={styles.messages}>
+          {messages.length === 0 ? (
+            <div className={styles.welcomeMessage}>
+              <div className={styles.welcomeIcon}>💬</div>
+              <h3>Привет! Я ваш финансовый помощник</h3>
+              <p>
+                Я могу помочь вам управлять финансами прямо через чат. Просто напишите что хотите сделать!
+              </p>
+              
+              <div className={styles.commandsGrid}>
+                <div className={styles.commandGroup}>
+                  <div className={styles.commandGroupTitle}>📁 Категории</div>
+                  <div className={styles.commandExample}>
+                    &quot;Создай категорию расходов Транспорт&quot;
+                  </div>
+                </div>
+                
+                <div className={styles.commandGroup}>
+                  <div className={styles.commandGroupTitle}>💰 Транзакции</div>
+                  <div className={styles.commandExample}>
+                    &quot;Потратил 500 рублей на Еду&quot;
+                  </div>
+                  <div className={styles.commandExample}>
+                    &quot;Покажи мои траты&quot;
+                  </div>
+                </div>
+                
+                <div className={styles.commandGroup}>
+                  <div className={styles.commandGroupTitle}>💳 Счета</div>
+                  <div className={styles.commandExample}>
+                    &quot;Добавь счёт Сбербанк&quot;
+                  </div>
+                  <div className={styles.commandExample}>
+                    &quot;Сколько денег на счетах?&quot;
+                  </div>
+                </div>
+                
+                <div className={styles.commandGroup}>
+                  <div className={styles.commandGroupTitle}>📊 Бюджеты</div>
+                  <div className={styles.commandExample}>
+                    &quot;Поставь бюджет 10000 на Еду&quot;
+                  </div>
+                </div>
+                
+                <div className={styles.commandGroup}>
+                  <div className={styles.commandGroupTitle}>📝 Заметки</div>
+                  <div className={styles.commandExample}>
+                    &quot;Запомни что надо купить молоко&quot;
+                  </div>
+                  <div className={styles.commandExample}>
+                    &quot;Покажи мои заметки&quot;
+                  </div>
+                </div>
+                
+                <div className={styles.commandGroup}>
+                  <div className={styles.commandGroupTitle}>🎯 Планы</div>
+                  <div className={styles.commandExample}>
+                    &quot;Создай план накопить 100000 на отпуск&quot;
+                  </div>
+                  <div className={styles.commandExample}>
+                    &quot;Покажи мои планы&quot;
+                  </div>
+                </div>
+                
+                <div className={styles.commandGroup}>
+                  <div className={styles.commandGroupTitle}>🔖 Закладки</div>
+                  <div className={styles.commandExample}>
+                    &quot;Сохрани закладку на GitHub&quot;
+                  </div>
+                </div>
+                
+                <div className={styles.commandGroup}>
+                  <div className={styles.commandGroupTitle}>💪 Фитнес</div>
+                  <div className={styles.commandExample}>
+                    &quot;Бегал 30 минут&quot;
+                  </div>
+                  <div className={styles.commandExample}>
+                    &quot;Тренировка в зале 60 минут&quot;
+                  </div>
+                </div>
+              </div>
+              
+              <p className={styles.helpText}>
+                💡 Пишите естественным языком - я пойму!
+              </p>
+              
+              {/* Быстрые команды */}
+              <div className={styles.quickCommands}>
+                <div className={styles.quickCommandsTitle}>⚡ Быстрые команды:</div>
+                <div className={styles.quickCommandsGrid}>
+                  {getQuickCommands().map((cmd, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setInput(cmd.command)}
+                      className={styles.quickCommandButton}
+                      type="button"
+                    >
+                      <span className={styles.quickCommandIcon}>{cmd.icon}</span>
+                      <span className={styles.quickCommandLabel}>{cmd.label}</span>
                     </button>
                   ))}
                 </div>
-              )}
-            </div>
-          )}
-        </div>
-        {/* Конец modelSelector */}
-      </div>
-      {/* Конец chatHeader */}
-
-        <div className={styles.chatMessages}>
-        {messages.length === 0 && (
-          <>
-            <div className={styles.welcomeScreen}>
-              <div className={styles.welcomeIcon}>💬</div>
-              <h3 className={styles.welcomeTitle}>
-                Привет! Я ваш финансовый помощник
-              </h3>
-              <p className={styles.welcomeText}>
-                Я могу помочь вам с анализом расходов, планированием бюджета и
-                ответить на вопросы о ваших финансах.
-              </p>
-            </div>
-          </>
-        )}
-        
-        {messages.length > 0 && (
-          messages.map((message: ChatMessage) => (
-            <div
-              key={message.id}
-              className={`${styles.message} ${
-                message.role === "user"
-                  ? styles.userMessage
-                  : styles.assistantMessage
-              }`}
-            >
-              <div className={styles.messageAvatar}>
-                {message.role === "user" ? "👤" : "🤖"}
               </div>
-              <div className={styles.messageContent}>
-                <div className={styles.messageText}>
-                  {message.content}
+            </div>
+          ) : (
+            messages.map((message) => (
+              <div
+                key={message.id}
+                className={
+                  message.role === "user"
+                    ? styles.userMessage
+                    : styles.assistantMessage
+                }
+              >
+                <div className={styles.messageIcon}>
+                  {message.role === "user" ? "👤" : "🤖"}
+                </div>
+                <div className={styles.messageContent}>
+                  {message.role === "assistant"
+                    ? renderAssistantMessage(message.content)
+                    : message.content}
                 </div>
               </div>
-            </div>
-          ))
-        )}
-
-        {connectionStatus === "error" && (
-          <div className={styles.errorContainer}>
-            <div className={styles.errorIcon}>⚠️</div>
-            <div className={styles.errorContent}>
-              <h3 className={styles.errorTitle}>Ошибка подключения к AI</h3>
-              <p className={styles.errorText}>{errorMessage}</p>
-              <div className={styles.errorHelp}>
-                <p><strong>Возможные причины:</strong></p>
-                <ul>
-                  <li>OpenRouter API ключ не настроен</li>
-                  <li>Проблемы с интернет-соединением</li>
-                  <li>API ключ недействителен или исчерпан лимит</li>
-                </ul>
-                <p><strong>Как исправить:</strong></p>
-                <ol>
-                  <li>Проверьте переменную окружения <code>OPENROUTER_API_KEY</code> в .env.local</li>
-                  <li>Убедитесь что у API ключа есть баланс на https://openrouter.ai/</li>
-                  <li>Попробуйте перезагрузить страницу</li>
-                </ol>
+            ))
+          )}
+          {connectionStatus === "error" && errorMessage && (
+            <div className={styles.errorMessage}>
+              <div className={styles.errorIcon}>⚠️</div>
+              <div className={styles.errorContent}>
+                <h3>Ошибка подключения к AI</h3>
+                <p>&quot;{errorMessage}&quot;</p>
+                <div className={styles.errorHelp}>
+                  <p>
+                    <strong>Возможные причины:</strong>
+                  </p>
+                  <ul>
+                    <li>OpenRouter API ключ не настроен</li>
+                    <li>Проблемы с интернет-соединением</li>
+                    <li>API ключ недействителен или исчерпан лимит</li>
+                  </ul>
+                  <p>
+                    <strong>Как исправить:</strong>
+                  </p>
+                  <ul>
+                    <li>
+                      Проверьте переменную окружения{" "}
+                      <code>OPENROUTER_API_KEY</code> в .env.local
+                    </li>
+                    <li>
+                      Убедитесь что у API ключа есть баланс на
+                      https://openrouter.ai/
+                    </li>
+                    <li>Попробуйте перезагрузить страницу</li>
+                  </ul>
+                </div>
+                <button
+                  onClick={() => {
+                    setConnectionStatus("checking");
+                    setErrorMessage("");
+                    window.location.reload();
+                  }}
+                  className={styles.retryButton}
+                >
+                  🔄 Попробовать снова
+                </button>
               </div>
-              <button 
-                onClick={() => window.location.reload()} 
-                className={styles.retryButton}
-              >
-                🔄 Попробовать снова
-              </button>
             </div>
-          </div>
-        )}
-
-        {isLoading && (
-          <div className={`${styles.message} ${styles.assistantMessage}`}>
-            <div className={styles.messageAvatar}>🤖</div>
-            <div className={styles.messageContent}>
-              <div className={styles.typingIndicator}>
-                <span></span>
-                <span></span>
-                <span></span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      <div className={styles.chatInputContainer}>
-        <div className={styles.inputWrapper}>
-          <form onSubmit={handleSubmit} className={styles.chatForm}>
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              disabled={isLoading}
-              placeholder="Сообщение ChatGPT"
-              className={styles.chatInput}
-            />
-            <button
-              type="submit"
-              disabled={isLoading || !input.trim()}
-              className={styles.sendButton}
-              aria-label="Отправить сообщение"
-            >
-              {isLoading ? "⏳" : "↑"}
-            </button>
-          </form>
+          )}
+          <div ref={messagesEndRef} />
         </div>
+
+        {/* Input */}
+        <form className={styles.inputForm} onSubmit={handleSubmit}>
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Сообщение ChatGPT"
+            disabled={isLoading}
+            className={styles.input}
+          />
+          <button
+            type="submit"
+            disabled={isLoading || !input.trim()}
+            className={styles.sendButton}
+          >
+            {isLoading ? "⏳" : "↑"}
+          </button>
+        </form>
       </div>
-    </div>
     </div>
   );
 }

@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import styles from "./Dashboard.module.css";
-import WidgetSettingsModal from "./WidgetSettingsModal";
+import { DashboardCustomizer } from "./DashboardCustomizer";
 import type { WidgetVisibilityState } from "@/lib/dashboard/preferences/shared";
+import TourGuide from "@/components/onboarding/TourGuide";
+import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist";
 
 type DashboardClientProps = {
   children: React.ReactNode;
@@ -12,12 +14,14 @@ type DashboardClientProps = {
 
 export default function DashboardClient({
   children,
-  widgetVisibility,
 }: DashboardClientProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   return (
     <div className={styles.page}>
+      {/* Интерактивный тур по дашборду */}
+      <TourGuide page="dashboard" />
+
       <div className={styles.topBar}>
         <div className={styles.pageTitle}>Дашборд</div>
         <div className={styles.topBarActions}>
@@ -29,18 +33,19 @@ export default function DashboardClient({
             <span className="material-icons" aria-hidden>
               tune
             </span>
-            Настроить виджеты
+            Настроить дашборд
           </button>
         </div>
       </div>
 
+      {/* Чек-лист "Первые шаги" */}
+      <OnboardingChecklist />
+
       {children}
 
-      <WidgetSettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        initialVisibility={widgetVisibility}
-      />
+      {isSettingsOpen && (
+        <DashboardCustomizer onClose={() => setIsSettingsOpen(false)} />
+      )}
     </div>
   );
 }

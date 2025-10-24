@@ -9,13 +9,14 @@ import PlanSettingsManager, {
 import ProfileManager from "@/components/settings/ProfileManager";
 import RolesManager, { type RoleRecord } from "@/components/settings/RolesManager";
 import UsersManager, { type UserRecord, type RoleOption } from "@/components/settings/UsersManager";
-import NotificationsManager from "@/components/settings/NotificationsManager";
 import TelegramManager from "@/components/settings/TelegramManager";
 import BackupManager from "@/components/settings/BackupManager";
 import APIKeysManager from "@/components/settings/APIKeysManager";
+import N8nManager from "@/components/settings/N8nManager";
+import TourManager from "@/components/settings/TourManager";
 import styles from "@/components/settings/Settings.module.css";
 
-const TAB_KEYS = ["profile", "categories", "plans", "users", "roles", "notifications", "telegram", "backup", "api", "theme"] as const;
+const TAB_KEYS = ["profile", "categories", "plans", "users", "roles", "telegram", "backup", "api", "n8n", "tour"] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
 type ProfileData = {
@@ -36,17 +37,17 @@ type SettingsShellProps = {
   roleOptions: RoleOption[];
 };
 
-const TAB_LABELS: Record<TabKey, { icon: string; label: string }> = {
+const TAB_LABELS: Record<TabKey, { icon: string; label: string; isEmoji?: boolean }> = {
   profile: { icon: "person", label: "Профиль" },
   categories: { icon: "label", label: "Категории" },
   plans: { icon: "flag", label: "Планы" },
   users: { icon: "people", label: "Пользователи" },
   roles: { icon: "admin_panel_settings", label: "Роли" },
-  notifications: { icon: "notifications", label: "Уведомления" },
   telegram: { icon: "send", label: "Telegram" },
   backup: { icon: "backup", label: "Резервные копии" },
   api: { icon: "key", label: "API Keys" },
-  theme: { icon: "palette", label: "Тема" },
+  n8n: { icon: "settings_suggest", label: "n8n Автоматизация" },
+  tour: { icon: "explore", label: "Туры и подсказки" },
 };
 
 export default function SettingsShell({ profile, categories, planTypes, planPresets, users, roles, roleOptions }: SettingsShellProps) {
@@ -73,10 +74,6 @@ export default function SettingsShell({ profile, categories, planTypes, planPres
       return <RolesManager roles={roles} />;
     }
 
-    if (activeTab === "notifications") {
-      return <NotificationsManager />;
-    }
-
     if (activeTab === "telegram") {
       return <TelegramManager />;
     }
@@ -87,6 +84,14 @@ export default function SettingsShell({ profile, categories, planTypes, planPres
 
     if (activeTab === "api") {
       return <APIKeysManager />;
+    }
+
+    if (activeTab === "n8n") {
+      return <N8nManager />;
+    }
+
+    if (activeTab === "tour") {
+      return <TourManager />;
     }
 
     return (
@@ -106,19 +111,28 @@ export default function SettingsShell({ profile, categories, planTypes, planPres
       </div>
 
       <div className={styles.tabs}>
-        {TAB_KEYS.map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            className={`${styles.tab} ${activeTab === tab ? styles.tabActive : ""}`}
-            onClick={() => setActiveTab(tab)}
-          >
-            <span className="material-icons" aria-hidden>
-              {TAB_LABELS[tab].icon}
-            </span>
-            &nbsp;{TAB_LABELS[tab].label}
-          </button>
-        ))}
+        {TAB_KEYS.map((tab) => {
+          const tabLabel = TAB_LABELS[tab];
+          return (
+            <button
+              key={tab}
+              type="button"
+              className={`${styles.tab} ${activeTab === tab ? styles.tabActive : ""}`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tabLabel.isEmoji ? (
+                <span aria-hidden style={{ fontSize: "18px" }}>
+                  {tabLabel.icon}
+                </span>
+              ) : (
+                <span className="material-icons" aria-hidden>
+                  {tabLabel.icon}
+                </span>
+              )}
+              &nbsp;{tabLabel.label}
+            </button>
+          );
+        })}
       </div>
 
       <div className={styles.content}>{tabContent}</div>

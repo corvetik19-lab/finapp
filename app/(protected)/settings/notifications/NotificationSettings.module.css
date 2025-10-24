@@ -14,9 +14,9 @@
 }
 
 .title {
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--primary-dark);
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
   margin: 0 0 8px 0;
 }
 
@@ -36,9 +36,9 @@
   flex-direction: column;
   align-items: center;
   padding: 16px 24px;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+  background: #ffffff;
   border-radius: 12px;
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  border: 1px solid #e5e7eb;
 }
 
 .statValue {
@@ -65,32 +65,29 @@
 .actionButton {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  border-radius: 10px;
-  background: rgba(148, 163, 184, 0.1);
-  color: var(--text-secondary);
-  font-size: 15px;
-  font-weight: 600;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s;
 }
 
 .actionButton:hover {
-  background: rgba(148, 163, 184, 0.2);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: #e5e7eb;
 }
 
 .actionButton.danger {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.3);
-  color: #c62828;
+  background: #fef2f2;
+  color: #dc2626;
 }
 
 .actionButton.danger:hover {
-  background: rgba(239, 68, 68, 0.2);
+  background: #fee2e2;
 }
 
 .categories {
@@ -102,16 +99,15 @@
 
 .category {
   background: var(--card-bg);
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
   transition: all 0.2s ease;
   overflow: hidden;
 }
 
 .category:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  border-color: #3b82f6;
 }
 
 .categoryHeader {
@@ -138,9 +134,9 @@
 }
 
 .categoryTitle {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--primary-dark);
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
   margin: 0;
   flex: 1;
   min-width: 0;
@@ -249,7 +245,7 @@
 }
 
 .toggleActive {
-  background: linear-gradient(135deg, var(--primary-color), #22d3ee);
+  background: #3b82f6;
 }
 
 .toggleActive::before {
@@ -257,7 +253,7 @@
 }
 
 .togglePartial {
-  background: linear-gradient(135deg, rgba(255, 152, 0, 0.7), rgba(255, 152, 0, 0.5));
+  background: #f59e0b;
 }
 
 .footer {
@@ -270,26 +266,20 @@
 .saveButton {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px 48px;
+  gap: 6px;
+  padding: 8px 12px;
   border: none;
-  border-radius: 12px;
-  background: linear-gradient(135deg, var(--primary-color), #22d3ee);
+  border-radius: 8px;
+  background: #3b82f6;
   color: white;
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  transition: all 0.2s;
 }
 
 .saveButton:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
-}
-
-.saveButton:active {
-  transform: translateY(0);
+  background: #2563eb;
 }
 
 .saveButton:disabled {
@@ -314,20 +304,19 @@
 /* Новые элементы для расширенных настроек */
 .section {
   background: var(--card-bg);
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
 }
 
 .sectionTitle {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--primary-dark);
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
   margin: 0 0 20px 0;
 }
 
@@ -379,8 +368,7 @@
 
 .timeInput:focus {
   outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #3b82f6;
 }
 
 .daysSelector {
@@ -408,8 +396,8 @@
 }
 
 .dayButton.dayActive {
-  background: linear-gradient(135deg, var(--primary-color), #22d3ee);
-  border-color: var(--primary-color);
+  background: #3b82f6;
+  border-color: #3b82f6;
   color: white;
 }
 

@@ -59,37 +59,34 @@
 }
 
 .pageTitle {
-  font-size: 32px;
-  font-weight: 700;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
 }
 
 .addCardBtn {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  gap: 6px;
+  background: #3b82f6;
   color: #fff;
   border: none;
-  border-radius: 14px;
-  padding: 14px 24px;
-  font-size: 15px;
-  font-weight: 600;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .addCardBtn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  background: #2563eb;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 .addCardBtn:active {
-  transform: translateY(0);
+  transform: none;
 }
 
 
@@ -279,126 +276,57 @@
 
 .debitCard {
   position: relative;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #fff;
-  border-radius: 20px;
-  padding: 28px;
-  min-height: 220px;
+  background: #ffffff;
+  color: #111827;
+  border-radius: 12px;
+  padding: 24px;
+  min-height: 200px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+  border: 1px solid #e5e7eb;
   overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Разные градиенты для разных карт */
-.debitCard:nth-child(1) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
-}
 
-.debitCard:nth-child(2) {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  box-shadow: 0 10px 30px rgba(245, 87, 108, 0.4);
-}
 
-.debitCard:nth-child(3) {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  box-shadow: 0 10px 30px rgba(79, 172, 254, 0.4);
-}
-
-.debitCard:nth-child(4) {
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-  box-shadow: 0 10px 30px rgba(67, 233, 123, 0.4);
-}
-
-.debitCard:nth-child(5) {
-  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-  box-shadow: 0 10px 30px rgba(250, 112, 154, 0.4);
-}
-
-.debitCard:nth-child(n+6) {
-  background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
-  box-shadow: 0 10px 30px rgba(48, 207, 208, 0.4);
-}
-
-.debitCard::after {
-  content: "";
-  position: absolute;
-  top: -60px;
-  right: -60px;
-  width: 200px;
-  height: 200px;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 50%;
-  filter: blur(40px);
-}
-
-.debitCard::before {
-  content: "";
-  position: absolute;
-  bottom: -80px;
-  left: -40px;
-  width: 220px;
-  height: 220px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  filter: blur(50px);
-}
-
-.debitCard:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-}
 
 .debitCardActive {
-  transform: scale(1.05);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8), 0 20px 40px rgba(0, 0, 0, 0.4);
+  border: 1px solid #e5e7eb;
 }
 
 .cardBalance {
-  font-size: 36px;
+  font-size: 32px;
   font-weight: 700;
   margin-bottom: 4px;
-  position: relative;
-  z-index: 1;
-  letter-spacing: -0.5px;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  color: #111827;
 }
 
 .cardType {
-  font-size: 15px;
-  font-weight: 600;
-  opacity: 0.95;
-  position: relative;
-  z-index: 1;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
 }
 
 .kubyshkaInfo {
-  margin-top: 20px;
+  margin-top: 16px;
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  position: relative;
-  z-index: 1;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
   font-size: 13px;
   line-height: 1.6;
+  color: #6b7280;
 }
 
 .progressContainer {
-  height: 8px;
-  background: rgba(255, 255, 255, 0.25);
-  border-radius: 999px;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
   overflow: hidden;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .progressBar {
@@ -408,9 +336,8 @@
 
 .progressFill {
   height: 100%;
-  background: linear-gradient(90deg, #ffd700, #ffed4e);
-  border-radius: 999px;
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+  background: #eab308;
+  border-radius: 3px;
   transition: width 0.3s ease;
 }
 
@@ -434,36 +361,18 @@
 }
 
 .actionCard {
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 24px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
   cursor: pointer;
-  position: relative;
-  overflow: hidden;
-}
-
-.actionCard::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.actionCard:hover::before {
-  opacity: 1;
 }
 
 .actionCard:disabled,
@@ -480,29 +389,29 @@
 }
 
 .actionCard:not(:disabled):hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
-  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03);
+  border-color: #3b82f6;
 }
 
 .actionIcon {
-  width: 60px;
-  height: 60px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: #3b82f6;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  transition: transform 0.3s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
 }
 
 .actionCard:hover .actionIcon {
-  transform: scale(1.1);
+  background: #2563eb;
 }
 
 .actionIcon i {
-  font-size: 28px;
+  font-size: 24px;
   color: #ffffff;
 }
 
@@ -760,79 +669,67 @@
 }
 
 .deleteCardBtn {
-  position: relative;
-  z-index: 10;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: transparent;
+  border: none;
   cursor: pointer;
-  padding: 10px;
-  border-radius: 10px;
-  color: #fff;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 6px;
+  border-radius: 6px;
+  color: #dc2626;
+  transition: all 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 28px;
+  height: 28px;
 }
 
 .deleteCardBtn:hover {
-  background: rgba(239, 68, 68, 0.9);
-  border-color: rgba(220, 38, 38, 1);
-  transform: scale(1.05);
-  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+  background: #fee2e2;
+  color: #b91c1c;
 }
 
 .deleteCardBtn:active {
-  transform: scale(0.95);
+  transform: none;
 }
 
 .deleteCardBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
 }
 
 .deleteCardBtn .material-icons {
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .editCardBtn {
-  position: relative;
-  z-index: 10;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: transparent;
+  border: none;
   cursor: pointer;
-  padding: 10px;
-  border-radius: 10px;
-  color: #fff;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 6px;
+  border-radius: 6px;
+  color: #6b7280;
+  transition: all 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 28px;
+  height: 28px;
 }
 
 .editCardBtn:hover {
-  background: rgba(59, 130, 246, 0.9);
-  border-color: rgba(37, 99, 235, 1);
-  transform: scale(1.05);
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+  background: #f3f4f6;
+  color: #111827;
 }
 
 .editCardBtn:active {
-  transform: scale(0.95);
+  transform: none;
 }
 
 .editCardBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
 }
 
 .editCardBtn .material-icons {
-  font-size: 20px;
+  font-size: 18px;
 }

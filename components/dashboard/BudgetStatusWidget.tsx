@@ -2,22 +2,6 @@ import styles from "./BudgetStatusWidget.module.css";
 import type { BudgetWithUsage } from "@/lib/budgets/service";
 import { formatMoney } from "@/lib/utils/format";
 
-const ICON_MAP: Record<string, string> = {
-  food: "restaurant",
-  grocery: "shopping_basket",
-  transport: "directions_car",
-  car: "directions_car",
-  entertainment: "theaters",
-  travel: "flight",
-  health: "local_hospital",
-  sport: "fitness_center",
-  education: "school",
-  utilities: "bolt",
-  home: "home",
-  housing: "home",
-  personal: "person",
-};
-
 const STATUS_LABEL: Record<BudgetWithUsage["status"], string> = {
   ok: "В пределах",
   warning: "Почти лимит",
@@ -55,8 +39,6 @@ export default function BudgetStatusWidget({ budgets, currency, onDelete, deleti
     <div className={styles.budgetGrid}>
       {sorted.map((budget) => {
         const categoryName = budget.category?.name || "Без категории";
-        const iconKey = categoryName.toLowerCase();
-        const icon = ICON_MAP[iconKey] || ICON_MAP[budget.category?.kind || ""] || "category";
         const statusLabel = STATUS_LABEL[budget.status];
         const progressPct = Math.min(Math.max(budget.progress * 100, 0), 120);
 
@@ -73,9 +55,6 @@ export default function BudgetStatusWidget({ budgets, currency, onDelete, deleti
           <article key={budget.id} className={styles.budgetCard}>
             <header className={styles.budgetHeader}>
               <div className={styles.budgetCategory}>
-                <span className={`material-icons ${styles.budgetIcon}`} aria-hidden>
-                  {icon}
-                </span>
                 <span className={styles.categoryName}>{categoryName}</span>
               </div>
               <div className={styles.budgetActions}>

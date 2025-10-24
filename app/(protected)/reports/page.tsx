@@ -3,6 +3,7 @@ import { aggregateReports } from "@/lib/reports/aggregations";
 import { listBudgetsWithUsage } from "@/lib/budgets/service";
 import MonthlyTrendChart from "@/components/reports/MonthlyTrendChart";
 import ExpenseBreakdownDonut from "@/components/reports/ExpenseBreakdownDonut";
+import ExportButtons from "@/components/reports/ExportButtons";
 import styles from "@/components/reports/Reports.module.css";
 import { formatMoney } from "@/lib/utils/format";
 
@@ -74,6 +75,7 @@ export default async function ReportsPage() {
           <p className={styles.subtitle}>
             Здесь появятся визуализации доходов и расходов. Добавьте транзакции, чтобы построить аналитику по периодам и категориям.
           </p>
+          <ExportButtons />
         </section>
 
         <div className={styles.emptyState}>
@@ -127,6 +129,7 @@ export default async function ReportsPage() {
         <p className={styles.subtitle}>
           Аналитика по доходам и расходам, структура затрат и динамика по периодам. Данные обновляются автоматически на основе ваших транзакций.
         </p>
+        <ExportButtons />
       </section>
 
       <section className={styles.summary}>

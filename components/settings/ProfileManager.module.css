@@ -4,11 +4,14 @@
 }
 
 .header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  padding: 32px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+  border: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .headerContent {
@@ -19,31 +22,28 @@
 
 .title {
   margin: 0;
-  font-size: 32px;
-  font-weight: 700;
-  color: white;
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
 }
 
 .signOutBtn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 600;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #f3f4f6;
+  color: #6b7280;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s;
 }
 
 .signOutBtn:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: #e5e7eb;
 }
 
 .signOutBtn .material-icons {
@@ -52,9 +52,9 @@
 
 .profileCard {
   background: white;
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid #e5e7eb;
 }
 
 .avatarSection {
@@ -82,7 +82,7 @@
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #3b82f6;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -99,20 +99,18 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #667eea;
+  background: #3b82f6;
   border: 3px solid white;
   color: white;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s;
 }
 
 .avatarEditBtn:hover {
-  background: #764ba2;
-  transform: scale(1.1);
+  background: #2563eb;
 }
 
 .avatarEditBtn:disabled {
@@ -202,8 +200,7 @@
 
 .formInput:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+  border-color: #3b82f6;
 }
 
 .actions {
@@ -215,21 +212,20 @@
 .btnPrimary {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  gap: 6px;
+  padding: 8px 12px;
+  background: #3b82f6;
   color: white;
   border: none;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 600;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s;
 }
 
 .btnPrimary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+  background: #2563eb;
 }
 
 .btnPrimary:disabled {
@@ -245,16 +241,16 @@
 .btnSecondary {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
+  gap: 6px;
+  padding: 8px 12px;
   background: #f3f4f6;
-  color: #374151;
+  color: #6b7280;
   border: none;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 600;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s;
 }
 
 .btnSecondary:hover {
@@ -287,10 +283,10 @@
 
 .modal {
   background: white;
-  border-radius: 16px;
+  border-radius: 12px;
   width: 90%;
   max-width: 500px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border: 1px solid #e5e7eb;
   overflow: hidden;
 }
 

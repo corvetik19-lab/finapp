@@ -66,8 +66,14 @@ export default function WidgetSettingsModal({
   };
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modalDialog} onClick={(e) => e.stopPropagation()}>
+    <div style={{ 
+      position: 'fixed', 
+      top: '50%', 
+      left: '50%', 
+      transform: 'translate(-50%, -50%)',
+      zIndex: 9999 
+    }}>
+      <div className={styles.modalDialog}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>Настройка виджетов</h2>
           <button

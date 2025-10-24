@@ -22,6 +22,7 @@ import type { CsvNormalizedRow } from "@/lib/csv/import-schema";
 import { buildExportCsv } from "@/lib/csv/export";
 import { z } from "zod";
 import { NextResponse } from "next/server";
+import { checkTransactionAchievements } from "@/lib/gamification/detectors";
 
 export async function createDefaultAccount() {
   const supabase = await createRouteClient();
@@ -278,6 +279,13 @@ export async function createTransaction(formData: FormData) {
 
   await createTransactionService(parsed.data);
 
+  // Проверяем достижения
+  const supabase = await createRouteClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    checkTransactionAchievements(user.id).catch(console.error);
+  }
+
   revalidatePath("/transactions");
   revalidatePath("/cards");
   revalidatePath("/reports");
@@ -292,6 +300,14 @@ export async function createTransactionFromValues(values: TransactionFormValues)
       category_id: parsed.category_id ? parsed.category_id : null,
       amount_major: Number(parsed.amount_major.replace(/\s+/g, "").replace(",", ".")),
     });
+
+    // Проверяем достижения
+    const supabase = await createRouteClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      checkTransactionAchievements(user.id).catch(console.error);
+    }
+
     revalidatePath("/transactions");
     revalidatePath("/cards");
     revalidatePath("/reports");

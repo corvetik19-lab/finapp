@@ -1,0 +1,298 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal {
+  background: var(--card-bg);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.35);
+  animation: slideUp 0.3s ease-out;
+  border: 1px solid var(--border-color);
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 32px;
+  border-bottom: 2px solid var(--border-color);
+  background: var(--muted-bg);
+  border-radius: 16px 16px 0 0;
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  transition: color 0.25s ease;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 4px 0 0;
+  transition: color 0.25s ease;
+}
+
+.closeButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 20px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.closeButton:hover {
+  background: var(--danger);
+  color: #ffffff;
+  transform: rotate(90deg);
+  border-color: var(--danger);
+}
+
+.columns {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 28px 32px;
+  overflow-y: auto;
+  flex: 1;
+  background: var(--background);
+  transition: background 0.25s ease;
+}
+
+.column {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid var(--border-color);
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+.column h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.25s ease;
+}
+
+.section {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid var(--border-color);
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+.section:last-child {
+  margin-bottom: 0;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+  transition: color 0.25s ease;
+}
+
+.sectionHint {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 16px;
+  transition: color 0.25s ease;
+}
+
+.widgetList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+  background: var(--muted-bg);
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+
+.emptyState p {
+  margin: 0;
+  font-size: 15px;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 32px;
+  border-top: 2px solid var(--border-color);
+  background: var(--muted-bg);
+  border-radius: 0 0 16px 16px;
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+.cancelButton,
+.saveButton {
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.cancelButton {
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.cancelButton:hover {
+  background: var(--muted-bg);
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+
+.saveButton {
+  background: var(--primary-color);
+  color: #ffffff;
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.25);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.saveButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(59, 130, 246, 0.35);
+  filter: brightness(1.1);
+}
+
+.saveButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 16px;
+  color: var(--text-secondary);
+  transition: color 0.25s ease;
+}
+
+.message {
+  margin: 0 32px 20px;
+  padding: 14px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message.success {
+  background: #d1fae5;
+  border: 2px solid #6ee7b7;
+  color: #065f46;
+}
+
+.message.error {
+  background: #fee2e2;
+  border: 2px solid #fecaca;
+  color: #991b1b;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .modal {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .header,
+  .content,
+  .footer {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .title {
+    font-size: 20px;
+  }
+
+  .footer {
+    flex-direction: column;
+  }
+
+  .cancelButton,
+  .saveButton {
+    width: 100%;
+  }
+}

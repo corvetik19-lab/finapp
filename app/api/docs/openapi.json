@@ -1,0 +1,457 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Finappka API",
+    "description": "REST API для доступа к данным финансового трекера Finappka",
+    "version": "1.0.0",
+    "contact": {
+      "email": "support@finappka.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://finappka.com/api/v1",
+      "description": "Production"
+    },
+    {
+      "url": "http://localhost:3000/api/v1",
+      "description": "Development"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "API Key",
+        "description": "Используйте ваш API ключ в формате: Bearer YOUR_API_KEY"
+      }
+    },
+    "schemas": {
+      "Transaction": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "user_id": { "type": "string", "format": "uuid" },
+          "account_id": { "type": "string", "format": "uuid" },
+          "category_id": { "type": "string", "format": "uuid" },
+          "amount": { "type": "integer", "description": "Сумма в копейках" },
+          "direction": { "type": "string", "enum": ["income", "expense", "transfer"] },
+          "currency": { "type": "string", "default": "RUB" },
+          "occurred_at": { "type": "string", "format": "date-time" },
+          "counterparty": { "type": "string" },
+          "note": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Account": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "type": { "type": "string", "enum": ["cash", "bank", "card", "savings"] },
+          "currency": { "type": "string", "default": "RUB" },
+          "initial_balance": { "type": "integer" },
+          "is_active": { "type": "boolean" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Budget": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "category_id": { "type": "string", "format": "uuid" },
+          "limit_amount": { "type": "integer" },
+          "period_start": { "type": "string", "format": "date" },
+          "period_end": { "type": "string", "format": "date" },
+          "currency": { "type": "string", "default": "RUB" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "type": { "type": "string", "enum": ["income", "expense"] },
+          "icon": { "type": "string" },
+          "color": { "type": "string" },
+          "parent_id": { "type": "string", "format": "uuid", "nullable": true },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" },
+          "message": { "type": "string" },
+          "details": { "type": "string" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/transactions": {
+      "get": {
+        "summary": "Получить список транзакций",
+        "tags": ["Transactions"],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 50, "maximum": 100 },
+            "description": "Количество записей"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": { "type": "integer", "default": 0 },
+            "description": "Смещение"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": { "type": "string", "format": "date" },
+            "description": "Дата начала (YYYY-MM-DD)"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": { "type": "string", "format": "date" },
+            "description": "Дата конца (YYYY-MM-DD)"
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["income", "expense", "transfer"] },
+            "description": "Тип транзакции"
+          },
+          {
+            "name": "account_id",
+            "in": "query",
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "Фильтр по счёту"
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "Фильтр по категории"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список транзакций",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Transaction" }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "total": { "type": "integer" },
+                        "limit": { "type": "integer" },
+                        "offset": { "type": "integer" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Неавторизован",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "429": {
+            "description": "Превышен лимит запросов",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Создать транзакцию",
+        "tags": ["Transactions"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["amount", "direction", "account_id", "occurred_at"],
+                "properties": {
+                  "amount": { "type": "integer", "description": "Сумма в копейках" },
+                  "direction": { "type": "string", "enum": ["income", "expense", "transfer"] },
+                  "account_id": { "type": "string", "format": "uuid" },
+                  "category_id": { "type": "string", "format": "uuid" },
+                  "occurred_at": { "type": "string", "format": "date-time" },
+                  "counterparty": { "type": "string" },
+                  "note": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Транзакция создана",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Transaction" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Неверные данные",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/accounts": {
+      "get": {
+        "summary": "Получить список счетов",
+        "tags": ["Accounts"],
+        "parameters": [
+          {
+            "name": "include_balance",
+            "in": "query",
+            "schema": { "type": "boolean", "default": false },
+            "description": "Включить текущий баланс"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["cash", "bank", "card", "savings"] },
+            "description": "Фильтр по типу"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список счетов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Account" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Создать счёт",
+        "tags": ["Accounts"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "type"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "type": { "type": "string", "enum": ["cash", "bank", "card", "savings"] },
+                  "currency": { "type": "string", "default": "RUB" },
+                  "initial_balance": { "type": "integer", "default": 0 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Счёт создан",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Account" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/budgets": {
+      "get": {
+        "summary": "Получить список бюджетов",
+        "tags": ["Budgets"],
+        "parameters": [
+          {
+            "name": "include_spent",
+            "in": "query",
+            "schema": { "type": "boolean", "default": false },
+            "description": "Включить информацию о потраченной сумме"
+          },
+          {
+            "name": "active",
+            "in": "query",
+            "schema": { "type": "boolean" },
+            "description": "Только активные бюджеты"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список бюджетов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Budget" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Создать бюджет",
+        "tags": ["Budgets"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["category_id", "limit_amount", "period_start", "period_end"],
+                "properties": {
+                  "category_id": { "type": "string", "format": "uuid" },
+                  "limit_amount": { "type": "integer" },
+                  "period_start": { "type": "string", "format": "date" },
+                  "period_end": { "type": "string", "format": "date" },
+                  "currency": { "type": "string", "default": "RUB" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Бюджет создан",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Budget" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/categories": {
+      "get": {
+        "summary": "Получить список категорий",
+        "tags": ["Categories"],
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["income", "expense"] },
+            "description": "Фильтр по типу"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список категорий",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Category" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Создать категорию",
+        "tags": ["Categories"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "type"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "type": { "type": "string", "enum": ["income", "expense"] },
+                  "icon": { "type": "string" },
+                  "color": { "type": "string" },
+                  "parent_id": { "type": "string", "format": "uuid", "nullable": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Категория создана",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Category" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

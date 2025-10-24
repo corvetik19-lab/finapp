@@ -45,8 +45,8 @@
   gap: 32px;
   background: white;
   padding: 32px;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
 }
 
 .periodBox {
@@ -86,8 +86,8 @@
 .metricCard {
   background: white;
   padding: 24px;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -151,8 +151,8 @@
 .chartSection {
   background: white;
   padding: 32px;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
 }
 
 .chartSection h2 {
@@ -170,8 +170,8 @@
 .categoriesSection {
   background: white;
   padding: 32px;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
 }
 
 .categoriesSection h2 {
@@ -278,8 +278,8 @@
   min-height: 400px;
   background: white;
   padding: 48px;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
 }
 
 .errorIcon {
@@ -368,8 +368,8 @@
 .recommendationsSection {
   background: white;
   padding: 32px;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
 }
 
 .insightsSection h2,
@@ -390,18 +390,18 @@
 .insightCard,
 .recommendationCard {
   padding: 16px 20px;
-  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-  border-radius: 10px;
+  background: #f9fafb;
+  border-radius: 8px;
   font-size: 15px;
   color: #1f2937;
-  border-left: 4px solid #6366f1;
+  border: 1px solid #e5e7eb;
 }
 
 .heatmapSection {
   background: white;
   padding: 32px;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
 }
 
 .heatmapSection h2 {
@@ -507,8 +507,8 @@
 .dayRangeAnalysis {
   background: white;
   padding: 32px;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
 }
 
 .monthlyAnalysis h2,
@@ -594,7 +594,7 @@
 
 .seasonCard {
   padding: 24px;
-  border-radius: 16px;
+  border-radius: 12px;
   text-align: center;
   transition: transform 0.2s, box-shadow 0.2s;
 }
@@ -765,8 +765,8 @@
 .overallTrendSection {
   background: white;
   padding: 32px;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
 }
 
 .overallTrendSection h2 {
@@ -815,8 +815,8 @@
 .alertsSection {
   background: white;
   padding: 32px;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
 }
 
 .alertsSection h2 {
@@ -834,23 +834,20 @@
 
 .alertCard {
   padding: 16px 20px;
-  border-radius: 10px;
-  border-left: 4px solid;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
 }
 
 .alertHigh {
-  background: #fef2f2;
-  border-left-color: #dc2626;
+  background: #ffffff;
 }
 
 .alertMedium {
-  background: #fef3c7;
-  border-left-color: #f59e0b;
+  background: #ffffff;
 }
 
 .alertLow {
-  background: #f0f9ff;
-  border-left-color: #3b82f6;
+  background: #ffffff;
 }
 
 .alertHeader {
@@ -882,8 +879,8 @@
 .categoryTrendsSection {
   background: white;
   padding: 32px;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
 }
 
 .categoryTrendsSection h2 {
@@ -1012,8 +1009,8 @@
 .scoreSection {
   background: white;
   padding: 32px;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
 }
 
 .scoreSection h2 {
@@ -1037,9 +1034,9 @@
 
 .gaugeCenter {
   position: absolute;
-  top: 50%;
+  top: 55%;
   left: 50%;
-  transform: translate(-50%, -20%);
+  transform: translate(-50%, -50%);
   text-align: center;
 }
 
@@ -1070,8 +1067,8 @@
 .categoriesScoreSection {
   background: white;
   padding: 32px;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
 }
 
 .categoriesScoreSection h2 {
@@ -1089,7 +1086,7 @@
 
 .categoryScoreCard {
   padding: 24px;
-  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  background: #ffffff;
   border-radius: 12px;
   border: 1px solid #e5e7eb;
 }
@@ -1170,22 +1167,19 @@
 .recommendationCard {
   padding: 20px 24px;
   border-radius: 12px;
-  border-left: 4px solid;
+  border: 1px solid #e5e7eb;
 }
 
 .priorityHigh {
-  background: #fef2f2;
-  border-left-color: #dc2626;
+  background: #ffffff;
 }
 
 .priorityMedium {
-  background: #fef3c7;
-  border-left-color: #f59e0b;
+  background: #ffffff;
 }
 
 .priorityLow {
-  background: #f0f9ff;
-  border-left-color: #3b82f6;
+  background: #ffffff;
 }
 
 .recommendationHeader {

@@ -20,6 +20,9 @@ import {
   type TransactionEditFormValues,
 } from "@/lib/validation/transaction";
 import { formatMoney } from "@/lib/utils/format";
+import { AttachmentsList } from "@/components/transactions/AttachmentsList";
+import { FileUpload } from "@/components/transactions/FileUpload";
+import { FileViewerModal } from "@/components/transactions/FileViewerModal";
 
 export type Txn = {
   id: string;
@@ -112,6 +115,11 @@ export default function TransactionsGroupedList({
   const [editKey, setEditKey] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
   const [removingIds, setRemovingIds] = useState<Record<string, boolean>>({});
+  const [viewingFile, setViewingFile] = useState<{
+    fileName: string;
+    fileUrl: string;
+    mimeType: string | null;
+  } | null>(null);
 
   const [deleteState, deleteAction] = useActionState(deleteTransactionAction, { ok: false } as DeleteTxnState);
   const [isSaving, startSaving] = useTransition();
@@ -658,6 +666,15 @@ export default function TransactionsGroupedList({
                   </div>
                 </div>
               </div>
+
+              {/* Вложения */}
+              <div className={styles.modalSection}>
+                <div className={styles.modalSectionTitle}>Вложения</div>
+                <AttachmentsList 
+                  transactionId={selected.id}
+                  onViewFile={(file) => setViewingFile(file)}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -856,6 +873,21 @@ export default function TransactionsGroupedList({
                 <input type="hidden" {...register("id")} />
                 <input type="hidden" {...register("currency")} />
 
+                {/* Загрузка вложений */}
+                <div className={styles.modalSection}>
+                  <div className={styles.modalSectionTitle}>Вложения</div>
+                  <FileUpload 
+                    transactionId={selected.id}
+                    maxSizeMB={10}
+                  />
+                  <div style={{ marginTop: '1rem' }}>
+                    <AttachmentsList 
+                      transactionId={selected.id}
+                      onViewFile={(file) => setViewingFile(file)}
+                    />
+                  </div>
+                </div>
+
                 <div className={styles.modalActions}>
                   <button
                     type="button"
@@ -876,6 +908,16 @@ export default function TransactionsGroupedList({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Модальное окно просмотра файла */}
+      {viewingFile && (
+        <FileViewerModal
+          fileName={viewingFile.fileName}
+          fileUrl={viewingFile.fileUrl}
+          mimeType={viewingFile.mimeType}
+          onClose={() => setViewingFile(null)}
+        />
       )}
     </div>
   );

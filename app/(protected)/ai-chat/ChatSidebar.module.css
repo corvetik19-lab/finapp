@@ -1,12 +1,48 @@
+/* Обновлено - единый стиль */
 .sidebar {
   width: 320px;
   min-height: 0; /* Важно для flex */
-  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  background: #ffffff !important;
+  border-right: 1px solid #e5e7eb !important;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   flex-shrink: 0; /* Не сжимается */
+  position: relative;
+  transition: width 0.3s ease, min-width 0.3s ease;
+}
+
+.sidebar.collapsed {
+  width: 48px;
+  min-width: 48px;
+}
+
+.toggleBtn {
+  position: absolute;
+  top: 12px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s;
+}
+
+.toggleBtn:hover {
+  background: #e5e7eb;
+  border-color: #3b82f6;
+}
+
+.collapsed .toggleBtn {
+  left: 50%;
+  transform: translateX(-50%);
+  right: auto;
 }
 
 .header {
@@ -14,14 +50,15 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-right: 48px; /* Отступ для toggle button */
+  border-bottom: 1px solid #e5e7eb;
   flex-shrink: 0;
 }
 
 .title {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
-  color: #ffffff;
+  color: #111827;
   margin: 0;
 }
 
@@ -36,28 +73,21 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: 12px;
-  background: rgba(99, 102, 241, 0.1);
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  color: #6366f1;
+  border-radius: 8px;
+  background: #3b82f6;
+  border: none;
+  color: white;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .newChatBtn:hover {
-  background: rgba(99, 102, 241, 0.2);
-  border-color: #6366f1;
-  transform: scale(1.05);
-}
-
-.newChatBtn:active {
-  transform: scale(0.95);
+  background: #2563eb;
 }
 
 .newChatBtn.activeMode {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.4);
-  color: #ef4444;
+  background: #fef2f2;
+  color: #dc2626;
 }
 
 /* Панель массовых действий */
@@ -66,15 +96,15 @@
   flex-direction: column;
   gap: 12px;
   padding: 16px 20px;
-  background: rgba(99, 102, 241, 0.1);
-  border-bottom: 1px solid rgba(99, 102, 241, 0.3);
+  background: #eff6ff;
+  border-bottom: 1px solid #3b82f6;
   flex-shrink: 0;
 }
 
 .selectionInfo {
   font-size: 14px;
   font-weight: 500;
-  color: #ffffff;
+  color: #111827;
 }
 
 .selectionActions {
@@ -84,11 +114,11 @@
 
 .selectBtn {
   flex: 1;
-  padding: 8px 16px;
+  padding: 8px 12px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  background: #f3f4f6;
+  border: none;
+  color: #6b7280;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -96,8 +126,7 @@
 }
 
 .selectBtn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: #e5e7eb;
 }
 
 .deleteBulkBtn {
@@ -106,11 +135,11 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 8px 16px;
+  padding: 8px 12px;
   border-radius: 8px;
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ef4444;
+  background: #fef2f2;
+  border: none;
+  color: #dc2626;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -118,8 +147,7 @@
 }
 
 .deleteBulkBtn:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.25);
-  border-color: rgba(239, 68, 68, 0.5);
+  background: #fee2e2;
 }
 
 .deleteBulkBtn:disabled {
@@ -137,9 +165,9 @@
   align-items: center;
   gap: 8px;
   padding: 16px 20px;
-  background: rgba(255, 255, 255, 0.05);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.5);
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  color: #6b7280;
   flex-shrink: 0;
 }
 
@@ -148,12 +176,12 @@
   background: transparent;
   border: none;
   outline: none;
-  color: #ffffff;
+  color: #111827;
   font-size: 14px;
 }
 
 .searchInput::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: #9ca3af;
 }
 
 .clearBtn {
@@ -165,14 +193,14 @@
   border-radius: 50%;
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.5);
+  color: #6b7280;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .clearBtn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background: #f3f4f6;
+  color: #111827;
 }
 
 /* Список чатов - фиксированная высота */
@@ -193,12 +221,12 @@
 }
 
 .chatList::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: #cbd5e0;
   border-radius: 3px;
 }
 
 .chatList::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: #a0aec0;
 }
 
 /* Элемент чата */
@@ -208,25 +236,26 @@
   gap: 12px;
   padding: 12px;
   margin-bottom: 4px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: transparent;
   cursor: pointer;
   transition: all 0.2s;
   position: relative;
+  border: 1px solid transparent;
 }
 
 .chatItem:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: #f9fafb;
 }
 
 .chatItem.active {
-  background: rgba(99, 102, 241, 0.15);
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  background: #eff6ff;
+  border-color: #3b82f6;
 }
 
 .chatItem.selected {
-  background: rgba(99, 102, 241, 0.2);
-  border: 1px solid rgba(99, 102, 241, 0.4);
+  background: #dbeafe;
+  border-color: #3b82f6;
 }
 
 /* Чекбокс */
@@ -241,10 +270,10 @@
   width: 20px;
   height: 20px;
   border-radius: 6px;
-  border: 2px solid rgba(99, 102, 241, 0.5);
+  border: 2px solid #3b82f6;
   background: transparent;
   cursor: pointer;
-  accent-color: #6366f1;
+  accent-color: #3b82f6;
 }
 
 .chatIcon {
@@ -253,9 +282,9 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: 10px;
-  background: rgba(99, 102, 241, 0.1);
-  color: #6366f1;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #3b82f6;
   flex-shrink: 0;
 }
 
@@ -267,7 +296,7 @@
 .chatTitle {
   font-size: 14px;
   font-weight: 500;
-  color: #ffffff;
+  color: #111827;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -276,17 +305,17 @@
 
 .chatDate {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: #6b7280;
 }
 
 /* Поле редактирования названия */
 .editInput {
   width: 100%;
   padding: 6px 8px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(99, 102, 241, 0.5);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 6px;
-  color: #ffffff;
+  color: #111827;
   font-size: 14px;
   font-weight: 500;
   outline: none;
@@ -294,8 +323,7 @@
 }
 
 .editInput:focus {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: #6366f1;
+  border-color: #3b82f6;
 }
 
 /* Кнопки редактирования */
@@ -313,29 +341,25 @@
   height: 28px;
   border-radius: 6px;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: none;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .saveBtn {
   color: #10b981;
-  border-color: rgba(16, 185, 129, 0.3);
 }
 
 .saveBtn:hover {
-  background: rgba(16, 185, 129, 0.1);
-  border-color: #10b981;
+  background: #f0fdf4;
 }
 
 .cancelBtn {
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.3);
+  color: #dc2626;
 }
 
 .cancelBtn:hover {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: #ef4444;
+  background: #fef2f2;
 }
 
 .saveBtn .material-icons,
@@ -365,20 +389,20 @@
   border-radius: 8px;
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.4);
+  color: #6b7280;
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;
 }
 
 .editBtn:hover {
-  background: rgba(99, 102, 241, 0.1);
-  color: #6366f1;
+  background: #eff6ff;
+  color: #3b82f6;
 }
 
 .deleteBtn:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  background: #fef2f2;
+  color: #dc2626;
 }
 
 .editBtn .material-icons,
@@ -395,7 +419,7 @@
   justify-content: center;
   padding: 40px 20px;
   text-align: center;
-  color: rgba(255, 255, 255, 0.5);
+  color: #6b7280;
 }
 
 .loading .material-icons,

@@ -1,0 +1,291 @@
+{
+  "name": "ФНС Telegram → AI → Finappka",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"]
+      },
+      "id": "telegram-trigger",
+      "name": "Telegram Bot",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [250, 300],
+      "webhookId": "telegram-fns-bot",
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_TELEGRAM_BOT_CREDENTIAL",
+          "name": "ФНС Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Извлекаем текст чека из сообщения Telegram\nconst message = $input.all()[0].json.message;\nconst text = message.text || '';\n\n// Проверяем что это чек от ФНС\nif (!text.includes('кассовый чек') && !text.includes('ККТ') && !text.includes('Итого:')) {\n  // Это не чек, пропускаем\n  return [];\n}\n\n// Извлекаем данные из чека\nconst lines = text.split('\\n');\nlet totalAmount = 0;\nlet items = [];\nlet shopName = '';\nlet date = new Date().toISOString();\n\n// Ищем название магазина в первой строке\n// Формат: \"Поступил кассовый чек: от АО \\\"ТАНДЕР\\\"\"\nconst shopMatch = text.match(/кассовый чек:\\s*от\\s+(.+?)\\s*\\n/);\nif (shopMatch) {\n  shopName = shopMatch[1].trim().replace(/\\\"/g, '');\n}\n\n// Если не нашли, ищем \"Место расчетов\"\nif (!shopName) {\n  const placeMatch = text.match(/Место расчетов:\\s*(.+?)\\n/);\n  if (placeMatch) {\n    shopName = placeMatch[1].trim();\n  }\n}\n\n// Ищем дату\nconst dateMatch = text.match(/Дата:\\s*(\\d{2})\\.(\\d{2})\\.(\\d{4})\\s+(\\d{2}):(\\d{2})/);\nif (dateMatch) {\n  date = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}T${dateMatch[4]}:${dateMatch[5]}:00Z`;\n}\n\n// Парсим товары\n// Формат:\n// 1. Название товара\n// цена x количество = итоговая цена руб.\nlet i = 0;\nwhile (i < lines.length) {\n  const line = lines[i].trim();\n  \n  // Ищем строку с номером товара: \"1. Название\"\n  const itemHeaderMatch = line.match(/^(\\d+)\\.\\s+(.+)$/);\n  \n  if (itemHeaderMatch && i + 1 < lines.length) {\n    const itemName = itemHeaderMatch[2].trim();\n    const nextLine = lines[i + 1].trim();\n    \n    // Следующая строка должна содержать цену: \"47.99 x 1.0 = 47.99 руб.\"\n    const priceMatch = nextLine.match(/([\\d.]+)\\s*x\\s*([\\d.]+)\\s*=\\s*([\\d.]+)\\s*руб/);\n    \n    if (priceMatch) {\n      const unitPrice = parseFloat(priceMatch[1]);\n      const quantity = parseFloat(priceMatch[2]);\n      const totalPrice = parseFloat(priceMatch[3]);\n      \n      items.push({\n        name: itemName,\n        price: totalPrice,\n        unit_price: unitPrice,\n        quantity: quantity\n      });\n      \n      i += 2; // Пропускаем обе строки\n      continue;\n    }\n  }\n  \n  // Ищем итоговую сумму\n  if (line.startsWith('Итого:')) {\n    const totalMatch = line.match(/Итого:\\s*([\\d.]+)\\s*руб/);\n    if (totalMatch) {\n      totalAmount = parseFloat(totalMatch[1]);\n    }\n    break; // Дальше читать не нужно\n  }\n  \n  i++;\n}\n\n// Если не нашли итоговую сумму - считаем из товаров\nif (totalAmount === 0 && items.length > 0) {\n  totalAmount = items.reduce((sum, item) => sum + item.price, 0);\n}\n\n// Если нет товаров - возвращаем пустой результат\nif (items.length === 0) {\n  return [];\n}\n\nreturn [{\n  json: {\n    raw_text: text,\n    shop_name: shopName || 'Неизвестный магазин',\n    date: date,\n    total_amount: totalAmount,\n    items: items,\n    items_count: items.length\n  }\n}];"
+      },
+      "id": "parse-receipt",
+      "name": "Parse Receipt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-items",
+              "leftValue": "={{ $json.items_count }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-valid",
+      "name": "Valid Receipt?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "❌ Не удалось распознать чек. Попробуй переслать сообщение от ФНС бота.",
+        "additionalFields": {}
+      },
+      "id": "send-error",
+      "name": "Send Error",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [910, 400],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_TELEGRAM_BOT_CREDENTIAL",
+          "name": "ФНС Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "resource": "chat",
+        "operation": "create",
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Ты - эксперт по категоризации покупок. Твоя задача - распределить товары из чека по логическим категориям.\n\nДоступные категории:\n- Продукты (еда, напитки, продукты питания)\n- Транспорт (такси, бензин, парковка, общественный транспорт)\n- Развлечения (кино, игры, подписки, хобби)\n- Здоровье (аптека, врачи, спорт, фитнес)\n- Одежда (одежда, обувь, аксессуары)\n- Дом (мебель, техника, ремонт, коммуналка)\n- Образование (книги, курсы, обучение)\n- Кафе/Рестораны (кафе, рестораны, фастфуд)\n- Прочее (всё остальное)\n\nВерни JSON в формате:\n{\n  \"items\": [\n    {\n      \"name\": \"название товара\",\n      \"price\": цена,\n      \"category\": \"категория\"\n    }\n  ],\n  \"main_category\": \"основная категория для всего чека\"\n}"
+            },
+            {
+              "role": "user",
+              "content": "=Магазин: {{ $json.shop_name }}\nДата: {{ $json.date }}\nИтого: {{ $json.total_amount }}₽\n\nТовары:\n{{ $json.items.map(item => `- ${item.name}: ${item.price}₽`).join('\\n') }}\n\nРаспредели товары по категориям."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "ai-categorize",
+      "name": "AI Categorize",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.4,
+      "position": [910, 200],
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_OPENAI_CREDENTIAL",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Парсим ответ от AI\nconst aiResponse = $input.all()[0].json.choices[0].message.content;\nconst originalData = $input.all()[0].json;\n\n// Извлекаем JSON из ответа AI\nlet categorizedData;\ntry {\n  // Ищем JSON в ответе (может быть обёрнут в ```json```)\n  const jsonMatch = aiResponse.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    categorizedData = JSON.parse(jsonMatch[0]);\n  } else {\n    throw new Error('No JSON found');\n  }\n} catch (error) {\n  // Если AI не вернул валидный JSON, используем дефолтную категорию\n  categorizedData = {\n    items: originalData.items.map(item => ({\n      name: item.name,\n      price: item.price,\n      category: 'Прочее'\n    })),\n    main_category: 'Прочее'\n  };\n}\n\nreturn [{\n  json: {\n    shop_name: originalData.shop_name,\n    date: originalData.date,\n    total_amount: originalData.total_amount,\n    items: categorizedData.items,\n    main_category: categorizedData.main_category,\n    raw_text: originalData.raw_text\n  }\n}];"
+      },
+      "id": "parse-ai-response",
+      "name": "Parse AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1130, 200]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.FINAPPKA_BASE_URL}}/api/v1/receipts/import",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "shop_name",
+              "value": "={{ $json.shop_name }}"
+            },
+            {
+              "name": "date",
+              "value": "={{ $json.date }}"
+            },
+            {
+              "name": "total_amount",
+              "value": "={{ Math.round($json.total_amount * 100) }}"
+            },
+            {
+              "name": "items",
+              "value": "={{ JSON.stringify($json.items) }}"
+            },
+            {
+              "name": "main_category",
+              "value": "={{ $json.main_category }}"
+            },
+            {
+              "name": "raw_text",
+              "value": "={{ $json.raw_text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "import-to-finappka",
+      "name": "Import to Finappka",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1350, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_YOUR_FINAPPKA_CREDENTIAL",
+          "name": "Finappka API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "operation": "sendMessage",
+        "chatId": "={{ $input.all()[0].json.message.chat.id }}",
+        "text": "=✅ Чек обработан!\n\n🏪 Магазин: {{ $json.shop_name }}\n💰 Сумма: {{ $json.total_amount }}₽\n📁 Категория: {{ $json.main_category }}\n\n📦 Товары:\n{{ $json.items.map(item => `• ${item.name} - ${item.price}₽ (${item.category})`).join('\\n') }}\n\n✨ Транзакции созданы в Finappka!",
+        "additionalFields": {
+          "parseMode": "Markdown"
+        }
+      },
+      "id": "send-success",
+      "name": "Send Success",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1570, 200],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_TELEGRAM_BOT_CREDENTIAL",
+          "name": "ФНС Bot"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Bot": {
+      "main": [
+        [
+          {
+            "node": "Parse Receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Receipt": {
+      "main": [
+        [
+          {
+            "node": "Valid Receipt?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid Receipt?": {
+      "main": [
+        [
+          {
+            "node": "AI Categorize",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Categorize": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "Import to Finappka",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Import to Finappka": {
+      "main": [
+        [
+          {
+            "node": "Send Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {},
+  "tags": [
+    {
+      "createdAt": "2024-10-23T00:00:00.000Z",
+      "updatedAt": "2024-10-23T00:00:00.000Z",
+      "id": "finappka",
+      "name": "finappka"
+    }
+  ],
+  "triggerCount": 0,
+  "updatedAt": "2024-10-23T00:00:00.000Z",
+  "versionId": "1"
+}

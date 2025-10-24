@@ -30,15 +30,15 @@ export async function POST(req: Request) {
 
     // Генерируем уникальное имя файла
     const fileExt = file.name.split(".").pop();
-    const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-    const filePath = `avatars/${fileName}`;
+    const fileName = `avatar.${fileExt}`;
+    const filePath = `${user.id}/${fileName}`;
 
     // Загружаем в Storage
     const { error: uploadError } = await supabase.storage
-      .from("user-files")
+      .from("avatars")
       .upload(filePath, file, {
         cacheControl: "3600",
-        upsert: false,
+        upsert: true, // Заменяем старый аватар
       });
 
     if (uploadError) {
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
 
     // Получаем публичный URL
     const { data: urlData } = supabase.storage
-      .from("user-files")
+      .from("avatars")
       .getPublicUrl(filePath);
 
     const avatarUrl = urlData.publicUrl;

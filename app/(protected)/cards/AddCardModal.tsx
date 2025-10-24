@@ -9,13 +9,6 @@ type AddCardModalProps = {
   triggerClassName?: string;
 };
 
-const colors = [
-  { value: "blue", style: { background: "linear-gradient(135deg, #1565c0, #03a9f4)" } },
-  { value: "red", style: { background: "linear-gradient(135deg, #c62828, #f44336)" } },
-  { value: "green", style: { background: "linear-gradient(135deg, #2e7d32, #4caf50)" } },
-  { value: "pink", style: { background: "linear-gradient(135deg, #9c27b0, #e91e63)" } },
-];
-
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
@@ -27,7 +20,6 @@ function SubmitButton() {
 
 export default function AddCardModal({ triggerClassName }: AddCardModalProps) {
   const [open, setOpen] = useState(false);
-  const [color, setColor] = useState<string>(colors[0]?.value ?? "blue");
   const titleId = useId();
 
   const handleOpen = useCallback(() => setOpen(true), []);
@@ -67,7 +59,7 @@ export default function AddCardModal({ triggerClassName }: AddCardModalProps) {
                 </div>
 
                 <input type="hidden" name="card_type" value="debit" />
-                <input type="hidden" name="card_color" value={color} />
+                <input type="hidden" name="card_color" value="blue" />
                 <input type="hidden" name="currency" value="RUB" />
 
                 <div className={styles.formField}>
@@ -80,22 +72,6 @@ export default function AddCardModal({ triggerClassName }: AddCardModalProps) {
                     step="0.01"
                     placeholder="0.00"
                   />
-                </div>
-
-                <div className={styles.formField}>
-                  <label>Цвет карты</label>
-                  <div className={styles.colorOptions}>
-                    {colors.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        className={`${styles.colorSwatch}${color === option.value ? " " + styles.colorSwatchActive : ""}`}
-                        style={option.style}
-                        onClick={() => setColor(option.value)}
-                        aria-pressed={color === option.value}
-                      />
-                    ))}
-                  </div>
                 </div>
 
                 <label className={styles.modalCheckbox}>

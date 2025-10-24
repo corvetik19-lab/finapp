@@ -26,7 +26,7 @@
   padding: 0.75rem 1rem;
   background: var(--bg-secondary);
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
   white-space: nowrap;
 }
 
@@ -87,8 +87,8 @@
 .chatContainer {
   flex: 1;
   background: var(--bg-secondary);
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
   overflow: hidden;

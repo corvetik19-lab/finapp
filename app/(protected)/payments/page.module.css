@@ -11,9 +11,9 @@
 }
 
 .title {
-  font-size: 32px;
+  font-size: 20px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: #111827;
 }
 
 .subtitle {
@@ -35,10 +35,10 @@
 }
 
 .statCard {
-  border-radius: 16px;
-  padding: 20px;
-  background: var(--surface-card);
-  box-shadow: var(--shadow-sm);
+  border-radius: 12px;
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -65,10 +65,10 @@
 }
 
 .insightCard {
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 24px;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(14, 165, 233, 0.12));
-  border: 1px solid rgba(99, 102, 241, 0.16);
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
   display: flex;
   flex-direction: column;
   gap: 12px;

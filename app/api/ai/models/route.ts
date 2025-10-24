@@ -49,13 +49,24 @@ export async function GET() {
       });
 
     // Группируем по провайдерам для удобства
+    const recommended = models.filter((m: FormattedModel) => 
+      m.id.includes("openai/gpt-4o") ||
+      m.id.includes("anthropic/claude-3.5") ||
+      m.id.includes("google/gemini-2.0")
+    );
+    
+    const free = models.filter((m: FormattedModel) => m.is_free);
+    
+    // Остальные модели (не рекомендованные и не бесплатные)
+    const other = models.filter((m: FormattedModel) => 
+      !m.is_free && 
+      !recommended.some(r => r.id === m.id)
+    );
+    
     const grouped = {
-      recommended: models.filter((m: FormattedModel) => 
-        m.id.includes("openai/gpt-4o") ||
-        m.id.includes("anthropic/claude") ||
-        m.id.includes("google/gemini")
-      ),
-      free: models.filter((m: FormattedModel) => m.is_free),
+      recommended,
+      free,
+      other,
       all: models,
     };
 

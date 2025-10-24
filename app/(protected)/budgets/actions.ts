@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createRouteClient } from "@/lib/supabase/helpers";
 import { budgetFormSchema } from "@/lib/validation/budget";
+import { checkBudgetAchievements } from "@/lib/gamification/detectors";
 
 function toObject(formData: FormData) {
   return Object.fromEntries(formData.entries());
@@ -36,6 +37,9 @@ export async function createBudget(formData: FormData) {
     currency: parsed.currency,
   });
   if (error) throw error;
+
+  // Проверяем достижения по бюджетам
+  checkBudgetAchievements(user.id).catch(console.error);
 
   revalidatePath("/budgets");
 }

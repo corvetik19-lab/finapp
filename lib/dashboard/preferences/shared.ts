@@ -1,9 +1,6 @@
 export const CATEGORY_WIDGET_KEY = "category-management";
 export const WIDGET_VISIBILITY_KEY = "widget-visibility";
-
-export type CategoryWidgetPreferencesState = {
-  visibleIds: string[];
-};
+export const WIDGET_ORDER_KEY = "widget-order";
 
 // Ключи виджетов дашборда
 export const DASHBOARD_WIDGETS = {
@@ -19,6 +16,27 @@ export const DASHBOARD_WIDGETS = {
 
 export type DashboardWidgetKey = typeof DASHBOARD_WIDGETS[keyof typeof DASHBOARD_WIDGETS];
 
+export type CategoryWidgetPreferencesState = {
+  visibleIds: string[];
+};
+
+// Настройки порядка виджетов
+export type WidgetOrderState = {
+  order: DashboardWidgetKey[];
+};
+
+// Порядок виджетов по умолчанию
+export const DEFAULT_WIDGET_ORDER: DashboardWidgetKey[] = [
+  DASHBOARD_WIDGETS.BUDGET,
+  DASHBOARD_WIDGETS.FINANCIAL_TRENDS,
+  DASHBOARD_WIDGETS.EXPENSE_BY_CATEGORY,
+  DASHBOARD_WIDGETS.NET_WORTH,
+  DASHBOARD_WIDGETS.PLANS,
+  DASHBOARD_WIDGETS.UPCOMING_PAYMENTS,
+  DASHBOARD_WIDGETS.RECENT_NOTES,
+  DASHBOARD_WIDGETS.CATEGORY_MANAGEMENT,
+];
+
 // Настройки видимости виджетов
 export type WidgetVisibilityState = {
   hidden: DashboardWidgetKey[];
@@ -26,44 +44,44 @@ export type WidgetVisibilityState = {
 
 // Информация о виджетах для отображения в настройках
 export const WIDGET_INFO: Record<DashboardWidgetKey, { title: string; description: string; icon: string }> = {
-  [DASHBOARD_WIDGETS.NET_WORTH]: {
-    title: "Чистые активы",
-    description: "Обзор ваших активов и долгов",
-    icon: "account_balance",
-  },
-  [DASHBOARD_WIDGETS.PLANS]: {
-    title: "Планы",
-    description: "Финансовые цели и прогресс",
-    icon: "flag",
-  },
-  [DASHBOARD_WIDGETS.UPCOMING_PAYMENTS]: {
-    title: "Предстоящие платежи",
-    description: "Напоминания о счетах",
-    icon: "receipt_long",
-  },
-  [DASHBOARD_WIDGETS.RECENT_NOTES]: {
-    title: "Последние заметки",
-    description: "Быстрый доступ к записям",
-    icon: "sticky_note_2",
-  },
   [DASHBOARD_WIDGETS.BUDGET]: {
     title: "Бюджет на месяц",
-    description: "Контроль расходов",
+    description: "Использование бюджетов по категориям",
     icon: "account_balance_wallet",
   },
   [DASHBOARD_WIDGETS.FINANCIAL_TRENDS]: {
     title: "Финансовые тенденции",
-    description: "Динамика доходов и расходов",
-    icon: "trending_up",
+    description: "График доходов и расходов за период",
+    icon: "show_chart",
   },
   [DASHBOARD_WIDGETS.EXPENSE_BY_CATEGORY]: {
     title: "Расходы по категориям",
-    description: "Распределение расходов",
+    description: "Пончик-диаграмма распределения расходов",
     icon: "pie_chart",
+  },
+  [DASHBOARD_WIDGETS.NET_WORTH]: {
+    title: "Чистые активы",
+    description: "Обзор активов и долгов (счета, кредиты)",
+    icon: "account_balance",
+  },
+  [DASHBOARD_WIDGETS.PLANS]: {
+    title: "Планы",
+    description: "Прогресс достижения финансовых целей",
+    icon: "flag",
+  },
+  [DASHBOARD_WIDGETS.UPCOMING_PAYMENTS]: {
+    title: "Предстоящие платежи",
+    description: "Ближайшие обязательные платежи",
+    icon: "event",
+  },
+  [DASHBOARD_WIDGETS.RECENT_NOTES]: {
+    title: "Последние заметки",
+    description: "Быстрый доступ к вашим записям",
+    icon: "sticky_note_2",
   },
   [DASHBOARD_WIDGETS.CATEGORY_MANAGEMENT]: {
     title: "Управление категориями",
-    description: "Быстрый доступ к категориям",
+    description: "Быстрое редактирование категорий",
     icon: "category",
   },
 };

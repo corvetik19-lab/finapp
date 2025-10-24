@@ -1,14 +1,21 @@
 {
   "name": "finapp",
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "description": "Финансовый трекер с AI-аналитикой - управление личными финансами с интеллектуальными прогнозами и рекомендациями",
+  "author": "FinApp Team",
+  "license": "MIT",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint app components lib --ext .ts,.tsx,.js,.jsx"
   },
   "dependencies": {
+    "@ai-sdk/react": "^2.0.76",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@ducanh2912/next-pwa": "^10.2.8",
     "@fontsource-variable/roboto": "^5.1.0",
     "@fontsource-variable/rubik": "^5.1.0",
@@ -16,12 +23,16 @@
     "@fontsource/rubik": "^5.1.0",
     "@hookform/resolvers": "^5.2.2",
     "@openrouter/ai-sdk-provider": "^1.2.0",
+    "@react-email/components": "^0.5.7",
+    "@react-email/render": "^1.4.0",
     "@sentry/nextjs": "^10.19.0",
+    "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.57.4",
     "ai": "^5.0.68",
     "chart.js": "^4.5.0",
     "clsx": "^2.1.1",
+    "dotenv": "^17.2.3",
     "exceljs": "^4.4.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.3",
@@ -34,6 +45,8 @@
     "react-chartjs-2": "^5.3.0",
     "react-dom": "19.1.0",
     "react-hook-form": "^7.63.0",
+    "react-joyride": "^2.9.3",
+    "resend": "^6.2.2",
     "zod": "^4.1.12"
   },
   "devDependencies": {

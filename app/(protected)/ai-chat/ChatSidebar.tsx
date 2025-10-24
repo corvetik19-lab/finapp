@@ -10,6 +10,8 @@ type ChatSidebarProps = {
   onSelectChat: (chatId: string | null) => void;
   onNewChat: () => void;
   refreshKey?: number;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 };
 
 export default function ChatSidebar({
@@ -17,6 +19,8 @@ export default function ChatSidebar({
   onSelectChat,
   onNewChat,
   refreshKey = 0,
+  isCollapsed = false,
+  onToggleCollapse,
 }: ChatSidebarProps) {
   const [chats, setChats] = useState<AiChat[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -202,11 +206,26 @@ export default function ChatSidebar({
   };
 
   return (
-    <div className={styles.sidebar}>
-      {/* Заголовок и кнопки */}
-      <div className={styles.header}>
-        <h2 className={styles.title}>Чаты</h2>
-        <div className={styles.headerButtons}>
+    <div className={`${styles.sidebar} ${isCollapsed ? styles.collapsed : ''}`}>
+      {/* Кнопка сворачивания/разворачивания */}
+      {onToggleCollapse && (
+        <button
+          className={styles.toggleBtn}
+          onClick={onToggleCollapse}
+          title={isCollapsed ? "Развернуть" : "Свернуть"}
+        >
+          <span className="material-icons">
+            {isCollapsed ? "chevron_right" : "chevron_left"}
+          </span>
+        </button>
+      )}
+
+      {!isCollapsed && (
+        <>
+          {/* Заголовок и кнопки */}
+          <div className={styles.header}>
+            <h2 className={styles.title}>Чаты</h2>
+            <div className={styles.headerButtons}>
           {!isSelectionMode && (
             <button
               onClick={onNewChat}
@@ -392,6 +411,8 @@ export default function ChatSidebar({
           ))
         )}
       </div>
+        </>
+      )}
     </div>
   );
 }

@@ -1,0 +1,253 @@
+.container {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 24px;
+  color: white;
+  box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+  margin-bottom: 24px;
+  transition: all 0.3s ease;
+}
+
+.container.minimized {
+  padding: 16px 24px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.progress {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.headerRight {
+  display: flex;
+  gap: 8px;
+}
+
+.minimizeBtn,
+.closeBtn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.minimizeBtn:hover,
+.closeBtn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.progressBar {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  height: 8px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.progressFill {
+  background: linear-gradient(90deg, #10b981, #34d399);
+  height: 100%;
+  border-radius: 8px;
+  transition: width 0.5s ease;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.item {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.item.clickable {
+  cursor: pointer;
+}
+
+.item.clickable:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateX(4px);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.item.completed {
+  opacity: 0.7;
+}
+
+.itemIcon {
+  font-size: 24px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.checkmark {
+  color: #10b981;
+  font-weight: bold;
+  font-size: 28px;
+}
+
+.itemContent {
+  flex: 1;
+}
+
+.itemTitle {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.itemDescription {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.itemArrow {
+  font-size: 20px;
+  opacity: 0.6;
+  transition: transform 0.2s ease;
+}
+
+.item:hover .itemArrow {
+  transform: translateX(4px);
+}
+
+.footer {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-top: 16px;
+}
+
+.footerText {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.footerText strong {
+  font-weight: 600;
+}
+
+.congratulations {
+  text-align: center;
+  padding: 32px 16px;
+}
+
+.congratsIcon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  animation: bounce 1s ease infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.congratulations h4 {
+  margin: 0 0 12px 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.congratulations p {
+  margin: 0 0 24px 0;
+  font-size: 15px;
+  opacity: 0.95;
+}
+
+.congratsBtn {
+  background: white;
+  color: #667eea;
+  border: none;
+  padding: 12px 32px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.congratsBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .header h3 {
+    font-size: 18px;
+  }
+
+  .item {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .itemIcon {
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+  }
+
+  .itemTitle {
+    font-size: 14px;
+  }
+
+  .itemDescription {
+    font-size: 12px;
+  }
+}

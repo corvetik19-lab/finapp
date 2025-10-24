@@ -28,10 +28,6 @@ const FINANCIAL_TRENDS_DEFAULT_MONTHS = 1;
 export default async function DashboardPage() {
   const supabase = await createRSCClient();
 
-  // Получаем данные текущего пользователя
-  const { data: { user } } = await supabase.auth.getUser();
-  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Пользователь';
-
   const overview = await loadDashboardOverview(8);
   const trendsOverview = await loadDashboardOverview(FINANCIAL_TRENDS_DEFAULT_MONTHS);
   const trendLabels = trendsOverview.trend.map((point) => point.label);
@@ -61,6 +57,28 @@ export default async function DashboardPage() {
 
   const prefs = await loadCategoryWidgetPreferences();
   const widgetVisibility = await loadWidgetVisibility();
+  
+  // Получаем текущего пользователя
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  // Загружаем порядок виджетов из настроек
+  const { data: dashboardSettings } = await supabase
+    .from("user_dashboard_settings")
+    .select("widget_layout")
+    .eq("user_id", user?.id || "")
+    .single();
+  
+  // Создаём порядок виджетов (если настроек нет, используем дефолтный)
+  const widgetOrder = dashboardSettings?.widget_layout?.map((w: { id: string }) => w.id) || [
+    DASHBOARD_WIDGETS.BUDGET,
+    DASHBOARD_WIDGETS.FINANCIAL_TRENDS,
+    DASHBOARD_WIDGETS.EXPENSE_BY_CATEGORY,
+    DASHBOARD_WIDGETS.NET_WORTH,
+    DASHBOARD_WIDGETS.PLANS,
+    DASHBOARD_WIDGETS.UPCOMING_PAYMENTS,
+    DASHBOARD_WIDGETS.RECENT_NOTES,
+    DASHBOARD_WIDGETS.CATEGORY_MANAGEMENT,
+  ];
 
   // Загружаем счета пользователя из базы
   const { data: accountsRaw = [] } = await supabase
@@ -160,23 +178,61 @@ export default async function DashboardPage() {
     .filter((g) => g.isDebt)
     .reduce((sum, g) => sum + g.balance, 0);
 
+  // Создаём мапу виджетов для динамического рендеринга
+  const widgetComponents: Record<string, React.ReactNode> = {
+    [DASHBOARD_WIDGETS.BUDGET]: isWidgetVisible(DASHBOARD_WIDGETS.BUDGET, widgetVisibility) && (
+      <BudgetSection key="budget" budgets={budgets} currency={overview.currency} categories={categories} />
+    ),
+    [DASHBOARD_WIDGETS.FINANCIAL_TRENDS]: isWidgetVisible(DASHBOARD_WIDGETS.FINANCIAL_TRENDS, widgetVisibility) && (
+      <div key="financial-trends" data-tour="dashboard-chart">
+        <FinancialTrendsCard
+          labels={trendLabels}
+          income={trendIncome}
+          expense={trendExpense}
+          currency={trendsOverview.currency}
+          initialMonths={FINANCIAL_TRENDS_DEFAULT_MONTHS}
+        />
+      </div>
+    ),
+    [DASHBOARD_WIDGETS.EXPENSE_BY_CATEGORY]: isWidgetVisible(DASHBOARD_WIDGETS.EXPENSE_BY_CATEGORY, widgetVisibility) && (
+      <div key="expense-by-category" data-tour="dashboard-categories">
+        <ExpenseByCategoryCard
+          breakdown={overview.breakdown}
+          total={breakdownTotal}
+          currency={overview.currency}
+        />
+      </div>
+    ),
+    [DASHBOARD_WIDGETS.NET_WORTH]: isWidgetVisible(DASHBOARD_WIDGETS.NET_WORTH, widgetVisibility) && (
+      <NetWorthWidget
+        key="net-worth"
+        accounts={accountGroups}
+        totalAssets={totalAssets}
+        totalDebts={totalDebts}
+        currency={overview.currency}
+      />
+    ),
+    [DASHBOARD_WIDGETS.PLANS]: isWidgetVisible(DASHBOARD_WIDGETS.PLANS, widgetVisibility) && (
+      <PlansWidget key="plans" plans={plans} currency={overview.currency} />
+    ),
+    [DASHBOARD_WIDGETS.UPCOMING_PAYMENTS]: isWidgetVisible(DASHBOARD_WIDGETS.UPCOMING_PAYMENTS, widgetVisibility) && (
+      <UpcomingPaymentsCard key="upcoming-payments" payments={upcomingPayments} />
+    ),
+    [DASHBOARD_WIDGETS.RECENT_NOTES]: isWidgetVisible(DASHBOARD_WIDGETS.RECENT_NOTES, widgetVisibility) && (
+      <RecentNotesCard key="recent-notes" notes={notes} />
+    ),
+    [DASHBOARD_WIDGETS.CATEGORY_MANAGEMENT]: isWidgetVisible(DASHBOARD_WIDGETS.CATEGORY_MANAGEMENT, widgetVisibility) && (
+      <CategoryManagementCard
+        key="category-management"
+        initialData={categorySummary}
+        initialPreferences={prefs}
+      />
+    ),
+  };
+
   return (
     <DashboardClient widgetVisibility={widgetVisibility}>
-      <section className={styles.banner}>
-        <div>
-          <div className={styles.bannerTitle}>Добро пожаловать, {userName}!</div>
-          <div className={styles.bannerSub}>Краткий обзор ваших финансов за последние месяцы</div>
-        </div>
-        <div className="material-icons" aria-hidden style={{ fontSize: 56, opacity: 0.9 }}>
-          insights
-        </div>
-      </section>
-
-      {isWidgetVisible(DASHBOARD_WIDGETS.BUDGET, widgetVisibility) && (
-        <BudgetSection budgets={budgets} currency={overview.currency} categories={categories} />
-      )}
-
-      <section className={styles.summaryGrid}>
+      <section className={styles.summaryGrid} data-tour="dashboard-summary">
         <div className={styles.card}>
           <div className={`${styles.cardIcon} balance`}><span className="material-icons">account_balance_wallet</span></div>
           <div className={styles.cardTitle}>Итог месяца</div>
@@ -194,51 +250,8 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <section className={styles.grid2}>
-        {isWidgetVisible(DASHBOARD_WIDGETS.FINANCIAL_TRENDS, widgetVisibility) && (
-          <FinancialTrendsCard
-            labels={trendLabels}
-            income={trendIncome}
-            expense={trendExpense}
-            currency={trendsOverview.currency}
-            initialMonths={FINANCIAL_TRENDS_DEFAULT_MONTHS}
-          />
-        )}
-        {isWidgetVisible(DASHBOARD_WIDGETS.EXPENSE_BY_CATEGORY, widgetVisibility) && (
-          <ExpenseByCategoryCard
-            breakdown={overview.breakdown}
-            total={breakdownTotal}
-            currency={overview.currency}
-          />
-        )}
-      </section>
-
-      <section className={styles.widgetsGrid}>
-        {isWidgetVisible(DASHBOARD_WIDGETS.NET_WORTH, widgetVisibility) && (
-          <NetWorthWidget
-            accounts={accountGroups}
-            totalAssets={totalAssets}
-            totalDebts={totalDebts}
-            currency={overview.currency}
-          />
-        )}
-        {isWidgetVisible(DASHBOARD_WIDGETS.PLANS, widgetVisibility) && (
-          <PlansWidget plans={plans} currency={overview.currency} />
-        )}
-        {isWidgetVisible(DASHBOARD_WIDGETS.UPCOMING_PAYMENTS, widgetVisibility) && (
-          <UpcomingPaymentsCard payments={upcomingPayments} />
-        )}
-        {isWidgetVisible(DASHBOARD_WIDGETS.RECENT_NOTES, widgetVisibility) && (
-          <RecentNotesCard notes={notes} />
-        )}
-      </section>
-
-      {isWidgetVisible(DASHBOARD_WIDGETS.CATEGORY_MANAGEMENT, widgetVisibility) && (
-        <CategoryManagementCard
-          initialData={categorySummary}
-          initialPreferences={prefs}
-        />
-      )}
+      {/* Рендерим виджеты в порядке из настроек */}
+      {widgetOrder.map((widgetId: string) => widgetComponents[widgetId]).filter(Boolean)}
     </DashboardClient>
   );
 }

@@ -24,8 +24,8 @@
   gap: 8px;
   background: white;
   padding: 6px;
-  border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
 }
 
 .tabs button {
@@ -46,16 +46,15 @@
 }
 
 .tabs button.activeTab {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #3b82f6;
   color: white;
-  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.4);
 }
 
 .title {
-  font-size: 32px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 600;
   margin: 0 0 8px;
-  color: #1f2937;
+  color: #111827;
 }
 
 .subtitle {
@@ -89,9 +88,8 @@
 }
 
 .periodSelector button.active {
-  background: white;
-  color: #4f46e5;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: #3b82f6;
+  color: white;
 }
 
 .section {
@@ -99,7 +97,7 @@
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
 }
 
 .sectionTitle {
@@ -117,7 +115,7 @@
 }
 
 .comparisonCard {
-  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  background: #ffffff;
   padding: 20px;
   border-radius: 12px;
   border: 1px solid #e5e7eb;
@@ -180,13 +178,12 @@
 
 .topItem:hover {
   background: #f3f4f6;
-  transform: translateX(4px);
 }
 
 .topRank {
   width: 32px;
   height: 32px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #3b82f6;
   color: white;
   border-radius: 50%;
   display: flex;

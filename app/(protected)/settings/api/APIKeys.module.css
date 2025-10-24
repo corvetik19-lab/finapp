@@ -13,10 +13,10 @@
 }
 
 .title {
-  font-size: 32px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 600;
   margin: 0 0 8px;
-  color: #1f2937;
+  color: #111827;
 }
 
 .subtitle {
@@ -26,25 +26,25 @@
 }
 
 .createBtn {
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 8px 12px;
+  background: #3b82f6;
   color: white;
   border: none;
   border-radius: 8px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
-  transition: transform 0.2s;
+  transition: all 0.2s;
 }
 
 .createBtn:hover {
-  transform: translateY(-2px);
+  background: #2563eb;
 }
 
 .newKeyAlert {
-  background: #d1fae5;
-  border: 2px solid #10b981;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 24px;
@@ -106,7 +106,7 @@
 
 .form {
   background: white;
-  border: 2px solid #e5e7eb;
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 32px;
@@ -114,8 +114,8 @@
 
 .form h3 {
   margin: 0 0 20px;
-  font-size: 20px;
-  color: #1f2937;
+  font-size: 18px;
+  color: #111827;
 }
 
 .form label {
@@ -173,13 +173,13 @@
 }
 
 .formActions button:first-child {
-  background: white;
-  border: 1px solid #d1d5db;
-  color: #374151;
+  background: #f3f4f6;
+  border: none;
+  color: #6b7280;
 }
 
 .submitBtn {
-  background: #4f46e5 !important;
+  background: #3b82f6 !important;
   color: white !important;
   border: none !important;
 }
@@ -218,7 +218,7 @@
 
 .keyCard {
   background: white;
-  border: 2px solid #e5e7eb;
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 16px;
@@ -226,8 +226,7 @@
 }
 
 .keyCard:hover {
-  border-color: #667eea;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+  border-color: #3b82f6;
 }
 
 .keyHeader {
@@ -241,8 +240,8 @@
 
 .keyHeader h3 {
   margin: 0 0 8px;
-  font-size: 18px;
-  color: #1f2937;
+  font-size: 16px;
+  color: #111827;
 }
 
 .keyHeader code {
@@ -254,19 +253,19 @@
 }
 
 .deleteBtn {
-  padding: 8px 16px;
-  background: #fee2e2;
-  color: #991b1b;
+  padding: 8px 12px;
+  background: #fef2f2;
+  color: #dc2626;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   transition: all 0.2s;
 }
 
 .deleteBtn:hover {
-  background: #fecaca;
+  background: #fee2e2;
 }
 
 .keyDetails {
@@ -294,9 +293,9 @@
 }
 
 .docs h2 {
-  font-size: 24px;
+  font-size: 18px;
   margin: 0 0 12px;
-  color: #1f2937;
+  color: #111827;
 }
 
 .docs h3 {
@@ -341,12 +340,12 @@
   background: white;
   border-radius: 8px;
   margin-bottom: 8px;
-  border-left: 3px solid #667eea;
+  border-left: 3px solid #3b82f6;
 }
 
 .endpointsList code {
   font-weight: 600;
-  color: #4f46e5;
+  color: #3b82f6;
 }
 
 @media (max-width: 768px) {

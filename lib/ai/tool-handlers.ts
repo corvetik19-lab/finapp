@@ -2,44 +2,63 @@
  * Обработчики инструментов AI - выполняют действия в приложении
  */
 
-import { createRouteClient } from "@/lib/supabase/helpers";
+import { createAdminClient, createRouteClient } from "@/lib/supabase/helpers";
 import type { ToolParameters } from "./tools";
 
-// Получить ID пользователя
-async function getCurrentUserId() {
-  const supabase = await createRouteClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("User not authenticated");
-  return user.id;
-}
+type TransactionSummaryRow = {
+  amount: number;
+  direction: "income" | "expense";
+};
+
+type TransactionRecordRow = {
+  occurred_at: string;
+  amount: number;
+  direction: "income" | "expense";
+  currency?: string | null;
+  note?: string | null;
+  categories?: { name?: string | null } | null;
+  accounts?: { name?: string | null } | null;
+};
+
+type PlanRecord = {
+  name: string;
+  current_amount?: number | null;
+  target_amount?: number | null;
+};
+
+type ProgramRecord = {
+  name: string;
+  is_active?: boolean | null;
+  duration?: number | null;
+};
 
 // === ДЕБЕТОВЫЕ КАРТЫ ===
-export async function handleAddDebitCard(params: ToolParameters<"addDebitCard">) {
+export async function handleAddDebitCard(params: ToolParameters<"addDebitCard"> & { userId: string }) {
   const supabase = await createRouteClient();
-  const userId = await getCurrentUserId();
+  const userId = params.userId;
 
-  const { data, error } = await supabase
+  const { data, error} = await supabase
     .from("accounts")
     .insert({
       user_id: userId,
       name: params.name,
       type: "debit_card",
       balance: Math.round(params.balance * 100), // в копейках
-      currency: params.currency,
-      bank: params.bank,
+      currency: params.currency || "RUB",
+      bank: params.bank || params.name,
       card_number: params.cardNumber || null,
     })
     .select()
     .single();
 
   if (error) throw error;
-  return { success: true, data, message: `Карта "${params.name}" успешно добавлена с балансом ${params.balance} ${params.currency}` };
+  return { success: true, data, message: `Карта "${params.name}" успешно добавлена с балансом ${params.balance} ${params.currency || "RUB"}` };
 }
 
 // === КРЕДИТНЫЕ КАРТЫ ===
-export async function handleAddCreditCard(params: ToolParameters<"addCreditCard">) {
+export async function handleAddCreditCard(params: ToolParameters<"addCreditCard"> & { userId: string }) {
   const supabase = await createRouteClient();
-  const userId = await getCurrentUserId();
+  const userId = params.userId;
 
   const { data, error } = await supabase
     .from("accounts")
@@ -48,8 +67,8 @@ export async function handleAddCreditCard(params: ToolParameters<"addCreditCard"
       name: params.name,
       type: "credit_card",
       balance: Math.round(params.balance * 100),
-      currency: params.currency,
-      bank: params.bank,
+      currency: params.currency || "RUB",
+      bank: params.bank || params.name,
       card_number: params.cardNumber || null,
       credit_limit: Math.round(params.creditLimit * 100),
     })
@@ -57,13 +76,13 @@ export async function handleAddCreditCard(params: ToolParameters<"addCreditCard"
     .single();
 
   if (error) throw error;
-  return { success: true, data, message: `Кредитная карта "${params.name}" добавлена. Лимит: ${params.creditLimit} ${params.currency}` };
+  return { success: true, data, message: `Кредитная карта "${params.name}" добавлена. Лимит: ${params.creditLimit} ${params.currency || "RUB"}` };
 }
 
 // === ТРАНЗАКЦИИ ===
-export async function handleAddTransaction(params: ToolParameters<"addTransaction">) {
+export async function handleAddTransaction(params: ToolParameters<"addTransaction"> & { userId: string }) {
   const supabase = await createRouteClient();
-  const userId = await getCurrentUserId();
+  const userId = params.userId;
 
   // Найти счёт по имени
   const { data: account } = await supabase
@@ -128,9 +147,9 @@ export async function handleAddTransaction(params: ToolParameters<"addTransactio
 }
 
 // === БЮДЖЕТЫ ===
-export async function handleAddBudget(params: ToolParameters<"addBudget">) {
+export async function handleAddBudget(params: ToolParameters<"addBudget"> & { userId: string }) {
   const supabase = await createRouteClient();
-  const userId = await getCurrentUserId();
+  const userId = params.userId;
 
   // Найти категорию
   const { data: category } = await supabase
@@ -161,9 +180,9 @@ export async function handleAddBudget(params: ToolParameters<"addBudget">) {
 }
 
 // === ПЛАНЫ ===
-export async function handleAddPlan(params: ToolParameters<"addPlan">) {
+export async function handleAddPlan(params: ToolParameters<"addPlan"> & { userId: string }) {
   const supabase = await createRouteClient();
-  const userId = await getCurrentUserId();
+  const userId = params.userId;
 
   const { data, error } = await supabase
     .from("plans")
@@ -183,9 +202,9 @@ export async function handleAddPlan(params: ToolParameters<"addPlan">) {
 }
 
 // === ЗАКЛАДКИ ===
-export async function handleAddBookmark(params: ToolParameters<"addBookmark">) {
+export async function handleAddBookmark(params: ToolParameters<"addBookmark"> & { userId: string }) {
   const supabase = await createRouteClient();
-  const userId = await getCurrentUserId();
+  const userId = params.userId;
 
   const { data, error } = await supabase
     .from("bookmarks")
@@ -204,9 +223,9 @@ export async function handleAddBookmark(params: ToolParameters<"addBookmark">) {
 }
 
 // === ПРОМПТЫ ===
-export async function handleAddPrompt(params: ToolParameters<"addPrompt">) {
+export async function handleAddPrompt(params: ToolParameters<"addPrompt"> & { userId: string }) {
   const supabase = await createRouteClient();
-  const userId = await getCurrentUserId();
+  const userId = params.userId;
 
   const { data, error } = await supabase
     .from("prompts")
@@ -225,9 +244,9 @@ export async function handleAddPrompt(params: ToolParameters<"addPrompt">) {
 }
 
 // === АНАЛИТИКА ===
-export async function handleGetFinancialSummary(params: ToolParameters<"getFinancialSummary">) {
+export async function handleGetFinancialSummary(params: ToolParameters<"getFinancialSummary"> & { userId: string }) {
   const supabase = await createRouteClient();
-  const userId = await getCurrentUserId();
+  const userId = params.userId;
 
   // Определить период
   const now = new Date();
@@ -257,12 +276,14 @@ export async function handleGetFinancialSummary(params: ToolParameters<"getFinan
     return { success: false, message: "Не удалось получить данные" };
   }
 
-  const income = transactions
-    .filter(t => t.direction === "income")
+  const summaryRows: TransactionSummaryRow[] = transactions as TransactionSummaryRow[];
+
+  const income = summaryRows
+    .filter((t) => t.direction === "income")
     .reduce((sum, t) => sum + t.amount, 0) / 100;
 
-  const expense = transactions
-    .filter(t => t.direction === "expense")
+  const expense = summaryRows
+    .filter((t) => t.direction === "expense")
     .reduce((sum, t) => sum + t.amount, 0) / 100;
 
   const balance = income - expense;
@@ -275,9 +296,9 @@ export async function handleGetFinancialSummary(params: ToolParameters<"getFinan
 }
 
 // === РАСХОДЫ ПО КАТЕГОРИЯМ ===
-export async function handleGetExpensesByCategory(params: ToolParameters<"getExpensesByCategory">) {
+export async function handleGetExpensesByCategory(params: ToolParameters<"getExpensesByCategory"> & { userId: string }) {
   const supabase = await createRouteClient();
-  const userId = await getCurrentUserId();
+  const userId = params.userId;
 
   const query = supabase
     .from("transactions")
@@ -319,9 +340,16 @@ export async function handleGetExpensesByCategory(params: ToolParameters<"getExp
 }
 
 // === БАЛАНС СЧЕТОВ ===
-export async function handleGetAccountBalance(params: ToolParameters<"getAccountBalance">) {
-  const supabase = await createRouteClient();
-  const userId = await getCurrentUserId();
+export async function handleGetAccountBalance(
+  params: ToolParameters<"getAccountBalance"> & { userId?: string }
+) {
+  const supabase = createAdminClient(); // Service Role - обход RLS
+  
+  if (!params.userId) {
+    throw new Error("userId is required for AI tool calls");
+  }
+  
+  const userId = params.userId;
 
   const query = supabase
     .from("accounts")
@@ -354,30 +382,316 @@ export async function handleGetAccountBalance(params: ToolParameters<"getAccount
   };
 }
 
-// === ДОБАВИТЬ КАТЕГОРИЮ ===
-export async function handleAddCategory(params: ToolParameters<"addCategory">) {
-  const supabase = await createRouteClient();
-  const userId = await getCurrentUserId();
+// === ДОБАВИТЬ КАТЕГОРИЮ (AI) ===
+export async function handleAddCategory(
+  params: ToolParameters<"addCategory"> & { userId?: string }
+) {
+  const supabase = createAdminClient(); // Service Role - обход RLS
+  
+  if (!params.userId) {
+    throw new Error("userId is required for AI tool calls");
+  }
+  
+  const userId = params.userId;
 
   const { data, error } = await supabase
     .from("categories")
     .insert({
       user_id: userId,
       name: params.name,
-      type: params.type,
-      icon: params.icon || null,
+      kind: params.type, // В БД поле называется kind, а не type
+      // icon колонки нет в БД
     })
     .select()
     .single();
 
   if (error) throw error;
-  return { success: true, data, message: `Категория "${params.name}" создана` };
+  return { success: true, data, message: `✅ Категория "${params.name}" успешно создана!` };
+}
+
+// === ДОБАВИТЬ ТРАНЗАКЦИЮ (AI) ===
+export async function handleAIAddTransaction(
+  params: { amount: number; direction: string; categoryName: string; accountName?: string; note?: string; date?: string; userId?: string }
+) {
+  const supabase = createAdminClient();
+  
+  if (!params.userId) {
+    throw new Error("userId is required for AI tool calls");
+  }
+  
+  const userId = params.userId;
+
+  // Найти или создать первый счёт пользователя
+  let accountId;
+  if (params.accountName) {
+    const { data: account } = await supabase
+      .from("accounts")
+      .select("id")
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .ilike("name", `%${params.accountName}%`)
+      .single();
+    accountId = account?.id;
+  }
+  
+  if (!accountId) {
+    // Взять первый доступный счёт или создать новый
+    const { data: firstAccount } = await supabase
+      .from("accounts")
+      .select("id")
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .limit(1)
+      .single();
+    
+    if (firstAccount) {
+      accountId = firstAccount.id;
+    } else {
+      // Создать дефолтный счёт
+      const { data: newAccount } = await supabase
+        .from("accounts")
+        .insert({
+          user_id: userId,
+          name: "Основной счёт",
+          type: "cash",
+          currency: "RUB"
+        })
+        .select("id")
+        .single();
+      accountId = newAccount?.id;
+    }
+  }
+
+  // Найти или создать категорию
+  let categoryId;
+  const { data: category } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("user_id", userId)
+    .ilike("name", params.categoryName)
+    .single();
+
+  if (category) {
+    categoryId = category.id;
+  } else {
+    // Создать категорию
+    const { data: newCategory } = await supabase
+      .from("categories")
+      .insert({
+        user_id: userId,
+        name: params.categoryName,
+        kind: params.direction,
+      })
+      .select("id")
+      .single();
+    categoryId = newCategory?.id;
+  }
+
+  // Сумма в БД хранится в копейках (bigint)
+  const amountInCents = Math.round(params.amount * 100);
+  
+  // Создать транзакцию
+  const { data, error } = await supabase
+    .from("transactions")
+    .insert({
+      user_id: userId,
+      account_id: accountId,
+      category_id: categoryId,
+      amount: amountInCents,
+      direction: params.direction,
+      currency: "RUB",
+      note: params.note || null,
+      occurred_at: params.date ? new Date(params.date).toISOString() : new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  
+  const directionText = params.direction === "expense" ? "Расход" : "Доход";
+  return { 
+    success: true, 
+    data, 
+    message: `✅ ${directionText} ${params.amount} ₽ добавлен в "${params.categoryName}"` 
+  };
+}
+
+// === ДОБАВИТЬ СЧЁТ (AI) ===
+export async function handleAIAddAccount(
+  params: { name: string; type: string; currency?: string; userId?: string }
+) {
+  const supabase = createAdminClient();
+  
+  if (!params.userId) {
+    throw new Error("userId is required for AI tool calls");
+  }
+  
+  const userId = params.userId;
+
+  const { data, error } = await supabase
+    .from("accounts")
+    .insert({
+      user_id: userId,
+      name: params.name,
+      type: params.type,
+      currency: params.currency || "RUB",
+      archived: false
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return { success: true, data, message: `✅ Счёт "${params.name}" создан!` };
+}
+
+// === ДОБАВИТЬ БЮДЖЕТ (AI) ===
+export async function handleAIAddBudget(
+  params: { categoryName: string; amount: number; period?: string; userId?: string }
+) {
+  const supabase = createAdminClient();
+  
+  if (!params.userId) {
+    throw new Error("userId is required for AI tool calls");
+  }
+  
+  const userId = params.userId;
+
+  // Найти категорию
+  const { data: category } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("user_id", userId)
+    .ilike("name", params.categoryName)
+    .single();
+
+  if (!category) {
+    return { success: false, message: `❌ Категория "${params.categoryName}" не найдена. Сначала создай её!` };
+  }
+
+  // Определить период
+  const now = new Date();
+  let periodStart, periodEnd;
+  
+  if (params.period === "year") {
+    periodStart = new Date(now.getFullYear(), 0, 1);
+    periodEnd = new Date(now.getFullYear(), 11, 31);
+  } else if (params.period === "quarter") {
+    const quarter = Math.floor(now.getMonth() / 3);
+    periodStart = new Date(now.getFullYear(), quarter * 3, 1);
+    periodEnd = new Date(now.getFullYear(), quarter * 3 + 3, 0);
+  } else {
+    // month по умолчанию
+    periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  }
+
+  const amountInCents = Math.round(params.amount * 100);
+
+  const { data, error } = await supabase
+    .from("budgets")
+    .insert({
+      user_id: userId,
+      category_id: category.id,
+      limit_amount: amountInCents,
+      currency: "R", // single char в БД
+      period_start: periodStart.toISOString().split('T')[0],
+      period_end: periodEnd.toISOString().split('T')[0],
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  
+  const periodText = params.period === "year" ? "год" : params.period === "quarter" ? "квартал" : "месяц";
+  return { 
+    success: true, 
+    data, 
+    message: `✅ Бюджет ${params.amount} ₽ на "${params.categoryName}" установлен на ${periodText}!` 
+  };
+}
+
+// === ПОЛУЧИТЬ ТРАНЗАКЦИИ (AI) ===
+export async function handleAIGetTransactions(
+  params: { limit?: number; categoryName?: string; userId?: string }
+) {
+  const supabase = createAdminClient();
+  
+  if (!params.userId) {
+    throw new Error("userId is required for AI tool calls");
+  }
+  
+  const userId = params.userId;
+  const limit = params.limit || 10;
+
+  let query = supabase
+    .from("transactions")
+    .select(`
+      id,
+      amount,
+      direction,
+      currency,
+      occurred_at,
+      note,
+      categories(name),
+      accounts(name)
+    `)
+    .eq("user_id", userId)
+    .order("occurred_at", { ascending: false })
+    .limit(limit);
+
+  if (params.categoryName) {
+    // Сначала найти ID категории
+    const { data: category } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("user_id", userId)
+      .ilike("name", params.categoryName)
+      .single();
+    
+    if (category) {
+      query = query.eq("category_id", category.id);
+    }
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw error;
+  
+  const records: TransactionRecordRow[] = (data ?? []) as TransactionRecordRow[];
+
+  if (records.length === 0) {
+    return { 
+      success: true, 
+      data: [], 
+      message: "📭 Транзакций пока нет. Добавь первую трату или доход!" 
+    };
+  }
+
+  // Форматируем для ответа
+  const formatted = records.map((t) => ({
+    date: new Date(t.occurred_at).toLocaleDateString('ru-RU'),
+    amount: (t.amount / 100).toFixed(2),
+    direction: t.direction === 'expense' ? 'расход' : 'доход',
+    category: t.categories?.name || 'Без категории',
+    account: t.accounts?.name || 'Неизвестный счёт',
+    note: t.note || ''
+  }));
+
+  const summary = formatted.map((t) => 
+    `${t.date}: ${t.direction} ${t.amount} ₽ (${t.category}${t.note ? ` - ${t.note}` : ''})`
+  ).join('\n');
+
+  return { 
+    success: true, 
+    data: formatted, 
+    message: `📊 Последние транзакции:\n\n${summary}` 
+  };
 }
 
 // === УПРАВЛЕНИЕ ПЛАНАМИ (расширенное) ===
-export async function handleGetPlans(params: ToolParameters<"getPlans">) {
+export async function handleGetPlans(params: ToolParameters<"getPlans"> & { userId: string }) {
   const supabase = await createRouteClient();
-  const userId = await getCurrentUserId();
+  const userId = params.userId;
 
   let query = supabase
     .from("plans")
@@ -390,13 +704,15 @@ export async function handleGetPlans(params: ToolParameters<"getPlans">) {
     query = query.eq("status", params.status);
   }
 
-  const { data: plans } = await query;
+  const { data: plansData } = await query;
 
-  if (!plans || plans.length === 0) {
+  if (!plansData || plansData.length === 0) {
     return { success: true, data: [], message: "У вас пока нет планов" };
   }
 
-  const summary = plans.map(p => 
+  const plans: PlanRecord[] = plansData as PlanRecord[];
+
+  const summary = plans.map((p) => 
     `${p.name}: ${(p.current_amount || 0) / 100} / ${(p.target_amount || 0) / 100} ₽ (${Math.round(((p.current_amount || 0) / (p.target_amount || 1)) * 100)}%)`
   ).join(", ");
 
@@ -407,9 +723,9 @@ export async function handleGetPlans(params: ToolParameters<"getPlans">) {
   };
 }
 
-export async function handleUpdatePlan(params: ToolParameters<"updatePlan">) {
+export async function handleUpdatePlan(params: ToolParameters<"updatePlan"> & { userId: string }) {
   const supabase = await createRouteClient();
-  const userId = await getCurrentUserId();
+  const userId = params.userId;
 
   const updates: Record<string, unknown> = {};
   if (params.name) updates.name = params.name;
@@ -431,9 +747,9 @@ export async function handleUpdatePlan(params: ToolParameters<"updatePlan">) {
   return { success: true, data, message: `План "${data.name}" обновлён` };
 }
 
-export async function handleDeletePlan(params: ToolParameters<"deletePlan">) {
+export async function handleDeletePlan(params: ToolParameters<"deletePlan"> & { userId: string }) {
   const supabase = await createRouteClient();
-  const userId = await getCurrentUserId();
+  const userId = params.userId;
 
   const { error } = await supabase
     .from("plans")
@@ -445,9 +761,9 @@ export async function handleDeletePlan(params: ToolParameters<"deletePlan">) {
   return { success: true, message: "План удалён" };
 }
 
-export async function handleAddPlanTopup(params: ToolParameters<"addPlanTopup">) {
+export async function handleAddPlanTopup(params: ToolParameters<"addPlanTopup"> & { userId: string }) {
   const supabase = await createRouteClient();
-  const userId = await getCurrentUserId();
+  const userId = params.userId;
 
   // Получить текущую сумму плана
   const { data: plan } = await supabase
@@ -489,9 +805,9 @@ export async function handleAddPlanTopup(params: ToolParameters<"addPlanTopup">)
 }
 
 // === ФИТНЕС ПРОГРАММЫ ===
-export async function handleGetFitnessPrograms(params: ToolParameters<"getFitnessPrograms">) {
+export async function handleGetFitnessPrograms(params: ToolParameters<"getFitnessPrograms"> & { userId: string }) {
   const supabase = await createRouteClient();
-  const userId = await getCurrentUserId();
+  const userId = params.userId;
 
   let query = supabase
     .from("fitness_programs")
@@ -504,13 +820,15 @@ export async function handleGetFitnessPrograms(params: ToolParameters<"getFitnes
     query = query.eq("is_active", true);
   }
 
-  const { data: programs } = await query;
+  const { data: programsData } = await query;
 
-  if (!programs || programs.length === 0) {
+  if (!programsData || programsData.length === 0) {
     return { success: true, data: [], message: "У вас пока нет фитнес-программ" };
   }
 
-  const summary = programs.map(p => 
+  const programs: ProgramRecord[] = programsData as ProgramRecord[];
+
+  const summary = programs.map((p) => 
     `${p.name}${p.is_active ? ' (активна)' : ''}: ${p.duration || 'без срока'} дней`
   ).join(", ");
 
@@ -521,9 +839,9 @@ export async function handleGetFitnessPrograms(params: ToolParameters<"getFitnes
   };
 }
 
-export async function handleAddFitnessProgram(params: ToolParameters<"addFitnessProgram">) {
+export async function handleAddFitnessProgram(params: ToolParameters<"addFitnessProgram"> & { userId: string }) {
   const supabase = await createRouteClient();
-  const userId = await getCurrentUserId();
+  const userId = params.userId;
 
   const { data, error } = await supabase
     .from("fitness_programs")
@@ -543,9 +861,9 @@ export async function handleAddFitnessProgram(params: ToolParameters<"addFitness
   return { success: true, data, message: `Программа "${params.name}" создана` };
 }
 
-export async function handleUpdateFitnessProgram(params: ToolParameters<"updateFitnessProgram">) {
+export async function handleUpdateFitnessProgram(params: ToolParameters<"updateFitnessProgram"> & { userId: string }) {
   const supabase = await createRouteClient();
-  const userId = await getCurrentUserId();
+  const userId = params.userId;
 
   const updates: Record<string, unknown> = {};
   if (params.name) updates.name = params.name;
@@ -568,9 +886,9 @@ export async function handleUpdateFitnessProgram(params: ToolParameters<"updateF
   return { success: true, data, message: `Программа "${data.name}" обновлена` };
 }
 
-export async function handleDeleteFitnessProgram(params: ToolParameters<"deleteFitnessProgram">) {
+export async function handleDeleteFitnessProgram(params: ToolParameters<"deleteFitnessProgram"> & { userId: string }) {
   const supabase = await createRouteClient();
-  const userId = await getCurrentUserId();
+  const userId = params.userId;
 
   const { error } = await supabase
     .from("fitness_programs")
@@ -582,9 +900,9 @@ export async function handleDeleteFitnessProgram(params: ToolParameters<"deleteF
   return { success: true, message: "Программа удалена" };
 }
 
-export async function handleAddFitnessWorkout(params: ToolParameters<"addFitnessWorkout">) {
+export async function handleAddFitnessWorkout(params: ToolParameters<"addFitnessWorkout"> & { userId: string }) {
   const supabase = await createRouteClient();
-  const userId = await getCurrentUserId();
+  const userId = params.userId;
 
   const { data, error } = await supabase
     .from("fitness_workouts")
@@ -608,25 +926,261 @@ export async function handleAddFitnessWorkout(params: ToolParameters<"addFitness
   };
 }
 
-// Маппинг обработчиков
+// === ЗАМЕТКИ (AI) ===
+export async function handleAIAddNote(
+  params: { title: string; content: string; userId?: string }
+) {
+  const supabase = createAdminClient();
+  
+  if (!params.userId) {
+    throw new Error("userId is required for AI tool calls");
+  }
+  
+  const { data, error } = await supabase
+    .from("notes")
+    .insert({
+      user_id: params.userId,
+      title: params.title,
+      content: params.content
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return { success: true, data, message: `✅ Заметка "${params.title}" создана!` };
+}
+
+export async function handleAIGetNotes(
+  params: { limit?: number; userId?: string }
+) {
+  const supabase = createAdminClient();
+  
+  if (!params.userId) {
+    throw new Error("userId is required for AI tool calls");
+  }
+  
+  const limit = params.limit || 10;
+  
+  const { data, error } = await supabase
+    .from("notes")
+    .select("id, title, content, created_at")
+    .eq("user_id", params.userId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  
+  if (!data || data.length === 0) {
+    return { success: true, data: [], message: "📝 Заметок пока нет. Создай первую!" };
+  }
+  
+  const summary = data.map(n => 
+    `"${n.title}" (${new Date(n.created_at).toLocaleDateString('ru-RU')})`
+  ).join('\n');
+  
+  return { success: true, data, message: `📝 Твои заметки:\n\n${summary}` };
+}
+
+// === ПЛАНЫ (AI) ===
+export async function handleAIAddPlan(
+  params: { name: string; goalAmount: number; targetDate?: string; description?: string; userId?: string }
+) {
+  const supabase = createAdminClient();
+  
+  if (!params.userId) {
+    throw new Error("userId is required for AI tool calls");
+  }
+  
+  const amountInCents = Math.round(params.goalAmount * 100);
+  
+  const { data, error } = await supabase
+    .from("plans")
+    .insert({
+      user_id: params.userId,
+      name: params.name,
+      goal_amount: amountInCents,
+      currency: "R",
+      target_date: params.targetDate || null,
+      description: params.description || null,
+      plan_type: "savings"
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return { success: true, data, message: `✅ План "${params.name}" с целью ${params.goalAmount} ₽ создан!` };
+}
+
+export async function handleAIGetPlans(
+  params: { userId?: string }
+) {
+  const supabase = createAdminClient();
+  
+  if (!params.userId) {
+    throw new Error("userId is required for AI tool calls");
+  }
+  
+  const { data, error } = await supabase
+    .from("plans")
+    .select("id, name, goal_amount, target_date, plan_type")
+    .eq("user_id", params.userId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  
+  if (!data || data.length === 0) {
+    return { success: true, data: [], message: "🎯 Планов пока нет. Создай первый!" };
+  }
+  
+  const summary = data.map(p => 
+    `"${p.name}" - цель ${(p.goal_amount / 100).toFixed(0)} ₽${p.target_date ? ` до ${new Date(p.target_date).toLocaleDateString('ru-RU')}` : ''}`
+  ).join('\n');
+  
+  return { success: true, data, message: `🎯 Твои планы:\n\n${summary}` };
+}
+
+// === ЗАКЛАДКИ (AI) ===
+export async function handleAIAddBookmark(
+  params: { title: string; url: string; description?: string; userId?: string }
+) {
+  const supabase = createAdminClient();
+  
+  if (!params.userId) {
+    throw new Error("userId is required for AI tool calls");
+  }
+  
+  const { data, error } = await supabase
+    .from("bookmarks")
+    .insert({
+      user_id: params.userId,
+      title: params.title,
+      url: params.url,
+      description: params.description || null
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return { success: true, data, message: `✅ Закладка "${params.title}" сохранена!` };
+}
+
+// === ПРОМПТЫ (AI) ===
+export async function handleAIAddPrompt(
+  params: { title: string; content: string; category?: string; userId?: string }
+) {
+  const supabase = createAdminClient();
+  
+  if (!params.userId) {
+    throw new Error("userId is required for AI tool calls");
+  }
+  
+  const { data, error } = await supabase
+    .from("prompts")
+    .insert({
+      user_id: params.userId,
+      title: params.title,
+      content: params.content,
+      category: params.category || "general"
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return { success: true, data, message: `✅ Промпт "${params.title}" сохранён!` };
+}
+
+// === ФИТНЕС (AI) ===
+export async function handleAIAddWorkout(
+  params: { programName: string; duration: number; calories?: number; note?: string; userId?: string }
+) {
+  const supabase = createAdminClient();
+  
+  if (!params.userId) {
+    throw new Error("userId is required for AI tool calls");
+  }
+  
+  // Найти программу или создать дефолтную
+  let programId;
+  const { data: program } = await supabase
+    .from("fitness_programs")
+    .select("id")
+    .eq("user_id", params.userId)
+    .ilike("name", `%${params.programName}%`)
+    .single();
+  
+  if (program) {
+    programId = program.id;
+  } else {
+    // Создать дефолтную программу
+    const { data: newProgram } = await supabase
+      .from("fitness_programs")
+      .insert({
+        user_id: params.userId,
+        name: params.programName,
+        description: "Автоматически создано AI"
+      })
+      .select("id")
+      .single();
+    programId = newProgram?.id;
+  }
+  
+  const { data, error } = await supabase
+    .from("fitness_workouts")
+    .insert({
+      user_id: params.userId,
+      program_id: programId,
+      duration: params.duration,
+      calories: params.calories || null,
+      notes: params.note || null,
+      completed_at: new Date().toISOString()
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return { 
+    success: true, 
+    data, 
+    message: `✅ Тренировка "${params.programName}" записана: ${params.duration} мин${params.calories ? `, ${params.calories} ккал` : ''}!` 
+  };
+}
+
+// Маппинг обработчиков для AI
 export const toolHandlers = {
+  // AI Tools (используют Admin Client)
+  addCategory: handleAddCategory,
+  addTransaction: handleAIAddTransaction,
+  addAccount: handleAIAddAccount,
+  addBudget: handleAIAddBudget,
+  getTransactions: handleAIGetTransactions,
+  getAccountBalance: handleGetAccountBalance,
+  
+  // Заметки
+  addNote: handleAIAddNote,
+  getNotes: handleAIGetNotes,
+  
+  // Планы
+  addPlan: handleAIAddPlan,
+  getPlans: handleAIGetPlans,
+  
+  // Закладки
+  addBookmark: handleAIAddBookmark,
+  
+  // Промпты
+  addPrompt: handleAIAddPrompt,
+  
+  // Фитнес
+  addWorkout: handleAIAddWorkout,
+  
+  // Legacy handlers (для совместимости)
   addDebitCard: handleAddDebitCard,
   addCreditCard: handleAddCreditCard,
-  addTransaction: handleAddTransaction,
-  addBudget: handleAddBudget,
-  addPlan: handleAddPlan,
-  addBookmark: handleAddBookmark,
-  addPrompt: handleAddPrompt,
   getFinancialSummary: handleGetFinancialSummary,
   getExpensesByCategory: handleGetExpensesByCategory,
-  getAccountBalance: handleGetAccountBalance,
-  addCategory: handleAddCategory,
-  // Управление планами
-  getPlans: handleGetPlans,
   updatePlan: handleUpdatePlan,
   deletePlan: handleDeletePlan,
   addPlanTopup: handleAddPlanTopup,
-  // Фитнес программы
   getFitnessPrograms: handleGetFitnessPrograms,
   addFitnessProgram: handleAddFitnessProgram,
   updateFitnessProgram: handleUpdateFitnessProgram,

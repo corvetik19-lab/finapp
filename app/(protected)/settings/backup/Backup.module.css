@@ -9,10 +9,10 @@
 }
 
 .title {
-  font-size: 32px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 600;
   margin: 0 0 8px;
-  color: #1f2937;
+  color: #111827;
 }
 
 .subtitle {
@@ -49,34 +49,31 @@
 .createBtn,
 .downloadBtn {
   flex: 1;
-  padding: 16px 24px;
+  padding: 8px 12px;
   border: none;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .createBtn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #3b82f6;
   color: white;
 }
 
 .createBtn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  background: #2563eb;
 }
 
 .downloadBtn {
-  background: white;
-  border: 2px solid #4f46e5;
-  color: #4f46e5;
+  background: #f3f4f6;
+  color: #6b7280;
 }
 
 .downloadBtn:hover:not(:disabled) {
-  background: #f0f9ff;
-  transform: translateY(-2px);
+  background: #e5e7eb;
 }
 
 .createBtn:disabled,
@@ -86,10 +83,10 @@
 }
 
 .info {
-  background: #fffbeb;
+  background: #f9fafb;
   padding: 20px;
   border-radius: 12px;
-  border-left: 4px solid #f59e0b;
+  border: 1px solid #e5e7eb;
   margin-bottom: 32px;
 }
 
@@ -109,10 +106,10 @@
 }
 
 .backupsList h2 {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
   margin: 0 0 20px;
-  color: #1f2937;
+  color: #111827;
 }
 
 .loading,
@@ -151,15 +148,14 @@
 
 .backupCard {
   background: white;
-  border: 2px solid #e5e7eb;
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 20px;
   transition: all 0.2s;
 }
 
 .backupCard:hover {
-  border-color: #4f46e5;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+  border-color: #3b82f6;
 }
 
 .backupHeader {
@@ -200,21 +196,19 @@
 
 .restoreBtn {
   flex: 1;
-  padding: 10px 16px;
-  background: white;
-  border: 2px solid #10b981;
-  color: #10b981;
+  padding: 8px 12px;
+  background: #f0fdf4;
+  border: none;
+  color: #16a34a;
   border-radius: 8px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .restoreBtn:hover:not(:disabled) {
-  background: #d1fae5;
-  border-color: #059669;
-  color: #059669;
+  background: #dcfce7;
 }
 
 .restoreBtn:disabled {
@@ -223,12 +217,12 @@
 }
 
 .deleteBtn {
-  padding: 10px 14px;
-  background: white;
-  border: 2px solid #ef4444;
-  color: #ef4444;
+  padding: 8px 12px;
+  background: #fef2f2;
+  border: none;
+  color: #dc2626;
   border-radius: 8px;
-  font-size: 18px;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;
@@ -236,8 +230,6 @@
 
 .deleteBtn:hover:not(:disabled) {
   background: #fee2e2;
-  border-color: #dc2626;
-  color: #dc2626;
 }
 
 .deleteBtn:disabled {

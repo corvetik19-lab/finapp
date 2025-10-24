@@ -6,6 +6,7 @@ import {
   logAPIUsage,
   hasScope,
 } from "@/lib/api/auth";
+import { triggerTransactionCreated } from "@/lib/webhooks/sender";
 
 export const dynamic = "force-dynamic";
 
@@ -218,6 +219,9 @@ export async function POST(request: Request) {
       .single();
 
     if (error) throw error;
+
+    // Триггерим webhook для события создания транзакции
+    await triggerTransactionCreated(validation.userId, data);
 
     const responseTime = Date.now() - startTime;
 
