@@ -13,11 +13,6 @@ type TourStatus = {
   cards: boolean;
 };
 
-type TourSettings = {
-  enabled: boolean;
-  completedTours: TourStatus;
-};
-
 const TOUR_LABELS: Record<keyof TourStatus, string> = {
   dashboard: "Дашборд",
   transactions: "Транзакции",
@@ -28,36 +23,38 @@ const TOUR_LABELS: Record<keyof TourStatus, string> = {
   cards: "Кредитные карты",
 };
 
+const DEFAULT_TOUR_STATUS: TourStatus = {
+  dashboard: false,
+  transactions: false,
+  reports: false,
+  plans: false,
+  settings: false,
+  loans: false,
+  cards: false,
+};
+
 export default function TourManager() {
   const [enabled, setEnabled] = useState(true);
-  const [completedTours, setCompletedTours] = useState<TourStatus>({
-    dashboard: false,
-    transactions: false,
-    reports: false,
-    plans: false,
-    settings: false,
-    loans: false,
-    cards: false,
-  });
+  const [completedTours, setCompletedTours] = useState<TourStatus>(DEFAULT_TOUR_STATUS);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
+    const loadTourSettings = async () => {
+      try {
+        const response = await fetch("/api/settings/tour");
+        if (response.ok) {
+          const data = await response.json();
+          setEnabled(data.enabled ?? true);
+          setCompletedTours(data.completedTours ?? DEFAULT_TOUR_STATUS);
+        }
+      } catch (error) {
+        console.error("Error loading tour settings:", error);
+      }
+    };
+
     loadTourSettings();
   }, []);
-
-  const loadTourSettings = async () => {
-    try {
-      const response = await fetch("/api/settings/tour");
-      if (response.ok) {
-        const data = await response.json();
-        setEnabled(data.enabled ?? true);
-        setCompletedTours(data.completedTours ?? completedTours);
-      }
-    } catch (error) {
-      console.error("Error loading tour settings:", error);
-    }
-  };
 
   const saveSettings = async () => {
     setIsSaving(true);
@@ -85,11 +82,11 @@ export default function TourManager() {
   };
 
   const resetAllTours = () => {
-    const resetTours = Object.keys(completedTours).reduce((acc, key) => {
+    const resetTours = Object.keys(DEFAULT_TOUR_STATUS).reduce((acc, key) => {
       acc[key as keyof TourStatus] = false;
       return acc;
     }, {} as TourStatus);
-    
+
     setCompletedTours(resetTours);
     setMessage({ type: "success", text: "Прогресс туров сброшен" });
   };

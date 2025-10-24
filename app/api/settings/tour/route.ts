@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createRSCClient } from "@/lib/supabase/helpers";
 
-type TourStatus = {
-  dashboard: boolean;
-  transactions: boolean;
-  reports: boolean;
-  plans: boolean;
-  settings: boolean;
-  loans: boolean;
-  cards: boolean;
-};
+const DEFAULT_TOUR_STATUS = {
+  dashboard: false,
+  transactions: false,
+  reports: false,
+  plans: false,
+  settings: false,
+  loans: false,
+  cards: false,
+} as const;
 
 export async function GET() {
   try {
@@ -32,29 +32,13 @@ export async function GET() {
       // Возвращаем дефолтные настройки
       return NextResponse.json({
         enabled: true,
-        completedTours: {
-          dashboard: false,
-          transactions: false,
-          reports: false,
-          plans: false,
-          settings: false,
-          loans: false,
-          cards: false,
-        },
+        completedTours: { ...DEFAULT_TOUR_STATUS },
       });
     }
 
     return NextResponse.json({
       enabled: preferences?.tour_enabled ?? true,
-      completedTours: preferences?.tour_completed ?? {
-        dashboard: false,
-        transactions: false,
-        reports: false,
-        plans: false,
-        settings: false,
-        loans: false,
-        cards: false,
-      },
+      completedTours: preferences?.tour_completed ?? { ...DEFAULT_TOUR_STATUS },
     });
   } catch (error) {
     console.error("Error in GET /api/settings/tour:", error);
@@ -86,7 +70,7 @@ export async function POST(req: NextRequest) {
       .from("user_preferences")
       .update({
         tour_enabled: enabled,
-        tour_completed: completedTours,
+        tour_completed: completedTours ?? { ...DEFAULT_TOUR_STATUS },
         updated_at: new Date().toISOString(),
       })
       .eq("user_id", user.id);
