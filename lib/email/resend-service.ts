@@ -4,8 +4,8 @@ import BudgetAlertEmail from "./templates/BudgetAlert";
 import LargeTransactionAlert from "./templates/LargeTransactionAlert";
 import WeeklySummary from "./templates/WeeklySummary";
 
-// Инициализация Resend
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Инициализация Resend (опционально, если нет ключа - email не будут отправляться)
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "Finapp <noreply@finapp.com>";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -21,6 +21,11 @@ export async function sendBudgetAlertEmail(params: {
   currentSpent: number;
   percentage: number;
 }) {
+  if (!resend) {
+    console.warn("Resend API key not configured, skipping email");
+    return { success: false, error: "Email service not configured" };
+  }
+  
   try {
     const emailHtml = (await render(
       BudgetAlertEmail({
@@ -61,6 +66,11 @@ export async function sendLargeTransactionEmail(params: {
   date: string;
   averageAmount: number;
 }) {
+  if (!resend) {
+    console.warn("Resend API key not configured, skipping email");
+    return { success: false, error: "Email service not configured" };
+  }
+  
   try {
     const emailHtml = (await render(
       LargeTransactionAlert({
@@ -107,6 +117,11 @@ export async function sendWeeklySummaryEmail(params: {
   }>;
   transactionCount: number;
 }) {
+  if (!resend) {
+    console.warn("Resend API key not configured, skipping email");
+    return { success: false, error: "Email service not configured" };
+  }
+  
   try {
     const emailHtml = (await render(
       WeeklySummary({
@@ -185,6 +200,11 @@ export async function checkEmailPreferences(userId: string, type: "budget" | "tr
  * Отправка тестового email
  */
 export async function sendTestEmail(to: string) {
+  if (!resend) {
+    console.warn("Resend API key not configured, skipping email");
+    return { success: false, error: "Email service not configured" };
+  }
+  
   try {
     const { data, error } = await resend.emails.send({
       from: FROM_EMAIL,
