@@ -23,21 +23,42 @@ export default function OnboardingChecklist() {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    // Сначала проверяем localStorage синхронно
-    const hidden = localStorage.getItem('onboarding_checklist_hidden') === 'true';
+    const checkTourSettings = async () => {
+      try {
+        // Проверяем настройки тура из API
+        const response = await fetch('/api/settings/tour');
+        if (response.ok) {
+          const settings = await response.json();
+          
+          // Если туры отключены глобально - не показываем чек-лист
+          if (!settings.enabled) {
+            setIsVisible(false);
+            setIsMounted(true);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load tour settings for checklist:', error);
+      }
+      
+      // Если туры включены, проверяем localStorage
+      const hidden = localStorage.getItem('onboarding_checklist_hidden') === 'true';
+      
+      if (!hidden) {
+        setIsVisible(true);
+      }
+      
+      setIsMounted(true);
+      
+      // Загружаем данные
+      loadChecklist();
+      
+      // Проверяем каждые 2 секунды (для обновления прогресса)
+      const interval = setInterval(loadChecklist, 2000);
+      return () => clearInterval(interval);
+    };
     
-    if (!hidden) {
-      setIsVisible(true);
-    }
-    
-    setIsMounted(true);
-    
-    // Загружаем данные
-    loadChecklist();
-    
-    // Проверяем каждые 2 секунды (для обновления прогресса)
-    const interval = setInterval(loadChecklist, 2000);
-    return () => clearInterval(interval);
+    checkTourSettings();
   }, []);
 
   const loadChecklist = async () => {
