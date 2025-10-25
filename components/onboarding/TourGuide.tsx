@@ -21,17 +21,26 @@ export default function TourGuide({ page }: TourGuideProps) {
       try {
         // Проверяем настройки тура из API
         const response = await fetch('/api/settings/tour');
-        if (!response.ok) return;
+        if (!response.ok) {
+          console.error('Tour settings API error:', response.status, response.statusText);
+          return;
+        }
         
         const settings = await response.json();
+        console.log('Tour settings loaded:', settings);
         
         // Если туры отключены глобально - не показываем
-        if (!settings.enabled) return;
+        if (!settings.enabled) {
+          console.log('Tours are disabled globally');
+          return;
+        }
         
         // Проверяем, прошёл ли пользователь тур для этой страницы
         const completed = settings.completedTours?.[page];
+        console.log(`Tour for page "${page}" completed:`, completed);
         
         if (!completed) {
+          console.log(`Starting tour for page "${page}"`);
           const steps = getStepsForPage(page);
           setSteps(steps);
           setCurrentStep(0);
