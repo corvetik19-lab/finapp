@@ -14,7 +14,7 @@ export type CategorySummaryParams = {
 export type CategorySummaryItem = {
   id: string;
   name: string;
-  kind: "income" | "expense";
+  kind: "income" | "expense" | "both";
   totalMinor: number;
   transactionCount: number;
 };
@@ -150,14 +150,17 @@ export async function loadCategorySummary(params: CategorySummaryParams = {}): P
   const rows = (data ?? []) as TransactionsRow[];
 
   const currency = rows[0]?.currency ?? "RUB";
-  const aggregation = new Map<string, CategorySummaryItem & { totalMinor: number }>();
+  const aggregation = new Map<string, CategorySummaryItem & { totalMinor: number; hasIncome: boolean; hasExpense: boolean }>();
 
   for (const row of rows) {
     const category = normalizeCategory(row.category);
     if (!category) continue;
     if (row.direction !== "income" && row.direction !== "expense") continue;
 
-    const amountMinor = Math.abs(Number(row.amount ?? 0));
+    // Доходы - положительные, расходы - отрицательные
+    const amountMinor = Number(row.amount ?? 0);
+    const signedAmount = row.direction === "income" ? Math.abs(amountMinor) : -Math.abs(amountMinor);
+    
     if (!aggregation.has(category.id)) {
       aggregation.set(category.id, {
         id: category.id,
@@ -165,13 +168,28 @@ export async function loadCategorySummary(params: CategorySummaryParams = {}): P
         kind: category.kind === "income" ? "income" : "expense",
         totalMinor: 0,
         transactionCount: 0,
+        hasIncome: false,
+        hasExpense: false,
       });
     }
     const entry = aggregation.get(category.id)!;
-    entry.totalMinor += amountMinor;
+    entry.totalMinor += signedAmount;
     entry.transactionCount += 1;
-    if (category.kind === "transfer") {
-      entry.kind = row.direction;
+    
+    // Отслеживаем наличие доходов и расходов
+    if (row.direction === "income") {
+      entry.hasIncome = true;
+    } else if (row.direction === "expense") {
+      entry.hasExpense = true;
+    }
+    
+    // Определяем kind на основе фактических транзакций
+    if (entry.hasIncome && entry.hasExpense) {
+      entry.kind = "both";
+    } else if (entry.hasIncome) {
+      entry.kind = "income";
+    } else if (entry.hasExpense) {
+      entry.kind = "expense";
     }
   }
 

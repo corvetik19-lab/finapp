@@ -113,7 +113,7 @@ export default async function TransactionsPage({
 
   const txnList = await listTransactions(
     {
-      limit: 50,
+      limit: 500,
       direction: f_type === "income" || f_type === "expense" ? (f_type as "income" | "expense") : "all",
       accountIds: accts.length > 0 ? accts : undefined,
       categoryIds: cats.length > 0 ? cats : undefined,
@@ -159,7 +159,7 @@ export default async function TransactionsPage({
     .select("id,occurred_at,amount,currency,direction,category_id,account_id,counterparty")
     .gte("occurred_at", new Date(Date.UTC(now.getUTCFullYear() - 1, now.getUTCMonth(), 1)).toISOString())
     .order("occurred_at", { ascending: true })
-    .limit(1000);
+    .limit(5000);
 
   type TxnWithRefs = Txn & { category_id: string | null; account_id: string };
   const txc = (txnsForCharts as unknown as TxnWithRefs[]) || [];

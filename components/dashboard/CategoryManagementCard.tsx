@@ -26,12 +26,6 @@ const PERIODS: { id: CategorySummaryPeriod; label: string }[] = [
 ];
 
 const ICON_FALLBACK = "category";
-
-const KIND_LABEL: Record<"income" | "expense", string> = {
-  income: "доход",
-  expense: "расход",
-};
-
 const INITIAL_VISIBLE_COUNT = 6;
 const LOCAL_STORAGE_KEY = "dashboard:categories:visible";
 
@@ -426,7 +420,7 @@ export default function CategoryManagementCard({
                   <article
                     key={item.id}
                     className={`${styles.categoryCard} ${
-                      item.kind === "income" ? styles.categoryCardIncome : styles.categoryCardExpense
+                      item.totalMinor >= 0 ? styles.categoryCardIncome : styles.categoryCardExpense
                     }`}
                     role="button"
                     tabIndex={0}
@@ -484,11 +478,10 @@ export default function CategoryManagementCard({
                     <div className={styles.categoryName}>{item.name}</div>
                     <div className={styles.categoryStats}>
                       <div className={styles.categoryAmount}>
-                        {item.kind === "income" ? "+" : "-"}
                         {formatMoney(item.totalMinor, data.currency)}
                       </div>
                       <div className={styles.categoryMeta}>
-                        {item.transactionCount} {pluralizeTransactions(item.transactionCount)} · {KIND_LABEL[item.kind]}
+                        {item.transactionCount} {pluralizeTransactions(item.transactionCount)}
                       </div>
                     </div>
                   </article>
