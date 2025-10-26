@@ -1,12 +1,13 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import styles from "./Settings.module.css";
 import { addCategory, renameCategory, deleteCategory } from "@/app/(protected)/settings/actions";
+import { useToast, type ToastContextValue } from "@/components/toast/ToastContext";
 
 export type CategoryRecord = {
   id: string;
   name: string;
-  kind: "income" | "expense" | "transfer";
+  kind: "income" | "expense" | "transfer" | "both";
   parent_id: string | null;
 };
 
@@ -27,7 +28,8 @@ const KIND_LABEL: Record<"expense" | "income", string> = {
 const KIND_ORDER: ("expense" | "income")[] = ["expense", "income"];
 
 function buildTrees(categories: CategoryRecord[], kind: CategoryRecord["kind"]): TreeNode[] {
-  const filtered = categories.filter((c) => c.kind === kind);
+  // Фильтруем категории: показываем категории с нужным kind или "both"
+  const filtered = categories.filter((c) => c.kind === kind || c.kind === "both");
   const map = new Map<string, TreeNode>();
   for (const cat of filtered) {
     map.set(cat.id, { ...cat, depth: 0, children: [] });
@@ -70,6 +72,8 @@ function flattenOptions(tree: TreeNode[], excludeIds: Set<string> = new Set()): 
 
 export default function CategoriesManager({ categories }: { categories: CategoryRecord[] }) {
   const [tab, setTab] = useState<"expense" | "income">("expense");
+  const toast = useToast();
+  const [isPending, startTransition] = useTransition();
 
   const treeByKind = useMemo(() => {
     return {
@@ -89,6 +93,17 @@ export default function CategoriesManager({ categories }: { categories: Category
 
   const tree = treeByKind[tab];
 
+  const handleAddCategory = async (formData: FormData) => {
+    startTransition(async () => {
+      try {
+        await addCategory(formData);
+        toast.show("Категория успешно добавлена", { type: "success" });
+      } catch (error) {
+        toast.show(error instanceof Error ? error.message : "Ошибка при добавлении категории", { type: "error" });
+      }
+    });
+  };
+
   return (
     <div className={styles.card}>
       <div className={styles.sectionTitle}>Управление категориями</div>
@@ -105,9 +120,13 @@ export default function CategoriesManager({ categories }: { categories: Category
           </button>
         ))}
         <div style={{ marginLeft: "auto" }} />
-        <form action={addCategory} className={styles.itemForm}>
-          <input type="hidden" name="kind" value={tab} />
+        <form action={handleAddCategory} className={styles.itemForm}>
           <input className={styles.input} name="name" placeholder="Новая категория" required />
+          <select className={styles.select} name="kind" defaultValue={tab}>
+            <option value="expense">Только расходы</option>
+            <option value="income">Только доходы</option>
+            <option value="both">Доходы и расходы</option>
+          </select>
           <select className={styles.select} name="parent_id" defaultValue="">
             <option value="">Без родителя</option>
             {(selectableByKind.get(tab) ?? []).map((opt) => (
@@ -116,7 +135,9 @@ export default function CategoriesManager({ categories }: { categories: Category
               </option>
             ))}
           </select>
-          <button className={styles.btn} type="submit">Добавить</button>
+          <button className={styles.btn} type="submit" disabled={isPending}>
+            {isPending ? "Добавление..." : "Добавить"}
+          </button>
         </form>
       </div>
 
@@ -127,6 +148,7 @@ export default function CategoriesManager({ categories }: { categories: Category
             key={node.id}
             node={node}
             allOptions={selectableByKind.get(tab) ?? []}
+            toast={toast}
           />
         ))}
       </div>
@@ -134,9 +156,33 @@ export default function CategoriesManager({ categories }: { categories: Category
   );
 }
 
-function TreeRow({ node, allOptions }: { node: TreeNode; allOptions: { id: string; label: string }[] }) {
+function TreeRow({ node, allOptions, toast }: { node: TreeNode; allOptions: { id: string; label: string }[]; toast: ToastContextValue }) {
+  const [isPending, startTransition] = useTransition();
   const exclude = new Set<string>([node.id]);
   const options = allOptions.filter((opt) => !exclude.has(opt.id));
+
+  const handleRename = async (formData: FormData) => {
+    startTransition(async () => {
+      try {
+        await renameCategory(formData);
+        toast.show("Категория успешно обновлена", { type: "success" });
+      } catch (error) {
+        toast.show(error instanceof Error ? error.message : "Ошибка при обновлении категории", { type: "error" });
+      }
+    });
+  };
+
+  const handleDelete = async (formData: FormData) => {
+    startTransition(async () => {
+      try {
+        await deleteCategory(formData);
+        toast.show("Категория успешно удалена", { type: "success" });
+      } catch (error) {
+        toast.show(error instanceof Error ? error.message : "Ошибка при удалении категории", { type: "error" });
+      }
+    });
+  };
+
   return (
     <div className={styles.treeGroup}>
       <div className={styles.treeRow} style={{ marginLeft: node.depth * 20 }}>
@@ -147,9 +193,14 @@ function TreeRow({ node, allOptions }: { node: TreeNode; allOptions: { id: strin
           <span>{node.name}</span>
         </div>
         <div className={styles.treeActions}>
-          <form action={renameCategory} className={styles.itemForm}>
+          <form action={handleRename} className={styles.itemForm}>
             <input type="hidden" name="id" value={node.id} />
             <input className={styles.input} name="name" defaultValue={node.name} />
+            <select className={styles.select} name="kind" defaultValue={node.kind}>
+              <option value="expense">Только расходы</option>
+              <option value="income">Только доходы</option>
+              <option value="both">Доходы и расходы</option>
+            </select>
             <select className={styles.select} name="parent_id" defaultValue={node.parent_id ?? ""}>
               <option value="">Без родителя</option>
               {options.map((opt) => (
@@ -158,18 +209,20 @@ function TreeRow({ node, allOptions }: { node: TreeNode; allOptions: { id: strin
                 </option>
               ))}
             </select>
-            <button className={`${styles.btn} ${styles.btnSecondary}`} type="submit">Сохранить</button>
+            <button className={`${styles.btn} ${styles.btnSecondary}`} type="submit" disabled={isPending}>
+              {isPending ? "Сохранение..." : "Сохранить"}
+            </button>
           </form>
-          <form action={deleteCategory}>
+          <form action={handleDelete}>
             <input type="hidden" name="id" value={node.id} />
-            <button type="submit" className={styles.del} title="Удалить">
+            <button type="submit" className={styles.del} title="Удалить" disabled={isPending}>
               <span className="material-icons" aria-hidden>delete</span>
             </button>
           </form>
         </div>
       </div>
       {node.children.map((child) => (
-        <TreeRow key={child.id} node={child} allOptions={allOptions} />
+        <TreeRow key={child.id} node={child} allOptions={allOptions} toast={toast} />
       ))}
     </div>
   );

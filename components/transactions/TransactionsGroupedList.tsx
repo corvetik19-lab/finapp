@@ -42,7 +42,7 @@ export type Txn = {
   transfer_to_account_id?: string | null;
 };
 
-export type Category = { id: string; name: string; kind: "income" | "expense" | "transfer" };
+export type Category = { id: string; name: string; kind: "income" | "expense" | "transfer" | "both" };
 export type Account = { id: string; name: string; currency: string };
 
 type Group = {

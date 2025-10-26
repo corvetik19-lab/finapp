@@ -12,7 +12,7 @@ import {
 import { createTransactionFromValues } from "../actions";
 
 type Account = { id: string; name: string; currency: string };
-type Category = { id: string; name: string; kind: "income" | "expense" | "transfer" };
+type Category = { id: string; name: string; kind: "income" | "expense" | "transfer" | "both" };
 
 export default function AddTransactionButton({
   accounts,
@@ -89,7 +89,7 @@ export default function AddTransactionButton({
   const categoryValue = useWatch({ control, name: "category_id" }) ?? "";
 
   const filteredCategories = useMemo(
-    () => categories.filter((c) => c.kind === directionValue),
+    () => categories.filter((c) => c.kind === directionValue || c.kind === "both"),
     [categories, directionValue]
   );
 

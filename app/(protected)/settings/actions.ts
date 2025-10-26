@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { createRouteClient } from "@/lib/supabase/helpers";
 
-type CategoryKind = "income" | "expense" | "transfer";
+type CategoryKind = "income" | "expense" | "transfer" | "both";
 
 function normalizeParent(value: FormDataEntryValue | null): string | null {
   if (typeof value !== "string") return null;
@@ -55,7 +55,7 @@ export async function addCategory(formData: FormData) {
   const parentId = normalizeParent(formData.get("parent_id"));
 
   if (!name) throw new Error("Укажите название категории");
-  if (!["income", "expense", "transfer"].includes(kind)) throw new Error("Некорректный тип категории");
+  if (!["income", "expense", "transfer", "both"].includes(kind)) throw new Error("Некорректный тип категории");
 
   if (parentId) {
     const { data: parent, error: parentErr } = await supabase
@@ -65,7 +65,16 @@ export async function addCategory(formData: FormData) {
       .maybeSingle();
     if (parentErr) throw parentErr;
     if (!parent || parent.user_id !== userId) throw new Error("Родительская категория не найдена");
-    if (parent.kind !== kind) throw new Error("Родитель должен быть того же типа");
+    
+    // Проверяем совместимость типов
+    const isCompatible = 
+      parent.kind === kind || 
+      parent.kind === "both" || 
+      kind === "both" ||
+      (parent.kind === "income" && kind === "income") ||
+      (parent.kind === "expense" && kind === "expense");
+    
+    if (!isCompatible) throw new Error("Родитель должен быть совместимого типа");
   }
 
   const { error } = await supabase
@@ -263,9 +272,11 @@ export async function renameCategory(formData: FormData) {
 
   const id = String(formData.get("id") || "").trim();
   const name = String(formData.get("name") || "").trim();
+  const kind = String(formData.get("kind") || "").trim() as CategoryKind;
   const parentId = normalizeParent(formData.get("parent_id"));
 
   if (!id || !name) throw new Error("Данные не полные");
+  if (!["income", "expense", "transfer", "both"].includes(kind)) throw new Error("Некорректный тип категории");
 
   const { data: categories, error: catsErr } = await supabase
     .from("categories")
@@ -281,7 +292,16 @@ export async function renameCategory(formData: FormData) {
   if (parentId) {
     const parent = categories?.find((c) => c.id === parentId);
     if (!parent) throw new Error("Родительская категория не найдена");
-    if (parent.kind !== current.kind) throw new Error("Родитель должен быть того же типа");
+    
+    // Проверяем совместимость типов
+    const isCompatible = 
+      parent.kind === kind || 
+      parent.kind === "both" || 
+      kind === "both" ||
+      (parent.kind === "income" && kind === "income") ||
+      (parent.kind === "expense" && kind === "expense");
+    
+    if (!isCompatible) throw new Error("Родитель должен быть совместимого типа");
 
     // Проверка на циклы: поднимемся по цепочке родителей
     const map = new Map<string, string | null>();
@@ -299,7 +319,7 @@ export async function renameCategory(formData: FormData) {
 
   const { error } = await supabase
     .from("categories")
-    .update({ name, parent_id: parentId })
+    .update({ name, kind, parent_id: parentId })
     .eq("id", id)
     .eq("user_id", userId);
   if (error) throw error;

@@ -27,7 +27,7 @@ function displayToParam(s: string): string {
 }
 
 export type FiltersAccount = { id: string; name: string };
-export type FiltersCategory = { id: string; name: string; kind: "income" | "expense" | "transfer" };
+export type FiltersCategory = { id: string; name: string; kind: "income" | "expense" | "transfer" | "both" };
 
 export default function FiltersAndSearch({
   accounts,

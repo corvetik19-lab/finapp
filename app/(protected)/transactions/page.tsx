@@ -16,7 +16,7 @@ import ImportCsvTrigger from "@/components/transactions/ImportCsvTrigger";
 import ExportCsvButton from "@/components/transactions/ExportCsvButton";
 
 type Account = { id: string; name: string; currency: string; balance: number };
-type Category = { id: string; name: string; kind: "income" | "expense" | "transfer" };
+type Category = { id: string; name: string; kind: "income" | "expense" | "transfer" | "both" };
 type Txn = GroupTxn;
 
 // removed lastMonths helper (no longer used)
