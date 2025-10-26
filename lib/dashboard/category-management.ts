@@ -194,7 +194,7 @@ export async function loadCategorySummary(params: CategorySummaryParams = {}): P
   }
 
   const items = Array.from(aggregation.values())
-    .sort((a, b) => b.totalMinor - a.totalMinor)
+    .sort((a, b) => Math.abs(b.totalMinor) - Math.abs(a.totalMinor))
     .slice(0, limit)
     .map((item) => ({
       id: item.id,
