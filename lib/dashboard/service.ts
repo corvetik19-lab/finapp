@@ -51,10 +51,12 @@ type SupabaseDashboardRow = {
   amount: number | bigint;
   currency: string;
   direction: "income" | "expense" | "transfer";
+  category_id: string | null;
   category:
     | null
-    | { name: string }[]
+    | { id: string; name: string }[]
     | {
+        id: string;
         name: string;
       };
 };
@@ -67,6 +69,9 @@ export type DashboardOverviewOptions = {
 export async function loadDashboardOverview(monthsBack = 8, options?: DashboardOverviewOptions): Promise<DashboardOverview> {
   const supabase = await createRSCClient();
   const now = new Date();
+
+  // ID категории "Такси" - расходы по ней не учитываются в общих расходах
+  const TAXI_CATEGORY_ID = "faac1aa6-82ad-40a9-8850-074691a52996";
 
   const hasCustomRange = Boolean(options?.from && options?.to);
 
@@ -84,7 +89,7 @@ export async function loadDashboardOverview(monthsBack = 8, options?: DashboardO
 
   const { data, error } = await supabase
     .from("transactions")
-    .select("occurred_at,amount,currency,direction,category:categories(name)")
+    .select("occurred_at,amount,currency,direction,category_id,category:categories(id,name)")
     .gte("occurred_at", startBound.toISOString())
     .lte("occurred_at", endBound.toISOString())
     .order("occurred_at", { ascending: true })
@@ -116,10 +121,14 @@ export async function loadDashboardOverview(monthsBack = 8, options?: DashboardO
     const trendPoint = trendMap.get(monthKey);
     if (trendPoint) {
       if (row.direction === "income") trendPoint.income += amountMajor;
-      if (row.direction === "expense") trendPoint.expense += Math.abs(amountMajor);
+      // Исключаем расходы по категории "Такси" из общих расходов
+      if (row.direction === "expense" && row.category_id !== TAXI_CATEGORY_ID) {
+        trendPoint.expense += Math.abs(amountMajor);
+      }
     }
 
-    if (row.direction === "expense" && occurredAt >= startBound && occurredAt <= endBound) {
+    // Исключаем расходы по категории "Такси" из breakdown (разбивки по категориям)
+    if (row.direction === "expense" && occurredAt >= startBound && occurredAt <= endBound && row.category_id !== TAXI_CATEGORY_ID) {
       const categoryField = row.category;
       const categoryName = Array.isArray(categoryField)
         ? categoryField[0]?.name ?? "Без категории"

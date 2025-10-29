@@ -25,7 +25,7 @@ export default function CreateCreditCardModal({
     balance: "",
     interest_rate: "",
     grace_period: "",
-    next_payment_date: "",
+    payment_day: "", // День платежа (1-31)
     min_payment: "",
   });
 
@@ -34,13 +34,20 @@ export default function CreateCreditCardModal({
   // Заполняем форму при редактировании
   useEffect(() => {
     if (editingCard && isOpen) {
+      // Извлекаем день из даты (если есть)
+      let paymentDay = "";
+      if (editingCard.nextPaymentDate) {
+        const date = new Date(editingCard.nextPaymentDate);
+        paymentDay = date.getDate().toString();
+      }
+      
       setFormData({
         name: editingCard.bank,
         credit_limit: (editingCard.limit / 100).toString(),
         balance: (editingCard.balance / 100).toString(),
         interest_rate: editingCard.interestRate ? editingCard.interestRate.toString() : "",
         grace_period: editingCard.gracePeriod ? editingCard.gracePeriod.toString() : "",
-        next_payment_date: editingCard.nextPaymentDate || "",
+        payment_day: paymentDay,
         min_payment: (editingCard.minPayment / 100).toString(),
       });
     } else if (!editingCard && isOpen) {
@@ -50,7 +57,7 @@ export default function CreateCreditCardModal({
         balance: "",
         interest_rate: "",
         grace_period: "",
-        next_payment_date: "",
+        payment_day: "",
         min_payment: "",
       });
     }
@@ -70,6 +77,31 @@ export default function CreateCreditCardModal({
       const gracePeriod = formData.grace_period ? parseInt(formData.grace_period) : null;
       const minPaymentMinor = formData.min_payment ? Math.round(parseFloat(formData.min_payment) * 100) : 0;
 
+      // Формируем дату платежа из дня месяца (всегда следующий месяц)
+      let nextPaymentDate = null;
+      if (formData.payment_day) {
+        const paymentDay = parseInt(formData.payment_day);
+        if (paymentDay >= 1 && paymentDay <= 31) {
+          const now = new Date();
+          
+          // Всегда используем следующий месяц
+          let targetMonth = now.getMonth() + 1;
+          let targetYear = now.getFullYear();
+          
+          if (targetMonth > 11) {
+            targetMonth = 0;
+            targetYear += 1;
+          }
+          
+          // Проверяем максимальное количество дней в целевом месяце
+          const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+          const validPaymentDay = Math.min(paymentDay, daysInMonth);
+          
+          // Формат: YYYY-MM-DD (месяцы в JavaScript 0-based, но в дате 1-based)
+          nextPaymentDate = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}-${String(validPaymentDay).padStart(2, '0')}`;
+        }
+      }
+
       const url = isEditMode ? `/api/credit-cards/${editingCard?.id}` : "/api/credit-cards";
       const method = isEditMode ? "PATCH" : "POST";
 
@@ -78,7 +110,7 @@ export default function CreateCreditCardModal({
         credit_limit: creditLimitMinor,
         interest_rate: interestRate,
         grace_period: gracePeriod,
-        next_payment_date: formData.next_payment_date || null,
+        next_payment_date: nextPaymentDate,
         min_payment: minPaymentMinor,
       };
 
@@ -107,7 +139,7 @@ export default function CreateCreditCardModal({
         balance: "",
         interest_rate: "",
         grace_period: "",
-        next_payment_date: "",
+        payment_day: "",
         min_payment: "",
       });
       onSuccess();
@@ -236,19 +268,22 @@ export default function CreateCreditCardModal({
             </div>
 
             <div className={styles.formGroup}>
-              <label className={styles.formLabel} htmlFor="card-payment-date">
-                Дата платежа
+              <label className={styles.formLabel} htmlFor="card-payment-day">
+                День платежа
               </label>
               <input
-                id="card-payment-date"
+                id="card-payment-day"
                 className={styles.formInput}
-                type="date"
-                value={formData.next_payment_date}
-                onChange={(e) => setFormData((prev) => ({ ...prev, next_payment_date: e.target.value }))}
+                type="number"
+                min="1"
+                max="31"
+                placeholder="Например, 25"
+                value={formData.payment_day}
+                onChange={(e) => setFormData((prev) => ({ ...prev, payment_day: e.target.value }))}
                 disabled={isSaving}
               />
               <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                Дата, до которой нужно оплатить
+                День месяца, до которого нужно оплатить (1-31)
               </span>
             </div>
 

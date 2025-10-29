@@ -178,6 +178,8 @@ export default async function TransactionsPage({
 
   // Build summary presets (only for summary cards)
   const currencyCode = (accounts?.[0]?.currency as string) || "RUB";
+  // ID категории "Такси" - расходы по ней не учитываются в общих расходах
+  const TAXI_CATEGORY_ID = "faac1aa6-82ad-40a9-8850-074691a52996";
   // Inclusive period: from <= d <= toInclusive
   function sumRange(from: Date, toInclusive: Date) {
     let inc = 0;
@@ -186,7 +188,12 @@ export default async function TransactionsPage({
       const d = new Date(t.occurred_at);
       if (d >= from && d <= toInclusive) {
         if (t.direction === "income") inc += Number(t.amount);
-        else if (t.direction === "expense") exp += Number(t.amount);
+        else if (t.direction === "expense") {
+          // Исключаем расходы по категории "Такси" из общих расходов
+          if (t.category_id !== TAXI_CATEGORY_ID) {
+            exp += Number(t.amount);
+          }
+        }
       }
     }
     return { incomeMinor: inc, expenseMinor: exp };

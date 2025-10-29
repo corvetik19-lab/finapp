@@ -20,6 +20,10 @@ export default function LoanFormModal({ open, onClose, onSuccess, loan }: LoanFo
   
   const isEdit = Boolean(loan);
   
+  const [paymentDay, setPaymentDay] = useState<string>("");
+  const [calculatedTermMonths, setCalculatedTermMonths] = useState<number | undefined>(undefined);
+  const [calculatedTotalAmount, setCalculatedTotalAmount] = useState<number | undefined>(undefined);
+  
   const form = useForm<LoanFormData>({
     resolver: zodResolver(loanFormSchema),
     defaultValues: {
@@ -36,9 +40,50 @@ export default function LoanFormModal({ open, onClose, onSuccess, loan }: LoanFo
       nextPaymentDate: "",
     },
   });
+  
+  // Автоматический расчёт срока кредита при изменении дат
+  const issueDate = form.watch("issueDate");
+  const endDate = form.watch("endDate");
+  const monthlyPayment = form.watch("monthlyPayment");
+  
+  useEffect(() => {
+    if (issueDate && endDate) {
+      const start = new Date(issueDate);
+      const end = new Date(endDate);
+      
+      if (start < end) {
+        // Рассчитываем количество месяцев между датами
+        const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+        setCalculatedTermMonths(months);
+        form.setValue("termMonths", months);
+        
+        // Рассчитываем общую сумму к оплате
+        if (monthlyPayment && monthlyPayment > 0) {
+          const totalAmount = monthlyPayment * months;
+          setCalculatedTotalAmount(totalAmount);
+        } else {
+          setCalculatedTotalAmount(undefined);
+        }
+      } else {
+        setCalculatedTermMonths(undefined);
+        setCalculatedTotalAmount(undefined);
+      }
+    } else {
+      setCalculatedTermMonths(undefined);
+      setCalculatedTotalAmount(undefined);
+    }
+  }, [issueDate, endDate, monthlyPayment, form]);
 
   useEffect(() => {
     if (loan && open) {
+      // Извлекаем день из даты (если есть)
+      let day = "";
+      if (loan.nextPaymentDate) {
+        const date = new Date(loan.nextPaymentDate);
+        day = date.getDate().toString();
+      }
+      setPaymentDay(day);
+      
       form.reset({
         id: loan.id,
         name: loan.name,
@@ -56,6 +101,7 @@ export default function LoanFormModal({ open, onClose, onSuccess, loan }: LoanFo
     } else if (!open) {
       form.reset();
       setError(null);
+      setPaymentDay("");
     }
   }, [loan, open, form]);
 
@@ -64,13 +110,38 @@ export default function LoanFormModal({ open, onClose, onSuccess, loan }: LoanFo
     setError(null);
 
     try {
+      // Формируем дату платежа из дня месяца (всегда следующий месяц)
+      let nextPaymentDate = data.nextPaymentDate;
+      if (paymentDay) {
+        const day = parseInt(paymentDay);
+        if (day >= 1 && day <= 31) {
+          const now = new Date();
+          
+          // Всегда используем следующий месяц
+          let targetMonth = now.getMonth() + 1;
+          let targetYear = now.getFullYear();
+          
+          if (targetMonth > 11) {
+            targetMonth = 0;
+            targetYear += 1;
+          }
+          
+          // Проверяем максимальное количество дней в целевом месяце
+          const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+          const validPaymentDay = Math.min(day, daysInMonth);
+          
+          // Формат: YYYY-MM-DD
+          nextPaymentDate = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}-${String(validPaymentDay).padStart(2, '0')}`;
+        }
+      }
+      
       const url = "/api/loans";
       const method = isEdit ? "PUT" : "POST";
       
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, nextPaymentDate }),
       });
 
       const result = await res.json();
@@ -220,10 +291,14 @@ export default function LoanFormModal({ open, onClose, onSuccess, loan }: LoanFo
               </label>
               <input
                 type="number"
-                placeholder="Напр., 240"
-                {...form.register("termMonths", { valueAsNumber: true })}
-                disabled={isSaving}
+                placeholder="Рассчитается автоматически"
+                value={calculatedTermMonths || ""}
+                disabled
+                style={{ backgroundColor: "var(--bg-secondary)", cursor: "not-allowed" }}
               />
+              <span style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>
+                Рассчитывается автоматически из дат выдачи и окончания
+              </span>
               {form.formState.errors.termMonths && (
                 <span className={styles.fieldError}>{form.formState.errors.termMonths.message}</span>
               )}
@@ -245,15 +320,51 @@ export default function LoanFormModal({ open, onClose, onSuccess, loan }: LoanFo
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
               <label>
-                <span className="material-icons">event_available</span>
-                Дата следующего платежа
+                <span className="material-icons">calculate</span>
+                Общая сумма к оплате (₽)
               </label>
               <input
-                type="date"
-                {...form.register("nextPaymentDate")}
-                disabled={isSaving}
-                placeholder="Для автоматических напоминаний"
+                type="text"
+                placeholder="Рассчитается автоматически"
+                value={calculatedTotalAmount ? calculatedTotalAmount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ""}
+                disabled
+                style={{ backgroundColor: "var(--bg-secondary)", cursor: "not-allowed" }}
               />
+              <span style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>
+                Рассчитывается как: Ежемесячный платёж × Срок кредита
+              </span>
+            </div>
+
+            <div className={styles.formGroup}>
+              {calculatedTotalAmount && form.watch("principalAmount") > 0 && (
+                <div className={styles.infoMessage}>
+                  <span className="material-icons">info</span>
+                  <span>
+                    Переплата: {(calculatedTotalAmount - form.watch("principalAmount")).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className={styles.formRow}>
+            <div className={styles.formGroup}>
+              <label>
+                <span className="material-icons">event_available</span>
+                День следующего платежа
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="31"
+                placeholder="Например, 25"
+                value={paymentDay}
+                onChange={(e) => setPaymentDay(e.target.value)}
+                disabled={isSaving}
+              />
+              <span style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>
+                День месяца для платежа (1-31). Дата будет установлена на следующий месяц.
+              </span>
               {form.formState.errors.nextPaymentDate && (
                 <span className={styles.fieldError}>{form.formState.errors.nextPaymentDate.message}</span>
               )}

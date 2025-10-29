@@ -43,6 +43,28 @@ export async function POST(req: Request) {
     const body = await req.json();
     const validatedData = loanFormSchema.parse(body);
 
+    // Автоматический расчёт уже оплаченной суммы на основе фактических платежей
+    let principalPaid = 0;
+    if (validatedData.issueDate && validatedData.monthlyPayment > 0 && validatedData.termMonths) {
+      const issueDate = new Date(validatedData.issueDate);
+      const now = new Date();
+      
+      // Рассчитываем количество полных месяцев с даты выдачи до текущей даты
+      const monthsPassed = (now.getFullYear() - issueDate.getFullYear()) * 12 + (now.getMonth() - issueDate.getMonth());
+      
+      if (monthsPassed > 0) {
+        // Количество платежей не может быть больше срока кредита
+        const paymentsMade = Math.min(monthsPassed, validatedData.termMonths);
+        
+        // Предполагаем что все платежи были сделаны вовремя
+        principalPaid = Math.round(validatedData.monthlyPayment * paymentsMade * 100);
+        
+        // Не может быть больше суммы кредита
+        const principalAmount = Math.round(validatedData.principalAmount * 100);
+        principalPaid = Math.min(principalPaid, principalAmount);
+      }
+    }
+
     const { data, error } = await supabase
       .from("loans")
       .insert({
@@ -50,6 +72,7 @@ export async function POST(req: Request) {
         name: validatedData.name,
         bank: validatedData.bank,
         principal_amount: Math.round(validatedData.principalAmount * 100),
+        principal_paid: principalPaid,
         interest_rate: validatedData.interestRate,
         monthly_payment: Math.round(validatedData.monthlyPayment * 100),
         issue_date: validatedData.issueDate,
@@ -91,12 +114,35 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Loan ID is required" }, { status: 400 });
     }
 
+    // Автоматический расчёт уже оплаченной суммы на основе фактических платежей
+    let principalPaid = 0;
+    if (validatedData.issueDate && validatedData.monthlyPayment > 0 && validatedData.termMonths) {
+      const issueDate = new Date(validatedData.issueDate);
+      const now = new Date();
+      
+      // Рассчитываем количество полных месяцев с даты выдачи до текущей даты
+      const monthsPassed = (now.getFullYear() - issueDate.getFullYear()) * 12 + (now.getMonth() - issueDate.getMonth());
+      
+      if (monthsPassed > 0) {
+        // Количество платежей не может быть больше срока кредита
+        const paymentsMade = Math.min(monthsPassed, validatedData.termMonths);
+        
+        // Предполагаем что все платежи были сделаны вовремя
+        principalPaid = Math.round(validatedData.monthlyPayment * paymentsMade * 100);
+        
+        // Не может быть больше суммы кредита
+        const principalAmount = Math.round(validatedData.principalAmount * 100);
+        principalPaid = Math.min(principalPaid, principalAmount);
+      }
+    }
+
     const { data, error } = await supabase
       .from("loans")
       .update({
         name: validatedData.name,
         bank: validatedData.bank,
         principal_amount: Math.round(validatedData.principalAmount * 100),
+        principal_paid: principalPaid,
         interest_rate: validatedData.interestRate,
         monthly_payment: Math.round(validatedData.monthlyPayment * 100),
         issue_date: validatedData.issueDate,

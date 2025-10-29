@@ -6,6 +6,7 @@ import type { Loan, LoanSummary } from "@/lib/loans/types";
 import { formatMoney } from "@/lib/utils/format";
 import LoanFormModal from "@/components/loans/LoanFormModal";
 import LoanRepayModal from "@/components/loans/LoanRepayModal";
+import RecalculateButton from "./recalculate-button";
 import styles from "./Loans.module.css";
 
 type LoansPageClientProps = {
@@ -77,6 +78,9 @@ export default function LoansPageClient({ loans, summary }: LoansPageClientProps
           </button>
         </div>
       </header>
+
+      {/* Кнопка пересчёта */}
+      <RecalculateButton />
 
       {/* Статистика */}
       <div className={styles.summaryContainer}>
