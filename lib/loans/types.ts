@@ -21,6 +21,7 @@ export type LoanRecord = {
   next_payment_date: string | null;
   principal_paid: number; // в копейках
   interest_paid: number; // в копейках
+  last_payment_date: string | null; // дата последнего платежа
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -56,8 +57,10 @@ export type Loan = {
   nextPaymentDate: string | null;
   principalPaid: number; // в рублях
   interestPaid: number; // в рублях
+  lastPaymentDate: string | null; // дата последнего платежа
   remainingDebt: number; // в рублях (calculated)
   progressPercent: number; // calculated
+  isPaidThisMonth: boolean; // оплачен ли в этом месяце (calculated)
 };
 
 export type LoanPayment = {

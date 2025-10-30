@@ -22,8 +22,9 @@ export type LoanFormData = z.infer<typeof loanFormSchema>;
 export const loanRepaymentSchema = z.object({
   loanId: z.string().uuid("Выберите кредит"),
   amount: z.number().positive("Сумма должна быть больше нуля"),
-  principalAmount: z.number().nonnegative("Сумма не может быть отрицательной"),
-  interestAmount: z.number().nonnegative("Сумма не может быть отрицательной"),
+  principalAmount: z.number().nonnegative("Сумма не может быть отрицательной").optional(),
+  interestAmount: z.number().nonnegative("Сумма не может быть отрицательной").optional(),
+  commission: z.number().nonnegative("Комиссия не может быть отрицательной").optional(),
   paymentDate: z.string().min(1, "Укажите дату платежа"),
   note: z.string().max(200).optional(),
 });

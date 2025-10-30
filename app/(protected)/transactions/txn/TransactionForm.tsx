@@ -9,7 +9,7 @@ export default function TransactionForm({
   accounts,
   categories,
 }: {
-  accounts: { id: string; name: string; currency: string }[];
+  accounts: { id: string; name: string; currency: string; type: string; credit_limit: number | null; balance: number }[];
   categories: { id: string; name: string; kind: "income" | "expense" | "transfer" }[];
 }) {
   const initial: TxnActionState = { ok: false };
@@ -38,6 +38,31 @@ export default function TransactionForm({
     [categories, direction]
   );
 
+  // Группируем счета по типам (исключаем кредитные карты - они только для переводов)
+  const groupedAccounts = useMemo(() => {
+    const debitCards: typeof accounts = [];
+    const loans: typeof accounts = [];
+    const other: typeof accounts = [];
+
+    accounts.forEach((acc) => {
+      if (acc.type === 'loan') {
+        // Кредиты из таблицы loans
+        loans.push(acc);
+      } else if (acc.credit_limit && acc.credit_limit > 0) {
+        // Кредитные карты - пропускаем, они только для переводов
+        return;
+      } else if (acc.type === 'card') {
+        // Дебетовые карты
+        debitCards.push(acc);
+      } else {
+        // Остальное (наличные, депозиты и т.д.)
+        other.push(acc);
+      }
+    });
+
+    return { debitCards, loans, other };
+  }, [accounts]);
+
   return (
     <form ref={formRef} action={formAction} style={{ display: "grid", gap: 8, background: "#fff", padding: 12, borderRadius: 8 }}>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -59,11 +84,36 @@ export default function TransactionForm({
           <span>Счёт</span>
           <select name="account_id" defaultValue={accounts[0]?.id || ""} required style={{ display: "block", padding: 8, borderRadius: 8, border: "1px solid #ccc", minWidth: 200 }}>
             <option value="">— выберите —</option>
-            {accounts.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
+            
+            {groupedAccounts.debitCards.length > 0 && (
+              <optgroup label="💳 Дебетовые карты">
+                {groupedAccounts.debitCards.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            
+            {groupedAccounts.loans.length > 0 && (
+              <optgroup label="🏦 Кредиты">
+                {groupedAccounts.loans.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            
+            {groupedAccounts.other.length > 0 && (
+              <optgroup label="💰 Другие счета">
+                {groupedAccounts.other.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
           </select>
         </label>
 

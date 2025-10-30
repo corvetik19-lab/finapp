@@ -237,6 +237,7 @@ export async function deleteTransactionAction(
     revalidatePath("/cards");
     revalidatePath("/reports");
     revalidatePath("/dashboard");
+    revalidatePath("/loans"); // Обновляем страницу кредитов при удалении транзакции
     return { ok: true };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Ошибка удаления";

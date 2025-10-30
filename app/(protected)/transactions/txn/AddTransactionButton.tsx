@@ -11,7 +11,7 @@ import {
 } from "@/lib/validation/transaction";
 import { createTransactionFromValues } from "../actions";
 
-type Account = { id: string; name: string; currency: string };
+type Account = { id: string; name: string; currency: string; type: string; credit_limit: number | null; balance: number };
 type Category = { id: string; name: string; kind: "income" | "expense" | "transfer" | "both" };
 
 export default function AddTransactionButton({
@@ -92,6 +92,31 @@ export default function AddTransactionButton({
     () => categories.filter((c) => c.kind === directionValue || c.kind === "both"),
     [categories, directionValue]
   );
+
+  // Группируем счета по типам (исключаем кредитные карты - они только для переводов)
+  const groupedAccounts = useMemo(() => {
+    const debitCards: Account[] = [];
+    const loans: Account[] = [];
+    const other: Account[] = [];
+
+    accounts.forEach((acc) => {
+      if (acc.type === 'loan') {
+        // Кредиты из таблицы loans
+        loans.push(acc);
+      } else if (acc.credit_limit && acc.credit_limit > 0) {
+        // Кредитные карты - пропускаем, они только для переводов
+        return;
+      } else if (acc.type === 'card') {
+        // Дебетовые карты
+        debitCards.push(acc);
+      } else {
+        // Остальное (наличные, депозиты и т.д.)
+        other.push(acc);
+      }
+    });
+
+    return { debitCards, loans, other };
+  }, [accounts]);
 
   useEffect(() => {
     const current = accounts.find((a) => a.id === accountValue);
@@ -191,11 +216,36 @@ export default function AddTransactionButton({
                     defaultValue={accounts[0]?.id || ""}
                   >
                     <option value="">— выберите —</option>
-                    {accounts.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name}
-                      </option>
-                    ))}
+                    
+                    {groupedAccounts.debitCards.length > 0 && (
+                      <optgroup label="💳 Дебетовые карты">
+                        {groupedAccounts.debitCards.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    
+                    {groupedAccounts.loans.length > 0 && (
+                      <optgroup label="🏦 Кредиты">
+                        {groupedAccounts.loans.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    
+                    {groupedAccounts.other.length > 0 && (
+                      <optgroup label="💰 Другие счета">
+                        {groupedAccounts.other.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                 </div>
                 <div className={modal.groupRow}>

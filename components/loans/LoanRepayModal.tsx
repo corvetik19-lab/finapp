@@ -25,8 +25,7 @@ export default function LoanRepayModal({ open, onClose, onSuccess, loans }: Loan
     defaultValues: {
       loanId: "",
       amount: 0,
-      principalAmount: 0,
-      interestAmount: 0,
+      commission: 0,
       paymentDate: new Date().toISOString().slice(0, 10),
       note: "",
     },
@@ -157,40 +156,24 @@ export default function LoanRepayModal({ open, onClose, onSuccess, loans }: Loan
                 )}
               </div>
 
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label>
-                    <span className="material-icons">account_balance_wallet</span>
-                    Сумма по телу кредита (₽)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="Напр., 25000"
-                    {...form.register("principalAmount", { valueAsNumber: true })}
-                    disabled={isSaving}
-                  />
-                  {form.formState.errors.principalAmount && (
-                    <span className={styles.fieldError}>{form.formState.errors.principalAmount.message}</span>
-                  )}
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label>
-                    <span className="material-icons">percent</span>
-                    Сумма процентов (₽)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="Напр., 3500"
-                    {...form.register("interestAmount", { valueAsNumber: true })}
-                    disabled={isSaving}
-                  />
-                  {form.formState.errors.interestAmount && (
-                    <span className={styles.fieldError}>{form.formState.errors.interestAmount.message}</span>
-                  )}
-                </div>
+              <div className={styles.formGroup}>
+                <label>
+                  <span className="material-icons">receipt</span>
+                  Комиссия банка (₽)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="Напр., 100 (необязательно)"
+                  {...form.register("commission", { valueAsNumber: true })}
+                  disabled={isSaving}
+                />
+                {form.formState.errors.commission && (
+                  <span className={styles.fieldError}>{form.formState.errors.commission.message}</span>
+                )}
+                <small className={styles.fieldHint}>
+                  Укажите комиссию, если банк взимает плату за досрочное погашение
+                </small>
               </div>
 
               <div className={styles.formGroup}>

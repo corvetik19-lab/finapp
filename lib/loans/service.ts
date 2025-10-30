@@ -8,6 +8,9 @@ export function mapLoanRecord(record: LoanRecord): Loan {
   const remainingDebt = principalAmount - principalPaid;
   const progressPercent = principalAmount > 0 ? (principalPaid / principalAmount) * 100 : 0;
 
+  // Проверяем оплачен ли кредит в этом месяце
+  const isPaidThisMonth = checkIfPaidThisMonth(record.last_payment_date);
+
   return {
     id: record.id,
     name: record.name,
@@ -25,9 +28,26 @@ export function mapLoanRecord(record: LoanRecord): Loan {
     nextPaymentDate: record.next_payment_date,
     principalPaid,
     interestPaid: record.interest_paid / 100,
+    lastPaymentDate: record.last_payment_date,
     remainingDebt,
     progressPercent: Math.round(progressPercent * 10) / 10,
+    isPaidThisMonth,
   };
+}
+
+// Проверка оплачен ли кредит в текущем месяце
+function checkIfPaidThisMonth(lastPaymentDate: string | null): boolean {
+  if (!lastPaymentDate) return false;
+  
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  
+  const paymentDate = new Date(lastPaymentDate);
+  const paymentYear = paymentDate.getFullYear();
+  const paymentMonth = paymentDate.getMonth();
+  
+  return currentYear === paymentYear && currentMonth === paymentMonth;
 }
 
 // Загрузка всех кредитов пользователя

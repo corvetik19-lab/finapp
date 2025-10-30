@@ -132,6 +132,13 @@
   margin-bottom: 15px;
   background: #ffffff;
   border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.loanItem:has(.loanStatusPaid) {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #86efac;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.1);
 }
 
 .loanHeader {
@@ -152,6 +159,19 @@
   border-radius: 4px;
   background: rgba(76, 175, 80, 0.1);
   color: #4caf50;
+}
+
+.loanStatusPaid {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #22c55e;
+  color: white;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 4px rgba(34, 197, 94, 0.2);
 }
 
 .editBtn, .deleteBtn {

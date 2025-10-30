@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: finapp-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      # Базовая аутентификация
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=change_this_password
+      
+      # Webhook URL (для локальной разработки)
+      - WEBHOOK_URL=http://localhost:5678/
+      
+      # Timezone
+      - GENERIC_TIMEZONE=Europe/Moscow
+      
+      # Executions
+      - EXECUTIONS_DATA_SAVE_ON_ERROR=all
+      - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
+      - EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS=true
+      
+      # Encryption key (сгенерируйте свой!)
+      - N8N_ENCRYPTION_KEY=your-encryption-key-here-min-10-chars
+      
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - finapp-network
+
+volumes:
+  n8n_data:
+    driver: local
+
+networks:
+  finapp-network:
+    driver: bridge

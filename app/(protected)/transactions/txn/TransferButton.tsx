@@ -11,7 +11,7 @@ import {
 } from "@/lib/validation/transaction";
 import { createTransferFromValues } from "../actions";
 
-type Account = { id: string; name: string; currency: string };
+type Account = { id: string; name: string; currency: string; type: string; credit_limit: number | null; balance: number };
 
 type TransferButtonProps = {
   accounts: Account[];
@@ -60,6 +60,32 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
   });
 
   const fromAccount = watch("from_account_id");
+
+  // Группируем счета по типам (исключаем кредиты из переводов)
+  const groupedAccounts = useMemo(() => {
+    const debitCards: Account[] = [];
+    const creditCards: Account[] = [];
+    const other: Account[] = [];
+
+    accounts.forEach((acc) => {
+      // Кредиты (type='loan') не включаем в переводы
+      // Погашение кредита делается через обычную транзакцию расхода
+      if (acc.type === 'loan') {
+        return; // Пропускаем кредиты
+      } else if (acc.credit_limit && acc.credit_limit > 0) {
+        // Кредитные карты
+        creditCards.push(acc);
+      } else if (acc.type === 'card') {
+        // Дебетовые карты
+        debitCards.push(acc);
+      } else {
+        // Остальное (наличные, депозиты и т.д.)
+        other.push(acc);
+      }
+    });
+
+    return { debitCards, creditCards, other };
+  }, [accounts]);
 
   useEffect(() => {
     if (!open) return;
@@ -137,11 +163,36 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
                     required
                   >
                     <option value="">— выберите —</option>
-                    {accounts.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name}
-                      </option>
-                    ))}
+                    
+                    {groupedAccounts.debitCards.length > 0 && (
+                      <optgroup label="💳 Дебетовые карты">
+                        {groupedAccounts.debitCards.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    
+                    {groupedAccounts.creditCards.length > 0 && (
+                      <optgroup label="💳 Кредитные карты">
+                        {groupedAccounts.creditCards.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    
+                    {groupedAccounts.other.length > 0 && (
+                      <optgroup label="💰 Другие счета">
+                        {groupedAccounts.other.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                   {errors.from_account_id && <div className={modal.error}>{errors.from_account_id.message}</div>}
                 </div>
@@ -154,11 +205,36 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
                     required
                   >
                     <option value="">— выберите —</option>
-                    {accounts.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name}
-                      </option>
-                    ))}
+                    
+                    {groupedAccounts.debitCards.length > 0 && (
+                      <optgroup label="💳 Дебетовые карты">
+                        {groupedAccounts.debitCards.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    
+                    {groupedAccounts.creditCards.length > 0 && (
+                      <optgroup label="💳 Кредитные карты">
+                        {groupedAccounts.creditCards.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    
+                    {groupedAccounts.other.length > 0 && (
+                      <optgroup label="💰 Другие счета">
+                        {groupedAccounts.other.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                   {errors.to_account_id && <div className={modal.error}>{errors.to_account_id.message}</div>}
                 </div>

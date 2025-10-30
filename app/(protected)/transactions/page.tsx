@@ -15,7 +15,7 @@ import { listTransactions } from "@/lib/transactions/service";
 import ImportCsvTrigger from "@/components/transactions/ImportCsvTrigger";
 import ExportCsvButton from "@/components/transactions/ExportCsvButton";
 
-type Account = { id: string; name: string; currency: string; balance: number };
+type Account = { id: string; name: string; currency: string; balance: number; type: string; credit_limit: number | null };
 type Category = { id: string; name: string; kind: "income" | "expense" | "transfer" | "both" };
 type Txn = GroupTxn;
 
@@ -28,11 +28,40 @@ export default async function TransactionsPage({
 }) {
   const supabase = await createRSCClient();
 
-  const { data: accounts = [] } = await supabase
+  // Загружаем счета (карты, наличные и т.д.)
+  const { data: accountsData = [] } = await supabase
     .from("accounts")
-    .select("id,name,currency,balance")
+    .select("id,name,currency,balance,type,credit_limit")
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
+
+  // Загружаем кредиты
+  const { data: loansData = [] } = await supabase
+    .from("loans")
+    .select("id,name,bank,principal_amount,principal_paid,currency")
+    .is("deleted_at", null)
+    .eq("status", "active")
+    .order("created_at", { ascending: true });
+
+  // Объединяем счета и кредиты в один массив
+  const accounts: Account[] = [
+    ...(accountsData || []).map((acc) => ({
+      id: acc.id,
+      name: acc.name,
+      currency: acc.currency || "RUB",
+      balance: acc.balance || 0,
+      type: acc.type || "other",
+      credit_limit: acc.credit_limit,
+    })),
+    ...(loansData || []).map((loan) => ({
+      id: loan.id,
+      name: `${loan.name} (${loan.bank})`,
+      currency: loan.currency || "RUB",
+      balance: -(loan.principal_amount - loan.principal_paid), // Отрицательный баланс для кредитов
+      type: "loan" as string,
+      credit_limit: null,
+    })),
+  ];
 
   const { data: categories = [] } = await supabase
     .from("categories")
@@ -178,8 +207,6 @@ export default async function TransactionsPage({
 
   // Build summary presets (only for summary cards)
   const currencyCode = (accounts?.[0]?.currency as string) || "RUB";
-  // ID категории "Такси" - расходы по ней не учитываются в общих расходах
-  const TAXI_CATEGORY_ID = "faac1aa6-82ad-40a9-8850-074691a52996";
   // Inclusive period: from <= d <= toInclusive
   function sumRange(from: Date, toInclusive: Date) {
     let inc = 0;
@@ -189,10 +216,7 @@ export default async function TransactionsPage({
       if (d >= from && d <= toInclusive) {
         if (t.direction === "income") inc += Number(t.amount);
         else if (t.direction === "expense") {
-          // Исключаем расходы по категории "Такси" из общих расходов
-          if (t.category_id !== TAXI_CATEGORY_ID) {
-            exp += Number(t.amount);
-          }
+          exp += Number(t.amount);
         }
       }
     }

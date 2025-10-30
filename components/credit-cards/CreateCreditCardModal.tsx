@@ -41,10 +41,13 @@ export default function CreateCreditCardModal({
         paymentDay = date.getDate().toString();
       }
       
+      // Вычисляем задолженность из доступного остатка
+      const debt = editingCard.debt ?? (editingCard.limit - editingCard.available);
+      
       setFormData({
         name: editingCard.bank,
         credit_limit: (editingCard.limit / 100).toString(),
-        balance: (editingCard.balance / 100).toString(),
+        balance: (debt / 100).toString(), // показываем задолженность
         interest_rate: editingCard.interestRate ? editingCard.interestRate.toString() : "",
         grace_period: editingCard.gracePeriod ? editingCard.gracePeriod.toString() : "",
         payment_day: paymentDay,
@@ -72,7 +75,10 @@ export default function CreateCreditCardModal({
 
     try {
       const creditLimitMinor = Math.round(parseFloat(formData.credit_limit) * 100);
-      const balanceMinor = formData.balance ? Math.round(parseFloat(formData.balance) * 100) : 0;
+      // balance - это задолженность, которую вводит пользователь
+      // Нужно конвертировать в доступный остаток: available = limit - debt
+      const debtMinor = formData.balance ? Math.round(parseFloat(formData.balance) * 100) : 0;
+      const balanceMinor = creditLimitMinor - debtMinor; // доступный остаток
       const interestRate = formData.interest_rate ? parseFloat(formData.interest_rate) : null;
       const gracePeriod = formData.grace_period ? parseInt(formData.grace_period) : null;
       const minPaymentMinor = formData.min_payment ? Math.round(parseFloat(formData.min_payment) * 100) : 0;

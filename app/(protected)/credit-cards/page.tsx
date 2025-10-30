@@ -19,9 +19,10 @@ export default async function CreditCardsPage() {
   const cards = (cardsData ?? []).map((card) => ({
     id: card.id,
     bank: card.name,
-    balance: Math.abs(card.balance ?? 0), // задолженность в минорных единицах
+    balance: card.balance ?? 0, // доступный остаток в минорных единицах
     limit: card.credit_limit ?? 0,
-    available: Math.max(0, (card.credit_limit ?? 0) - Math.abs(card.balance ?? 0)),
+    available: card.balance ?? 0, // доступный остаток
+    debt: Math.max(0, (card.credit_limit ?? 0) - (card.balance ?? 0)), // задолженность
     currency: card.currency ?? "RUB",
     interestRate: card.interest_rate ?? 0,
     gracePeriod: card.grace_period ?? 0,

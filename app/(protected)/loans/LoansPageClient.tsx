@@ -6,7 +6,7 @@ import type { Loan, LoanSummary } from "@/lib/loans/types";
 import { formatMoney } from "@/lib/utils/format";
 import LoanFormModal from "@/components/loans/LoanFormModal";
 import LoanRepayModal from "@/components/loans/LoanRepayModal";
-import RecalculateButton from "./recalculate-button";
+import LoanTransactionsModal from "@/components/loans/LoanTransactionsModal";
 import styles from "./Loans.module.css";
 
 type LoansPageClientProps = {
@@ -20,6 +20,7 @@ export default function LoansPageClient({ loans, summary }: LoansPageClientProps
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isRepayModalOpen, setIsRepayModalOpen] = useState(false);
   const [editingLoan, setEditingLoan] = useState<Loan | null>(null);
+  const [transactionsModalLoan, setTransactionsModalLoan] = useState<Loan | null>(null);
 
   const filteredLoans = loans.filter((loan) => {
     if (filter === "all") return true;
@@ -79,9 +80,6 @@ export default function LoansPageClient({ loans, summary }: LoansPageClientProps
         </div>
       </header>
 
-      {/* Кнопка пересчёта */}
-      <RecalculateButton />
-
       {/* Статистика */}
       <div className={styles.summaryContainer}>
         <div className={styles.summaryCard}>
@@ -134,7 +132,22 @@ export default function LoansPageClient({ loans, summary }: LoansPageClientProps
             <div className={styles.loanHeader}>
               <div className={styles.loanName}>{loan.name}</div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div className={styles.loanStatus}>{loan.status === "active" ? "Активен" : "Погашен"}</div>
+                {loan.isPaidThisMonth ? (
+                  <div className={styles.loanStatusPaid}>
+                    <span className="material-icons" style={{ fontSize: 16 }}>check_circle</span>
+                    Оплачено
+                  </div>
+                ) : (
+                  <div className={styles.loanStatus}>{loan.status === "active" ? "Активен" : "Погашен"}</div>
+                )}
+                <button 
+                  className={styles.editBtn} 
+                  onClick={() => setTransactionsModalLoan(loan)}
+                  title="Посмотреть транзакции"
+                >
+                  <span className="material-icons" style={{ fontSize: 16 }}>receipt_long</span>
+                  Транзакции
+                </button>
                 <button className={styles.editBtn} onClick={() => handleOpenEditModal(loan)}>
                   <span className="material-icons" style={{ fontSize: 16 }}>edit</span>
                   Изменить
@@ -214,6 +227,14 @@ export default function LoansPageClient({ loans, summary }: LoansPageClientProps
         onSuccess={handleRepaySuccess}
         loans={loans}
       />
+
+      {transactionsModalLoan && (
+        <LoanTransactionsModal
+          isOpen={true}
+          onClose={() => setTransactionsModalLoan(null)}
+          loan={transactionsModalLoan}
+        />
+      )}
     </div>
   );
 }

@@ -70,9 +70,6 @@ export async function loadDashboardOverview(monthsBack = 8, options?: DashboardO
   const supabase = await createRSCClient();
   const now = new Date();
 
-  // ID категории "Такси" - расходы по ней не учитываются в общих расходах
-  const TAXI_CATEGORY_ID = "faac1aa6-82ad-40a9-8850-074691a52996";
-
   const hasCustomRange = Boolean(options?.from && options?.to);
 
   const startDate = hasCustomRange
@@ -121,14 +118,12 @@ export async function loadDashboardOverview(monthsBack = 8, options?: DashboardO
     const trendPoint = trendMap.get(monthKey);
     if (trendPoint) {
       if (row.direction === "income") trendPoint.income += amountMajor;
-      // Исключаем расходы по категории "Такси" из общих расходов
-      if (row.direction === "expense" && row.category_id !== TAXI_CATEGORY_ID) {
+      if (row.direction === "expense") {
         trendPoint.expense += Math.abs(amountMajor);
       }
     }
 
-    // Исключаем расходы по категории "Такси" из breakdown (разбивки по категориям)
-    if (row.direction === "expense" && occurredAt >= startBound && occurredAt <= endBound && row.category_id !== TAXI_CATEGORY_ID) {
+    if (row.direction === "expense" && occurredAt >= startBound && occurredAt <= endBound) {
       const categoryField = row.category;
       const categoryName = Array.isArray(categoryField)
         ? categoryField[0]?.name ?? "Без категории"

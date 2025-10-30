@@ -655,12 +655,142 @@ export async function deleteTransaction(id: string): Promise<void> {
   // Получаем данные транзакции перед удалением для обновления баланса
   const { data: txnToDelete, error: fetchError } = await supabase
     .from("transactions")
-    .select("id, account_id, direction, amount")
+    .select("id, account_id, direction, amount, category_id, occurred_at, counterparty")
     .eq("id", id)
     .eq("user_id", user.id)
     .single();
 
   if (fetchError) throw fetchError;
+
+  // Проверяем, является ли это транзакцией погашения кредита
+  if (txnToDelete.category_id) {
+    const { data: category } = await supabase
+      .from("categories")
+      .select("name")
+      .eq("id", txnToDelete.category_id)
+      .single();
+
+    if (category && category.name === "Погашение кредита") {
+      console.log("Deleting loan repayment transaction:", {
+        amount: txnToDelete.amount,
+        occurred_at: txnToDelete.occurred_at,
+        counterparty: txnToDelete.counterparty,
+      });
+
+      // Извлекаем дату без времени для сравнения
+      const txnDate = txnToDelete.occurred_at ? txnToDelete.occurred_at.split('T')[0] : null;
+      
+      // Ищем соответствующий платёж по кредиту (по сумме)
+      const { data: loanPayments, error: paymentsError } = await supabase
+        .from("loan_payments")
+        .select("id, loan_id, principal_amount, amount, payment_date")
+        .eq("user_id", user.id)
+        .eq("amount", txnToDelete.amount);
+
+      console.log("Found loan payments:", loanPayments);
+
+      if (!paymentsError && loanPayments && loanPayments.length > 0) {
+        // Ищем платёж с совпадающей датой (берём самый последний если несколько)
+        const matchingPayments = loanPayments.filter(p => {
+          const paymentDate = p.payment_date ? p.payment_date.split('T')[0] : null;
+          const dateMatches = paymentDate === txnDate;
+          
+          console.log("Checking payment:", {
+            id: p.id,
+            paymentDate,
+            txnDate,
+            dateMatches,
+            amount: p.amount,
+          });
+          
+          return dateMatches;
+        });
+
+        // Берём последний платёж (самый свежий)
+        const loanPayment = matchingPayments.length > 0 ? matchingPayments[matchingPayments.length - 1] : null;
+
+        console.log("Matched loan payment:", loanPayment);
+
+        if (loanPayment) {
+          // Уменьшаем principal_paid в кредите
+          const { data: loan } = await supabase
+            .from("loans")
+            .select("principal_paid")
+            .eq("id", loanPayment.loan_id)
+            .single();
+
+          if (loan) {
+            const newPrincipalPaid = Math.max(0, (loan.principal_paid || 0) - loanPayment.principal_amount);
+            console.log("Updating loan principal_paid:", {
+              old: loan.principal_paid,
+              subtract: loanPayment.principal_amount,
+              new: newPrincipalPaid,
+            });
+
+            // Удаляем запись о платеже сначала
+            await supabase
+              .from("loan_payments")
+              .delete()
+              .eq("id", loanPayment.id);
+
+            // Находим последний оставшийся платёж для этого кредита
+            const { data: remainingPayments } = await supabase
+              .from("loan_payments")
+              .select("payment_date")
+              .eq("loan_id", loanPayment.loan_id)
+              .order("payment_date", { ascending: false })
+              .limit(1);
+
+            // Обновляем кредит: principal_paid и last_payment_date
+            const lastPaymentDate = remainingPayments && remainingPayments.length > 0 
+              ? remainingPayments[0].payment_date 
+              : null;
+
+            await supabase
+              .from("loans")
+              .update({
+                principal_paid: newPrincipalPaid,
+                last_payment_date: lastPaymentDate,
+              })
+              .eq("id", loanPayment.loan_id);
+          }
+          
+          console.log("Deleted loan payment:", loanPayment.id);
+
+          // Удаляем связанную комиссию, если она есть
+          // Ищем транзакцию комиссии с той же датой и counterparty
+          const { data: commissionTxns } = await supabase
+            .from("transactions")
+            .select("id, category:categories(name)")
+            .eq("user_id", user.id)
+            .eq("counterparty", txnToDelete.counterparty)
+            .eq("occurred_at", txnToDelete.occurred_at)
+            .neq("id", id); // Исключаем текущую транзакцию
+
+          console.log("Found potential commission transactions:", commissionTxns);
+
+          if (commissionTxns && commissionTxns.length > 0) {
+            // Ищем транзакцию с категорией "Комиссия"
+            const commissionTxn = commissionTxns.find((txn: any) => 
+              txn.category && txn.category.name === "Комиссия"
+            );
+
+            if (commissionTxn) {
+              console.log("Deleting related commission transaction:", commissionTxn.id);
+              await supabase
+                .from("transactions")
+                .delete()
+                .eq("id", commissionTxn.id);
+            }
+          }
+        } else {
+          console.log("No matching loan payment found by date");
+        }
+      } else {
+        console.log("No loan payments found for amount:", txnToDelete.amount);
+      }
+    }
+  }
 
   const { data: transfer, error: transferError } = await supabase
     .from("transaction_transfers")

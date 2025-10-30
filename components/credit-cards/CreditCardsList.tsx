@@ -7,9 +7,10 @@ import { formatMoney } from "@/lib/utils/format";
 export type CreditCard = {
   id: string;
   bank: string;
-  balance: number; // задолженность в минорных единицах
+  balance: number; // доступный остаток в минорных единицах
   limit: number;
   available: number;
+  debt?: number; // задолженность в минорных единицах
   currency: string;
   interestRate: number;
   gracePeriod: number;
@@ -43,7 +44,8 @@ export default function CreditCardsList({ cards, onEdit, onDelete, onCardClick }
     <div className={styles.container}>
       <div className={styles.cardsGrid}>
         {cards.map((card) => {
-          const utilizationPercent = Math.round((card.balance / card.limit) * 100);
+          const debt = card.debt ?? (card.limit - card.available);
+          const utilizationPercent = Math.round((debt / card.limit) * 100);
           const isSelected = card.id === selectedCardId;
 
           return (
@@ -61,7 +63,7 @@ export default function CreditCardsList({ cards, onEdit, onDelete, onCardClick }
                 }}
               >
                 <div className={styles.cardBank}>{card.bank}</div>
-                <div className={styles.cardBalance}>{formatMoney(card.balance, card.currency)}</div>
+                <div className={styles.cardBalance}>{formatMoney(debt, card.currency)}</div>
                 <div className={styles.cardBalanceLabel}>Задолженность</div>
 
                 <div className={styles.cardFooter}>
