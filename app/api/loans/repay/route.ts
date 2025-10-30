@@ -123,7 +123,7 @@ export async function POST(req: Request) {
         // Найти категорию "Комиссия" или создать её
         let commissionCategoryId: string | null = null;
         
-        const { data: existingCategory, error: categoryFindError } = await supabase
+        const { data: existingCategory } = await supabase
           .from("categories")
           .select("id")
           .eq("name", "Комиссия")

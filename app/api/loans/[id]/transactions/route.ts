@@ -54,6 +54,7 @@ export async function GET(
     }
 
     // Форматируем данные
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const formattedTransactions = (transactions || []).map((txn: any) => ({
       id: txn.id,
       direction: txn.direction,

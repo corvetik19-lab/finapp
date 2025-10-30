@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createRSCClient } from '@/lib/supabase/helpers';
 
 // OpenRouter API для AI категоризации
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function categorizeWithAI(items: any[], shopName: string) {
   const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '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';
   
@@ -20,7 +21,7 @@ async function categorizeWithAI(items: any[], shopName: string) {
 
 Магазин: ${shopName}
 Товары:
-${items.map((item: any) => `- ${item.name}: ${item.price}₽`).join('\n')}
+${items.map((item) => `- ${item.name}: ${item.price}₽`).join('\n')}
 
 Верни ТОЛЬКО JSON:
 {
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { shop_name, date, total_amount, items, raw_text } = body;
+    const { shop_name, date, items } = body;
 
     // Валидация
     if (!shop_name || !items || !Array.isArray(items) || items.length === 0) {

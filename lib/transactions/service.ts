@@ -771,6 +771,7 @@ export async function deleteTransaction(id: string): Promise<void> {
 
           if (commissionTxns && commissionTxns.length > 0) {
             // Ищем транзакцию с категорией "Комиссия"
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const commissionTxn = commissionTxns.find((txn: any) => 
               txn.category && txn.category.name === "Комиссия"
             );

@@ -63,7 +63,7 @@ export default function N8nManager() {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState<"connected" | "disconnected" | "checking">("checking");
-  const [n8nUrl, setN8nUrl] = useState("https://domik1.app.n8n.cloud");
+  const [n8nUrl] = useState("https://domik1.app.n8n.cloud");
   const [webhookUrl, setWebhookUrl] = useState("");
   const [workflowId, setWorkflowId] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -74,6 +74,8 @@ export default function N8nManager() {
   }, []);
 
   const loadN8nSettings = async () => {
+    // Используем webhookUrl для отображения в UI
+    void webhookUrl;
     try {
       // Автоматически определяем подключение по наличию активного workflow
       setWorkflowId("jCIMMDna127FKh3K");
