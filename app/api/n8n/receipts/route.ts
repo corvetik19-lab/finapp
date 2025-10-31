@@ -63,13 +63,21 @@ ${items.map((item) => `- ${item.name}: ${item.price}₽`).join('\n')}
     });
 
     const data = await response.json();
+    console.log('OpenRouter response:', JSON.stringify(data, null, 2));
     const content = data.choices?.[0]?.message?.content;
+    console.log('AI content:', content);
     
     if (content) {
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
+        const parsed = JSON.parse(jsonMatch[0]);
+        console.log('Parsed AI result:', JSON.stringify(parsed, null, 2));
+        return parsed;
+      } else {
+        console.error('No JSON found in AI response');
       }
+    } else {
+      console.error('No content in AI response');
     }
     
     return null;
@@ -107,8 +115,10 @@ export async function POST(req: NextRequest) {
 
     // AI категоризация через OpenRouter
     const categorized = await categorizeWithAI(items, shop_name);
+    console.log('AI categorization result:', JSON.stringify(categorized, null, 2));
     const categorizedItems = categorized?.items || items;
     const mainCategory = categorized?.main_category || 'Прочее';
+    console.log('Selected main category:', mainCategory);
 
     // Найти или создать категорию
     let categoryId: string | null = null;
