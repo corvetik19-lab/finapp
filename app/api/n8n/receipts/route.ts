@@ -1,6 +1,96 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+function normalizeCategory(
+  rawCategory: unknown,
+  shopName?: string,
+  items?: Array<{ name?: string }>,
+): string {
+  const tryParse = (value: string) => {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return null;
+    }
+  };
+
+  const sanitizeLine = (text: string) =>
+    text
+      .replace(/\r/g, '')
+      .split('\n')
+      .map((line) => line.trim())
+      .find(
+        (line) =>
+          line &&
+          !/^(?:пожалуйста|пришлите|понял|жду|provide|send)/i.test(line),
+      );
+
+  let candidate: string | undefined;
+
+  if (rawCategory && typeof rawCategory === 'object') {
+    const obj = rawCategory as Record<string, unknown>;
+    if (typeof obj.output === 'string') {
+      candidate = obj.output;
+    } else if (typeof obj.category === 'string') {
+      candidate = obj.category;
+    }
+  }
+
+  if (!candidate && typeof rawCategory === 'string') {
+    const trimmed = rawCategory.trim();
+    if (
+      (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+      (trimmed.startsWith('[') && trimmed.endsWith(']'))
+    ) {
+      const parsed = tryParse(trimmed);
+      if (parsed && typeof parsed === 'object') {
+        const obj = parsed as Record<string, unknown>;
+        if (typeof obj.output === 'string') {
+          candidate = obj.output;
+        } else if (typeof obj.category === 'string') {
+          candidate = obj.category;
+        }
+      }
+    }
+
+    if (!candidate) {
+      candidate = trimmed;
+    }
+  }
+
+  if (candidate) {
+    candidate = candidate.replace(/^\s*['"]|['"]\s*$/g, '').trim();
+  }
+
+  const firstMeaningfulLine = candidate ? sanitizeLine(candidate) : undefined;
+
+  let finalCategory = (firstMeaningfulLine ?? candidate ?? '').trim();
+
+  const lowerShop = (shopName || '').toLowerCase();
+  const itemsText = Array.isArray(items)
+    ? items.map((item) => (item?.name || '').toLowerCase()).join(' ')
+    : '';
+
+  const shouldBeCharging =
+    /айти\s*чардж|aiti|aiticharge|iticharge/i.test(
+      `${lowerShop} ${itemsText}`,
+    ) || /зарядк|электромобил|charging/i.test(itemsText);
+
+  if (shouldBeCharging) {
+    finalCategory = 'Зарядка электромобиля';
+  }
+
+  if (!finalCategory || /пожалуйста|пришлите|понял/i.test(finalCategory)) {
+    finalCategory = shouldBeCharging ? 'Зарядка электромобиля' : '';
+  }
+
+  if (!finalCategory) {
+    finalCategory = 'Прочее';
+  }
+
+  return finalCategory;
+}
+
 export async function POST(req: NextRequest) {
   try {
     // Проверка API ключа
@@ -28,7 +118,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Категория приходит из n8n (уже определена AI)
-    const mainCategory = category || 'Прочее';
+    const mainCategory = normalizeCategory(category, shop_name, items);
     console.log('Category from n8n:', mainCategory);
 
     // Найти или создать категорию
