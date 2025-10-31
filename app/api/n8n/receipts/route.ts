@@ -1,92 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// OpenRouter API для AI категоризации
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function categorizeWithAI(items: any[], shopName: string) {
-  const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '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';
-  
-  const prompt = `Ты - эксперт по категоризации финансовых транзакций. Проанализируй покупку и определи НАИБОЛЕЕ ПОДХОДЯЩУЮ категорию.
-
-КОНТЕКСТ:
-Магазин/Компания: ${shopName}
-Товары/Услуги:
-${items.map((item) => `- ${item.name}: ${item.price}₽`).join('\n')}
-
-ПРАВИЛА КАТЕГОРИЗАЦИИ:
-1. Анализируй название магазина и товара для точного определения
-2. Создавай КОНКРЕТНЫЕ категории вместо общих
-3. Примеры специфичных категорий:
-   - "Зарядка электромобиля" (для зарядных станций)
-   - "Автомойка" (для мойки авто)
-   - "Парковка" (для парковок)
-   - "Каршеринг" (для аренды авто)
-   - "Такси" (для такси и Яндекс.Такси)
-   - "Продукты" (супермаркеты, продукты)
-   - "Кафе" (кафе, рестораны, фастфуд)
-   - "Аптека" (лекарства, медтовары)
-   - "Одежда" (одежда, обувь)
-   - "Развлечения" (кино, игры)
-   - "Подписки" (Netflix, Spotify и т.д.)
-   - "Коммунальные услуги" (свет, вода, газ)
-
-4. Если не подходит ни одна - создай НОВУЮ конкретную категорию
-5. Используй "Прочее" ТОЛЬКО если категорию невозможно определить
-
-ПРИМЕРЫ КАТЕГОРИЗАЦИИ:
-- "АЙТИ ЧАРДЖ" или "IT CHARGE" или любое упоминание зарядки → ВСЕГДА "Зарядка электромобиля"
-- "Яндекс.Такси" или "Uber" → "Такси"
-- "Пятёрочка" + "Молоко" → "Продукты"
-- "КиноМакс" → "Развлечения"
-- "Автомойка" → "Автомойка"
-- "Парковка" → "Парковка"
-
-ВАЖНО: Для зарядных станций (АЙТИ ЧАРДЖ, IT CHARGE, зарядка авто) ВСЕГДА используй категорию "Зарядка электромобиля", НЕ "Прочее"!
-
-Верни ТОЛЬКО JSON (без markdown):
-{
-  "items": [{"name": "название", "price": сумма, "category": "конкретная категория"}],
-  "main_category": "основная категория для всей транзакции"
-}`;
-
-  try {
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'openai/gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    });
-
-    const data = await response.json();
-    console.log('OpenRouter response:', JSON.stringify(data, null, 2));
-    const content = data.choices?.[0]?.message?.content;
-    console.log('AI content:', content);
-    
-    if (content) {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        console.log('Parsed AI result:', JSON.stringify(parsed, null, 2));
-        return parsed;
-      } else {
-        console.error('No JSON found in AI response');
-      }
-    } else {
-      console.error('No content in AI response');
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('AI categorization error:', error);
-    return null;
-  }
-}
-
 export async function POST(req: NextRequest) {
   try {
     // Проверка API ключа
@@ -106,19 +20,16 @@ export async function POST(req: NextRequest) {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const body = await req.json();
-    const { shop_name, date, items } = body;
+    const { shop_name, date, items, category } = body;
 
     // Валидация
     if (!shop_name || !items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
     }
 
-    // AI категоризация через OpenRouter
-    const categorized = await categorizeWithAI(items, shop_name);
-    console.log('AI categorization result:', JSON.stringify(categorized, null, 2));
-    const categorizedItems = categorized?.items || items;
-    const mainCategory = categorized?.main_category || 'Прочее';
-    console.log('Selected main category:', mainCategory);
+    // Категория приходит из n8n (уже определена AI)
+    const mainCategory = category || 'Прочее';
+    console.log('Category from n8n:', mainCategory);
 
     // Найти или создать категорию
     let categoryId: string | null = null;
@@ -190,7 +101,7 @@ export async function POST(req: NextRequest) {
 
     // Создать транзакции для каждого товара
     const transactions = [];
-    for (const item of categorizedItems) {
+    for (const item of items) {
       // Конвертируем price в число (может быть строкой из n8n)
       const priceValue = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
       const amountMinor = Math.round(priceValue * 100);
