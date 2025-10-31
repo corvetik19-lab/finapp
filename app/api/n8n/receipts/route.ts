@@ -142,7 +142,11 @@ export async function POST(req: NextRequest) {
         .single();
       
       if (accountError || !newAccount) {
-        return NextResponse.json({ error: 'Failed to create account' }, { status: 500 });
+        console.error('Failed to create account:', accountError);
+        return NextResponse.json({ 
+          error: 'Failed to create account',
+          details: accountError?.message || 'Unknown error'
+        }, { status: 500 });
       }
       
       accountId = newAccount.id;
