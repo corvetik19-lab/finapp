@@ -134,7 +134,9 @@ export async function POST(req: NextRequest) {
     // Создать транзакции для каждого товара
     const transactions = [];
     for (const item of categorizedItems) {
-      const amountMinor = Math.round(parseFloat(item.price) * 100);
+      // Конвертируем price в число (может быть строкой из n8n)
+      const priceValue = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
+      const amountMinor = Math.round(priceValue * 100);
       
       const { data: txn, error: txnError } = await supabase
         .from('transactions')
