@@ -118,16 +118,20 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Найти или создать счёт пользователя
+    // Найти счёт "Т-банк" с максимальным балансом или первый доступный счёт
     const { data: accounts } = await supabase
       .from('accounts')
-      .select('id')
+      .select('id, name, balance')
       .eq('user_id', userId)
-      .limit(1);
+      .order('balance', { ascending: false });
+    
+    // Фильтруем по имени "Т-банк" если есть
+    const tBankAccounts = accounts?.filter(a => a.name?.toLowerCase().includes('т-банк')) || [];
+    const selectedAccounts = tBankAccounts.length > 0 ? tBankAccounts : accounts;
     
     let accountId: string;
     
-    if (!accounts || accounts.length === 0) {
+    if (!selectedAccounts || selectedAccounts.length === 0) {
       // Создать дефолтный счёт
       const { data: newAccount, error: accountError } = await supabase
         .from('accounts')
@@ -151,7 +155,7 @@ export async function POST(req: NextRequest) {
       
       accountId = newAccount.id;
     } else {
-      accountId = accounts[0].id;
+      accountId = selectedAccounts[0].id;
     }
 
     // Создать транзакции для каждого товара
