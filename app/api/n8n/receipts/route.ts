@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
         .from('categories')
         .insert({
           name: mainCategory,
-          type: 'expense',
+          kind: 'expense',
           user_id: userId,
         })
         .select('id')
