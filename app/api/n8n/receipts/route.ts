@@ -118,18 +118,37 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Найти первый счёт пользователя
+    // Найти или создать счёт пользователя
     const { data: accounts } = await supabase
       .from('accounts')
       .select('id')
       .eq('user_id', userId)
       .limit(1);
     
+    let accountId: string;
+    
     if (!accounts || accounts.length === 0) {
-      return NextResponse.json({ error: 'No accounts found' }, { status: 400 });
+      // Создать дефолтный счёт
+      const { data: newAccount, error: accountError } = await supabase
+        .from('accounts')
+        .insert({
+          user_id: userId,
+          name: 'Основной счёт',
+          type: 'cash',
+          currency: 'RUB',
+          balance: 0,
+        })
+        .select('id')
+        .single();
+      
+      if (accountError || !newAccount) {
+        return NextResponse.json({ error: 'Failed to create account' }, { status: 500 });
+      }
+      
+      accountId = newAccount.id;
+    } else {
+      accountId = accounts[0].id;
     }
-
-    const accountId = accounts[0].id;
 
     // Создать транзакции для каждого товара
     const transactions = [];
