@@ -304,11 +304,41 @@ export default async function TransactionsPage({
       {/* Accounts widget at top (как в дизайне) */}
       {hasAccount && (
         <section className={styles.accounts}>
-          {(accounts as Account[]).slice(0, 3).map((a) => {
+          {(accounts as Account[]).slice(0, 6).map((a) => {
             // Используем баланс напрямую из БД (balance уже актуальный)
             const currentBalance = a.balance ?? 0;
+            
+            // Определяем тип карты и иконку
+            let icon = "account_balance_wallet";
+            let typeLabel = "";
+            
+            if (a.type === "card") {
+              if (a.credit_limit && a.credit_limit > 0) {
+                icon = "credit_card";
+                typeLabel = "💳 Кредитная";
+              } else {
+                icon = "payment";
+                typeLabel = "💳 Дебетовая";
+              }
+            } else if (a.type === "cash") {
+              icon = "payments";
+              typeLabel = "💵 Наличные";
+            } else if (a.type === "loan") {
+              icon = "account_balance";
+              typeLabel = "💰 Кредит";
+            } else if (a.type === "bank") {
+              icon = "account_balance";
+              typeLabel = "🏦 Счёт";
+            }
+            
             return (
               <div key={a.id} className={styles.accountCard}>
+                <div className={styles.accountHeader}>
+                  <span className="material-icons" style={{ fontSize: 20, color: "var(--primary-color)" }}>
+                    {icon}
+                  </span>
+                  {typeLabel && <span className={styles.accountType}>{typeLabel}</span>}
+                </div>
                 <div className={styles.accountName}>{a.name}</div>
                 <div className={styles.accountBalance}>{formatMoney(currentBalance, a.currency)}</div>
               </div>
