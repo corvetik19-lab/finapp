@@ -5,6 +5,7 @@ import modal from "@/components/transactions/AddModal.module.css";
 import stylesTxn from "@/components/transactions/Transactions.module.css";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useToast } from "@/components/toast/ToastContext";
 import {
   transferFormSchema,
   type TransferFormValues,
@@ -27,6 +28,7 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
   const [open, setOpen] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const { show: showToast } = useToast();
 
   const primaryCurrency = accounts[0]?.currency || "RUB";
   const nowLocal = useMemo(
@@ -125,8 +127,10 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
       const result = await createTransferFromValues(normalized);
       if (!result.ok) {
         setServerError(result.error ?? "Не удалось выполнить перевод");
+        showToast(`❌ Ошибка: ${result.error ?? "Не удалось выполнить перевод"}`, { type: "error" });
         return;
       }
+      showToast("✅ Перевод успешно выполнен", { type: "success" });
       setOpen(false);
     });
   });
