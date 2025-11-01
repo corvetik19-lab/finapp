@@ -22,11 +22,18 @@ export default async function BudgetsPage() {
 
   const categories = (categoriesRaw ?? []) as { id: string; name: string; kind: "income" | "expense" | "transfer" }[];
 
+  // Отладка - смотрим категорию "Такси"
+  const taxiCategories = categories.filter(c => c.name === "Такси");
+  console.log("Такси categories:", taxiCategories);
+
   const budgets = await listBudgetsWithUsage();
   
   // Находим категории с одинаковыми именами в доходах и расходах
   const incomeCategories = categories.filter(c => c.kind === "income");
   const expenseCategories = categories.filter(c => c.kind === "expense");
+  
+  console.log("Income categories:", incomeCategories.map(c => c.name));
+  console.log("Expense categories:", expenseCategories.map(c => c.name));
   
   const netProfitCategories: Array<{ 
     name: string; 
