@@ -211,16 +211,27 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
               <>
                 <div className={styles.cardAmounts}>
                   <div className={styles.amountItem}>
-                    <span className={styles.amountLabel}>Лимит</span>
+                    <span className={styles.amountLabel}>
+                      {budget.category?.kind === "income" ? "План" : "Лимит"}
+                    </span>
                     <span className={styles.amountValue}>{formatMoney(budget.limit_minor, budget.currency)}</span>
                   </div>
                   <div className={styles.amountItem}>
-                    <span className={styles.amountLabel}>Потрачено</span>
+                    <span className={styles.amountLabel}>
+                      {budget.category?.kind === "income" ? "Получено" : "Потрачено"}
+                    </span>
                     <span className={styles.amountValue}>{formatMoney(budget.spent_minor, budget.currency)}</span>
                   </div>
                   <div className={styles.amountItem}>
-                    <span className={styles.amountLabel}>{budget.remaining_minor >= 0 ? "Остаток" : "Перерасход"}</span>
-                    <span className={styles.amountValue}>{formatMoney(budget.remaining_minor, budget.currency)}</span>
+                    <span className={styles.amountLabel}>
+                      {budget.category?.kind === "income" 
+                        ? (budget.remaining_minor >= 0 ? "Сверх плана" : "Недобор")
+                        : (budget.remaining_minor >= 0 ? "Остаток" : "Перерасход")
+                      }
+                    </span>
+                    <span className={styles.amountValue}>
+                      {formatMoney(Math.abs(budget.remaining_minor), budget.currency)}
+                    </span>
                   </div>
                 </div>
 
@@ -249,11 +260,16 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
                           : styles.statusDotOk
                     }`}
                   />
-                  {budget.status === "over"
-                    ? "Лимит превышен"
-                    : budget.status === "warning"
-                      ? "Осталось менее 15%"
-                      : "В пределах лимита"}
+                  {budget.category?.kind === "income" 
+                    ? (budget.status === "ok" 
+                        ? "План выполнен" 
+                        : "План не выполнен")
+                    : (budget.status === "over"
+                        ? "Лимит превышен"
+                        : budget.status === "warning"
+                          ? "Осталось менее 15%"
+                          : "В пределах лимита")
+                  }
                 </div>
               </>
             )}
