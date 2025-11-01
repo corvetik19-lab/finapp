@@ -88,13 +88,54 @@ export async function deleteBudget(formData: FormData) {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
-  if (authError || !user) throw authError ?? new Error("Нет пользователя");
+  if (authError || !user) {
+    console.error("Delete budget: auth error", authError);
+    throw authError ?? new Error("Нет пользователя");
+  }
 
   const id = String(formData.get("id") ?? "").trim();
-  if (!id) throw new Error("Нет идентификатора бюджета");
+  if (!id) {
+    console.error("Delete budget: no ID provided");
+    throw new Error("Нет идентификатора бюджета");
+  }
 
-  const { error } = await supabase.from("budgets").delete().eq("id", id).eq("user_id", user.id);
-  if (error) throw error;
+  console.log("Deleting budget:", { id, user_id: user.id });
+
+  // Сначала проверяем что бюджет существует
+  const { data: existing, error: checkError } = await supabase
+    .from("budgets")
+    .select("id, user_id")
+    .eq("id", id)
+    .single();
+
+  if (checkError) {
+    console.error("Delete budget: check error", checkError);
+    throw new Error(`Бюджет не найден: ${checkError.message}`);
+  }
+
+  if (!existing) {
+    console.error("Delete budget: not found");
+    throw new Error("Бюджет не найден");
+  }
+
+  if (existing.user_id !== user.id) {
+    console.error("Delete budget: wrong user", { existing_user: existing.user_id, current_user: user.id });
+    throw new Error("Нет доступа к этому бюджету");
+  }
+
+  // Удаляем
+  const { error, count } = await supabase
+    .from("budgets")
+    .delete({ count: "exact" })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Delete budget: delete error", error);
+    throw new Error(`Ошибка удаления: ${error.message}`);
+  }
+
+  console.log("Budget deleted successfully:", { id, deleted_count: count });
 
   revalidatePath("/budgets");
 }
