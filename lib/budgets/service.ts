@@ -59,7 +59,7 @@ function normalizeBudgetRecord(record: Record<string, unknown>): BudgetRow {
       ? {
           id: String(categoryValue.id ?? ""),
           name: String(categoryValue.name ?? ""),
-          kind: String(categoryValue.kind ?? "expense") as "income" | "expense" | "transfer",
+          kind: String(categoryValue.kind ?? "expense") as "income" | "expense" | "transfer" | "both",
         }
       : null,
   } satisfies BudgetRow;
@@ -91,38 +91,68 @@ async function enrichBudgetWithUsage(
     } satisfies BudgetWithUsage;
   }
 
-  // Определяем direction на основе типа категории
-  const direction = budget.category?.kind === "income" ? "income" : "expense";
+  const categoryKind = budget.category?.kind;
+  let spentMinor = 0;
   
-  const { data: txRows, error: txError } = await supabase
-    .from("transactions")
-    .select("amount")
-    .eq("category_id", budget.category_id)
-    .eq("direction", direction)
-    .gte("occurred_at", startOfDay(budget.period_start))
-    .lte("occurred_at", endOfDay(budget.period_end));
+  // Для категорий 'both' считаем чистую прибыль (доходы - расходы)
+  if (categoryKind === "both") {
+    // Получаем доходы
+    const { data: incomeRows } = await supabase
+      .from("transactions")
+      .select("amount")
+      .eq("category_id", budget.category_id)
+      .eq("direction", "income")
+      .gte("occurred_at", startOfDay(budget.period_start))
+      .lte("occurred_at", endOfDay(budget.period_end));
+    
+    // Получаем расходы
+    const { data: expenseRows } = await supabase
+      .from("transactions")
+      .select("amount")
+      .eq("category_id", budget.category_id)
+      .eq("direction", "expense")
+      .gte("occurred_at", startOfDay(budget.period_start))
+      .lte("occurred_at", endOfDay(budget.period_end));
+    
+    const incomeTotal = (incomeRows ?? []).reduce((acc, row) => acc + Math.abs(Number((row as { amount?: number }).amount ?? 0)), 0);
+    const expenseTotal = (expenseRows ?? []).reduce((acc, row) => acc + Math.abs(Number((row as { amount?: number }).amount ?? 0)), 0);
+    
+    // Чистая прибыль = доходы - расходы
+    spentMinor = incomeTotal - expenseTotal;
+  } else {
+    // Для обычных категорий
+    const direction = categoryKind === "income" ? "income" : "expense";
+    
+    const { data: txRows, error: txError } = await supabase
+      .from("transactions")
+      .select("amount")
+      .eq("category_id", budget.category_id)
+      .eq("direction", direction)
+      .gte("occurred_at", startOfDay(budget.period_start))
+      .lte("occurred_at", endOfDay(budget.period_end));
 
-  if (txError) throw txError;
+    if (txError) throw txError;
 
-  const transactions = Array.isArray(txRows) ? txRows : [];
-  const spentMinor = transactions.reduce((acc, row) => acc + Math.abs(Number((row as { amount?: number }).amount ?? 0)), 0);
+    const transactions = Array.isArray(txRows) ? txRows : [];
+    spentMinor = transactions.reduce((acc, row) => acc + Math.abs(Number((row as { amount?: number }).amount ?? 0)), 0);
+  }
   
-  // Для доходов: remaining = actual - limit (сколько больше заработали)
+  // Для доходов и both: remaining = actual - limit (сколько больше заработали/недобор)
   // Для расходов: remaining = limit - spent (сколько осталось)
-  const remainingMinor = direction === "income" 
+  const remainingMinor = (categoryKind === "income" || categoryKind === "both")
     ? spentMinor - limitMinor 
     : limitMinor - spentMinor;
     
   const progressRatio = limitMinor > 0 ? spentMinor / limitMinor : 0;
   const clampedProgress = Math.max(0, progressRatio);
   
-  // Для доходов: "ok" если выполнили план
-  // Для расходов: "over" если потратили больше лимита (плохо)
+  // Статус для доходов/both и расходов
   let status: BudgetWithUsage["status"];
-  if (direction === "income") {
-    // Для доходов: ok = план выполнен, warning = близко к плану, over = план превышен (это хорошо)
+  if (categoryKind === "income" || categoryKind === "both") {
+    // Для доходов/both: ok = план выполнен (100%+), warning = близко
     status = spentMinor >= limitMinor ? "ok" : clampedProgress >= 0.85 ? "warning" : "warning";
   } else {
+    // Для расходов: over = превышен лимит, warning = близко к лимиту
     status = remainingMinor < 0 ? "over" : clampedProgress >= 0.85 ? "warning" : "ok";
   }
 
