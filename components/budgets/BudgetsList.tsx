@@ -240,6 +240,9 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
                     className={styles.progressFill}
                     style={{ width: `${Math.min(Math.max(budget.progress, 0), 1) * 100}%` }}
                   />
+                  <span className={styles.progressText}>
+                    {Math.round(budget.progress * 100)}%
+                  </span>
                 </div>
 
                 <div
