@@ -225,7 +225,7 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
                   <div className={styles.amountItem}>
                     <span className={styles.amountLabel}>
                       {budget.category?.kind === "income" || budget.category?.kind === "both"
-                        ? (budget.remaining_minor >= 0 ? "Сверх плана" : "Недобор")
+                        ? (budget.remaining_minor < 0 ? "Недобор" : "Сверх плана")
                         : (budget.remaining_minor >= 0 ? "Остаток" : "Перерасход")
                       }
                     </span>
