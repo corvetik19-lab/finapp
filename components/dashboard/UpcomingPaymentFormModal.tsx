@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -140,7 +141,7 @@ export default function UpcomingPaymentFormModal({
     return null;
   }
 
-  return (
+  const modalContent = (
     <div className={styles.modalRoot} role="presentation" onClick={handleClose}>
       <div className={styles.modal} role="dialog" aria-modal onClick={(e) => e.stopPropagation()}>
         <header className={styles.modalHeader}>
@@ -265,4 +266,6 @@ export default function UpcomingPaymentFormModal({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
