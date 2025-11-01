@@ -4,6 +4,7 @@ import { listBudgetsWithUsage } from "@/lib/budgets/service";
 import { formatMoney } from "@/lib/utils/format";
 import { createBudget } from "./actions";
 import BudgetsList from "@/components/budgets/BudgetsList";
+import BudgetForm from "@/components/budgets/BudgetForm";
 
 // Делаем страницу динамической
 export const dynamic = 'force-dynamic';
@@ -115,52 +116,7 @@ export default async function BudgetsPage() {
         </div>
       </section>
 
-      <section className={styles.formCard}>
-        <div className={styles.formTitle}>Создать бюджет</div>
-        <form action={createBudget} className={styles.formGrid}>
-          <label>
-            <span className={styles.label}>Категория</span>
-            <select name="category_id" className={styles.select} required>
-              <option value="">— выберите категорию —</option>
-              <optgroup label="💰 Доходы">
-                {categories.filter(c => c.kind === "income").map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label="💸 Расходы">
-                {categories.filter(c => c.kind === "expense").map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </optgroup>
-            </select>
-          </label>
-          <label>
-            <span className={styles.label}>Дата начала</span>
-            <input type="date" name="period_start" className={styles.input} required />
-          </label>
-          <label>
-            <span className={styles.label}>Дата окончания</span>
-            <input type="date" name="period_end" className={styles.input} required />
-          </label>
-          <label>
-            <span className={styles.label}>Лимит (₽)</span>
-            <input type="text" name="limit_amount" inputMode="decimal" className={styles.input} required />
-          </label>
-          <input type="hidden" name="currency" value="RUB" />
-          <div className={styles.submitRow}>
-            <button type="submit" className={styles.primaryBtn}>
-              <span className="material-icons" aria-hidden>
-                add
-              </span>
-              Сохранить бюджет
-            </button>
-          </div>
-        </form>
-      </section>
+      <BudgetForm categories={categories} onSubmit={createBudget} />
 
       <section className={styles.list}>
         <BudgetsList budgets={budgets} categories={categories} />

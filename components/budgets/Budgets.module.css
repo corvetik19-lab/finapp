@@ -112,3 +112,28 @@
   background: rgba(156, 39, 176, 0.15);
   color: #9c27b0;
 }
+
+/* Кнопка быстрого выбора периода */
+.quickBtn {
+  background: rgba(33, 150, 243, 0.1);
+  color: #2196f3;
+  border: 1px solid rgba(33, 150, 243, 0.3);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.quickBtn:hover {
+  background: rgba(33, 150, 243, 0.2);
+  border-color: rgba(33, 150, 243, 0.5);
+}
+
+.quickBtn:active {
+  transform: scale(0.98);
+}
