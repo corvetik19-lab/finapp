@@ -264,7 +264,7 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
                     }`}
                   />
                   {budget.category?.kind === "income" || budget.category?.kind === "both"
-                    ? (budget.status === "ok" 
+                    ? (budget.progress >= 1
                         ? "План выполнен" 
                         : "План не выполнен")
                     : (budget.status === "over"
