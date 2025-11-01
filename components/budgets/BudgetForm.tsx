@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/toast/ToastContext";
 import styles from "./Budgets.module.css";
 
 type Category = {
@@ -17,6 +18,7 @@ type BudgetFormProps = {
 
 export default function BudgetForm({ categories, onSubmit }: BudgetFormProps) {
   const router = useRouter();
+  const { show: showToast } = useToast();
   const [periodStart, setPeriodStart] = useState("");
   const [periodEnd, setPeriodEnd] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,11 +53,15 @@ export default function BudgetForm({ categories, onSubmit }: BudgetFormProps) {
       setPeriodEnd("");
       e.currentTarget.reset();
       
+      // Показываем уведомление
+      showToast("✅ Бюджет успешно создан", { type: "success" });
+      
       // Обновляем страницу
       router.refresh();
     } catch (error) {
       console.error("Error creating budget:", error);
-      alert("Ошибка при создании бюджета");
+      const errorMessage = error instanceof Error ? error.message : "Неизвестная ошибка";
+      showToast(`❌ Ошибка: ${errorMessage}`, { type: "error" });
     } finally {
       setIsSubmitting(false);
     }

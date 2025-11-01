@@ -6,6 +6,7 @@ import { BudgetWithUsage } from "@/lib/budgets/service";
 import { formatMoney } from "@/lib/utils/format";
 import { deleteBudget, updateBudget } from "@/app/(protected)/budgets/actions";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/toast/ToastContext";
 
 type Category = {
   id: string;
@@ -26,6 +27,7 @@ function formatDate(date: string) {
 
 export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
   const router = useRouter();
+  const { show: showToast } = useToast();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<{
     category_id: string;
@@ -66,10 +68,12 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
       await updateBudget(formData);
       setEditingId(null);
       setEditForm(null);
+      showToast("✅ Бюджет успешно обновлен", { type: "success" });
       router.refresh();
     } catch (error) {
       console.error("Failed to update budget:", error);
-      alert("Не удалось обновить бюджет");
+      const errorMessage = error instanceof Error ? error.message : "Неизвестная ошибка";
+      showToast(`❌ Ошибка: ${errorMessage}`, { type: "error" });
     }
   };
 
@@ -82,11 +86,12 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
       console.log("Attempting to delete budget:", budgetId);
       await deleteBudget(formData);
       console.log("Budget deleted, refreshing...");
+      showToast("✅ Бюджет успешно удален", { type: "success" });
       router.refresh();
     } catch (error) {
       console.error("Failed to delete budget:", error);
       const errorMessage = error instanceof Error ? error.message : "Неизвестная ошибка";
-      alert(`Не удалось удалить бюджет: ${errorMessage}`);
+      showToast(`❌ Ошибка: ${errorMessage}`, { type: "error" });
     }
   };
 
