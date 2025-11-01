@@ -450,14 +450,24 @@ export default function PlansPageClient({ plans }: PlansPageClientProps) {
       if (!res.ok) {
         const error = await res.json();
         console.error("Failed to delete plan:", error);
-        alert("Ошибка при удалении плана");
+        alert(`Ошибка при удалении плана: ${error.error || "Неизвестная ошибка"}`);
         return;
+      }
+
+      // Если удаляем текущий выбранный план, переключаемся на первый доступный
+      if (selectedPlanId === planId) {
+        const remainingPlans = plans.filter(p => p.id !== planId);
+        if (remainingPlans.length > 0) {
+          setSelectedPlanId(remainingPlans[0].id);
+        } else {
+          setSelectedPlanId("");
+        }
       }
 
       router.refresh();
     } catch (error) {
       console.error("Failed to delete plan:", error);
-      alert("Ошибка при удалении плана");
+      alert("Ошибка при удалении плана: проблема с сетью");
     }
   };
 
