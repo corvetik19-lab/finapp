@@ -91,11 +91,14 @@ async function enrichBudgetWithUsage(
     } satisfies BudgetWithUsage;
   }
 
+  // Определяем direction на основе типа категории
+  const direction = budget.category?.kind === "income" ? "income" : "expense";
+  
   const { data: txRows, error: txError } = await supabase
     .from("transactions")
     .select("amount")
     .eq("category_id", budget.category_id)
-    .eq("direction", "expense")
+    .eq("direction", direction)
     .gte("occurred_at", startOfDay(budget.period_start))
     .lte("occurred_at", endOfDay(budget.period_end));
 
@@ -103,10 +106,25 @@ async function enrichBudgetWithUsage(
 
   const transactions = Array.isArray(txRows) ? txRows : [];
   const spentMinor = transactions.reduce((acc, row) => acc + Math.abs(Number((row as { amount?: number }).amount ?? 0)), 0);
-  const remainingMinor = limitMinor - spentMinor;
+  
+  // Для доходов: remaining = actual - limit (сколько больше заработали)
+  // Для расходов: remaining = limit - spent (сколько осталось)
+  const remainingMinor = direction === "income" 
+    ? spentMinor - limitMinor 
+    : limitMinor - spentMinor;
+    
   const progressRatio = limitMinor > 0 ? spentMinor / limitMinor : 0;
   const clampedProgress = Math.max(0, progressRatio);
-  const status: BudgetWithUsage["status"] = remainingMinor < 0 ? "over" : clampedProgress >= 0.85 ? "warning" : "ok";
+  
+  // Для доходов: "ok" если выполнили план
+  // Для расходов: "over" если потратили больше лимита (плохо)
+  let status: BudgetWithUsage["status"];
+  if (direction === "income") {
+    // Для доходов: ok = план выполнен, warning = близко к плану, over = план превышен (это хорошо)
+    status = spentMinor >= limitMinor ? "ok" : clampedProgress >= 0.85 ? "warning" : "warning";
+  } else {
+    status = remainingMinor < 0 ? "over" : clampedProgress >= 0.85 ? "warning" : "ok";
+  }
 
   return {
     id: budget.id,
