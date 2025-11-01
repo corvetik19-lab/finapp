@@ -47,9 +47,18 @@ export default async function BudgetsPage() {
     }
   });
   
-  // Фильтруем категории - убираем те, для которых уже есть бюджет
+  // ID категорий, которые входят в пары (чистая прибыль)
+  const pairedCategoryIds = new Set<string>();
+  netProfitCategories.forEach(npc => {
+    pairedCategoryIds.add(npc.incomeId);
+    pairedCategoryIds.add(npc.expenseId);
+  });
+  
+  // Фильтруем категории - убираем те, для которых уже есть бюджет, и парные категории
   const usedCategoryIds = new Set(budgets.map(b => b.category_id).filter(Boolean));
-  const availableCategories = categories.filter(c => !usedCategoryIds.has(c.id));
+  const availableCategories = categories.filter(c => 
+    !usedCategoryIds.has(c.id) && !pairedCategoryIds.has(c.id)
+  );
 
   // Разделяем бюджеты на доходы и расходы
   const incomeBudgets = budgets.filter(b => b.category?.kind === "income");
