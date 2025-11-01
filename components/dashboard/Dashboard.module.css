@@ -1682,11 +1682,10 @@
   background: var(--card-bg);
   border-radius: 20px;
   width: min(720px, 95%);
-  max-height: min(750px, 90vh);
+  max-height: 95vh;
   display: flex;
   flex-direction: column;
   box-shadow: 0 30px 60px rgba(15, 23, 42, 0.4);
-  overflow: hidden;
   animation: modalSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
