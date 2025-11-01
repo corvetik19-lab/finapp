@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./Budgets.module.css";
 
 type Category = {
@@ -11,12 +12,14 @@ type Category = {
 
 type BudgetFormProps = {
   categories: Category[];
-  onSubmit: (formData: FormData) => void;
+  onSubmit: (formData: FormData) => Promise<void>;
 };
 
 export default function BudgetForm({ categories, onSubmit }: BudgetFormProps) {
+  const router = useRouter();
   const [periodStart, setPeriodStart] = useState("");
   const [periodEnd, setPeriodEnd] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const setCurrentMonth = () => {
     const now = new Date();
@@ -34,10 +37,28 @@ export default function BudgetForm({ categories, onSubmit }: BudgetFormProps) {
     setPeriodEnd(lastDayStr);
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    onSubmit(formData);
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData(e.currentTarget);
+      await onSubmit(formData);
+      
+      // Очищаем форму
+      setPeriodStart("");
+      setPeriodEnd("");
+      e.currentTarget.reset();
+      
+      // Обновляем страницу
+      router.refresh();
+    } catch (error) {
+      console.error("Error creating budget:", error);
+      alert("Ошибка при создании бюджета");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -109,11 +130,11 @@ export default function BudgetForm({ categories, onSubmit }: BudgetFormProps) {
         <input type="hidden" name="currency" value="RUB" />
         
         <div className={styles.submitRow}>
-          <button type="submit" className={styles.primaryBtn}>
+          <button type="submit" className={styles.primaryBtn} disabled={isSubmitting}>
             <span className="material-icons" aria-hidden>
-              add
+              {isSubmitting ? "hourglass_empty" : "add"}
             </span>
-            Сохранить бюджет
+            {isSubmitting ? "Сохранение..." : "Сохранить бюджет"}
           </button>
         </div>
       </form>
