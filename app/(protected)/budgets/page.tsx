@@ -23,6 +23,10 @@ export default async function BudgetsPage() {
   const categories = (categoriesRaw ?? []) as { id: string; name: string; kind: "income" | "expense" | "transfer" }[];
 
   const budgets = await listBudgetsWithUsage();
+  
+  // Фильтруем категории - убираем те, для которых уже есть бюджет
+  const usedCategoryIds = new Set(budgets.map(b => b.category_id).filter(Boolean));
+  const availableCategories = categories.filter(c => !usedCategoryIds.has(c.id));
 
   // Разделяем бюджеты на доходы и расходы
   const incomeBudgets = budgets.filter(b => b.category?.kind === "income");
@@ -116,7 +120,7 @@ export default async function BudgetsPage() {
         </div>
       </section>
 
-      <BudgetForm categories={categories} onSubmit={createBudget} />
+      <BudgetForm categories={availableCategories} onSubmit={createBudget} />
 
       <section className={styles.list}>
         <BudgetsList budgets={budgets} categories={categories} />
