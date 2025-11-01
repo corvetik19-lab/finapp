@@ -11,12 +11,20 @@ type Category = {
   kind: "income" | "expense" | "transfer";
 };
 
+type NetProfitCategory = {
+  name: string;
+  incomeId: string;
+  expenseId: string;
+  displayId: string;
+};
+
 type BudgetFormProps = {
   categories: Category[];
+  netProfitCategories?: NetProfitCategory[];
   onSubmit: (formData: FormData) => Promise<void>;
 };
 
-export default function BudgetForm({ categories, onSubmit }: BudgetFormProps) {
+export default function BudgetForm({ categories, netProfitCategories = [], onSubmit }: BudgetFormProps) {
   const router = useRouter();
   const { show: showToast } = useToast();
   const [periodStart, setPeriodStart] = useState("");
@@ -79,6 +87,15 @@ export default function BudgetForm({ categories, onSubmit }: BudgetFormProps) {
           <span className={styles.label}>Категория</span>
           <select name="category_id" className={styles.select} required>
             <option value="">— выберите категорию —</option>
+            {netProfitCategories.length > 0 && (
+              <optgroup label="📊 Чистая прибыль (доход - расход)">
+                {netProfitCategories.map((cat) => (
+                  <option key={cat.displayId} value={cat.displayId}>
+                    {cat.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
             <optgroup label="💰 Доходы">
               {categories.filter(c => c.kind === "income").map((cat) => (
                 <option key={cat.id} value={cat.id}>

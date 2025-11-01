@@ -24,6 +24,29 @@ export default async function BudgetsPage() {
 
   const budgets = await listBudgetsWithUsage();
   
+  // Находим категории с одинаковыми именами в доходах и расходах
+  const incomeCategories = categories.filter(c => c.kind === "income");
+  const expenseCategories = categories.filter(c => c.kind === "expense");
+  
+  const netProfitCategories: Array<{ 
+    name: string; 
+    incomeId: string; 
+    expenseId: string;
+    displayId: string; // Используем для формы
+  }> = [];
+  
+  incomeCategories.forEach(inc => {
+    const matchingExpense = expenseCategories.find(exp => exp.name === inc.name);
+    if (matchingExpense) {
+      netProfitCategories.push({
+        name: inc.name,
+        incomeId: inc.id,
+        expenseId: matchingExpense.id,
+        displayId: `net_${inc.id}_${matchingExpense.id}` // Специальный ID для чистой прибыли
+      });
+    }
+  });
+  
   // Фильтруем категории - убираем те, для которых уже есть бюджет
   const usedCategoryIds = new Set(budgets.map(b => b.category_id).filter(Boolean));
   const availableCategories = categories.filter(c => !usedCategoryIds.has(c.id));
@@ -120,7 +143,11 @@ export default async function BudgetsPage() {
         </div>
       </section>
 
-      <BudgetForm categories={availableCategories} onSubmit={createBudget} />
+      <BudgetForm 
+        categories={availableCategories} 
+        netProfitCategories={netProfitCategories}
+        onSubmit={createBudget} 
+      />
 
       <section className={styles.list}>
         <BudgetsList budgets={budgets} categories={categories} />
