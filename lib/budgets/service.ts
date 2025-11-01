@@ -11,7 +11,7 @@ export type BudgetRow = {
   category: {
     id: string;
     name: string;
-    kind: "income" | "expense" | "transfer";
+    kind: "income" | "expense" | "transfer" | "both";
   } | null;
 };
 

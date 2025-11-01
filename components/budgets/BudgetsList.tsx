@@ -212,19 +212,19 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
                 <div className={styles.cardAmounts}>
                   <div className={styles.amountItem}>
                     <span className={styles.amountLabel}>
-                      {budget.category?.kind === "income" ? "План" : "Лимит"}
+                      {budget.category?.kind === "income" || budget.category?.kind === "both" ? "План" : "Лимит"}
                     </span>
                     <span className={styles.amountValue}>{formatMoney(budget.limit_minor, budget.currency)}</span>
                   </div>
                   <div className={styles.amountItem}>
                     <span className={styles.amountLabel}>
-                      {budget.category?.kind === "income" ? "Получено" : "Потрачено"}
+                      {budget.category?.kind === "income" || budget.category?.kind === "both" ? "Получено" : "Потрачено"}
                     </span>
                     <span className={styles.amountValue}>{formatMoney(budget.spent_minor, budget.currency)}</span>
                   </div>
                   <div className={styles.amountItem}>
                     <span className={styles.amountLabel}>
-                      {budget.category?.kind === "income" 
+                      {budget.category?.kind === "income" || budget.category?.kind === "both"
                         ? (budget.remaining_minor >= 0 ? "Сверх плана" : "Недобор")
                         : (budget.remaining_minor >= 0 ? "Остаток" : "Перерасход")
                       }
@@ -263,7 +263,7 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
                           : styles.statusDotOk
                     }`}
                   />
-                  {budget.category?.kind === "income" 
+                  {budget.category?.kind === "income" || budget.category?.kind === "both"
                     ? (budget.status === "ok" 
                         ? "План выполнен" 
                         : "План не выполнен")
