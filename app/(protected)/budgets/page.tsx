@@ -28,6 +28,9 @@ export default async function BudgetsPage() {
 
   const budgets = await listBudgetsWithUsage();
   
+  // Фильтруем категории - убираем те, для которых уже есть бюджет
+  const usedCategoryIds = new Set(budgets.map(b => b.category_id).filter(Boolean));
+  
   // Находим категории с одинаковыми именами в доходах и расходах
   const incomeCategories = categories.filter(c => c.kind === "income");
   const expenseCategories = categories.filter(c => c.kind === "expense");
@@ -45,6 +48,7 @@ export default async function BudgetsPage() {
   incomeCategories.forEach(inc => {
     const matchingExpense = expenseCategories.find(exp => exp.name === inc.name);
     if (matchingExpense) {
+      // Всегда добавляем парные категории - они будут доступны для бюджета "чистая прибыль"
       netProfitCategories.push({
         name: inc.name,
         incomeId: inc.id,
@@ -54,6 +58,8 @@ export default async function BudgetsPage() {
     }
   });
   
+  console.log("Net profit categories:", netProfitCategories);
+  
   // ID категорий, которые входят в пары (чистая прибыль)
   const pairedCategoryIds = new Set<string>();
   netProfitCategories.forEach(npc => {
@@ -62,7 +68,6 @@ export default async function BudgetsPage() {
   });
   
   // Фильтруем категории - убираем те, для которых уже есть бюджет, и парные категории
-  const usedCategoryIds = new Set(budgets.map(b => b.category_id).filter(Boolean));
   const availableCategories = categories.filter(c => 
     !usedCategoryIds.has(c.id) && !pairedCategoryIds.has(c.id)
   );
