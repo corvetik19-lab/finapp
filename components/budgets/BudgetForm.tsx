@@ -8,13 +8,12 @@ import styles from "./Budgets.module.css";
 type Category = {
   id: string;
   name: string;
-  kind: "income" | "expense" | "transfer";
+  kind: "income" | "expense" | "transfer" | "both";
 };
 
 type NetProfitCategory = {
   name: string;
-  incomeId: string;
-  expenseId: string;
+  categoryId: string;
   displayId: string;
 };
 

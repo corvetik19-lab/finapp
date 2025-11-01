@@ -11,7 +11,7 @@ import { useToast } from "@/components/toast/ToastContext";
 type Category = {
   id: string;
   name: string;
-  kind: "income" | "expense" | "transfer";
+  kind: "income" | "expense" | "transfer" | "both";
 };
 
 type BudgetsListProps = {

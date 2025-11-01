@@ -12,64 +12,40 @@ export const dynamic = 'force-dynamic';
 export default async function BudgetsPage() {
   const supabase = await createRSCClient();
 
-  // Загружаем категории доходов и расходов
+  // Загружаем категории доходов, расходов и "both" (доход+расход)
   const { data: categoriesRaw } = await supabase
     .from("categories")
     .select("id,name,kind")
-    .in("kind", ["income", "expense"])
-    .order("kind", { ascending: false }) // income сначала, потом expense
+    .in("kind", ["income", "expense", "both"])
+    .order("kind", { ascending: false })
     .order("name", { ascending: true });
 
-  const categories = (categoriesRaw ?? []) as { id: string; name: string; kind: "income" | "expense" | "transfer" }[];
-
-  // Отладка - смотрим категорию "Такси"
-  const taxiCategories = categories.filter(c => c.name === "Такси");
-  console.log("Такси categories:", taxiCategories);
+  const categories = (categoriesRaw ?? []) as { id: string; name: string; kind: "income" | "expense" | "transfer" | "both" }[];
 
   const budgets = await listBudgetsWithUsage();
   
   // Фильтруем категории - убираем те, для которых уже есть бюджет
   const usedCategoryIds = new Set(budgets.map(b => b.category_id).filter(Boolean));
   
-  // Находим категории с одинаковыми именами в доходах и расходах
-  const incomeCategories = categories.filter(c => c.kind === "income");
-  const expenseCategories = categories.filter(c => c.kind === "expense");
+  // Категории с kind='both' - это категории для чистой прибыли (доход - расход)
+  const bothCategories = categories.filter(c => c.kind === "both");
+  const netProfitCategories = bothCategories.map(c => ({
+    name: c.name,
+    categoryId: c.id,
+    displayId: `net_${c.id}` // Специальный ID для чистой прибыли
+  }));
   
-  console.log("Income categories:", incomeCategories.map(c => c.name));
-  console.log("Expense categories:", expenseCategories.map(c => c.name));
-  
-  const netProfitCategories: Array<{ 
-    name: string; 
-    incomeId: string; 
-    expenseId: string;
-    displayId: string; // Используем для формы
-  }> = [];
-  
-  incomeCategories.forEach(inc => {
-    const matchingExpense = expenseCategories.find(exp => exp.name === inc.name);
-    if (matchingExpense) {
-      // Всегда добавляем парные категории - они будут доступны для бюджета "чистая прибыль"
-      netProfitCategories.push({
-        name: inc.name,
-        incomeId: inc.id,
-        expenseId: matchingExpense.id,
-        displayId: `net_${inc.id}_${matchingExpense.id}` // Специальный ID для чистой прибыли
-      });
-    }
-  });
-  
+  console.log("Both categories (net profit):", bothCategories.map(c => c.name));
   console.log("Net profit categories:", netProfitCategories);
   
-  // ID категорий, которые входят в пары (чистая прибыль)
-  const pairedCategoryIds = new Set<string>();
-  netProfitCategories.forEach(npc => {
-    pairedCategoryIds.add(npc.incomeId);
-    pairedCategoryIds.add(npc.expenseId);
-  });
+  // ID категорий с kind='both' - они не должны попадать в обычные списки
+  const bothCategoryIds = new Set(bothCategories.map(c => c.id));
   
-  // Фильтруем категории - убираем те, для которых уже есть бюджет, и парные категории
+  // Фильтруем категории - только income и expense, убираем использованные и 'both'
   const availableCategories = categories.filter(c => 
-    !usedCategoryIds.has(c.id) && !pairedCategoryIds.has(c.id)
+    (c.kind === "income" || c.kind === "expense") && 
+    !usedCategoryIds.has(c.id) && 
+    !bothCategoryIds.has(c.id)
   );
 
   // Разделяем бюджеты на доходы и расходы
