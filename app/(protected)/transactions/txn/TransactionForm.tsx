@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState, useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { createTransactionAction, type TxnActionState } from "../actions";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/toast/ToastContext";
 import stylesTxn from "@/components/transactions/Transactions.module.css";
 
 export default function TransactionForm({
@@ -17,15 +18,19 @@ export default function TransactionForm({
   const formRef = useRef<HTMLFormElement>(null);
   const categoryRef = useRef<HTMLSelectElement>(null);
   const router = useRouter();
+  const { show: showToast } = useToast();
   const [direction, setDirection] = useState<"expense" | "income">("expense");
 
   useEffect(() => {
     if (state.ok) {
       formRef.current?.reset();
       setDirection("expense");
+      showToast("✅ Транзакция успешно добавлена", { type: "success" });
       router.refresh();
+    } else if (state.error) {
+      showToast(`❌ Ошибка: ${state.error}`, { type: "error" });
     }
-  }, [state.ok, router]);
+  }, [state.ok, state.error, router, showToast]);
 
   useEffect(() => {
     if (categoryRef.current) {

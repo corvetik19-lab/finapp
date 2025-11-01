@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useToast } from "@/components/toast/ToastContext";
 import styles from "@/components/transactions/Transactions.module.css";
 import {
   deleteTransactionAction,
@@ -113,7 +114,7 @@ export default function TransactionsGroupedList({
   const [viewClosing, setViewClosing] = useState(false);
   const [editClosing, setEditClosing] = useState(false);
   const [editKey, setEditKey] = useState(0);
-  const [toast, setToast] = useState<string | null>(null);
+  const { show: showToast } = useToast();
   const [removingIds, setRemovingIds] = useState<Record<string, boolean>>({});
   const [viewingFile, setViewingFile] = useState<{
     fileName: string;
@@ -215,15 +216,15 @@ export default function TransactionsGroupedList({
   useEffect(() => {
     if (!deleteState) return;
     if (deleteState.error) {
-      setToast(`Ошибка удаления: ${deleteState.error}`);
+      showToast(`❌ Ошибка удаления: ${deleteState.error}`, { type: "error" });
       setRemovingIds({});
       return;
     }
     if (deleteState.ok) {
-      setToast("Удалено");
+      showToast("✅ Транзакция успешно удалена", { type: "success" });
       setRemovingIds({});
     }
-  }, [deleteState]);
+  }, [deleteState, showToast]);
 
   function toggleDir(dir: "income" | "expense" | "transfer") {
     setOpenDir((prev) => {
@@ -273,10 +274,10 @@ export default function TransactionsGroupedList({
       };
       const result = await updateTransactionFromValues(normalized);
       if (!result.ok) {
-        setToast(result.error || "Не удалось сохранить");
+        showToast(`❌ Ошибка: ${result.error || "Не удалось сохранить"}`, { type: "error" });
         return;
       }
-      setToast("Сохранено");
+      showToast("✅ Транзакция успешно обновлена", { type: "success" });
       closeEdit();
     });
   });
@@ -500,13 +501,16 @@ export default function TransactionsGroupedList({
         delAction={(fd) => deleteAction(fd)}
       />
 
-      {toast && (
-        <div className={styles.toastWrap} onAnimationEnd={() => setToast(null)}>
-          <div className={styles.toast}>{toast}</div>
-        </div>
+      {viewingFile && (
+        <FileViewerModal
+          fileName={viewingFile.fileName}
+          fileUrl={viewingFile.fileUrl}
+          mimeType={viewingFile.mimeType}
+          onClose={() => setViewingFile(null)}
+        />
       )}
 
-      {selected && !editMode && (
+      {!editMode && selected && (
         <div className={styles.modalOverlay} onClick={closeView}>
           <div
             className={`${styles.modal} ${viewClosing ? styles.closing : ""}`}
