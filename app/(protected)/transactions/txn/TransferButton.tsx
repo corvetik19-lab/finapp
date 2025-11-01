@@ -11,6 +11,7 @@ import {
   type TransferFormValues,
 } from "@/lib/validation/transaction";
 import { createTransferFromValues } from "../actions";
+import { formatMoney } from "@/lib/utils/format";
 
 type Account = { id: string; name: string; currency: string; type: string; credit_limit: number | null; balance: number };
 
@@ -172,7 +173,7 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
                       <optgroup label="💳 Дебетовые карты">
                         {groupedAccounts.debitCards.map((a) => (
                           <option key={a.id} value={a.id}>
-                            {a.name}
+                            {a.name} — {formatMoney(a.balance, a.currency)}
                           </option>
                         ))}
                       </optgroup>
@@ -182,7 +183,7 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
                       <optgroup label="💳 Кредитные карты">
                         {groupedAccounts.creditCards.map((a) => (
                           <option key={a.id} value={a.id}>
-                            {a.name}
+                            {a.name} — {formatMoney(a.balance, a.currency)}
                           </option>
                         ))}
                       </optgroup>
@@ -192,7 +193,7 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
                       <optgroup label="💰 Другие счета">
                         {groupedAccounts.other.map((a) => (
                           <option key={a.id} value={a.id}>
-                            {a.name}
+                            {a.name} — {formatMoney(a.balance, a.currency)}
                           </option>
                         ))}
                       </optgroup>
@@ -214,7 +215,7 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
                       <optgroup label="💳 Дебетовые карты">
                         {groupedAccounts.debitCards.map((a) => (
                           <option key={a.id} value={a.id}>
-                            {a.name}
+                            {a.name} — {formatMoney(a.balance, a.currency)}
                           </option>
                         ))}
                       </optgroup>
@@ -224,7 +225,7 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
                       <optgroup label="💳 Кредитные карты">
                         {groupedAccounts.creditCards.map((a) => (
                           <option key={a.id} value={a.id}>
-                            {a.name}
+                            {a.name} — {formatMoney(a.balance, a.currency)}
                           </option>
                         ))}
                       </optgroup>
@@ -234,7 +235,7 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
                       <optgroup label="💰 Другие счета">
                         {groupedAccounts.other.map((a) => (
                           <option key={a.id} value={a.id}>
-                            {a.name}
+                            {a.name} — {formatMoney(a.balance, a.currency)}
                           </option>
                         ))}
                       </optgroup>
