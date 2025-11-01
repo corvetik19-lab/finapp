@@ -18,8 +18,16 @@ export async function createBudget(formData: FormData) {
   if (authError || !user) throw authError ?? new Error("Нет пользователя");
 
   const raw = toObject(formData);
+  
+  // Обрабатываем category_id - если начинается с net_, извлекаем реальный ID
+  let categoryId = String(raw.category_id || "");
+  if (categoryId.startsWith("net_")) {
+    // Формат: net_{categoryId}
+    categoryId = categoryId.replace("net_", "");
+  }
+  
   const parsed = budgetFormSchema.parse({
-    category_id: raw.category_id,
+    category_id: categoryId,
     period_start: raw.period_start,
     period_end: raw.period_end,
     limit_amount: raw.limit_amount,
