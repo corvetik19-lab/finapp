@@ -44,19 +44,23 @@ export default function BudgetForm({ categories, onSubmit }: BudgetFormProps) {
     if (isSubmitting) return;
     
     setIsSubmitting(true);
+    const form = e.currentTarget;
+    
     try {
-      const formData = new FormData(e.currentTarget);
+      const formData = new FormData(form);
       await onSubmit(formData);
-      
-      // Очищаем форму
-      setPeriodStart("");
-      setPeriodEnd("");
-      e.currentTarget.reset();
       
       // Показываем уведомление
       showToast("✅ Бюджет успешно создан", { type: "success" });
       
-      // Обновляем страницу
+      // Очищаем форму перед refresh
+      setPeriodStart("");
+      setPeriodEnd("");
+      if (form) {
+        form.reset();
+      }
+      
+      // Обновляем страницу (это может размонтировать компонент)
       router.refresh();
     } catch (error) {
       console.error("Error creating budget:", error);
