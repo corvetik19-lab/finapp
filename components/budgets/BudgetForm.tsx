@@ -65,46 +65,41 @@ export default function BudgetForm({ categories, onSubmit }: BudgetFormProps) {
           </select>
         </label>
         
-        <div style={{ gridColumn: "1 / -1" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-            <span className={styles.label} style={{ margin: 0 }}>Период</span>
+        <label>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
+            <span className={styles.label} style={{ margin: 0 }}>Начало</span>
             <button
               type="button"
               onClick={setCurrentMonth}
-              className={styles.quickBtn}
-              title="Выбрать текущий месяц"
+              className={styles.quickBtnSmall}
+              title="Текущий месяц"
             >
-              <span className="material-icons" style={{ fontSize: 16 }}>
-                calendar_today
+              <span className="material-icons" style={{ fontSize: 14 }}>
+                today
               </span>
-              Текущий месяц
             </button>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-            <label>
-              <span className={styles.label}>Дата начала</span>
-              <input
-                type="date"
-                name="period_start"
-                className={styles.input}
-                value={periodStart}
-                onChange={(e) => setPeriodStart(e.target.value)}
-                required
-              />
-            </label>
-            <label>
-              <span className={styles.label}>Дата окончания</span>
-              <input
-                type="date"
-                name="period_end"
-                className={styles.input}
-                value={periodEnd}
-                onChange={(e) => setPeriodEnd(e.target.value)}
-                required
-              />
-            </label>
-          </div>
-        </div>
+          <input
+            type="date"
+            name="period_start"
+            className={styles.input}
+            value={periodStart}
+            onChange={(e) => setPeriodStart(e.target.value)}
+            required
+          />
+        </label>
+        
+        <label>
+          <span className={styles.label}>Окончание</span>
+          <input
+            type="date"
+            name="period_end"
+            className={styles.input}
+            value={periodEnd}
+            onChange={(e) => setPeriodEnd(e.target.value)}
+            required
+          />
+        </label>
         
         <label>
           <span className={styles.label}>Лимит (₽)</span>

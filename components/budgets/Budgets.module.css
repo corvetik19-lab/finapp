@@ -137,3 +137,29 @@
 .quickBtn:active {
   transform: scale(0.98);
 }
+
+/* Компактная версия кнопки */
+.quickBtnSmall {
+  background: rgba(33, 150, 243, 0.1);
+  color: #2196f3;
+  border: 1px solid rgba(33, 150, 243, 0.3);
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  min-width: 24px;
+  height: 24px;
+}
+
+.quickBtnSmall:hover {
+  background: rgba(33, 150, 243, 0.2);
+  border-color: rgba(33, 150, 243, 0.5);
+}
+
+.quickBtnSmall:active {
+  transform: scale(0.95);
+}
