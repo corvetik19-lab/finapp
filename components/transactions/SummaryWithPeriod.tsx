@@ -166,7 +166,9 @@ export default function SummaryWithPeriod({
         <div className={`${styles.topSummaryCard} ${styles.topSummaryCardNet}`}>
           <div className={styles.topSummaryContent}>
             <span className={styles.topSummaryTitle}>Чистая прибыль</span>
-            <span className={styles.topSummaryValue}>{formatMoney(net, cur?.currency || "RUB")}</span>
+            <span className={styles.topSummaryValue} style={{ color: net < 0 ? '#991b1b' : undefined }}>
+              {formatMoney(net, cur?.currency || "RUB")}
+            </span>
             <span className={`${styles.topSummaryBadge} ${netBadge.variant === "positive" ? styles.topSummaryBadgePositive : netBadge.variant === "negative" ? styles.topSummaryBadgeNegative : ""}`}>
               {netBadge.text}
             </span>

@@ -44,7 +44,7 @@ export default function NetWorthWidget({
 
       <div className={styles.netWorthSummary}>
         <div className={styles.netWorthAmount} style={{ color: totalMinor < 0 ? 'var(--danger)' : undefined }}>
-          {totalMinor < 0 ? '-' : ''}{formatMoney(Math.abs(totalMinor), currency)}
+          {formatMoney(totalMinor, currency)}
         </div>
         <div className={`${styles.netWorthChange} ${isPositiveChange ? styles.netWorthChangePositive : styles.netWorthChangeNegative}`}>
           <span className="material-icons" aria-hidden>
