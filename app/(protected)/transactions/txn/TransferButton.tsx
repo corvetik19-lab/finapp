@@ -68,28 +68,35 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
 
   // Проверяем URL параметры для автоматического открытия
   useEffect(() => {
-    const type = searchParams.get('type');
-    const toAccount = searchParams.get('to_account');
-    const amount = searchParams.get('amount');
-    const note = searchParams.get('note');
+    // Небольшая задержка чтобы форма успела инициализироваться
+    const timer = setTimeout(() => {
+      const type = searchParams.get('type');
+      const toAccount = searchParams.get('to_account');
+      const amount = searchParams.get('amount');
+      const note = searchParams.get('note');
 
-    if (type === 'transfer' && toAccount) {
-      setOpen(true);
-      
-      // Устанавливаем значения из URL
-      if (toAccount) {
-        setValue('to_account_id', toAccount);
+      if (type === 'transfer' && toAccount) {
+        setOpen(true);
+        
+        // Устанавливаем значения из URL
+        setTimeout(() => {
+          if (toAccount) {
+            setValue('to_account_id', toAccount);
+          }
+          if (amount) {
+            setValue('amount_major', amount);
+          }
+          if (note) {
+            setValue('note', note);
+          }
+        }, 100);
+        
+        // Очищаем URL параметры
+        window.history.replaceState({}, '', '/transactions');
       }
-      if (amount) {
-        setValue('amount_major', amount);
-      }
-      if (note) {
-        setValue('note', note);
-      }
-      
-      // Очищаем URL параметры
-      window.history.replaceState({}, '', '/transactions');
-    }
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [searchParams, setValue]);
 
   // Группируем счета по типам (исключаем кредиты из переводов)
