@@ -278,6 +278,20 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
                           : "В пределах лимита")
                   }
                 </div>
+                
+                {budget.notes && (
+                  <div style={{ 
+                    marginTop: '0.75rem', 
+                    padding: '0.5rem', 
+                    background: '#f9fafb', 
+                    borderRadius: '4px',
+                    fontSize: '0.875rem',
+                    color: '#6b7280',
+                    fontStyle: 'italic'
+                  }}>
+                    💬 {budget.notes}
+                  </div>
+                )}
               </>
             )}
           </div>

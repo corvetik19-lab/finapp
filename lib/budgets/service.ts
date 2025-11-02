@@ -9,6 +9,7 @@ export type BudgetRow = {
   period_end: string;
   limit_amount: number;
   currency: string;
+  notes: string | null;
   category: {
     id: string;
     name: string;
@@ -30,6 +31,7 @@ export type BudgetWithUsage = {
   limit_minor: number;
   limit_major: number;
   currency: string;
+  notes: string | null;
   category: BudgetRow["category"];
   account: BudgetRow["account"];
   spent_minor: number;
@@ -69,6 +71,7 @@ function normalizeBudgetRecord(record: Record<string, unknown>): BudgetRow {
     period_end: String(record.period_end ?? ""),
     limit_amount: Number(record.limit_amount ?? 0),
     currency: String(record.currency ?? "RUB"),
+    notes: record.notes ? String(record.notes) : null,
     category: categoryValue
       ? {
           id: String(categoryValue.id ?? ""),
@@ -121,6 +124,7 @@ async function enrichBudgetWithUsage(
       limit_minor: limitMinor,
       limit_major: limitMinor / 100,
       currency: budget.currency,
+      notes: budget.notes,
       category: budget.category,
       account: budget.account,
       spent_minor: spentMinor,
@@ -143,6 +147,7 @@ async function enrichBudgetWithUsage(
       limit_minor: limitMinor,
       limit_major: limitMinor / 100,
       currency: budget.currency,
+      notes: budget.notes,
       category: budget.category,
       account: null,
       spent_minor: 0,
@@ -228,6 +233,7 @@ async function enrichBudgetWithUsage(
     limit_minor: limitMinor,
     limit_major: limitMinor / 100,
     currency: budget.currency,
+    notes: budget.notes,
     category: budget.category,
     account: null,
     spent_minor: spentMinor,
@@ -240,7 +246,7 @@ async function enrichBudgetWithUsage(
 }
 
 const commonSelect =
-  "id,category_id,account_id,period_start,period_end,limit_amount,currency,category:categories(id,name,kind),account:accounts(id,name,type)";
+  "id,category_id,account_id,period_start,period_end,limit_amount,currency,notes,category:categories(id,name,kind),account:accounts(id,name,type)";
 
 export async function listBudgetsWithUsage(): Promise<BudgetWithUsage[]> {
   const supabase = await createRSCClient();

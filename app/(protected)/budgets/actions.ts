@@ -53,6 +53,7 @@ export async function createBudget(formData: FormData) {
     period_end: parsed.period_end,
     limit_amount: limitMinor,
     currency: parsed.currency,
+    notes: raw.notes ? String(raw.notes) : null,
   });
   if (error) throw error;
 

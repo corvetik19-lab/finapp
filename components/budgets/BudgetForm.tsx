@@ -169,6 +169,16 @@ export default function BudgetForm({ categories, netProfitCategories = [], credi
           <input type="text" name="limit_amount" inputMode="decimal" className={styles.input} required />
         </label>
         
+        <label style={{ gridColumn: '1 / -1' }}>
+          <span className={styles.label}>Комментарий (необязательно)</span>
+          <textarea 
+            name="notes" 
+            className={styles.input} 
+            rows={2}
+            placeholder="Добавьте заметку к бюджету..."
+          />
+        </label>
+        
         <input type="hidden" name="currency" value="RUB" />
         
         <div className={styles.submitRow}>
