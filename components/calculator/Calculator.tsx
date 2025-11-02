@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./Calculator.module.css";
 
 type CalculatorProps = {
@@ -58,6 +58,62 @@ export default function Calculator({ onResult, onClose }: CalculatorProps) {
       setDisplay(display + ".");
     }
   };
+
+  // Обработка ввода с клавиатуры
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Цифры
+      if (e.key >= '0' && e.key <= '9') {
+        e.preventDefault();
+        handleNumber(e.key);
+      }
+      // Операторы
+      else if (e.key === '+') {
+        e.preventDefault();
+        handleOperator('+');
+      }
+      else if (e.key === '-') {
+        e.preventDefault();
+        handleOperator('-');
+      }
+      else if (e.key === '*') {
+        e.preventDefault();
+        handleOperator('*');
+      }
+      else if (e.key === '/') {
+        e.preventDefault();
+        handleOperator('/');
+      }
+      // Равно
+      else if (e.key === 'Enter' || e.key === '=') {
+        e.preventDefault();
+        handleEquals();
+      }
+      // Точка
+      else if (e.key === '.' || e.key === ',') {
+        e.preventDefault();
+        handleDecimal();
+      }
+      // Backspace
+      else if (e.key === 'Backspace') {
+        e.preventDefault();
+        handleBackspace();
+      }
+      // Escape - закрыть
+      else if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+      // C или Delete - очистить
+      else if (e.key === 'c' || e.key === 'C' || e.key === 'Delete') {
+        e.preventDefault();
+        handleClear();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [display, expression, onClose]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className={styles.calculator}>

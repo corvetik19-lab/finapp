@@ -60,7 +60,7 @@ export default function AmountInputWithCalculator({
     if (!showCalculator && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       const calculatorWidth = 280;
-      const calculatorHeight = 420;
+      const calculatorHeight = 480; // Увеличили для учета всех кнопок
       
       let top = rect.top;
       let left = rect.right + 12;
