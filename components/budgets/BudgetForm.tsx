@@ -17,13 +17,20 @@ type NetProfitCategory = {
   displayId: string;
 };
 
+type CreditCard = {
+  id: string;
+  name: string;
+  type: string;
+};
+
 type BudgetFormProps = {
   categories: Category[];
   netProfitCategories?: NetProfitCategory[];
+  creditCards?: CreditCard[];
   onSubmit: (formData: FormData) => Promise<void>;
 };
 
-export default function BudgetForm({ categories, netProfitCategories = [], onSubmit }: BudgetFormProps) {
+export default function BudgetForm({ categories, netProfitCategories = [], creditCards = [], onSubmit }: BudgetFormProps) {
   const router = useRouter();
   const { show: showToast } = useToast();
   const [periodStart, setPeriodStart] = useState("");
@@ -109,6 +116,15 @@ export default function BudgetForm({ categories, netProfitCategories = [], onSub
                 </option>
               ))}
             </optgroup>
+            {creditCards.length > 0 && (
+              <optgroup label="💳 Кредитные карты">
+                {creditCards.map((card) => (
+                  <option key={`acc_${card.id}`} value={`acc_${card.id}`}>
+                    {card.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
           </select>
         </label>
         

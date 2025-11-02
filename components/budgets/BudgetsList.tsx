@@ -101,7 +101,7 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
 
   // Группируем бюджеты
   const incomeBudgets = budgets.filter(b => b.category?.kind === "income" || b.category?.kind === "both");
-  const expenseBudgets = budgets.filter(b => b.category?.kind === "expense");
+  const expenseBudgets = budgets.filter(b => b.category?.kind === "expense" || b.account_id); // Кредитные карты тоже в расходах
 
   const renderBudget = (budget: BudgetWithUsage) => {
         const cardClass =
@@ -117,7 +117,9 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
           <div key={budget.id} className={cardClass}>
             <div className={styles.cardHeader}>
               <div>
-                <div className={styles.cardTitle}>{budget.category?.name ?? "Без категории"}</div>
+                <div className={styles.cardTitle}>
+                  {budget.account_id ? `💳 ${budget.account?.name ?? "Кредитная карта"}` : (budget.category?.name ?? "Без категории")}
+                </div>
                 <div className={styles.cardPeriod}>
                   {formatDate(budget.period_start)} — {formatDate(budget.period_end)}
                 </div>

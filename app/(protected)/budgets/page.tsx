@@ -33,8 +33,12 @@ export default async function BudgetsPage() {
 
   const budgets = await listBudgetsWithUsage();
   
-  // Фильтруем категории - убираем те, для которых уже есть бюджет
+  // Фильтруем категории и счета - убираем те, для которых уже есть бюджет
   const usedCategoryIds = new Set(budgets.map(b => b.category_id).filter(Boolean));
+  const usedAccountIds = new Set(budgets.map(b => b.account_id).filter(Boolean));
+  
+  // Доступные кредитные карты (без бюджета)
+  const availableCreditCards = creditCards.filter(card => !usedAccountIds.has(card.id));
   
   // Категории с kind='both' - это категории для чистой прибыли (доход - расход)
   const bothCategories = categories.filter(c => c.kind === "both");
@@ -156,6 +160,7 @@ export default async function BudgetsPage() {
       <BudgetForm 
         categories={availableCategories} 
         netProfitCategories={netProfitCategories}
+        creditCards={availableCreditCards}
         onSubmit={createBudget} 
       />
 

@@ -24,12 +24,14 @@ export type BudgetRow = {
 export type BudgetWithUsage = {
   id: string;
   category_id: string | null;
+  account_id: string | null;
   period_start: string;
   period_end: string;
   limit_minor: number;
   limit_major: number;
   currency: string;
   category: BudgetRow["category"];
+  account: BudgetRow["account"];
   spent_minor: number;
   spent_major: number;
   remaining_minor: number;
@@ -113,12 +115,14 @@ async function enrichBudgetWithUsage(
     return {
       id: budget.id,
       category_id: null,
+      account_id: budget.account_id,
       period_start: budget.period_start,
       period_end: budget.period_end,
       limit_minor: limitMinor,
       limit_major: limitMinor / 100,
       currency: budget.currency,
       category: budget.category,
+      account: budget.account,
       spent_minor: spentMinor,
       spent_major: spentMinor / 100,
       remaining_minor: remainingMinor,
@@ -133,12 +137,14 @@ async function enrichBudgetWithUsage(
     return {
       id: budget.id,
       category_id: null,
+      account_id: null,
       period_start: budget.period_start,
       period_end: budget.period_end,
       limit_minor: limitMinor,
       limit_major: limitMinor / 100,
       currency: budget.currency,
       category: budget.category,
+      account: null,
       spent_minor: 0,
       spent_major: 0,
       remaining_minor: remainingMinor,
@@ -216,12 +222,14 @@ async function enrichBudgetWithUsage(
   return {
     id: budget.id,
     category_id: budget.category_id,
+    account_id: null,
     period_start: budget.period_start,
     period_end: budget.period_end,
     limit_minor: limitMinor,
     limit_major: limitMinor / 100,
     currency: budget.currency,
     category: budget.category,
+    account: null,
     spent_minor: spentMinor,
     spent_major: spentMinor / 100,
     remaining_minor: remainingMinor,

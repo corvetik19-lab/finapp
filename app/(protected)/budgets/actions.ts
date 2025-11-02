@@ -19,15 +19,24 @@ export async function createBudget(formData: FormData) {
 
   const raw = toObject(formData);
   
-  // Обрабатываем category_id - если начинается с net_, извлекаем реальный ID
-  let categoryId = String(raw.category_id || "");
-  if (categoryId.startsWith("net_")) {
-    // Формат: net_{categoryId}
-    categoryId = categoryId.replace("net_", "");
+  // Обрабатываем category_id - может быть category, net_category или acc_account
+  let categoryId: string | null = null;
+  let accountId: string | null = null;
+  
+  const selectedValue = String(raw.category_id || "");
+  if (selectedValue.startsWith("net_")) {
+    // Формат: net_{categoryId} - бюджет чистой прибыли
+    categoryId = selectedValue.replace("net_", "");
+  } else if (selectedValue.startsWith("acc_")) {
+    // Формат: acc_{accountId} - бюджет для кредитной карты
+    accountId = selectedValue.replace("acc_", "");
+  } else {
+    // Обычная категория
+    categoryId = selectedValue;
   }
   
   const parsed = budgetFormSchema.parse({
-    category_id: categoryId,
+    category_id: categoryId || undefined,
     period_start: raw.period_start,
     period_end: raw.period_end,
     limit_amount: raw.limit_amount,
@@ -38,7 +47,8 @@ export async function createBudget(formData: FormData) {
 
   const { error } = await supabase.from("budgets").insert({
     user_id: user.id,
-    category_id: parsed.category_id,
+    category_id: categoryId,
+    account_id: accountId,
     period_start: parsed.period_start,
     period_end: parsed.period_end,
     limit_amount: limitMinor,
