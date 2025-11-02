@@ -3,6 +3,12 @@
  * Запуск: npx tsx scripts/generate-embeddings.ts
  */
 
+import { config } from 'dotenv';
+import { resolve } from 'path';
+
+// Загружаем переменные окружения из .env.local
+config({ path: resolve(process.cwd(), '.env.local') });
+
 import { createClient } from '@supabase/supabase-js';
 import { createEmbedding, buildTransactionText } from '../lib/ai/embeddings';
 
