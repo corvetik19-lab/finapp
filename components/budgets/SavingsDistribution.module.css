@@ -259,14 +259,49 @@
 .savedPlanHeader {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: space-between;
+  gap: 1rem;
   font-size: 1rem;
   font-weight: 600;
   margin-bottom: 1rem;
 }
 
-.savedPlanHeader .material-icons {
+.savedPlanHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.savedPlanHeaderLeft .material-icons {
   font-size: 1.5rem;
+}
+
+.savedPlanHeaderActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.savedPlanActionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.savedPlanActionBtn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.savedPlanActionBtn .material-icons {
+  font-size: 1.125rem;
 }
 
 .savedPlanCards {

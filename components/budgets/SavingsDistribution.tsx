@@ -52,6 +52,45 @@ export default function SavingsDistribution({ totalSavings, debitCards, initialD
     setDistributions(debitCards.map(card => ({ accountId: card.id, amount: 0 })));
   };
 
+  const handleDelete = async () => {
+    if (!confirm('Удалить сохраненный план распределения?')) {
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveMessage(null);
+
+    try {
+      // Удаляем все распределения (отправляем пустой массив)
+      const response = await fetch("/api/savings-distribution", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          distributions: [],
+          totalAmount: 0,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Ошибка при удалении");
+      }
+
+      // Очищаем локальное состояние
+      handleClear();
+      setSaveMessage("✅ План удален!");
+      setTimeout(() => {
+        setSaveMessage(null);
+        window.location.reload();
+      }, 2000);
+    } catch (error) {
+      console.error("Error deleting distribution:", error);
+      setSaveMessage("❌ Ошибка при удалении");
+      setTimeout(() => setSaveMessage(null), 3000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleSave = async () => {
     if (totalDistributed === 0) {
       setSaveMessage("⚠️ Введите суммы для распределения");
@@ -124,8 +163,32 @@ export default function SavingsDistribution({ totalSavings, debitCards, initialD
           {totalDistributed > 0 && (
             <div className={styles.savedPlan}>
               <div className={styles.savedPlanHeader}>
-                <span className="material-icons">bookmark</span>
-                <span>Сохраненный план распределения</span>
+                <div className={styles.savedPlanHeaderLeft}>
+                  <span className="material-icons">bookmark</span>
+                  <span>Сохраненный план распределения</span>
+                </div>
+                <div className={styles.savedPlanHeaderActions}>
+                  <button
+                    type="button"
+                    className={styles.savedPlanActionBtn}
+                    onClick={() => {
+                      // Редактирование - просто скроллим вниз к форме
+                      document.querySelector(`.${styles.cards}`)?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    title="Редактировать"
+                  >
+                    <span className="material-icons">edit</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.savedPlanActionBtn}
+                    onClick={handleDelete}
+                    disabled={isSaving}
+                    title="Удалить"
+                  >
+                    <span className="material-icons">delete</span>
+                  </button>
+                </div>
               </div>
               <div className={styles.savedPlanCards}>
                 {distributions.filter(d => d.amount > 0).map(dist => {
