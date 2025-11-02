@@ -29,14 +29,18 @@ export default async function BudgetsPage() {
   
   // Категории с kind='both' - это категории для чистой прибыли (доход - расход)
   const bothCategories = categories.filter(c => c.kind === "both");
-  const netProfitCategories = bothCategories.map(c => ({
-    name: c.name,
-    categoryId: c.id,
-    displayId: `net_${c.id}` // Специальный ID для чистой прибыли
-  }));
+  
+  // Фильтруем - убираем те, для которых уже есть бюджет
+  const netProfitCategories = bothCategories
+    .filter(c => !usedCategoryIds.has(c.id))
+    .map(c => ({
+      name: c.name,
+      categoryId: c.id,
+      displayId: `net_${c.id}` // Специальный ID для чистой прибыли
+    }));
   
   console.log("Both categories (net profit):", bothCategories.map(c => c.name));
-  console.log("Net profit categories:", netProfitCategories);
+  console.log("Net profit categories (available):", netProfitCategories);
   
   // ID категорий с kind='both' - они не должны попадать в обычные списки
   const bothCategoryIds = new Set(bothCategories.map(c => c.id));
