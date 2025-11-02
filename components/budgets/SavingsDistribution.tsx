@@ -42,12 +42,6 @@ export default function SavingsDistribution({ totalSavings, debitCards, initialD
       prev.map(d => (d.accountId === accountId ? { ...d, amount: Math.round(amount * 100) } : d))
     );
   };
-
-  const handleDistributeEqually = () => {
-    const perCard = Math.floor(totalSavings / debitCards.length);
-    setDistributions(debitCards.map(card => ({ accountId: card.id, amount: perCard })));
-  };
-
   const handleClear = () => {
     setDistributions(debitCards.map(card => ({ accountId: card.id, amount: 0 })));
   };
@@ -213,25 +207,6 @@ export default function SavingsDistribution({ totalSavings, debitCards, initialD
               </div>
             </div>
           )}
-
-          <div className={styles.actions}>
-            <button
-              type="button"
-              className={styles.actionBtn}
-              onClick={handleDistributeEqually}
-            >
-              <span className="material-icons">balance</span>
-              Распределить поровну
-            </button>
-            <button
-              type="button"
-              className={styles.actionBtn}
-              onClick={handleClear}
-            >
-              <span className="material-icons">clear_all</span>
-              Очистить
-            </button>
-          </div>
 
           <div className={styles.cards}>
             {debitCards.length === 0 ? (

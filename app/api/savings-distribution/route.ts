@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { distributions, periodStart, periodEnd } = body;
 
-    if (!distributions || !Array.isArray(distributions) || distributions.length === 0) {
+    if (!distributions || !Array.isArray(distributions)) {
       return NextResponse.json({ error: "Invalid distributions" }, { status: 400 });
     }
 
@@ -31,25 +31,28 @@ export async function POST(request: NextRequest) {
       .eq("period_start", period_start)
       .eq("period_end", period_end);
 
-    // Создаем записи распределения для каждой карты
-    const savingsDistributions = distributions.map((dist: { accountId: string; amount: number }) => ({
-      user_id: user.id,
-      account_id: dist.accountId,
-      amount: dist.amount, // уже в копейках
-      currency: "RUB",
-      period_start,
-      period_end,
-      note: "Плановое распределение экономии",
-    }));
+    // Если массив не пустой, вставляем новые распределения
+    if (distributions.length > 0) {
+      // Создаем записи распределения для каждой карты
+      const savingsDistributions = distributions.map((dist: { accountId: string; amount: number }) => ({
+        user_id: user.id,
+        account_id: dist.accountId,
+        amount: dist.amount, // уже в копейках
+        currency: "RUB",
+        period_start,
+        period_end,
+        note: "Плановое распределение экономии",
+      }));
 
-    // Вставляем распределения
-    const { error: insertError } = await supabase
-      .from("savings_distributions")
-      .insert(savingsDistributions);
+      // Вставляем распределения
+      const { error: insertError } = await supabase
+        .from("savings_distributions")
+        .insert(savingsDistributions);
 
-    if (insertError) {
-      console.error("Error inserting distributions:", insertError);
-      return NextResponse.json({ error: "Failed to save distribution" }, { status: 500 });
+      if (insertError) {
+        console.error("Error inserting distributions:", insertError);
+        return NextResponse.json({ error: "Failed to save distribution" }, { status: 500 });
+      }
     }
 
     return NextResponse.json({ success: true });
