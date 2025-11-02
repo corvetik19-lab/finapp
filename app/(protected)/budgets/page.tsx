@@ -46,6 +46,8 @@ export default async function BudgetsPage() {
     .order("name", { ascending: true });
 
   const debitCards = (debitAccountsRaw ?? []) as { id: string; name: string; type: string; balance: number }[];
+  
+  console.log("Debit cards loaded:", debitCards.length, debitCards.map(c => c.name));
 
   const budgets = await listBudgetsWithUsage();
   
