@@ -181,6 +181,7 @@ const addCardSchema = z.object({
 const updateCardSchema = z.object({
   id: uuidSchema,
   name: z.string().min(1),
+  balance: z.string().transform((val) => Math.round(parseFloat(val) * 100)),
 });
 
 const addFundsSchema = z.object({
@@ -274,6 +275,7 @@ export async function updateCardAction(formData: FormData): Promise<void> {
   const parsed = updateCardSchema.safeParse({
     id: formData.get("id"),
     name: formData.get("name"),
+    balance: formData.get("balance"),
   });
   if (!parsed.success) {
     throw new Error("Некорректные данные карты");
@@ -310,6 +312,7 @@ export async function updateCardAction(formData: FormData): Promise<void> {
     .from("accounts")
     .update({
       name: parsed.data.name,
+      balance: parsed.data.balance,
     })
     .eq("id", parsed.data.id)
     .eq("user_id", user.id);
@@ -322,6 +325,7 @@ export async function updateCardAction(formData: FormData): Promise<void> {
   revalidatePath("/transactions");
   revalidatePath("/reports");
   revalidatePath("/dashboard");
+  revalidatePath("/budgets");
 }
 
 export async function upsertStashAction(formData: FormData): Promise<void> {

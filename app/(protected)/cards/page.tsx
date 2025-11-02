@@ -158,6 +158,7 @@ export default async function CardsPage() {
                   <EditDebitCardButton 
                     cardId={card.id} 
                     cardName={card.name}
+                    cardBalance={balance}
                     className={styles.editCardBtn}
                   />
                   <DeleteDebitCardButton 

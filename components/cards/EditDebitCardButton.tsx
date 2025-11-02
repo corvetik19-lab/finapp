@@ -8,16 +8,19 @@ import styles from "@/app/(protected)/cards/cards.module.css";
 type EditDebitCardButtonProps = {
   cardId: string;
   cardName: string;
+  cardBalance: number;
   className?: string;
 };
 
 export default function EditDebitCardButton({
   cardId,
   cardName,
+  cardBalance,
   className,
 }: EditDebitCardButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState(cardName);
+  const [balance, setBalance] = useState((cardBalance / 100).toString());
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -25,6 +28,7 @@ export default function EditDebitCardButton({
 
   const handleOpen = () => {
     setName(cardName);
+    setBalance((cardBalance / 100).toString());
     setError(null);
     setIsOpen(true);
   };
@@ -94,6 +98,20 @@ export default function EditDebitCardButton({
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Например, Основная карта"
+                    required
+                  />
+                </div>
+
+                <div className={styles.formField}>
+                  <label htmlFor={`edit-card-balance-${cardId}`}>Баланс (₽)</label>
+                  <input
+                    id={`edit-card-balance-${cardId}`}
+                    name="balance"
+                    type="number"
+                    step="0.01"
+                    value={balance}
+                    onChange={(e) => setBalance(e.target.value)}
+                    placeholder="0.00"
                     required
                   />
                 </div>
