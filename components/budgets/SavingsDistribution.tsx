@@ -32,9 +32,29 @@ export default function SavingsDistribution({ totalSavings, debitCards, initialD
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [hiddenCards, setHiddenCards] = useState<Set<string>>(new Set());
 
   const totalDistributed = distributions.reduce((sum, d) => sum + d.amount, 0);
   const remaining = totalSavings - totalDistributed;
+
+  const toggleCardVisibility = (cardId: string) => {
+    setHiddenCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(cardId)) {
+        newSet.delete(cardId);
+      } else {
+        newSet.add(cardId);
+        // При скрытии обнуляем сумму
+        setDistributions(prevDist =>
+          prevDist.map(d => (d.accountId === cardId ? { ...d, amount: 0 } : d))
+        );
+      }
+      return newSet;
+    });
+  };
+
+  const visibleCards = debitCards.filter(card => !hiddenCards.has(card.id));
+  const hiddenCardsCount = hiddenCards.size;
 
   const handleAmountChange = (accountId: string, value: string) => {
     const amount = parseFloat(value) || 0;
@@ -221,7 +241,7 @@ export default function SavingsDistribution({ totalSavings, debitCards, initialD
                 Добавьте дебетовые карты в разделе &quot;Карты&quot;.
               </div>
             ) : (
-              debitCards.map((card) => {
+              visibleCards.map((card) => {
               const distribution = distributions.find(d => d.accountId === card.id);
               const amount = distribution?.amount || 0;
               const percentage = totalSavings > 0 ? (amount / totalSavings) * 100 : 0;
@@ -258,11 +278,45 @@ export default function SavingsDistribution({ totalSavings, debitCards, initialD
                       Новый баланс: <strong>{formatMoney(card.balance + amount, "RUB")}</strong>
                     </div>
                   )}
+                  <button
+                    type="button"
+                    className={styles.hideCardBtn}
+                    onClick={() => toggleCardVisibility(card.id)}
+                    title="Скрыть карту"
+                  >
+                    <span className="material-icons">visibility_off</span>
+                    Скрыть
+                  </button>
                 </div>
               );
             })
             )}
           </div>
+
+          {/* Показываем скрытые карты */}
+          {hiddenCardsCount > 0 && (
+            <div className={styles.hiddenCardsSection}>
+              <div className={styles.hiddenCardsHeader}>
+                <span className="material-icons">visibility_off</span>
+                <span>Скрытые карты ({hiddenCardsCount})</span>
+              </div>
+              <div className={styles.hiddenCardsList}>
+                {debitCards.filter(card => hiddenCards.has(card.id)).map(card => (
+                  <div key={card.id} className={styles.hiddenCard}>
+                    <span>💳 {card.name}</span>
+                    <button
+                      type="button"
+                      className={styles.showCardBtn}
+                      onClick={() => toggleCardVisibility(card.id)}
+                      title="Показать карту"
+                    >
+                      <span className="material-icons">visibility</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className={styles.summary}>
             <div className={styles.summaryRow}>

@@ -35,10 +35,10 @@ export default async function BudgetsPage() {
 
   const creditCards = (accountsRaw ?? []) as { id: string; name: string; type: string }[];
 
-  // Загружаем дебетовые карты для распределения экономии (без balance из-за RLS)
+  // Загружаем дебетовые карты для распределения экономии с балансами
   const { data: debitAccountsRaw, error: debitError } = await supabase
     .from("accounts")
-    .select("id,name,type,credit_limit")
+    .select("id,name,type,credit_limit,balance")
     .eq("type", "card")
     .eq("archived", false)
     .is("deleted_at", null)
@@ -48,14 +48,14 @@ export default async function BudgetsPage() {
     console.error("Error loading debit cards:", debitError);
   }
 
-  // Фильтруем только дебетовые карты (без кредитного лимита) и добавляем balance = 0
+  // Фильтруем только дебетовые карты (без кредитного лимита)
   const debitCards = (debitAccountsRaw ?? [])
-    .filter((card: { id: string; name: string; type: string; credit_limit: number | null }) => card.credit_limit === null)
-    .map((card: { id: string; name: string; type: string }) => ({
+    .filter((card: { id: string; name: string; type: string; credit_limit: number | null; balance: number }) => card.credit_limit === null)
+    .map((card: { id: string; name: string; type: string; balance: number }) => ({
       id: card.id,
       name: card.name,
       type: card.type,
-      balance: 0
+      balance: card.balance || 0
     })) as { id: string; name: string; type: string; balance: number }[];
 
   const budgets = await listBudgetsWithUsage();
