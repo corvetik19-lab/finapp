@@ -32,7 +32,20 @@ export default function SavingsDistribution({ totalSavings, debitCards, initialD
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [hiddenCards, setHiddenCards] = useState<Set<string>>(new Set());
+  const [hiddenCards, setHiddenCards] = useState<Set<string>>(() => {
+    // Загружаем скрытые карты из localStorage
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('hiddenDebitCards');
+      if (saved) {
+        try {
+          return new Set(JSON.parse(saved));
+        } catch {
+          return new Set();
+        }
+      }
+    }
+    return new Set();
+  });
 
   const totalDistributed = distributions.reduce((sum, d) => sum + d.amount, 0);
   const remaining = totalSavings - totalDistributed;
@@ -49,6 +62,12 @@ export default function SavingsDistribution({ totalSavings, debitCards, initialD
           prevDist.map(d => (d.accountId === cardId ? { ...d, amount: 0 } : d))
         );
       }
+      
+      // Сохраняем в localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('hiddenDebitCards', JSON.stringify(Array.from(newSet)));
+      }
+      
       return newSet;
     });
   };
