@@ -375,14 +375,47 @@
   opacity: 0.9;
 }
 
+.cardActions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.executeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  flex: 1;
+  padding: 0.625rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+.executeBtn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.executeBtn .material-icons {
+  font-size: 1.125rem;
+}
+
 .hideCardBtn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.25rem;
-  width: 100%;
+  flex: 1;
   padding: 0.5rem;
-  margin-top: 0.75rem;
   background: #f3f4f6;
   border: 1px solid #e5e7eb;
   border-radius: 6px;

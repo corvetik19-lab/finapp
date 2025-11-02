@@ -317,15 +317,38 @@ export default function SavingsDistribution({ totalSavings, debitCards, initialD
                       Новый баланс: <strong>{formatMoney(card.balance + amount, "RUB")}</strong>
                     </div>
                   )}
-                  <button
-                    type="button"
-                    className={styles.hideCardBtn}
-                    onClick={() => toggleCardVisibility(card.id)}
-                    title="Скрыть карту"
-                  >
-                    <span className="material-icons">visibility_off</span>
-                    Скрыть
-                  </button>
+                  
+                  <div className={styles.cardActions}>
+                    {amount > 0 && (
+                      <button
+                        type="button"
+                        className={styles.executeBtn}
+                        onClick={() => {
+                          // Переходим на страницу транзакций с параметрами для перевода
+                          const params = new URLSearchParams({
+                            type: 'transfer',
+                            to_account: card.id,
+                            amount: (amount / 100).toString(),
+                            note: `Распределение экономии на ${card.name}`
+                          });
+                          window.location.href = `/transactions?${params.toString()}`;
+                        }}
+                        title="Внести как транзакцию"
+                      >
+                        <span className="material-icons">send</span>
+                        Внести
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className={styles.hideCardBtn}
+                      onClick={() => toggleCardVisibility(card.id)}
+                      title="Скрыть карту"
+                    >
+                      <span className="material-icons">visibility_off</span>
+                      Скрыть
+                    </button>
+                  </div>
                 </div>
               );
             })
