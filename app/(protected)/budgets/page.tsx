@@ -155,8 +155,8 @@ export default async function BudgetsPage() {
             <span className="material-icons">update</span>
           </div>
           <div className={styles.summaryLabel}>⏳ Остаток бюджета</div>
-          <div className={styles.summaryValue}>{formatMoney(budgetBalanceMinor, "RUB")}</div>
-          <div className={styles.summaryMeta}>Плановый остаток (доходы - расходы)</div>
+          <div className={styles.summaryValue}>{formatMoney(actualBalanceMinor, "RUB")}</div>
+          <div className={styles.summaryMeta}>Фактический остаток (получено - потрачено)</div>
         </div>
       </section>
 
