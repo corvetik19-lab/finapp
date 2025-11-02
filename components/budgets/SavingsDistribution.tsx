@@ -120,6 +120,37 @@ export default function SavingsDistribution({ totalSavings, debitCards, initialD
 
       {isExpanded && (
         <div className={styles.content}>
+          {/* Показываем сохраненный план если есть */}
+          {totalDistributed > 0 && (
+            <div className={styles.savedPlan}>
+              <div className={styles.savedPlanHeader}>
+                <span className="material-icons">bookmark</span>
+                <span>Сохраненный план распределения</span>
+              </div>
+              <div className={styles.savedPlanCards}>
+                {distributions.filter(d => d.amount > 0).map(dist => {
+                  const card = debitCards.find(c => c.id === dist.accountId);
+                  if (!card) return null;
+                  const percentage = totalSavings > 0 ? (dist.amount / totalSavings) * 100 : 0;
+                  return (
+                    <div key={dist.accountId} className={styles.savedPlanCard}>
+                      <div className={styles.savedPlanCardIcon}>💳</div>
+                      <div className={styles.savedPlanCardInfo}>
+                        <div className={styles.savedPlanCardName}>{card.name}</div>
+                        <div className={styles.savedPlanCardAmount}>
+                          {formatMoney(dist.amount, "RUB")}
+                        </div>
+                      </div>
+                      <div className={styles.savedPlanCardPercent}>
+                        {percentage.toFixed(1)}%
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div className={styles.actions}>
             <button
               type="button"
