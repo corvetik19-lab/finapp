@@ -239,8 +239,29 @@ const tools = [
   {
     type: "function",
     function: {
+      name: "searchTransactions",
+      description: "УМНЫЙ ПОИСК транзакций по смыслу запроса (RAG). Используй когда пользователь спрашивает про конкретные траты, категории, места. Например: 'покажи все кафе', 'сколько потратил на такси', 'где я ел в октябре'.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "Поисковый запрос на естественном языке"
+          },
+          limit: {
+            type: "number",
+            description: "Количество результатов (по умолчанию 5)"
+          }
+        },
+        required: ["query"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
       name: "getTransactions",
-      description: "Получить список последних транзакций. Используй для анализа трат пользователя.",
+      description: "Получить список ПОСЛЕДНИХ транзакций в хронологическом порядке. Используй для общего анализа трат.",
       parameters: {
         type: "object",
         properties: {

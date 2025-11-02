@@ -4,6 +4,7 @@
 
 import { createAdminClient, createRouteClient } from "@/lib/supabase/helpers";
 import type { ToolParameters } from "./tools";
+import { searchRelevantTransactions } from "./rag-pipeline";
 
 type TransactionSummaryRow = {
   amount: number;
@@ -1146,8 +1147,48 @@ export async function handleAIAddWorkout(
   };
 }
 
+// === RAG: УМНЫЙ ПОИСК ТРАНЗАКЦИЙ ===
+export async function handleSearchTransactions(params: { query: string; limit?: number; userId: string }) {
+  try {
+    const results = await searchRelevantTransactions(params.query, params.userId, params.limit || 5);
+    
+    if (results.length === 0) {
+      return {
+        success: true,
+        message: "Транзакции не найдены по запросу",
+        transactions: []
+      };
+    }
+
+    // Форматируем результаты для AI
+    const formatted = results.map(t => ({
+      дата: new Date(t.occurred_at).toLocaleDateString("ru-RU"),
+      описание: t.note,
+      сумма: `${t.amount_major.toFixed(2)} ${t.currency}`,
+      категория: t.category_name || "Без категории",
+      счет: t.account_name || "Неизвестно",
+      схожесть: `${(t.similarity * 100).toFixed(0)}%`
+    }));
+
+    return {
+      success: true,
+      message: `Найдено ${results.length} транзакций`,
+      transactions: formatted
+    };
+  } catch (error) {
+    console.error("Error in handleSearchTransactions:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Ошибка поиска"
+    };
+  }
+}
+
 // Маппинг обработчиков для AI
 export const toolHandlers = {
+  // RAG Tools
+  searchTransactions: handleSearchTransactions,
+  
   // AI Tools (используют Admin Client)
   addCategory: handleAddCategory,
   addTransaction: handleAIAddTransaction,
