@@ -67,8 +67,8 @@ export default function AmountInputWithCalculator({
       
       // Проверяем, помещается ли калькулятор по высоте
       if (top + calculatorHeight > window.innerHeight) {
-        // Если не помещается снизу, выравниваем по нижнему краю экрана
-        top = window.innerHeight - calculatorHeight - 20;
+        // Если не помещается снизу, выравниваем по нижнему краю экрана с отступом
+        top = window.innerHeight - calculatorHeight - 60;
       }
       
       // Убеждаемся что калькулятор не выходит за верхний край
