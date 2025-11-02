@@ -24,11 +24,9 @@ export async function POST(request: NextRequest) {
       account_id: dist.accountId,
       amount: dist.amount, // уже в копейках
       direction: "income" as const,
-      description: "Распределение экономии",
-      transaction_date: new Date().toISOString().split('T')[0],
+      note: "Распределение экономии",
+      occurred_at: new Date().toISOString(),
       currency: "RUB",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
     }));
 
     // Вставляем все транзакции
