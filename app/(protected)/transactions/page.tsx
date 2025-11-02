@@ -307,50 +307,97 @@ export default async function TransactionsPage({
       </div>
 
       {/* Accounts widget at top (как в дизайне) */}
-      {hasAccount && (
-        <section className={styles.accounts}>
-          {(accounts as Account[]).slice(0, 6).map((a) => {
-            // Используем баланс напрямую из БД (balance уже актуальный)
-            const currentBalance = a.balance ?? 0;
-            
-            // Определяем тип карты и иконку
-            let icon = "account_balance_wallet";
-            let typeLabel = "";
-            
-            if (a.type === "card") {
-              if (a.credit_limit && a.credit_limit > 0) {
-                icon = "credit_card";
-                typeLabel = "💳 Кредитная";
-              } else {
-                icon = "payment";
-                typeLabel = "💳 Дебетовая";
-              }
-            } else if (a.type === "cash") {
-              icon = "payments";
-              typeLabel = "💵 Наличные";
-            } else if (a.type === "loan") {
-              icon = "account_balance";
-              typeLabel = "💰 Кредит";
-            } else if (a.type === "bank") {
-              icon = "account_balance";
-              typeLabel = "🏦 Счёт";
+      {hasAccount && (() => {
+        // Разделяем счета на категории
+        const debitCards = (accounts as Account[]).filter(a => 
+          a.type === "card" && (!a.credit_limit || a.credit_limit === 0)
+        );
+        const creditCards = (accounts as Account[]).filter(a => 
+          a.type === "card" && a.credit_limit && a.credit_limit > 0
+        );
+        const loans = (accounts as Account[]).filter(a => a.type === "loan");
+        const others = (accounts as Account[]).filter(a => 
+          a.type !== "card" && a.type !== "loan"
+        );
+
+        const renderAccountCard = (a: Account) => {
+          const currentBalance = a.balance ?? 0;
+          let icon = "account_balance_wallet";
+          let typeLabel = "";
+          
+          if (a.type === "card") {
+            if (a.credit_limit && a.credit_limit > 0) {
+              icon = "credit_card";
+              typeLabel = "💳 Кредитная";
+            } else {
+              icon = "payment";
+              typeLabel = "💳 Дебетовая";
             }
-            
-            return (
-              <div key={a.id} className={styles.accountCard}>
-                <div className={styles.accountHeader}>
-                  <span className="material-icons" style={{ fontSize: 20, color: "var(--primary-color)" }}>
-                    {icon}
-                  </span>
-                  {typeLabel && <span className={styles.accountType}>{typeLabel}</span>}
-                </div>
-                <div className={styles.accountName}>{a.name}</div>
-                <div className={styles.accountBalance}>{formatMoney(currentBalance, a.currency)}</div>
+          } else if (a.type === "cash") {
+            icon = "payments";
+            typeLabel = "💵 Наличные";
+          } else if (a.type === "loan") {
+            icon = "account_balance";
+            typeLabel = "💰 Кредит";
+          } else if (a.type === "bank") {
+            icon = "account_balance";
+            typeLabel = "🏦 Счёт";
+          }
+          
+          return (
+            <div key={a.id} className={styles.accountCard}>
+              <div className={styles.accountHeader}>
+                <span className="material-icons" style={{ fontSize: 20, color: "var(--primary-color)" }}>
+                  {icon}
+                </span>
+                {typeLabel && <span className={styles.accountType}>{typeLabel}</span>}
               </div>
-            );
-          })}
-        </section>
-      )}
+              <div className={styles.accountName}>{a.name}</div>
+              <div className={styles.accountBalance}>{formatMoney(currentBalance, a.currency)}</div>
+            </div>
+          );
+        };
+
+        return (
+          <>
+            {debitCards.length > 0 && (
+              <section className={styles.accountsSection}>
+                <h3 className={styles.accountsTitle}>💳 Дебетовые карты</h3>
+                <div className={styles.accounts}>
+                  {debitCards.map(renderAccountCard)}
+                </div>
+              </section>
+            )}
+            
+            {creditCards.length > 0 && (
+              <section className={styles.accountsSection}>
+                <h3 className={styles.accountsTitle}>💳 Кредитные карты</h3>
+                <div className={styles.accounts}>
+                  {creditCards.map(renderAccountCard)}
+                </div>
+              </section>
+            )}
+            
+            {loans.length > 0 && (
+              <section className={styles.accountsSection}>
+                <h3 className={styles.accountsTitle}>💰 Кредиты</h3>
+                <div className={styles.accounts}>
+                  {loans.map(renderAccountCard)}
+                </div>
+              </section>
+            )}
+            
+            {others.length > 0 && (
+              <section className={styles.accountsSection}>
+                <h3 className={styles.accountsTitle}>🏦 Другие счета</h3>
+                <div className={styles.accounts}>
+                  {others.map(renderAccountCard)}
+                </div>
+              </section>
+            )}
+          </>
+        );
+      })()}
 
       {/* Период + Summary (меняется только сводка) */}
       <SummaryWithPeriod presets={summaryPresets} defaultKey={summaryDefaultKey} />
