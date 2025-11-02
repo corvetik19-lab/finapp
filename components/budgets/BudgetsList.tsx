@@ -282,12 +282,27 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
         );
   };
 
+  // Считаем итоговые суммы
+  const totalIncomeLimit = incomeBudgets.reduce((sum, b) => sum + b.limit_minor, 0);
+  const totalExpenseLimit = expenseBudgets.reduce((sum, b) => sum + b.limit_minor, 0);
+
   return (
     <>
       {incomeBudgets.length > 0 && (
         <>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--primary-dark)' }}>
-            💰 Доходы
+          <h3 style={{ 
+            fontSize: '1.1rem', 
+            fontWeight: 600, 
+            marginBottom: '1rem', 
+            color: 'var(--primary-dark)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <span>💰 Доходы</span>
+            <span style={{ fontSize: '0.95rem', fontWeight: 500, color: '#059669' }}>
+              {formatMoney(totalIncomeLimit, 'RUB')}
+            </span>
           </h3>
           {incomeBudgets.map(renderBudget)}
         </>
@@ -295,8 +310,20 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
       
       {expenseBudgets.length > 0 && (
         <>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginTop: incomeBudgets.length > 0 ? '2rem' : 0, marginBottom: '1rem', color: 'var(--primary-dark)' }}>
-            💸 Расходы
+          <h3 style={{ 
+            fontSize: '1.1rem', 
+            fontWeight: 600, 
+            marginTop: incomeBudgets.length > 0 ? '2rem' : 0, 
+            marginBottom: '1rem', 
+            color: 'var(--primary-dark)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <span>💸 Расходы</span>
+            <span style={{ fontSize: '0.95rem', fontWeight: 500, color: '#dc2626' }}>
+              {formatMoney(totalExpenseLimit, 'RUB')}
+            </span>
           </h3>
           {expenseBudgets.map(renderBudget)}
         </>
