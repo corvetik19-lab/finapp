@@ -20,7 +20,7 @@ const limitAmountTransform = z
 
 export const budgetFormSchema = z
   .object({
-    category_id: z.string().uuid({ message: "Выберите категорию" }),
+    category_id: z.string().uuid({ message: "Выберите категорию" }).optional(),
     period_start: z
       .string()
       .min(1, "Укажите дату начала"),
