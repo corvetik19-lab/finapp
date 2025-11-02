@@ -60,7 +60,11 @@ export default function AmountInputWithCalculator({
         
         <button
           type="button"
-          onClick={() => setShowCalculator(!showCalculator)}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setShowCalculator(!showCalculator);
+          }}
           className={`${styles.calculatorBtn} ${showCalculator ? styles.active : ""}`}
           title="Открыть калькулятор"
         >
