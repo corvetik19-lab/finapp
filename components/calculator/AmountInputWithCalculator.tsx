@@ -28,13 +28,19 @@ export default function AmountInputWithCalculator({
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const calculatorRef = useRef<HTMLDivElement>(null);
 
   // Закрываем калькулятор при клике вне его
   useEffect(() => {
     if (!showCalculator) return;
 
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      // Проверяем что клик не внутри контейнера и не внутри калькулятора
+      if (
+        containerRef.current && !containerRef.current.contains(target) &&
+        calculatorRef.current && !calculatorRef.current.contains(target)
+      ) {
         setShowCalculator(false);
       }
     };
@@ -113,6 +119,7 @@ export default function AmountInputWithCalculator({
 
         {showCalculator && typeof window !== 'undefined' && createPortal(
           <div
+            ref={calculatorRef}
             style={{
               position: 'fixed',
               top: `${position.top}px`,
