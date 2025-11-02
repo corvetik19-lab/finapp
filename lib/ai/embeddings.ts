@@ -10,10 +10,6 @@ const openai = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY || "dummy-key-for-build",
   baseURL: "https://openrouter.ai/api/v1",
   dangerouslyAllowBrowser: false,
-  defaultHeaders: {
-    "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-    "X-Title": "FinApp",
-  },
 });
 
 /**
@@ -57,11 +53,19 @@ export async function createEmbedding(text: string): Promise<number[]> {
   }
 
   try {
-    const response = await openai.embeddings.create({
-      model: "openai/text-embedding-3-small", // OpenRouter: OpenAI Text Embedding 3 Small (1536 dimensions)
-      input: text,
-      encoding_format: "float",
-    });
+    const response = await openai.embeddings.create(
+      {
+        model: "openai/text-embedding-3-small", // OpenRouter: OpenAI Text Embedding 3 Small (1536 dimensions)
+        input: text,
+        encoding_format: "float",
+      },
+      {
+        headers: {
+          "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+          "X-Title": "FinApp",
+        },
+      }
+    );
 
     return response.data[0].embedding;
   } catch (error) {
@@ -81,11 +85,19 @@ export async function createEmbeddings(texts: string[]): Promise<number[][]> {
   if (texts.length === 0) return [];
 
   try {
-    const response = await openai.embeddings.create({
-      model: "openai/text-embedding-3-small",
-      input: texts,
-      encoding_format: "float",
-    });
+    const response = await openai.embeddings.create(
+      {
+        model: "openai/text-embedding-3-small",
+        input: texts,
+        encoding_format: "float",
+      },
+      {
+        headers: {
+          "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+          "X-Title": "FinApp",
+        },
+      }
+    );
 
     return response.data.map((item) => item.embedding);
   } catch (error) {
