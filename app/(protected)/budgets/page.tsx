@@ -22,11 +22,12 @@ export default async function BudgetsPage() {
 
   const categories = (categoriesRaw ?? []) as { id: string; name: string; kind: "income" | "expense" | "transfer" | "both" }[];
 
-  // Загружаем кредитные карты
+  // Загружаем кредитные карты (карты с лимитом)
   const { data: accountsRaw } = await supabase
     .from("accounts")
     .select("id,name,type")
-    .eq("type", "credit")
+    .eq("type", "card")
+    .not("credit_limit", "is", null)
     .order("name", { ascending: true });
 
   const creditCards = (accountsRaw ?? []) as { id: string; name: string; type: string }[];
