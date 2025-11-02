@@ -28,7 +28,10 @@ function getDefaultAccounts(accounts: Account[]): { fromId: string; toId: string
 
 export default function TransferButton({ accounts }: TransferButtonProps) {
   const searchParams = useSearchParams();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(() => {
+    // Проверяем URL параметры при инициализации
+    return searchParams.get('type') === 'transfer' && !!searchParams.get('to_account');
+  });
   const [serverError, setServerError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const { show: showToast } = useToast();
@@ -66,38 +69,34 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
 
   const fromAccount = watch("from_account_id");
 
-  // Проверяем URL параметры для автоматического открытия
+  // Заполняем поля из URL параметров если модалка открыта
   useEffect(() => {
-    // Небольшая задержка чтобы форма успела инициализироваться
-    const timer = setTimeout(() => {
-      const type = searchParams.get('type');
-      const toAccount = searchParams.get('to_account');
-      const amount = searchParams.get('amount');
-      const note = searchParams.get('note');
+    if (!open) return;
+    
+    const toAccount = searchParams.get('to_account');
+    const amount = searchParams.get('amount');
+    const note = searchParams.get('note');
 
-      if (type === 'transfer' && toAccount) {
-        setOpen(true);
-        
-        // Устанавливаем значения из URL
-        setTimeout(() => {
-          if (toAccount) {
-            setValue('to_account_id', toAccount);
-          }
-          if (amount) {
-            setValue('amount_major', amount);
-          }
-          if (note) {
-            setValue('note', note);
-          }
-        }, 100);
+    if (toAccount || amount || note) {
+      // Небольшая задержка чтобы форма успела инициализироваться
+      const timer = setTimeout(() => {
+        if (toAccount) {
+          setValue('to_account_id', toAccount);
+        }
+        if (amount) {
+          setValue('amount_major', amount);
+        }
+        if (note) {
+          setValue('note', note);
+        }
         
         // Очищаем URL параметры
         window.history.replaceState({}, '', '/transactions');
-      }
-    }, 100);
+      }, 100);
 
-    return () => clearTimeout(timer);
-  }, [searchParams, setValue]);
+      return () => clearTimeout(timer);
+    }
+  }, [open, searchParams, setValue]);
 
   // Группируем счета по типам (исключаем кредиты из переводов)
   const groupedAccounts = useMemo(() => {
