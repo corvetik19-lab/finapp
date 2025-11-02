@@ -130,6 +130,7 @@ export default function AmountInputWithCalculator({
             <Calculator
               onResult={handleCalculatorResult}
               onClose={() => setShowCalculator(false)}
+              initialValue={value}
             />
           </div>,
           document.body

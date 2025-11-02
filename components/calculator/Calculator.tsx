@@ -6,10 +6,11 @@ import styles from "./Calculator.module.css";
 type CalculatorProps = {
   onResult: (value: string) => void;
   onClose: () => void;
+  initialValue?: string;
 };
 
-export default function Calculator({ onResult, onClose }: CalculatorProps) {
-  const [display, setDisplay] = useState("0");
+export default function Calculator({ onResult, onClose, initialValue }: CalculatorProps) {
+  const [display, setDisplay] = useState(initialValue && initialValue !== "" ? initialValue : "0");
   const [expression, setExpression] = useState("");
 
   const handleNumber = (num: string) => {
