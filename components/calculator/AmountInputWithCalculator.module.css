@@ -1,0 +1,117 @@
+.container {
+  position: relative;
+  width: 100%;
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: var(--text-primary, #1a1a1a);
+  font-size: 14px;
+}
+
+.inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.input {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 16px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  background: var(--input-bg, #ffffff);
+  color: var(--text-primary, #1a1a1a);
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary-color, #1976d2);
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+}
+
+.input::placeholder {
+  color: var(--text-secondary, #999);
+}
+
+.inputError {
+  border-color: var(--error-color, #d32f2f) !important;
+}
+
+.inputError:focus {
+  box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.1) !important;
+}
+
+.calculatorBtn {
+  padding: 12px;
+  background: var(--primary-light, #e3f2fd);
+  border: 1px solid var(--primary-color, #1976d2);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.calculatorBtn:hover {
+  background: var(--primary-lighter, #bbdefb);
+  transform: translateY(-1px);
+}
+
+.calculatorBtn:active {
+  transform: translateY(0);
+}
+
+.calculatorBtn.active {
+  background: var(--primary-color, #1976d2);
+}
+
+.calculatorBtn.active .material-icons {
+  color: white;
+}
+
+.calculatorBtn .material-icons {
+  font-size: 20px;
+  color: var(--primary-color, #1976d2);
+  transition: color 0.2s;
+}
+
+.error {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--error-color, #d32f2f);
+}
+
+/* Темная тема */
+@media (prefers-color-scheme: dark) {
+  .label {
+    color: var(--text-primary-dark, #ffffff);
+  }
+
+  .input {
+    background: var(--input-bg-dark, #2a2a2a);
+    border-color: var(--border-color-dark, #444);
+    color: var(--text-primary-dark, #ffffff);
+  }
+
+  .input::placeholder {
+    color: var(--text-secondary-dark, #666);
+  }
+
+  .calculatorBtn {
+    background: var(--primary-dark-bg, #1a3a52);
+    border-color: var(--primary-color, #1976d2);
+  }
+
+  .calculatorBtn:hover {
+    background: var(--primary-dark-hover, #2a4a62);
+  }
+}

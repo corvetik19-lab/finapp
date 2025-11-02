@@ -11,6 +11,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/components/toast/ToastContext";
 import styles from "@/components/transactions/Transactions.module.css";
+import AmountInputWithCalculator from "@/components/calculator/AmountInputWithCalculator";
 import {
   deleteTransactionAction,
   updateTransactionFromValues,
@@ -147,6 +148,8 @@ export default function TransactionsGroupedList({
       counterparty: "",
     },
   });
+
+  const amountValue = watch("amount_major");
 
   const directionValue = watch("direction");
   const accountValue = watch("account_id");
@@ -773,16 +776,13 @@ export default function TransactionsGroupedList({
                             Сумма (₽)
                           </span>
                           <span className={styles.modalValue}>
-                            <input
-                              {...register("amount_major")}
-                              className={styles.input}
-                              type="text"
-                              inputMode="decimal"
-                              disabled={selected.direction === "transfer"}
+                            <AmountInputWithCalculator
+                              value={amountValue}
+                              onChange={(val) => setValue("amount_major", val)}
+                              placeholder="0"
+                              error={errors.amount_major?.message}
+                              inputClassName={styles.input}
                             />
-                            {errors.amount_major && (
-                              <div className={styles.fieldError}>{errors.amount_major.message}</div>
-                            )}
                           </span>
                         </div>
                       </div>

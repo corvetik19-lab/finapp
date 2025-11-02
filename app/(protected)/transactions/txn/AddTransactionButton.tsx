@@ -10,6 +10,7 @@ import {
   type TransactionFormValues,
 } from "@/lib/validation/transaction";
 import { createTransactionFromValues } from "../actions";
+import AmountInputWithCalculator from "@/components/calculator/AmountInputWithCalculator";
 
 type Account = { id: string; name: string; currency: string; type: string; credit_limit: number | null; balance: number };
 type Category = { id: string; name: string; kind: "income" | "expense" | "transfer" | "both" };
@@ -247,16 +248,14 @@ export default function AddTransactionButton({
                   </select>
                 </div>
                 <div className={modal.groupRow}>
-                  <label className={modal.label}>Сумма (₽)</label>
-                  <input
-                    {...register("amount_major")}
-                    type="text"
-                    inputMode="decimal"
+                  <AmountInputWithCalculator
+                    label="Сумма (₽)"
+                    value={amountValue}
+                    onChange={(val) => setValue("amount_major", val)}
                     placeholder="0"
-                    className={stylesTxn.input}
-                    autoFocus
+                    error={errors.amount_major?.message}
+                    inputClassName={stylesTxn.input}
                   />
-                  {errors.amount_major && <div className={modal.error}>{errors.amount_major.message}</div>}
                 </div>
               </div>
 

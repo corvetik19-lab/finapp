@@ -12,6 +12,7 @@ import {
   type TransferFormValues,
 } from "@/lib/validation/transaction";
 import { createTransferFromValues } from "../actions";
+import AmountInputWithCalculator from "@/components/calculator/AmountInputWithCalculator";
 import { formatMoney } from "@/lib/utils/format";
 
 type Account = { id: string; name: string; currency: string; type: string; credit_limit: number | null; balance: number };
@@ -66,6 +67,7 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
   });
 
   const fromAccount = watch("from_account_id");
+  const amountValue = watch("amount_major");
 
   // Открываем модалку если есть URL параметры (только на клиенте)
   useEffect(() => {
@@ -292,16 +294,14 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
 
               <div className={modal.row2}>
                 <div className={modal.groupRow}>
-                  <label className={modal.label}>Сумма</label>
-                  <input
-                    {...register("amount_major")}
-                    type="text"
-                    inputMode="decimal"
+                  <AmountInputWithCalculator
+                    label="Сумма"
+                    value={amountValue}
+                    onChange={(val) => setValue("amount_major", val)}
                     placeholder="0"
-                    className={stylesTxn.input}
-                    required
+                    error={errors.amount_major?.message}
+                    inputClassName={stylesTxn.input}
                   />
-                  {errors.amount_major && <div className={modal.error}>{errors.amount_major.message}</div>}
                 </div>
                 <div className={modal.groupRow}>
                   <label className={modal.label}>Дата</label>
