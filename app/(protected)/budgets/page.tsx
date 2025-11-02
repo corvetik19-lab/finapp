@@ -52,8 +52,8 @@ export default async function BudgetsPage() {
     !bothCategoryIds.has(c.id)
   );
 
-  // Разделяем бюджеты на доходы и расходы
-  const incomeBudgets = budgets.filter(b => b.category?.kind === "income");
+  // Разделяем бюджеты на доходы (включая both/чистую прибыль) и расходы
+  const incomeBudgets = budgets.filter(b => b.category?.kind === "income" || b.category?.kind === "both");
   const expenseBudgets = budgets.filter(b => b.category?.kind === "expense");
 
   // Считаем суммы по доходам

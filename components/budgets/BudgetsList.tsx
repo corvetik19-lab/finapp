@@ -99,9 +99,11 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
     return <div className={styles.empty}>Бюджеты ещё не настроены. Создайте первый лимит в форме выше.</div>;
   }
 
-  return (
-    <>
-      {budgets.map((budget) => {
+  // Группируем бюджеты
+  const incomeBudgets = budgets.filter(b => b.category?.kind === "income" || b.category?.kind === "both");
+  const expenseBudgets = budgets.filter(b => b.category?.kind === "expense");
+
+  const renderBudget = (budget: BudgetWithUsage) => {
         const cardClass =
           budget.status === "over"
             ? `${styles.card} ${styles.statusOver}`
@@ -278,7 +280,27 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
             )}
           </div>
         );
-      })}
+  };
+
+  return (
+    <>
+      {incomeBudgets.length > 0 && (
+        <>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--primary-dark)' }}>
+            💰 Доходы
+          </h3>
+          {incomeBudgets.map(renderBudget)}
+        </>
+      )}
+      
+      {expenseBudgets.length > 0 && (
+        <>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginTop: incomeBudgets.length > 0 ? '2rem' : 0, marginBottom: '1rem', color: 'var(--primary-dark)' }}>
+            💸 Расходы
+          </h3>
+          {expenseBudgets.map(renderBudget)}
+        </>
+      )}
     </>
   );
 }
