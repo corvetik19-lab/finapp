@@ -45,10 +45,6 @@ export default function SavingsDistribution({ totalSavings, debitCards }: Props)
     setDistributions(debitCards.map(card => ({ accountId: card.id, amount: 0 })));
   };
 
-  if (debitCards.length === 0) {
-    return null;
-  }
-
   return (
     <section className={styles.container}>
       <div className={styles.header}>
@@ -92,7 +88,19 @@ export default function SavingsDistribution({ totalSavings, debitCards }: Props)
           </div>
 
           <div className={styles.cards}>
-            {debitCards.map((card) => {
+            {debitCards.length === 0 ? (
+              <div style={{ 
+                padding: '2rem', 
+                textAlign: 'center', 
+                color: '#6b7280',
+                gridColumn: '1 / -1'
+              }}>
+                Нет дебетовых карт для распределения экономии. 
+                <br />
+                Добавьте дебетовые карты в разделе &quot;Карты&quot;.
+              </div>
+            ) : (
+              debitCards.map((card) => {
               const distribution = distributions.find(d => d.accountId === card.id);
               const amount = distribution?.amount || 0;
               const percentage = totalSavings > 0 ? (amount / totalSavings) * 100 : 0;
@@ -131,7 +139,8 @@ export default function SavingsDistribution({ totalSavings, debitCards }: Props)
                   )}
                 </div>
               );
-            })}
+            })
+            )}
           </div>
 
           <div className={styles.summary}>
