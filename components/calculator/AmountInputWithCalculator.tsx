@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Calculator from "./Calculator";
 import styles from "./AmountInputWithCalculator.module.css";
 
@@ -24,7 +25,9 @@ export default function AmountInputWithCalculator({
   inputClassName,
 }: AmountInputWithCalculatorProps) {
   const [showCalculator, setShowCalculator] = useState(false);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   // Закрываем калькулятор при клике вне его
   useEffect(() => {
@@ -44,6 +47,21 @@ export default function AmountInputWithCalculator({
     onChange(result);
   };
 
+  const handleToggleCalculator = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!showCalculator && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPosition({
+        top: rect.top,
+        left: rect.right + 12,
+      });
+    }
+    
+    setShowCalculator(!showCalculator);
+  };
+
   return (
     <div className={`${styles.container} ${className || ""}`} ref={containerRef}>
       {label && <label className={styles.label}>{label}</label>}
@@ -59,23 +77,30 @@ export default function AmountInputWithCalculator({
         />
         
         <button
+          ref={buttonRef}
           type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setShowCalculator(!showCalculator);
-          }}
+          onClick={handleToggleCalculator}
           className={`${styles.calculatorBtn} ${showCalculator ? styles.active : ""}`}
           title="Открыть калькулятор"
         >
           <span className="material-icons">calculate</span>
         </button>
 
-        {showCalculator && (
-          <Calculator
-            onResult={handleCalculatorResult}
-            onClose={() => setShowCalculator(false)}
-          />
+        {showCalculator && typeof window !== 'undefined' && createPortal(
+          <div
+            style={{
+              position: 'fixed',
+              top: `${position.top}px`,
+              left: `${position.left}px`,
+              zIndex: 9999,
+            }}
+          >
+            <Calculator
+              onResult={handleCalculatorResult}
+              onClose={() => setShowCalculator(false)}
+            />
+          </div>,
+          document.body
         )}
       </div>
 
