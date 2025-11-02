@@ -70,7 +70,7 @@ export default async function BudgetsPage() {
 
   // Разделяем бюджеты на доходы (включая both/чистую прибыль) и расходы
   const incomeBudgets = budgets.filter(b => b.category?.kind === "income" || b.category?.kind === "both");
-  const expenseBudgets = budgets.filter(b => b.category?.kind === "expense");
+  const expenseBudgets = budgets.filter(b => b.category?.kind === "expense" || b.account_id); // Кредитные карты тоже расходы
 
   // Считаем суммы по доходам
   const totalIncomeLimitMinor = incomeBudgets.reduce((acc, b) => acc + b.limit_minor, 0);
