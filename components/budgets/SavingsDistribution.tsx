@@ -77,9 +77,23 @@ export default function SavingsDistribution({ totalSavings, debitCards, initialD
 
   const handleAmountChange = (accountId: string, value: string) => {
     const amount = parseFloat(value) || 0;
-    setDistributions(prev =>
-      prev.map(d => (d.accountId === accountId ? { ...d, amount: Math.round(amount * 100) } : d))
-    );
+    const amountInMinor = Math.round(amount * 100);
+    
+    // Проверяем что общая сумма не превышает планируемую экономию
+    setDistributions(prev => {
+      const newDistributions = prev.map(d => 
+        d.accountId === accountId ? { ...d, amount: amountInMinor } : d
+      );
+      
+      const newTotal = newDistributions.reduce((sum, d) => sum + d.amount, 0);
+      
+      // Если превышает лимит, не обновляем
+      if (newTotal > totalSavings) {
+        return prev;
+      }
+      
+      return newDistributions;
+    });
   };
   const handleClear = () => {
     setDistributions(debitCards.map(card => ({ accountId: card.id, amount: 0 })));
@@ -280,13 +294,19 @@ export default function SavingsDistribution({ totalSavings, debitCards, initialD
                   </div>
                   <div className={styles.cardInput}>
                     <label>
-                      <span className={styles.label}>Сумма для распределения (₽)</span>
+                      <span className={styles.label}>
+                        Сумма для распределения (₽)
+                        {remaining < totalSavings && (
+                          <span className={styles.labelHint}> • Осталось: {formatMoney(remaining, "RUB")}</span>
+                        )}
+                      </span>
                       <input
                         type="number"
                         step="0.01"
                         min="0"
+                        max={totalSavings / 100}
                         className={styles.input}
-                        value={amount / 100}
+                        value={amount === 0 ? '' : amount / 100}
                         onChange={(e) => handleAmountChange(card.id, e.target.value)}
                         placeholder="0.00"
                       />
