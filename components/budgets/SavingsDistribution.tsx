@@ -25,6 +25,8 @@ export default function SavingsDistribution({ totalSavings, debitCards }: Props)
     debitCards.map(card => ({ accountId: card.id, amount: 0 }))
   );
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   const totalDistributed = distributions.reduce((sum, d) => sum + d.amount, 0);
   const remaining = totalSavings - totalDistributed;
@@ -43,6 +45,51 @@ export default function SavingsDistribution({ totalSavings, debitCards }: Props)
 
   const handleClear = () => {
     setDistributions(debitCards.map(card => ({ accountId: card.id, amount: 0 })));
+  };
+
+  const handleSave = async () => {
+    if (totalDistributed === 0) {
+      setSaveMessage("⚠️ Введите суммы для распределения");
+      setTimeout(() => setSaveMessage(null), 3000);
+      return;
+    }
+
+    if (totalDistributed > totalSavings) {
+      setSaveMessage("⚠️ Распределено больше чем запланировано!");
+      setTimeout(() => setSaveMessage(null), 3000);
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveMessage(null);
+
+    try {
+      // Создаем транзакции для каждого распределения
+      const response = await fetch("/api/savings-distribution", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          distributions: distributions.filter(d => d.amount > 0),
+          totalAmount: totalDistributed,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Ошибка при сохранении");
+      }
+
+      setSaveMessage("✅ Распределение сохранено!");
+      setTimeout(() => {
+        setSaveMessage(null);
+        window.location.reload(); // Перезагружаем страницу чтобы обновить данные
+      }, 2000);
+    } catch (error) {
+      console.error("Error saving distribution:", error);
+      setSaveMessage("❌ Ошибка при сохранении");
+      setTimeout(() => setSaveMessage(null), 3000);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -165,6 +212,33 @@ export default function SavingsDistribution({ totalSavings, debitCards }: Props)
                 ⚠️ Распределено больше чем запланировано!
               </div>
             )}
+          </div>
+
+          {saveMessage && (
+            <div className={styles.saveMessage}>
+              {saveMessage}
+            </div>
+          )}
+
+          <div className={styles.saveButtonContainer}>
+            <button
+              type="button"
+              className={styles.saveButton}
+              onClick={handleSave}
+              disabled={isSaving || totalDistributed === 0}
+            >
+              {isSaving ? (
+                <>
+                  <span className="material-icons">hourglass_empty</span>
+                  Сохранение...
+                </>
+              ) : (
+                <>
+                  <span className="material-icons">save</span>
+                  Сохранить распределение
+                </>
+              )}
+            </button>
           </div>
         </div>
       )}
