@@ -53,10 +53,35 @@ export default function AmountInputWithCalculator({
     
     if (!showCalculator && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      setPosition({
-        top: rect.top,
-        left: rect.right + 12,
-      });
+      const calculatorWidth = 280;
+      const calculatorHeight = 420;
+      
+      let top = rect.top;
+      let left = rect.right + 12;
+      
+      // Проверяем, помещается ли калькулятор справа
+      if (left + calculatorWidth > window.innerWidth) {
+        // Если не помещается справа, открываем слева
+        left = rect.left - calculatorWidth - 12;
+      }
+      
+      // Проверяем, помещается ли калькулятор по высоте
+      if (top + calculatorHeight > window.innerHeight) {
+        // Если не помещается снизу, выравниваем по нижнему краю экрана
+        top = window.innerHeight - calculatorHeight - 20;
+      }
+      
+      // Убеждаемся что калькулятор не выходит за верхний край
+      if (top < 20) {
+        top = 20;
+      }
+      
+      // Убеждаемся что калькулятор не выходит за левый край
+      if (left < 20) {
+        left = 20;
+      }
+      
+      setPosition({ top, left });
     }
     
     setShowCalculator(!showCalculator);
