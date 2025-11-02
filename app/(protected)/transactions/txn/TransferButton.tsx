@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
+import { useSearchParams } from "next/navigation";
 import modal from "@/components/transactions/AddModal.module.css";
 import stylesTxn from "@/components/transactions/Transactions.module.css";
 import { useForm } from "react-hook-form";
@@ -26,6 +27,7 @@ function getDefaultAccounts(accounts: Account[]): { fromId: string; toId: string
 }
 
 export default function TransferButton({ accounts }: TransferButtonProps) {
+  const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -63,6 +65,32 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
   });
 
   const fromAccount = watch("from_account_id");
+
+  // Проверяем URL параметры для автоматического открытия
+  useEffect(() => {
+    const type = searchParams.get('type');
+    const toAccount = searchParams.get('to_account');
+    const amount = searchParams.get('amount');
+    const note = searchParams.get('note');
+
+    if (type === 'transfer' && toAccount) {
+      setOpen(true);
+      
+      // Устанавливаем значения из URL
+      if (toAccount) {
+        setValue('to_account_id', toAccount);
+      }
+      if (amount) {
+        setValue('amount_major', amount);
+      }
+      if (note) {
+        setValue('note', note);
+      }
+      
+      // Очищаем URL параметры
+      window.history.replaceState({}, '', '/transactions');
+    }
+  }, [searchParams, setValue]);
 
   // Группируем счета по типам (исключаем кредиты из переводов)
   const groupedAccounts = useMemo(() => {
