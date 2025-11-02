@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { formatMoney } from "@/lib/utils/format";
 import styles from "./SavingsDistribution.module.css";
 
@@ -29,6 +30,7 @@ export default function SavingsDistribution({ totalSavings, debitCards, initialD
       return { accountId: card.id, amount: saved?.amount || 0 };
     });
   });
+  const router = useRouter();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -331,7 +333,7 @@ export default function SavingsDistribution({ totalSavings, debitCards, initialD
                             amount: (amount / 100).toString(),
                             note: `Распределение экономии на ${card.name}`
                           });
-                          window.location.href = `/transactions?${params.toString()}`;
+                          router.push(`/transactions?${params.toString()}`);
                         }}
                         title="Внести как транзакцию"
                       >
