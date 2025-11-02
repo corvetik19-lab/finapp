@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export type BudgetRow = {
   id: string;
   category_id: string | null;
+  account_id: string | null;
   period_start: string;
   period_end: string;
   limit_amount: number;
@@ -12,6 +13,11 @@ export type BudgetRow = {
     id: string;
     name: string;
     kind: "income" | "expense" | "transfer" | "both";
+  } | null;
+  account: {
+    id: string;
+    name: string;
+    type: string;
   } | null;
 };
 
@@ -48,9 +54,15 @@ function normalizeBudgetRecord(record: Record<string, unknown>): BudgetRow {
     ? (categoryField[0] as Record<string, unknown> | undefined)
     : (categoryField as Record<string, unknown> | undefined);
 
+  const accountField = record.account as unknown;
+  const accountValue = Array.isArray(accountField)
+    ? (accountField[0] as Record<string, unknown> | undefined)
+    : (accountField as Record<string, unknown> | undefined);
+
   return {
     id: String(record.id ?? ""),
     category_id: record.category_id ? String(record.category_id) : null,
+    account_id: record.account_id ? String(record.account_id) : null,
     period_start: String(record.period_start ?? ""),
     period_end: String(record.period_end ?? ""),
     limit_amount: Number(record.limit_amount ?? 0),
@@ -62,6 +74,13 @@ function normalizeBudgetRecord(record: Record<string, unknown>): BudgetRow {
           kind: String(categoryValue.kind ?? "expense") as "income" | "expense" | "transfer" | "both",
         }
       : null,
+    account: accountValue
+      ? {
+          id: String(accountValue.id ?? ""),
+          name: String(accountValue.name ?? ""),
+          type: String(accountValue.type ?? ""),
+        }
+      : null,
   } satisfies BudgetRow;
 }
 
@@ -70,6 +89,44 @@ async function enrichBudgetWithUsage(
   budget: BudgetRow
 ): Promise<BudgetWithUsage> {
   const limitMinor = Number(budget.limit_amount ?? 0);
+
+  // Если это бюджет для счета (кредитной карты)
+  if (budget.account_id && !budget.category_id) {
+    const { data: txRows } = await supabase
+      .from("transactions")
+      .select("amount")
+      .eq("account_id", budget.account_id)
+      .eq("direction", "expense")
+      .gte("occurred_at", startOfDay(budget.period_start))
+      .lte("occurred_at", endOfDay(budget.period_end));
+
+    const transactions = Array.isArray(txRows) ? txRows : [];
+    const spentMinor = transactions.reduce((acc, row) => acc + Math.abs(Number((row as { amount?: number }).amount ?? 0)), 0);
+    
+    const remainingMinor = limitMinor - spentMinor;
+    const progressRatio = limitMinor > 0 ? spentMinor / limitMinor : 0;
+    const clampedProgress = Math.max(0, progressRatio);
+    
+    const status: BudgetWithUsage["status"] = 
+      remainingMinor < 0 ? "over" : clampedProgress >= 0.85 ? "warning" : "ok";
+
+    return {
+      id: budget.id,
+      category_id: null,
+      period_start: budget.period_start,
+      period_end: budget.period_end,
+      limit_minor: limitMinor,
+      limit_major: limitMinor / 100,
+      currency: budget.currency,
+      category: budget.category,
+      spent_minor: spentMinor,
+      spent_major: spentMinor / 100,
+      remaining_minor: remainingMinor,
+      remaining_major: remainingMinor / 100,
+      progress: clampedProgress,
+      status,
+    } satisfies BudgetWithUsage;
+  }
 
   if (!budget.category_id) {
     const remainingMinor = limitMinor;
@@ -175,7 +232,7 @@ async function enrichBudgetWithUsage(
 }
 
 const commonSelect =
-  "id,category_id,period_start,period_end,limit_amount,currency,category:categories(id,name,kind)";
+  "id,category_id,account_id,period_start,period_end,limit_amount,currency,category:categories(id,name,kind),account:accounts(id,name,type)";
 
 export async function listBudgetsWithUsage(): Promise<BudgetWithUsage[]> {
   const supabase = await createRSCClient();

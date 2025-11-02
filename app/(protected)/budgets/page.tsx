@@ -22,6 +22,15 @@ export default async function BudgetsPage() {
 
   const categories = (categoriesRaw ?? []) as { id: string; name: string; kind: "income" | "expense" | "transfer" | "both" }[];
 
+  // Загружаем кредитные карты
+  const { data: accountsRaw } = await supabase
+    .from("accounts")
+    .select("id,name,type")
+    .eq("type", "credit")
+    .order("name", { ascending: true });
+
+  const creditCards = (accountsRaw ?? []) as { id: string; name: string; type: string }[];
+
   const budgets = await listBudgetsWithUsage();
   
   // Фильтруем категории - убираем те, для которых уже есть бюджет
