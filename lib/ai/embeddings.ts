@@ -1,15 +1,19 @@
 /**
- * OpenAI Embeddings для семантического поиска транзакций (RAG)
- * Используем OpenAI напрямую для embeddings, так как OpenRouter не поддерживает embeddings API
- * Для chat completions используется OpenRouter в других файлах
+ * OpenRouter Embeddings для семантического поиска транзакций (RAG)
+ * Используем OpenRouter с моделью OpenAI: Text Embedding 3 Small
  */
 
 import OpenAI from "openai";
 
-// Инициализация клиента OpenAI для embeddings
+// Инициализация клиента OpenRouter для embeddings
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || "dummy-key-for-build",
+  apiKey: process.env.OPENROUTER_API_KEY || "dummy-key-for-build",
+  baseURL: "https://openrouter.ai/api/v1",
   dangerouslyAllowBrowser: false,
+  defaultHeaders: {
+    "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+    "X-Title": "FinApp",
+  },
 });
 
 /**
@@ -48,13 +52,13 @@ export function buildTransactionText(transaction: {
  * @returns массив чисел (вектор размерностью 1536)
  */
 export async function createEmbedding(text: string): Promise<number[]> {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error("OPENAI_API_KEY not configured");
+  if (!process.env.OPENROUTER_API_KEY) {
+    throw new Error("OPENROUTER_API_KEY not configured");
   }
 
   try {
     const response = await openai.embeddings.create({
-      model: "text-embedding-3-small", // OpenAI: быстрая и дешёвая модель (1536 dimensions)
+      model: "openai/text-embedding-3-small", // OpenRouter: OpenAI Text Embedding 3 Small (1536 dimensions)
       input: text,
       encoding_format: "float",
     });
@@ -70,15 +74,15 @@ export async function createEmbedding(text: string): Promise<number[]> {
  * Создаёт embeddings для нескольких текстов за один запрос (эффективнее)
  */
 export async function createEmbeddings(texts: string[]): Promise<number[][]> {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error("OPENAI_API_KEY not configured");
+  if (!process.env.OPENROUTER_API_KEY) {
+    throw new Error("OPENROUTER_API_KEY not configured");
   }
 
   if (texts.length === 0) return [];
 
   try {
     const response = await openai.embeddings.create({
-      model: "text-embedding-3-small",
+      model: "openai/text-embedding-3-small",
       input: texts,
       encoding_format: "float",
     });
