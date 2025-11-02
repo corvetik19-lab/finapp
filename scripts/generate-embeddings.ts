@@ -28,7 +28,7 @@ async function generateEmbeddings() {
   // Получаем транзакции без embeddings
   const { data: transactions, error } = await supabase
     .from('transactions')
-    .select('id, note, amount_minor, direction, category_id, categories(name)')
+    .select('id, note, amount, direction, category_id, categories(name)')
     .is('embedding', null)
     .order('created_at', { ascending: false })
     .limit(100); // Обрабатываем по 100 за раз
@@ -58,7 +58,7 @@ async function generateEmbeddings() {
       const text = buildTransactionText({
         description: txn.note || 'Транзакция без описания',
         category: categoryName,
-        amount_minor: txn.amount_minor,
+        amount_minor: txn.amount,
         direction: txn.direction as 'income' | 'expense' | 'transfer',
       });
 
