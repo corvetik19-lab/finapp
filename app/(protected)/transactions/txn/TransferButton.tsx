@@ -28,10 +28,7 @@ function getDefaultAccounts(accounts: Account[]): { fromId: string; toId: string
 
 export default function TransferButton({ accounts }: TransferButtonProps) {
   const searchParams = useSearchParams();
-  const [open, setOpen] = useState(() => {
-    // Проверяем URL параметры при инициализации
-    return searchParams.get('type') === 'transfer' && !!searchParams.get('to_account');
-  });
+  const [open, setOpen] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const { show: showToast } = useToast();
@@ -68,6 +65,16 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
   });
 
   const fromAccount = watch("from_account_id");
+
+  // Открываем модалку если есть URL параметры (только на клиенте)
+  useEffect(() => {
+    const type = searchParams.get('type');
+    const toAccount = searchParams.get('to_account');
+    
+    if (type === 'transfer' && toAccount) {
+      setOpen(true);
+    }
+  }, [searchParams]);
 
   // Заполняем поля из URL параметров если модалка открыта
   useEffect(() => {
