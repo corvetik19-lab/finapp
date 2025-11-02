@@ -22,8 +22,21 @@ export default function Calculator({ onResult, onClose, initialValue }: Calculat
   };
 
   const handleOperator = (op: string) => {
-    setExpression(display + " " + op + " ");
-    setDisplay("0");
+    // Если уже есть выражение, сначала вычисляем его
+    if (expression) {
+      try {
+        const fullExpression = expression + display;
+        const result = calculateExpression(fullExpression);
+        setExpression(result.toString() + " " + op + " ");
+        setDisplay("0");
+      } catch {
+        setExpression(display + " " + op + " ");
+        setDisplay("0");
+      }
+    } else {
+      setExpression(display + " " + op + " ");
+      setDisplay("0");
+    }
   };
 
   const handleEquals = () => {
