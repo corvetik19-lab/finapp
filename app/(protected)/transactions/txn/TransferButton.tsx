@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import modal from "@/components/transactions/AddModal.module.css";
 import stylesTxn from "@/components/transactions/Transactions.module.css";
@@ -32,6 +32,7 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
   const [serverError, setServerError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const { show: showToast } = useToast();
+  const prevOpenRef = useRef(false);
 
   const primaryCurrency = accounts[0]?.currency || "RUB";
   const nowLocal = useMemo(
@@ -132,17 +133,20 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
   }, [accounts]);
 
   useEffect(() => {
-    if (!open) return;
-    const { fromId, toId } = getDefaultAccounts(accounts);
-    reset({
-      from_account_id: fromId,
-      to_account_id: toId,
-      amount_major: "",
-      currency: primaryCurrency,
-      occurred_at: nowLocal,
-      note: "",
-    });
-    setServerError(null);
+    // Сбрасываем форму только при переходе false -> true (открытие модалки)
+    if (open && !prevOpenRef.current) {
+      const { fromId, toId } = getDefaultAccounts(accounts);
+      reset({
+        from_account_id: fromId,
+        to_account_id: toId,
+        amount_major: "",
+        currency: primaryCurrency,
+        occurred_at: nowLocal,
+        note: "",
+      });
+      setServerError(null);
+    }
+    prevOpenRef.current = open;
   }, [open, accounts, nowLocal, primaryCurrency, reset]);
 
   useEffect(() => {

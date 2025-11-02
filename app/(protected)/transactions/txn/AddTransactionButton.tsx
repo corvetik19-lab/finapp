@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import stylesTxn from "@/components/transactions/Transactions.module.css";
 import modal from "@/components/transactions/AddModal.module.css";
@@ -28,6 +28,7 @@ export default function AddTransactionButton({
     .slice(0, 16);
   const [isPending, startTransition] = useTransition();
   const [serverError, setServerError] = useState<string | null>(null);
+  const prevOpenRef = useRef(false);
 
   useEffect(() => {
     if (!open) return;
@@ -69,19 +70,16 @@ export default function AddTransactionButton({
   });
 
   useEffect(() => {
-    if (open) {
+    // Сбрасываем форму только при переходе false -> true (открытие модалки)
+    if (open && !prevOpenRef.current) {
       reset(defaultValues);
       setServerError(null);
       setValue("direction", "expense");
       setValue("currency", primaryCurrency);
+      setValue("account_id", accounts[0]?.id ?? "");
     }
-  }, [open, reset, defaultValues, setValue, primaryCurrency]);
-
-  useEffect(() => {
-    if (!open) return;
-    setValue("account_id", accounts[0]?.id ?? "");
-    setValue("currency", accounts[0]?.currency ?? primaryCurrency);
-  }, [open, setValue, accounts, primaryCurrency]);
+    prevOpenRef.current = open;
+  }, [open, reset, defaultValues, setValue, primaryCurrency, accounts]);
 
   const amountValue = watch("amount_major");
   const accountValue = watch("account_id");
