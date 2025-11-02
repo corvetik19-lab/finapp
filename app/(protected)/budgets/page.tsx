@@ -36,7 +36,7 @@ export default async function BudgetsPage() {
   const creditCards = (accountsRaw ?? []) as { id: string; name: string; type: string }[];
 
   // Загружаем дебетовые карты для распределения экономии
-  const { data: debitAccountsRaw } = await supabase
+  const { data: debitAccountsRaw, error: debitError } = await supabase
     .from("accounts")
     .select("id,name,type,balance")
     .eq("type", "card")
@@ -44,6 +44,10 @@ export default async function BudgetsPage() {
     .eq("archived", false)
     .is("deleted_at", null)
     .order("name", { ascending: true });
+
+  if (debitError) {
+    console.error("Error loading debit cards:", debitError);
+  }
 
   const debitCards = (debitAccountsRaw ?? []) as { id: string; name: string; type: string; balance: number }[];
   
