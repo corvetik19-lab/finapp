@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { formatMoney } from "@/lib/utils/format";
 import styles from "./Transactions.module.css";
 
@@ -18,30 +18,35 @@ type AccountsSectionProps = {
 };
 
 export default function AccountsSection({ accounts }: AccountsSectionProps) {
-  // Состояния для сворачивания секций с сохранением в localStorage
-  const [debitExpanded, setDebitExpanded] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    const saved = localStorage.getItem('accounts_debit_expanded');
-    return saved !== null ? saved === 'true' : true;
-  });
-  
-  const [creditExpanded, setCreditExpanded] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    const saved = localStorage.getItem('accounts_credit_expanded');
-    return saved !== null ? saved === 'true' : true;
-  });
-  
-  const [loansExpanded, setLoansExpanded] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    const saved = localStorage.getItem('accounts_loans_expanded');
-    return saved !== null ? saved === 'true' : true;
-  });
-  
-  const [othersExpanded, setOthersExpanded] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    const saved = localStorage.getItem('accounts_others_expanded');
-    return saved !== null ? saved === 'true' : true;
-  });
+  // Состояния для сворачивания секций - по умолчанию все развернуты
+  const [debitExpanded, setDebitExpanded] = useState(true);
+  const [creditExpanded, setCreditExpanded] = useState(true);
+  const [loansExpanded, setLoansExpanded] = useState(true);
+  const [othersExpanded, setOthersExpanded] = useState(true);
+
+  // Загружаем сохраненное состояние из localStorage после монтирования
+  useEffect(() => {
+    
+    const debitSaved = localStorage.getItem('accounts_debit_expanded');
+    if (debitSaved !== null) {
+      setDebitExpanded(debitSaved === 'true');
+    }
+    
+    const creditSaved = localStorage.getItem('accounts_credit_expanded');
+    if (creditSaved !== null) {
+      setCreditExpanded(creditSaved === 'true');
+    }
+    
+    const loansSaved = localStorage.getItem('accounts_loans_expanded');
+    if (loansSaved !== null) {
+      setLoansExpanded(loansSaved === 'true');
+    }
+    
+    const othersSaved = localStorage.getItem('accounts_others_expanded');
+    if (othersSaved !== null) {
+      setOthersExpanded(othersSaved === 'true');
+    }
+  }, []);
 
   // Разделяем счета на категории
   const debitCards = accounts.filter(
