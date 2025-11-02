@@ -18,12 +18,17 @@ type Distribution = {
 type Props = {
   totalSavings: number;
   debitCards: DebitCard[];
+  initialDistributions?: Array<{ account_id: string; amount: number }>;
 };
 
-export default function SavingsDistribution({ totalSavings, debitCards }: Props) {
-  const [distributions, setDistributions] = useState<Distribution[]>(
-    debitCards.map(card => ({ accountId: card.id, amount: 0 }))
-  );
+export default function SavingsDistribution({ totalSavings, debitCards, initialDistributions = [] }: Props) {
+  const [distributions, setDistributions] = useState<Distribution[]>(() => {
+    // Загружаем сохраненные распределения или инициализируем нулями
+    return debitCards.map(card => {
+      const saved = initialDistributions.find(d => d.account_id === card.id);
+      return { accountId: card.id, amount: saved?.amount || 0 };
+    });
+  });
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);

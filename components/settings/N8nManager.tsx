@@ -66,12 +66,7 @@ export default function N8nManager() {
   const [n8nUrl] = useState("https://domik1.app.n8n.cloud");
   const [webhookUrl, setWebhookUrl] = useState("");
   const [workflowId, setWorkflowId] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
-  useEffect(() => {
-    loadN8nSettings();
-  }, []);
 
   const loadN8nSettings = async () => {
     // Используем webhookUrl для отображения в UI
@@ -95,6 +90,11 @@ export default function N8nManager() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadN8nSettings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const saveSettings = async () => {
     setMessage({ type: "success", text: "Настройки сохранены" });
@@ -232,10 +232,9 @@ export default function N8nManager() {
               <button
                 onClick={saveSettings}
                 className={`${styles.button} ${styles.primaryButton}`}
-                disabled={isSaving}
               >
                 <span className="material-icons" style={{ fontSize: "18px" }}>save</span>
-                {isSaving ? "Сохранение..." : "Сохранить"}
+                Сохранить
               </button>
             </div>
           </div>

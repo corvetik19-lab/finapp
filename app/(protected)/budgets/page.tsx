@@ -48,10 +48,10 @@ export default async function BudgetsPage() {
     console.error("Error loading debit cards:", debitError);
   }
 
-  // Фильтруем только дебетовые карты (credit_limit = null) и добавляем balance = 0
+  // Фильтруем только дебетовые карты (без кредитного лимита) и добавляем balance = 0
   const debitCards = (debitAccountsRaw ?? [])
-    .filter((card: any) => card.credit_limit === null)
-    .map((card: any) => ({
+    .filter((card: { id: string; name: string; type: string; credit_limit: number | null }) => card.credit_limit === null)
+    .map((card: { id: string; name: string; type: string }) => ({
       id: card.id,
       name: card.name,
       type: card.type,
@@ -59,6 +59,19 @@ export default async function BudgetsPage() {
     })) as { id: string; name: string; type: string; balance: number }[];
 
   const budgets = await listBudgetsWithUsage();
+
+  // Загружаем сохраненные распределения экономии для текущего месяца
+  const now = new Date();
+  const periodStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+  
+  const { data: savedDistributions } = await supabase
+    .from("savings_distributions")
+    .select("account_id, amount")
+    .eq("period_start", periodStart)
+    .eq("period_end", periodEnd);
+
+  const initialDistributions = savedDistributions || [];
   
   // Фильтруем категории и счета - убираем те, для которых уже есть бюджет
   const usedCategoryIds = new Set(budgets.map(b => b.category_id).filter(Boolean));
@@ -103,7 +116,6 @@ export default async function BudgetsPage() {
   // Считаем суммы по расходам
   const totalExpenseLimitMinor = expenseBudgets.reduce((acc, b) => acc + b.limit_minor, 0);
   const totalExpenseSpentMinor = expenseBudgets.reduce((acc, b) => acc + b.spent_minor, 0);
-  const totalExpenseRemainingMinor = totalExpenseLimitMinor - totalExpenseSpentMinor;
 
   // Баланс бюджета (планируемая экономия)
   const budgetBalanceMinor = totalIncomeLimitMinor - totalExpenseLimitMinor;
@@ -194,6 +206,7 @@ export default async function BudgetsPage() {
       <SavingsDistribution 
         totalSavings={budgetBalanceMinor}
         debitCards={debitCards}
+        initialDistributions={initialDistributions}
       />
 
       <section className={styles.list}>
