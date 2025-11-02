@@ -5,6 +5,7 @@ import { formatMoney } from "@/lib/utils/format";
 import { createBudget } from "./actions";
 import BudgetsList from "@/components/budgets/BudgetsList";
 import BudgetForm from "@/components/budgets/BudgetForm";
+import SavingsDistribution from "@/components/budgets/SavingsDistribution";
 
 // Делаем страницу динамической
 export const dynamic = 'force-dynamic';
@@ -33,6 +34,18 @@ export default async function BudgetsPage() {
     .order("name", { ascending: true });
 
   const creditCards = (accountsRaw ?? []) as { id: string; name: string; type: string }[];
+
+  // Загружаем дебетовые карты для распределения экономии
+  const { data: debitAccountsRaw } = await supabase
+    .from("accounts")
+    .select("id,name,type,balance")
+    .eq("type", "card")
+    .is("credit_limit", null)
+    .eq("archived", false)
+    .is("deleted_at", null)
+    .order("name", { ascending: true });
+
+  const debitCards = (debitAccountsRaw ?? []) as { id: string; name: string; type: string; balance: number }[];
 
   const budgets = await listBudgetsWithUsage();
   
@@ -165,6 +178,11 @@ export default async function BudgetsPage() {
         netProfitCategories={netProfitCategories}
         creditCards={availableCreditCards}
         onSubmit={createBudget} 
+      />
+
+      <SavingsDistribution 
+        totalSavings={budgetBalanceMinor}
+        debitCards={debitCards}
       />
 
       <section className={styles.list}>
