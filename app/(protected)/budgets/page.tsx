@@ -54,8 +54,6 @@ export default async function BudgetsPage() {
     ...card,
     balance: 0
   })) as { id: string; name: string; type: string; balance: number }[];
-  
-  console.log("Debit cards loaded:", debitCards.length, debitCards.map(c => c.name));
 
   const budgets = await listBudgetsWithUsage();
   
