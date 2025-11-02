@@ -35,6 +35,7 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
     period_end: string;
     limit_amount: string;
     currency: string;
+    notes: string;
   } | null>(null);
 
   const handleEdit = (budget: BudgetWithUsage) => {
@@ -45,6 +46,7 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
       period_end: budget.period_end,
       limit_amount: String(budget.limit_major),
       currency: budget.currency,
+      notes: budget.notes ?? "",
     });
   };
 
@@ -64,6 +66,7 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
       formData.append("period_end", editForm.period_end);
       formData.append("limit_amount", editForm.limit_amount);
       formData.append("currency", editForm.currency);
+      formData.append("notes", editForm.notes);
 
       await updateBudget(formData);
       setEditingId(null);
@@ -196,6 +199,16 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
                       className={styles.input}
                       value={editForm.limit_amount}
                       onChange={(e) => setEditForm({ ...editForm, limit_amount: e.target.value })}
+                    />
+                  </label>
+                  <label style={{ gridColumn: '1 / -1' }}>
+                    <span className={styles.label}>Комментарий</span>
+                    <textarea
+                      className={styles.input}
+                      rows={2}
+                      value={editForm.notes}
+                      onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                      placeholder="Добавьте заметку к бюджету..."
                     />
                   </label>
                 </div>

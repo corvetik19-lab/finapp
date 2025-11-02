@@ -93,6 +93,7 @@ export async function updateBudget(formData: FormData) {
       period_end: parsed.period_end,
       limit_amount: limitMinor,
       currency: parsed.currency,
+      notes: raw.notes ? String(raw.notes) : null,
     })
     .eq("id", id)
     .eq("user_id", user.id);
