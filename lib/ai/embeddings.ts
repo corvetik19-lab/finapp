@@ -1,5 +1,5 @@
 /**
- * OpenRouter Embeddings для семантического поиска транзакций
+ * OpenRouter Embeddings для семантического поиска транзакций (RAG)
  * Преобразует текст транзакций в векторы для поиска по смыслу
  */
 
@@ -54,7 +54,7 @@ export async function createEmbedding(text: string): Promise<number[]> {
 
   try {
     const response = await openai.embeddings.create({
-      model: "openai/text-embedding-3-small", // Быстрая и дешёвая модель
+      model: "openai/text-embedding-3-small", // OpenRouter: быстрая и дешёвая модель (1536 dimensions)
       input: text,
       encoding_format: "float",
     });
