@@ -18,11 +18,30 @@ type AccountsSectionProps = {
 };
 
 export default function AccountsSection({ accounts }: AccountsSectionProps) {
-  // Состояния для сворачивания секций
-  const [debitExpanded, setDebitExpanded] = useState(true);
-  const [creditExpanded, setCreditExpanded] = useState(true);
-  const [loansExpanded, setLoansExpanded] = useState(true);
-  const [othersExpanded, setOthersExpanded] = useState(true);
+  // Состояния для сворачивания секций с сохранением в localStorage
+  const [debitExpanded, setDebitExpanded] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    const saved = localStorage.getItem('accounts_debit_expanded');
+    return saved !== null ? saved === 'true' : true;
+  });
+  
+  const [creditExpanded, setCreditExpanded] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    const saved = localStorage.getItem('accounts_credit_expanded');
+    return saved !== null ? saved === 'true' : true;
+  });
+  
+  const [loansExpanded, setLoansExpanded] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    const saved = localStorage.getItem('accounts_loans_expanded');
+    return saved !== null ? saved === 'true' : true;
+  });
+  
+  const [othersExpanded, setOthersExpanded] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    const saved = localStorage.getItem('accounts_others_expanded');
+    return saved !== null ? saved === 'true' : true;
+  });
 
   // Разделяем счета на категории
   const debitCards = accounts.filter(
@@ -35,6 +54,31 @@ export default function AccountsSection({ accounts }: AccountsSectionProps) {
   const others = accounts.filter(
     (a) => a.type !== "card" && a.type !== "loan"
   );
+
+  // Функции для переключения с сохранением в localStorage
+  const toggleDebit = () => {
+    const newValue = !debitExpanded;
+    setDebitExpanded(newValue);
+    localStorage.setItem('accounts_debit_expanded', String(newValue));
+  };
+
+  const toggleCredit = () => {
+    const newValue = !creditExpanded;
+    setCreditExpanded(newValue);
+    localStorage.setItem('accounts_credit_expanded', String(newValue));
+  };
+
+  const toggleLoans = () => {
+    const newValue = !loansExpanded;
+    setLoansExpanded(newValue);
+    localStorage.setItem('accounts_loans_expanded', String(newValue));
+  };
+
+  const toggleOthers = () => {
+    const newValue = !othersExpanded;
+    setOthersExpanded(newValue);
+    localStorage.setItem('accounts_others_expanded', String(newValue));
+  };
 
   const renderAccountCard = (a: Account) => {
     const currentBalance = a.balance ?? 0;
@@ -85,7 +129,7 @@ export default function AccountsSection({ accounts }: AccountsSectionProps) {
         <section className={styles.accountsSection}>
           <div
             className={styles.accountsSectionHeader}
-            onClick={() => setDebitExpanded(!debitExpanded)}
+            onClick={toggleDebit}
           >
             <h3 className={styles.accountsTitle}>💳 Дебетовые карты</h3>
             <span className="material-icons" style={{ cursor: "pointer" }}>
@@ -104,7 +148,7 @@ export default function AccountsSection({ accounts }: AccountsSectionProps) {
         <section className={styles.accountsSection}>
           <div
             className={styles.accountsSectionHeader}
-            onClick={() => setCreditExpanded(!creditExpanded)}
+            onClick={toggleCredit}
           >
             <h3 className={styles.accountsTitle}>💳 Кредитные карты</h3>
             <span className="material-icons" style={{ cursor: "pointer" }}>
@@ -123,7 +167,7 @@ export default function AccountsSection({ accounts }: AccountsSectionProps) {
         <section className={styles.accountsSection}>
           <div
             className={styles.accountsSectionHeader}
-            onClick={() => setLoansExpanded(!loansExpanded)}
+            onClick={toggleLoans}
           >
             <h3 className={styles.accountsTitle}>💰 Кредиты</h3>
             <span className="material-icons" style={{ cursor: "pointer" }}>
@@ -140,7 +184,7 @@ export default function AccountsSection({ accounts }: AccountsSectionProps) {
         <section className={styles.accountsSection}>
           <div
             className={styles.accountsSectionHeader}
-            onClick={() => setOthersExpanded(!othersExpanded)}
+            onClick={toggleOthers}
           >
             <h3 className={styles.accountsTitle}>🏦 Другие счета</h3>
             <span className="material-icons" style={{ cursor: "pointer" }}>
