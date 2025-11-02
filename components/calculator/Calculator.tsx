@@ -32,6 +32,9 @@ export default function Calculator({ onResult, onClose }: CalculatorProps) {
       const result = calculateExpression(fullExpression);
       setDisplay(result.toString());
       setExpression("");
+      // Автоматически применяем результат
+      onResult(result.toString());
+      onClose();
     } catch {
       setDisplay("Ошибка");
     }
@@ -54,11 +57,6 @@ export default function Calculator({ onResult, onClose }: CalculatorProps) {
     if (!display.includes(".")) {
       setDisplay(display + ".");
     }
-  };
-
-  const handleApply = () => {
-    onResult(display);
-    onClose();
   };
 
   return (
@@ -96,13 +94,10 @@ export default function Calculator({ onResult, onClose }: CalculatorProps) {
         <button type="button" onClick={() => handleNumber("1")}>1</button>
         <button type="button" onClick={() => handleNumber("2")}>2</button>
         <button type="button" onClick={() => handleNumber("3")}>3</button>
-        <button type="button" onClick={handleEquals} className={styles.btnEquals}>=</button>
+        <button type="button" onClick={() => handleNumber("0")}>0</button>
 
-        <button type="button" onClick={() => handleNumber("0")} className={styles.btnZero}>0</button>
         <button type="button" onClick={handleDecimal}>.</button>
-        <button type="button" onClick={handleApply} className={styles.btnApply}>
-          <span className="material-icons">check</span>
-        </button>
+        <button type="button" onClick={handleEquals} className={styles.btnEquals}>=</button>
       </div>
     </div>
   );
