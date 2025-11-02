@@ -28,6 +28,8 @@ export default async function BudgetsPage() {
     .select("id,name,type")
     .eq("type", "card")
     .not("credit_limit", "is", null)
+    .eq("archived", false)
+    .is("deleted_at", null)
     .order("name", { ascending: true });
 
   const creditCards = (accountsRaw ?? []) as { id: string; name: string; type: string }[];
