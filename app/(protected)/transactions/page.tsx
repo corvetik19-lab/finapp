@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createRSCClient } from "@/lib/supabase/helpers";
 import { formatMoney } from "@/lib/utils/format";
 import styles from "@/components/transactions/Transactions.module.css";
@@ -296,7 +297,11 @@ export default async function TransactionsPage({
               to: f_to,
             }}
           />
-          {(accounts as Account[]).length >= 2 && <TransferButton accounts={accounts as Account[]} />}
+          {(accounts as Account[]).length >= 2 && (
+            <Suspense fallback={<button className={styles.topBtn}>Перевод</button>}>
+              <TransferButton accounts={accounts as Account[]} />
+            </Suspense>
+          )}
           <AddTransactionButton accounts={accounts as Account[]} categories={categories as Category[]} />
         </div>
       </div>
