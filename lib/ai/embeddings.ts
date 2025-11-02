@@ -10,6 +10,10 @@ const openai = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY || "dummy-key-for-build",
   baseURL: "https://openrouter.ai/api/v1",
   dangerouslyAllowBrowser: false,
+  defaultHeaders: {
+    "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+    "X-Title": "FinApp",
+  },
 });
 
 /**
