@@ -21,7 +21,25 @@ interface AIModel {
   id: string;
   name: string;
   is_free: boolean;
+  description?: string;
 }
+
+type ModelGroups = {
+  recommended: AIModel[];
+  free: AIModel[];
+  gpt5: AIModel[];
+  gpt41: AIModel[];
+  gpt4o: AIModel[];
+  reasoning: AIModel[];
+  realtime: AIModel[];
+  audio: AIModel[];
+  specialized: AIModel[];
+  gpt4: AIModel[];
+  other: AIModel[];
+  all: AIModel[];
+};
+
+type ModelGroupKey = Exclude<keyof ModelGroups, "all">;
 
 export default function Chat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -32,11 +50,19 @@ export default function Chat() {
   >("checking");
   const [errorMessage, setErrorMessage] = useState("");
   const [selectedModel, setSelectedModel] = useState("gpt-4o-mini");
-  const [models, setModels] = useState<{ recommended: AIModel[]; free: AIModel[]; all: AIModel[]; other?: AIModel[] }>({ 
-    recommended: [], 
+  const [models, setModels] = useState<ModelGroups>({
+    recommended: [],
     free: [],
+    gpt5: [],
+    gpt41: [],
+    gpt4o: [],
+    reasoning: [],
+    realtime: [],
+    audio: [],
+    specialized: [],
+    gpt4: [],
+    other: [],
     all: [],
-    other: []
   });
   const [showModelSelector, setShowModelSelector] = useState(false);
   const [modelSearchQuery, setModelSearchQuery] = useState("");
@@ -76,8 +102,21 @@ export default function Chat() {
       try {
         const res = await fetch("/api/ai/models");
         if (res.ok) {
-          const data = await res.json();
-          setModels(data);
+          const data = (await res.json()) as Partial<ModelGroups>;
+          setModels({
+            recommended: data.recommended ?? [],
+            free: data.free ?? [],
+            gpt5: data.gpt5 ?? [],
+            gpt41: data.gpt41 ?? [],
+            gpt4o: data.gpt4o ?? [],
+            reasoning: data.reasoning ?? [],
+            realtime: data.realtime ?? [],
+            audio: data.audio ?? [],
+            specialized: data.specialized ?? [],
+            gpt4: data.gpt4 ?? [],
+            other: data.other ?? [],
+            all: data.all ?? [],
+          });
         }
         setConnectionStatus("connected");
       } catch (error) {
@@ -114,13 +153,75 @@ export default function Chat() {
   // Фильтрация моделей по поисковому запросу
   const filterModels = (modelList: AIModel[]) => {
     if (!modelSearchQuery.trim()) return modelList;
-    
+
     const query = modelSearchQuery.toLowerCase();
     return modelList.filter(model => 
       model.name.toLowerCase().includes(query) ||
       model.id.toLowerCase().includes(query)
     );
   };
+
+  const modelGroupConfig: Array<{
+    key: ModelGroupKey;
+    title: string;
+    badge?: { text: string; className: string };
+  }> = [
+    {
+      key: "recommended",
+      title: "🌟 Рекомендуемые",
+      badge: { text: "TOP", className: styles.badgeRecommended },
+    },
+    {
+      key: "gpt5",
+      title: "🚀 GPT-5 серия",
+      badge: { text: "NEW", className: styles.badgeRecommended },
+    },
+    {
+      key: "gpt41",
+      title: "🎯 GPT-4.1 серия",
+    },
+    {
+      key: "gpt4o",
+      title: "⚡ GPT-4o серия",
+    },
+    {
+      key: "reasoning",
+      title: "🧠 Reasoning модели",
+      badge: { text: "PRO", className: styles.badgePremium },
+    },
+    {
+      key: "realtime",
+      title: "🎙️ Realtime модели",
+      badge: { text: "VOICE", className: styles.badgePremium },
+    },
+    {
+      key: "audio",
+      title: "🔊 Audio модели",
+    },
+    {
+      key: "specialized",
+      title: "🛠️ Специализированные",
+    },
+    {
+      key: "gpt4",
+      title: "📚 GPT-4 классика",
+    },
+    {
+      key: "other",
+      title: "💼 Другие модели",
+    },
+    {
+      key: "free",
+      title: "🆓 Бесплатные",
+    },
+  ];
+
+  const filteredModelGroups = modelGroupConfig.map((group) => ({
+    ...group,
+    models: filterModels(models[group.key]),
+  }));
+
+  const hasFilteredResults = filteredModelGroups.some((group) => group.models.length > 0);
 
   // Форматирование ответа ассистента без markdown-звёздочек
   const parseAssistantMessage = (content: string) => {
@@ -448,118 +549,53 @@ export default function Chat() {
               )}
             </div>
 
-            {filterModels(models.recommended).length > 0 && (
-              <>
-                <h3>
-                  🌟 Рекомендуемые
-                  <span className={styles.modelCount}>{filterModels(models.recommended).length}</span>
-                </h3>
-                {filterModels(models.recommended).map((model) => (
-              <button
-                key={model.id}
-                onClick={() => {
-                  setSelectedModel(model.id);
-                  setShowModelSelector(false);
-                }}
-                className={selectedModel === model.id ? styles.selected : ""}
-              >
-                <div className={styles.modelInfo}>
-                  <div className={styles.modelName}>
-                    {model.name}
-                    {model.is_free && (
-                      <span className={`${styles.modelBadge} ${styles.badgeFree}`}>
-                        FREE
-                      </span>
-                    )}
-                    <span className={`${styles.modelBadge} ${styles.badgeRecommended}`}>
-                      TOP
-                    </span>
-                  </div>
-                  <div className={styles.modelDescription}>
-                    {model.id.includes('gpt-4o-mini') && 'Быстрая и доступная модель'}
-                    {model.id.includes('gpt-4o') && !model.id.includes('mini') && 'Самая мощная модель'}
-                    {model.id.includes('gpt-3.5') && 'Классическая модель'}
-                  </div>
-                </div>
-                {selectedModel === model.id && <span>✓</span>}
-              </button>
-            ))}
-              </>
-            )}
-            
-            {filterModels(models.free).length > 0 && (
-              <>
-                <h3>
-                  🆓 Бесплатные
-                  <span className={styles.modelCount}>{filterModels(models.free).length}</span>
-                </h3>
-                {filterModels(models.free).map((model) => (
-              <button
-                key={model.id}
-                onClick={() => {
-                  setSelectedModel(model.id);
-                  setShowModelSelector(false);
-                }}
-                className={selectedModel === model.id ? styles.selected : ""}
-              >
-                <div className={styles.modelInfo}>
-                  <div className={styles.modelName}>
-                    {model.name}
-                    <span className={`${styles.modelBadge} ${styles.badgeFree}`}>
-                      FREE
-                    </span>
-                  </div>
-                  <div className={styles.modelDescription}>
-                    {model.id.includes('llama') && 'Open-source модель Meta'}
-                    {model.id.includes('mixtral') && 'Быстрая модель Mistral AI'}
-                    {model.id.includes('gemma') && 'Модель от Google'}
-                  </div>
-                </div>
-                {selectedModel === model.id && <span>✓</span>}
-              </button>
-            ))}
-              </>
-            )}
-            
-            {models.other && filterModels(models.other).length > 0 && (
-              <>
-                <h3>
-                  💎 Премиум
-                  <span className={styles.modelCount}>{filterModels(models.other).length}</span>
-                </h3>
-                {filterModels(models.other).map((model) => (
-                  <button
-                    key={model.id}
-                    onClick={() => {
-                      setSelectedModel(model.id);
-                      setShowModelSelector(false);
-                    }}
-                    className={selectedModel === model.id ? styles.selected : ""}
-                  >
-                    <div className={styles.modelInfo}>
-                      <div className={styles.modelName}>
-                        {model.name}
-                        {!model.is_free && (
-                          <span className={`${styles.modelBadge} ${styles.badgePremium}`}>
-                            PRO
-                          </span>
+            {filteredModelGroups.map((group) => {
+              if (group.models.length === 0) {
+                return null;
+              }
+
+              return (
+                <section key={group.key}>
+                  <h3>
+                    {group.title}
+                    <span className={styles.modelCount}>{group.models.length}</span>
+                  </h3>
+                  {group.models.map((model) => (
+                    <button
+                      key={model.id}
+                      onClick={() => {
+                        setSelectedModel(model.id);
+                        setShowModelSelector(false);
+                      }}
+                      className={selectedModel === model.id ? styles.selected : ""}
+                    >
+                      <div className={styles.modelInfo}>
+                        <div className={styles.modelName}>
+                          {model.name}
+                          {model.is_free && (
+                            <span className={`${styles.modelBadge} ${styles.badgeFree}`}>
+                              FREE
+                            </span>
+                          )}
+                          {group.badge && (
+                            <span className={`${styles.modelBadge} ${group.badge.className}`}>
+                              {group.badge.text}
+                            </span>
+                          )}
+                        </div>
+                        {model.description && (
+                          <div className={styles.modelDescription}>{model.description}</div>
                         )}
                       </div>
-                      <div className={styles.modelDescription}>
-                        Продвинутая модель
-                      </div>
-                    </div>
-                    {selectedModel === model.id && <span>✓</span>}
-                  </button>
-                ))}
-              </>
-            )}
+                      {selectedModel === model.id && <span>✓</span>}
+                    </button>
+                  ))}
+                </section>
+              );
+            })}
 
             {/* Сообщение если ничего не найдено */}
-            {modelSearchQuery && 
-             filterModels(models.recommended).length === 0 &&
-             filterModels(models.free).length === 0 &&
-             filterModels(models.other || []).length === 0 && (
+            {modelSearchQuery && !hasFilteredResults && (
               <div className={styles.noResults}>
                 <div className={styles.noResultsIcon}>🔍</div>
                 <div className={styles.noResultsText}>
