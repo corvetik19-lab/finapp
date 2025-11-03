@@ -628,6 +628,7 @@ export async function handleAIGetTransactions(
     const userId = params.userId;
     const limit = params.limit || 10;
 
+    // Упрощённый запрос без вложенных связей
     let query = supabase
       .from("transactions")
       .select(`
@@ -637,8 +638,8 @@ export async function handleAIGetTransactions(
         currency,
         date,
         note,
-        categories(name),
-        accounts(name)
+        category_id,
+        account_id
       `)
       .eq("user_id", userId)
       .order("date", { ascending: false })
@@ -658,7 +659,7 @@ export async function handleAIGetTransactions(
       }
     }
 
-    const { data, error } = await query;
+    const { data: transactions, error } = await query;
 
     if (error) {
       console.error("❌ Supabase error in getTransactions:", error);
@@ -667,8 +668,42 @@ export async function handleAIGetTransactions(
         message: `❌ Ошибка БД: ${error.message}`
       };
     }
+    
+    if (!transactions || transactions.length === 0) {
+      return { 
+        success: true, 
+        data: [], 
+        message: "📭 Транзакций пока нет. Добавь первую трату или доход!" 
+      };
+    }
+
+    // Получаем категории и счета отдельными запросами
+    const categoryIds = [...new Set(transactions.map(t => t.category_id).filter(Boolean))];
+    const accountIds = [...new Set(transactions.map(t => t.account_id).filter(Boolean))];
+
+    const { data: categories } = await supabase
+      .from("categories")
+      .select("id, name")
+      .in("id", categoryIds);
+
+    const { data: accounts } = await supabase
+      .from("accounts")
+      .select("id, name")
+      .in("id", accountIds);
+
+    // Создаём маппинги
+    const categoryMap = new Map(categories?.map(c => [c.id, c.name]) || []);
+    const accountMap = new Map(accounts?.map(a => [a.id, a.name]) || []);
   
-  const records: TransactionRecordRow[] = (data ?? []) as TransactionRecordRow[];
+  const records = transactions.map(t => ({
+    date: t.date,
+    amount: t.amount,
+    direction: t.direction,
+    currency: t.currency,
+    note: t.note,
+    categories: { name: categoryMap.get(t.category_id) || null },
+    accounts: { name: accountMap.get(t.account_id) || null }
+  }));
 
   if (records.length === 0) {
     return { 
