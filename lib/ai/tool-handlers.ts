@@ -615,48 +615,58 @@ export async function handleAIAddBudget(
 export async function handleAIGetTransactions(
   params: { limit?: number; categoryName?: string; userId?: string }
 ) {
-  const supabase = createAdminClient();
-  
-  if (!params.userId) {
-    throw new Error("userId is required for AI tool calls");
-  }
-  
-  const userId = params.userId;
-  const limit = params.limit || 10;
-
-  let query = supabase
-    .from("transactions")
-    .select(`
-      id,
-      amount,
-      direction,
-      currency,
-      date,
-      note,
-      categories(name),
-      accounts(name)
-    `)
-    .eq("user_id", userId)
-    .order("date", { ascending: false })
-    .limit(limit);
-
-  if (params.categoryName) {
-    // Сначала найти ID категории
-    const { data: category } = await supabase
-      .from("categories")
-      .select("id")
-      .eq("user_id", userId)
-      .ilike("name", params.categoryName)
-      .single();
+  try {
+    const supabase = createAdminClient();
     
-    if (category) {
-      query = query.eq("category_id", category.id);
+    if (!params.userId) {
+      return {
+        success: false,
+        message: "❌ Ошибка: userId не указан"
+      };
     }
-  }
+    
+    const userId = params.userId;
+    const limit = params.limit || 10;
 
-  const { data, error } = await query;
+    let query = supabase
+      .from("transactions")
+      .select(`
+        id,
+        amount,
+        direction,
+        currency,
+        date,
+        note,
+        categories(name),
+        accounts(name)
+      `)
+      .eq("user_id", userId)
+      .order("date", { ascending: false })
+      .limit(limit);
 
-  if (error) throw error;
+    if (params.categoryName) {
+      // Сначала найти ID категории
+      const { data: category } = await supabase
+        .from("categories")
+        .select("id")
+        .eq("user_id", userId)
+        .ilike("name", params.categoryName)
+        .single();
+      
+      if (category) {
+        query = query.eq("category_id", category.id);
+      }
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("❌ Supabase error in getTransactions:", error);
+      return {
+        success: false,
+        message: `❌ Ошибка БД: ${error.message}`
+      };
+    }
   
   const records: TransactionRecordRow[] = (data ?? []) as TransactionRecordRow[];
 
@@ -687,6 +697,13 @@ export async function handleAIGetTransactions(
     data: formatted, 
     message: `📊 Последние транзакции:\n\n${summary}` 
   };
+  } catch (error) {
+    console.error("❌ Unexpected error in getTransactions:", error);
+    return {
+      success: false,
+      message: `❌ Непредвиденная ошибка: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
 }
 
 // === УПРАВЛЕНИЕ ПЛАНАМИ (расширенное) ===
