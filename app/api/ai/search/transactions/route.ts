@@ -52,34 +52,35 @@ export async function POST(request: Request) {
 
     // 3. Обогащаем результаты дополнительными данными (категории, счета)
     const enrichedMatches = await Promise.all(
-      (matches || []).map(async (match: any) => {
+      (matches || []).map(async (match: unknown) => {
+        const matchData = match as Record<string, unknown>;
         // Получаем категорию
         let categoryName = null;
-        if (match.category_id) {
+        if (matchData.category_id) {
           const { data: category } = await supabase
             .from('categories')
             .select('name')
-            .eq('id', match.category_id)
+            .eq('id', matchData.category_id)
             .single();
           categoryName = category?.name || null;
         }
 
         // Получаем счет
         let accountName = null;
-        if (match.account_id) {
+        if (matchData.account_id) {
           const { data: account } = await supabase
             .from('accounts')
             .select('name')
-            .eq('id', match.account_id)
+            .eq('id', matchData.account_id)
             .single();
           accountName = account?.name || null;
         }
 
         return {
-          ...match,
+          ...matchData,
           category_name: categoryName,
           account_name: accountName,
-          amount_major: match.amount_minor / 100, // Конвертируем в рубли
+          amount_major: (matchData.amount_minor as number) / 100, // Конвертируем в рубли
         };
       })
     );

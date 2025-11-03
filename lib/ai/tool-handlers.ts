@@ -11,16 +11,6 @@ type TransactionSummaryRow = {
   direction: "income" | "expense";
 };
 
-type TransactionRecordRow = {
-  date: string;
-  amount: number;
-  direction: "income" | "expense";
-  currency?: string | null;
-  note?: string | null;
-  categories?: { name?: string | null } | null;
-  accounts?: { name?: string | null } | null;
-};
-
 type PlanRecord = {
   name: string;
   current_amount?: number | null;

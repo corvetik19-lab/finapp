@@ -5,11 +5,24 @@
 import { aiTools, toolSchemas } from "./tools";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
+interface OpenAITool {
+  type: "function";
+  function: {
+    name: string;
+    description: string;
+    parameters: {
+      type: "object";
+      properties: Record<string, unknown>;
+      required: string[];
+    };
+  };
+}
+
 /**
  * Конвертирует наши tools в формат OpenAI
  */
 export function convertToolsToOpenAI() {
-  const openaiTools: any[] = [];
+  const openaiTools: OpenAITool[] = [];
 
   for (const [toolName, toolDef] of Object.entries(aiTools)) {
     const schema = toolSchemas[toolName as keyof typeof toolSchemas];
@@ -17,7 +30,7 @@ export function convertToolsToOpenAI() {
     if (!schema) continue;
 
     // Конвертируем Zod схему в JSON Schema
-    const jsonSchema = zodToJsonSchema(schema, toolName);
+    const jsonSchema = zodToJsonSchema(schema, toolName) as Record<string, unknown>;
 
     openaiTools.push({
       type: "function",
@@ -26,8 +39,8 @@ export function convertToolsToOpenAI() {
         description: toolDef.description,
         parameters: {
           type: "object",
-          properties: (jsonSchema as any).properties || {},
-          required: (jsonSchema as any).required || [],
+          properties: (jsonSchema.properties as Record<string, unknown>) || {},
+          required: (jsonSchema.required as string[]) || [],
         },
       },
     });

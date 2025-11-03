@@ -53,7 +53,7 @@ export async function searchRelevantTransactions(
 
   // Обогащаем результаты
   const enriched = await Promise.all(
-    matches.map(async (match: any) => {
+    matches.map(async (match: Record<string, unknown>) => {
       let categoryName = null;
       let accountName = null;
 
@@ -78,7 +78,7 @@ export async function searchRelevantTransactions(
       return {
         id: match.id,
         note: match.note || "",
-        amount_major: match.amount_minor / 100,
+        amount_major: (match.amount_minor as number) / 100,
         currency: match.currency,
         occurred_at: match.occurred_at,
         category_name: categoryName,
@@ -124,7 +124,7 @@ export async function getFinancialContext(
 
   // Вычисляем использование бюджетов
   const budgetsWithUsage = await Promise.all(
-    (budgets || []).map(async (budget: any) => {
+    (budgets || []).map(async (budget: Record<string, unknown>) => {
       const { data: txns } = await supabase
         .from("transactions")
         .select("amount_minor")
@@ -134,10 +134,12 @@ export async function getFinancialContext(
         .gte("occurred_at", new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString());
 
       const used = (txns || []).reduce((sum, t) => sum + Math.abs(t.amount_minor), 0);
+      
+      const categories = budget.categories as { name?: string } | null | undefined;
 
       return {
-        category: budget.categories?.name || "Без категории",
-        limit: budget.limit_minor / 100,
+        category: categories?.name || "Без категории",
+        limit: (budget.limit_minor as number) / 100,
         used: used / 100,
       };
     })
