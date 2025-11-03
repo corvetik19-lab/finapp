@@ -1,16 +1,22 @@
 /**
- * OpenRouter Embeddings для семантического поиска транзакций (RAG)
- * Используем OpenRouter с моделью OpenAI: Text Embedding 3 Small
+ * OpenAI Embeddings для семантического поиска транзакций (RAG)
+ * Используем OpenAI API с моделью text-embedding-3-small
  */
 
 import OpenAI from "openai";
 
-// Инициализация клиента OpenRouter для embeddings
-const openai = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY || "dummy-key-for-build",
-  baseURL: "https://openrouter.ai/api/v1",
-  dangerouslyAllowBrowser: false,
-});
+// Функция для получения клиента OpenAI (ленивая инициализация)
+function getOpenAIClient() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey || apiKey === "dummy-key-for-build") {
+    throw new Error("OPENAI_API_KEY not configured");
+  }
+  
+  return new OpenAI({
+    apiKey,
+    dangerouslyAllowBrowser: false,
+  });
+}
 
 /**
  * Создаёт текстовое описание транзакции для embedding
@@ -48,24 +54,13 @@ export function buildTransactionText(transaction: {
  * @returns массив чисел (вектор размерностью 1536)
  */
 export async function createEmbedding(text: string): Promise<number[]> {
-  if (!process.env.OPENROUTER_API_KEY) {
-    throw new Error("OPENROUTER_API_KEY not configured");
-  }
-
   try {
-    const response = await openai.embeddings.create(
-      {
-        model: "openai/text-embedding-3-small", // OpenRouter: OpenAI Text Embedding 3 Small (1536 dimensions)
-        input: text,
-        encoding_format: "float",
-      },
-      {
-        headers: {
-          "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-          "X-Title": "FinApp",
-        },
-      }
-    );
+    const openai = getOpenAIClient();
+    const response = await openai.embeddings.create({
+      model: "text-embedding-3-small", // OpenAI: Text Embedding 3 Small (1536 dimensions)
+      input: text,
+      encoding_format: "float",
+    });
 
     return response.data[0].embedding;
   } catch (error) {
@@ -78,26 +73,15 @@ export async function createEmbedding(text: string): Promise<number[]> {
  * Создаёт embeddings для нескольких текстов за один запрос (эффективнее)
  */
 export async function createEmbeddings(texts: string[]): Promise<number[][]> {
-  if (!process.env.OPENROUTER_API_KEY) {
-    throw new Error("OPENROUTER_API_KEY not configured");
-  }
-
   if (texts.length === 0) return [];
 
   try {
-    const response = await openai.embeddings.create(
-      {
-        model: "openai/text-embedding-3-small",
-        input: texts,
-        encoding_format: "float",
-      },
-      {
-        headers: {
-          "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-          "X-Title": "FinApp",
-        },
-      }
-    );
+    const openai = getOpenAIClient();
+    const response = await openai.embeddings.create({
+      model: "text-embedding-3-small",
+      input: texts,
+      encoding_format: "float",
+    });
 
     return response.data.map((item) => item.embedding);
   } catch (error) {
@@ -113,17 +97,14 @@ export async function suggestCategory(
   description: string,
   availableCategories: { id: string; name: string; type: string }[]
 ): Promise<{ categoryId: string; categoryName: string; confidence: number; explanation: string }> {
-  if (!process.env.OPENROUTER_API_KEY) {
-    throw new Error("OPENROUTER_API_KEY not configured");
-  }
-
   try {
+    const openai = getOpenAIClient();
     const categoryList = availableCategories
       .map((c) => `- ${c.name} (${c.type})`)
       .join("\n");
 
     const response = await openai.chat.completions.create({
-      model: "openai/gpt-4o-mini",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",

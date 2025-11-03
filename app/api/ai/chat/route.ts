@@ -1,5 +1,5 @@
 /**
- * AI Chat API - прямая интеграция с OpenRouter БЕЗ Vercel AI SDK
+ * AI Chat API - прямая интеграция с OpenAI API БЕЗ Vercel AI SDK
  * Manual agentic loop для выполнения tools
  */
 
@@ -9,7 +9,7 @@ import { createRouteClient } from "@/lib/supabase/helpers";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-// Типы OpenRouter API
+// Типы OpenAI API
 interface Message {
   role: "user" | "assistant" | "system" | "tool";
   content: string | null;
@@ -31,7 +31,7 @@ interface ToolResult {
   content: string; // JSON string с результатом
 }
 
-// Определение доступных tools для OpenRouter
+// Определение доступных tools для OpenAI
 const tools = [
   {
     type: "function",
@@ -460,13 +460,13 @@ export async function POST(req: Request) {
     console.log('✅ User authenticated:', userId);
     
     // Проверяем API ключ
-    const apiKey = process.env.OPENROUTER_API_KEY;
+    const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey || apiKey.trim() === "") {
-      console.error("OPENROUTER_API_KEY is not set");
+      console.error("OPENAI_API_KEY is not set");
       return Response.json(
         { 
-          error: "OpenRouter API key is not configured",
-          details: "Please set OPENROUTER_API_KEY in your .env.local file"
+          error: "OpenAI API key is not configured",
+          details: "Please set OPENAI_API_KEY in your .env.local file"
         },
         { status: 500 }
       );
@@ -547,17 +547,15 @@ export async function POST(req: Request) {
       iteration++;
       console.log(`\n🔄 Iteration ${iteration}/${maxIterations}`);
       
-      // Вызываем OpenRouter API
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      // Вызываем OpenAI API
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-          "X-Title": "Finapp AI Chat"
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "openai/gpt-4o-mini",
+          model: "gpt-4o-mini",
           messages: allMessages,
           tools: tools,
           tool_choice: "auto",
@@ -567,8 +565,8 @@ export async function POST(req: Request) {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("OpenRouter API error:", errorText);
-        throw new Error(`OpenRouter API error: ${response.status} ${errorText}`);
+        console.error("OpenAI API error:", errorText);
+        throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
       }
 
       // Читаем стриминг ответ

@@ -9,6 +9,18 @@ import { resolve } from 'path';
 // Загружаем переменные окружения из .env.local
 config({ path: resolve(process.cwd(), '.env.local') });
 
+// Проверяем OpenAI ключ
+const openaiKey = process.env.OPENAI_API_KEY;
+console.log('🔑 OpenAI Key present:', !!openaiKey);
+console.log('🔑 OpenAI Key length:', openaiKey?.length || 0);
+console.log('🔑 OpenAI Key starts with:', openaiKey?.substring(0, 10) || 'N/A');
+
+if (!openaiKey || openaiKey === 'dummy-key-for-build') {
+  console.error('❌ Missing or invalid OpenAI API key');
+  console.error('Please set OPENAI_API_KEY in .env.local');
+  process.exit(1);
+}
+
 import { createClient } from '@supabase/supabase-js';
 import { createEmbedding, buildTransactionText } from '../lib/ai/embeddings';
 

@@ -43,7 +43,9 @@ next-env.d.ts
 # keep example envs in repo
 !.env.example
 !.env*.example
-!.env.local
+
+# local env files
+.env*.local
 
 # editors / IDEs
 .vscode/

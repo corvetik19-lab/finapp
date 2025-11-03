@@ -25,10 +25,10 @@
 └─────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                  Supabase + OpenRouter                      │
+│                    Supabase + OpenAI                        │
 │  • PostgreSQL + pgvector                                    │
-│  • OpenRouter: openai/gpt-4o-mini для генерации             │
-│  • OpenRouter: openai/text-embedding-3-small для embeddings │
+│  • OpenAI: gpt-4o-mini для генерации                        │
+│  • OpenAI: text-embedding-3-small для embeddings            │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -516,3 +516,49 @@ async function generateRecommendations(userId: string) {
 - "Покажи все кафе за октябрь" → RAG найдет похожие транзакции
 - "Сколько потратил на такси?" → Умный поиск + анализ
 - "Где я ел в прошлом месяце?" → Векторный поиск мест
+
+---
+
+## ✅ МИГРАЦИЯ НА OPENAI API (Завершено 03.11.2025)
+
+### Что сделано:
+
+1. **Полный переход с OpenRouter на OpenAI API**
+   - Обновлены все AI функции
+   - Embeddings: `text-embedding-3-small`
+   - Chat: `gpt-4o-mini` (быстрая и дешёвая)
+   - Analytics: `gpt-4o` (мощная)
+
+2. **Исправлена инициализация клиента**
+   - Ленивая инициализация вместо глобальной
+   - Правильная загрузка переменных окружения
+   - Поддержка скриптов через dotenv
+
+3. **Успешная генерация embeddings**
+   - ✅ 100 транзакций обработано без ошибок
+   - ✅ 102 транзакции с embeddings (37.78% покрытие)
+   - Скрипт: `npx tsx scripts/generate-embeddings.ts`
+
+4. **Обновлённые файлы:**
+   - `lib/ai/embeddings.ts` - OpenAI embeddings
+   - `lib/ai/openrouter.ts` → переименован в контекст OpenAI
+   - `app/api/ai/chat/route.ts` - OpenAI chat API
+   - `.env.local` - OpenAI API ключ
+   - `scripts/generate-embeddings.ts` - отладка и dotenv
+
+### Переменные окружения:
+
+```env
+OPENAI_API_KEY=sk-proj-xxx...xxx
+```
+
+### API Endpoints работают:
+
+- ✅ `/api/ai/chat` - AI чат с OpenAI
+- ✅ `/api/ai/embeddings/generate` - генерация embeddings
+- ✅ `/api/ai/search/transactions` - векторный поиск
+- ✅ `/api/ai/graph/build` - построение графа
+- ✅ `/api/ai/recommendations` - рекомендации
+- ✅ `/api/ai/patterns` - анализ паттернов
+
+### Последнее обновление: 03.11.2025, 08:00 UTC+3

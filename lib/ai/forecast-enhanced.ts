@@ -261,7 +261,7 @@ export async function generateAIAdvice(
   return fallbackAdvice;
 
   /* Отключено временно
-  if (!process.env.OPENROUTER_API_KEY) {
+  if (!process.env.OPENAI_API_KEY) {
     return fallbackAdvice;
   }
 
