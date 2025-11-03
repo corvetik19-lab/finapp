@@ -31,7 +31,7 @@ export default function Chat() {
     "checking" | "connected" | "error"
   >("checking");
   const [errorMessage, setErrorMessage] = useState("");
-  const [selectedModel, setSelectedModel] = useState("openai/gpt-4o-mini");
+  const [selectedModel, setSelectedModel] = useState("gpt-4o-mini");
   const [models, setModels] = useState<{ recommended: AIModel[]; free: AIModel[]; all: AIModel[]; other?: AIModel[] }>({ 
     recommended: [], 
     free: [],
@@ -710,7 +710,7 @@ export default function Chat() {
                     <strong>Возможные причины:</strong>
                   </p>
                   <ul>
-                    <li>OpenRouter API ключ не настроен</li>
+                    <li>OpenAI API ключ не настроен</li>
                     <li>Проблемы с интернет-соединением</li>
                     <li>API ключ недействителен или исчерпан лимит</li>
                   </ul>
@@ -720,11 +720,11 @@ export default function Chat() {
                   <ul>
                     <li>
                       Проверьте переменную окружения{" "}
-                      <code>OPENROUTER_API_KEY</code> в .env.local
+                      <code>OPENAI_API_KEY</code> в .env.local
                     </li>
                     <li>
-                      Убедитесь что у API ключа есть баланс на
-                      https://openrouter.ai/
+                      Убедитесь что API ключ действителен на
+                      https://platform.openai.com/api-keys
                     </li>
                     <li>Попробуйте перезагрузить страницу</li>
                   </ul>
