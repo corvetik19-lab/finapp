@@ -5,9 +5,13 @@
 
 import { toolHandlers } from "@/lib/ai/tool-handlers";
 import { createRouteClient } from "@/lib/supabase/helpers";
+import { convertToolsToOpenAI } from "@/lib/ai/convert-tools";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+// Автоматически генерируем ВСЕ 40+ tools из определений
+const tools = convertToolsToOpenAI();
 
 // Типы OpenAI API
 interface Message {
@@ -31,8 +35,9 @@ interface ToolResult {
   content: string; // JSON string с результатом
 }
 
+// УДАЛЕНО: Старое ручное определение tools заменено автоматической генерацией выше
 // Определение доступных tools для OpenAI
-const tools = [
+/*const tools_OLD = [
   {
     type: "function",
     function: {
@@ -436,7 +441,7 @@ const tools = [
       }
     }
   }
-];
+]; */
 
 export async function POST(req: Request) {
   try {
