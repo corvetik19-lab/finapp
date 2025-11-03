@@ -616,9 +616,11 @@ export async function handleAIGetTransactions(
   params: { limit?: number; categoryName?: string; userId?: string }
 ) {
   try {
+    console.log("🔍 getTransactions called with params:", params);
     const supabase = createAdminClient();
     
     if (!params.userId) {
+      console.error("❌ No userId provided");
       return {
         success: false,
         message: "❌ Ошибка: userId не указан"
@@ -627,6 +629,7 @@ export async function handleAIGetTransactions(
     
     const userId = params.userId;
     const limit = params.limit || 10;
+    console.log("✅ Using userId:", userId, "limit:", limit);
 
     // Упрощённый запрос без вложенных связей
     let query = supabase
@@ -636,13 +639,13 @@ export async function handleAIGetTransactions(
         amount,
         direction,
         currency,
-        date,
+        occurred_at,
         note,
         category_id,
         account_id
       `)
       .eq("user_id", userId)
-      .order("date", { ascending: false })
+      .order("occurred_at", { ascending: false })
       .limit(limit);
 
     if (params.categoryName) {
@@ -669,7 +672,10 @@ export async function handleAIGetTransactions(
       };
     }
     
+    console.log("📊 Transactions fetched:", transactions?.length || 0);
+    
     if (!transactions || transactions.length === 0) {
+      console.log("📭 No transactions found");
       return { 
         success: true, 
         data: [], 
@@ -681,22 +687,33 @@ export async function handleAIGetTransactions(
     const categoryIds = [...new Set(transactions.map(t => t.category_id).filter(Boolean))];
     const accountIds = [...new Set(transactions.map(t => t.account_id).filter(Boolean))];
 
-    const { data: categories } = await supabase
-      .from("categories")
-      .select("id, name")
-      .in("id", categoryIds);
+    let categories: Array<{ id: string; name: string }> = [];
+    let accounts: Array<{ id: string; name: string }> = [];
 
-    const { data: accounts } = await supabase
-      .from("accounts")
-      .select("id, name")
-      .in("id", accountIds);
+    // Запрашиваем категории только если есть ID
+    if (categoryIds.length > 0) {
+      const { data } = await supabase
+        .from("categories")
+        .select("id, name")
+        .in("id", categoryIds);
+      categories = data || [];
+    }
+
+    // Запрашиваем счета только если есть ID
+    if (accountIds.length > 0) {
+      const { data } = await supabase
+        .from("accounts")
+        .select("id, name")
+        .in("id", accountIds);
+      accounts = data || [];
+    }
 
     // Создаём маппинги
-    const categoryMap = new Map(categories?.map(c => [c.id, c.name]) || []);
-    const accountMap = new Map(accounts?.map(a => [a.id, a.name]) || []);
+    const categoryMap = new Map(categories.map(c => [c.id, c.name]));
+    const accountMap = new Map(accounts.map(a => [a.id, a.name]));
   
   const records = transactions.map(t => ({
-    date: t.date,
+    date: t.occurred_at,
     amount: t.amount,
     direction: t.direction,
     currency: t.currency,
