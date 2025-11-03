@@ -71,14 +71,51 @@ export const openai = {
  * - Качества ответов
  */
 export const MODELS = {
-  // Основная модель для команд и анализа (быстрая и дешёвая)
+  // === CHAT MODELS ===
+  
+  // Основная модель для команд и чата (быстрая и дешёвая)
   COMMANDS: "gpt-4o-mini",
   
   // Для сложного анализа и прогнозов (более мощная)
   ANALYTICS: "gpt-4o",
   
-  // Для embeddings
+  // Для reasoning задач (глубокое мышление)
+  REASONING: "o1-mini",
+  
+  // Новейшая reasoning модель
+  REASONING_ADVANCED: "o3-mini",
+  
+  // === EMBEDDINGS MODELS ===
+  
+  // Основная модель для embeddings (1536 dimensions, дешёвая)
   EMBEDDINGS: "text-embedding-3-small",
+  
+  // Большая модель embeddings (3072 dimensions, точнее)
+  EMBEDDINGS_LARGE: "text-embedding-3-large",
+  
+  // Старая модель (legacy, 1536 dimensions)
+  EMBEDDINGS_LEGACY: "text-embedding-ada-002",
+} as const;
+
+/**
+ * Информация о моделях embeddings
+ */
+export const EMBEDDINGS_INFO = {
+  "text-embedding-3-small": {
+    dimensions: 1536,
+    cost_per_1m_tokens: 0.02, // USD
+    description: "Быстрая и дешёвая модель для большинства задач"
+  },
+  "text-embedding-3-large": {
+    dimensions: 3072,
+    cost_per_1m_tokens: 0.13, // USD
+    description: "Более точная модель для критичных задач"
+  },
+  "text-embedding-ada-002": {
+    dimensions: 1536,
+    cost_per_1m_tokens: 0.10, // USD
+    description: "Устаревшая модель (legacy)"
+  },
 } as const;
 
 /**
