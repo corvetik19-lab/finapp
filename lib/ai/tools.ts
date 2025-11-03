@@ -146,6 +146,120 @@ export const toolSchemas = {
     notes: z.string().optional().describe("Заметки о тренировке"),
     calories: z.number().optional().describe("Сожжено калорий"),
   }),
+
+  // === ПРОСМОТР ДАННЫХ ===
+  getTransactions: z.object({
+    limit: z.number().optional().default(20).describe("Количество транзакций"),
+    offset: z.number().optional().default(0).describe("Пропустить N записей"),
+    startDate: z.string().optional().describe("Начальная дата YYYY-MM-DD"),
+    endDate: z.string().optional().describe("Конечная дата YYYY-MM-DD"),
+    categoryName: z.string().optional().describe("Фильтр по категории"),
+    direction: z.enum(["income", "expense", "transfer", "all"]).optional().describe("Тип транзакции"),
+  }),
+
+  getCategories: z.object({
+    type: z.enum(["income", "expense", "all"]).optional().describe("Тип категорий"),
+  }),
+
+  getAccounts: z.object({
+    includeBalance: z.boolean().optional().default(true).describe("Включить баланс"),
+  }),
+
+  getBudgets: z.object({
+    period: z.enum(["current", "all"]).optional().default("current").describe("Период"),
+  }),
+
+  getNotes: z.object({
+    limit: z.number().optional().default(10).describe("Количество заметок"),
+    search: z.string().optional().describe("Поиск по тексту"),
+  }),
+
+  getBookmarks: z.object({
+    category: z.string().optional().describe("Фильтр по категории"),
+    limit: z.number().optional().default(20).describe("Количество закладок"),
+  }),
+
+  // === УДАЛЕНИЕ ===
+  deleteTransaction: z.object({
+    transactionId: z.string().describe("ID транзакции для удаления"),
+  }),
+
+  deleteCategory: z.object({
+    categoryId: z.string().describe("ID категории для удаления"),
+  }),
+
+  deleteAccount: z.object({
+    accountId: z.string().describe("ID счёта для удаления"),
+  }),
+
+  deleteBudget: z.object({
+    budgetId: z.string().describe("ID бюджета для удаления"),
+  }),
+
+  deleteNote: z.object({
+    noteId: z.string().describe("ID заметки для удаления"),
+  }),
+
+  deleteBookmark: z.object({
+    bookmarkId: z.string().describe("ID закладки для удаления"),
+  }),
+
+  // === ОБНОВЛЕНИЕ ===
+  updateTransaction: z.object({
+    transactionId: z.string().describe("ID транзакции"),
+    amount: z.number().optional().describe("Новая сумма"),
+    categoryName: z.string().optional().describe("Новая категория"),
+    description: z.string().optional().describe("Новое описание"),
+    date: z.string().optional().describe("Новая дата YYYY-MM-DD"),
+  }),
+
+  updateCategory: z.object({
+    categoryId: z.string().describe("ID категории"),
+    name: z.string().optional().describe("Новое название"),
+    icon: z.string().optional().describe("Новая иконка"),
+  }),
+
+  updateBudget: z.object({
+    budgetId: z.string().describe("ID бюджета"),
+    amount: z.number().optional().describe("Новый лимит"),
+    period: z.enum(["monthly", "weekly", "yearly"]).optional().describe("Новый период"),
+  }),
+
+  updateAccount: z.object({
+    accountId: z.string().describe("ID счёта"),
+    name: z.string().optional().describe("Новое название"),
+    balance: z.number().optional().describe("Новый баланс"),
+  }),
+
+  // === ЗАМЕТКИ ===
+  addNote: z.object({
+    title: z.string().describe("Заголовок заметки"),
+    content: z.string().describe("Содержание заметки"),
+    tags: z.array(z.string()).optional().describe("Теги"),
+  }),
+
+  updateNote: z.object({
+    noteId: z.string().describe("ID заметки"),
+    title: z.string().optional().describe("Новый заголовок"),
+    content: z.string().optional().describe("Новое содержание"),
+    tags: z.array(z.string()).optional().describe("Новые теги"),
+  }),
+
+  // === АНАЛИТИКА ===
+  getSpendingByMonth: z.object({
+    months: z.number().optional().default(6).describe("Количество месяцев"),
+  }),
+
+  getTopCategories: z.object({
+    limit: z.number().optional().default(5).describe("Количество категорий"),
+    period: z.enum(["week", "month", "year"]).optional().default("month").describe("Период"),
+  }),
+
+  getNetWorth: z.object({}),
+
+  getMonthlyTrends: z.object({
+    months: z.number().optional().default(12).describe("Количество месяцев"),
+  }),
 };
 
 // Определение инструментов для AI
@@ -250,6 +364,121 @@ export const aiTools = {
   addFitnessWorkout: {
     description: "Записать выполненную тренировку. Используй когда пользователь отчитывается о тренировке.",
     parameters: toolSchemas.addFitnessWorkout,
+  },
+
+  // === ПРОСМОТР ДАННЫХ ===
+  getTransactions: {
+    description: "Получить список транзакций. Используй для просмотра истории операций, фильтрации по дате, категории.",
+    parameters: toolSchemas.getTransactions,
+  },
+
+  getCategories: {
+    description: "Получить список категорий доходов/расходов. Используй чтобы показать доступные категории.",
+    parameters: toolSchemas.getCategories,
+  },
+
+  getAccounts: {
+    description: "Получить список всех счетов/карт с балансами. Используй чтобы показать все счета пользователя.",
+    parameters: toolSchemas.getAccounts,
+  },
+
+  getBudgets: {
+    description: "Получить список бюджетов. Используй чтобы показать установленные лимиты по категориям.",
+    parameters: toolSchemas.getBudgets,
+  },
+
+  getNotes: {
+    description: "Получить список заметок. Используй для поиска и просмотра заметок пользователя.",
+    parameters: toolSchemas.getNotes,
+  },
+
+  getBookmarks: {
+    description: "Получить список закладок. Используй чтобы показать сохранённые ссылки.",
+    parameters: toolSchemas.getBookmarks,
+  },
+
+  // === УДАЛЕНИЕ ===
+  deleteTransaction: {
+    description: "Удалить транзакцию. Используй когда пользователь хочет удалить операцию.",
+    parameters: toolSchemas.deleteTransaction,
+  },
+
+  deleteCategory: {
+    description: "Удалить категорию. Используй когда нужно удалить неиспользуемую категорию.",
+    parameters: toolSchemas.deleteCategory,
+  },
+
+  deleteAccount: {
+    description: "Удалить счёт/карту. Используй когда пользователь закрыл счёт.",
+    parameters: toolSchemas.deleteAccount,
+  },
+
+  deleteBudget: {
+    description: "Удалить бюджет. Используй чтобы убрать лимит по категории.",
+    parameters: toolSchemas.deleteBudget,
+  },
+
+  deleteNote: {
+    description: "Удалить заметку. Используй когда заметка больше не нужна.",
+    parameters: toolSchemas.deleteNote,
+  },
+
+  deleteBookmark: {
+    description: "Удалить закладку. Используй чтобы убрать ссылку из списка.",
+    parameters: toolSchemas.deleteBookmark,
+  },
+
+  // === ОБНОВЛЕНИЕ ===
+  updateTransaction: {
+    description: "Обновить транзакцию. Используй для исправления суммы, категории, описания или даты операции.",
+    parameters: toolSchemas.updateTransaction,
+  },
+
+  updateCategory: {
+    description: "Обновить категорию. Используй чтобы переименовать или изменить иконку категории.",
+    parameters: toolSchemas.updateCategory,
+  },
+
+  updateBudget: {
+    description: "Обновить бюджет. Используй чтобы изменить лимит или период бюджета.",
+    parameters: toolSchemas.updateBudget,
+  },
+
+  updateAccount: {
+    description: "Обновить счёт. Используй чтобы изменить название или скорректировать баланс счёта.",
+    parameters: toolSchemas.updateAccount,
+  },
+
+  // === ЗАМЕТКИ ===
+  addNote: {
+    description: "Создать заметку. Используй когда пользователь хочет что-то записать или запомнить.",
+    parameters: toolSchemas.addNote,
+  },
+
+  updateNote: {
+    description: "Обновить заметку. Используй чтобы изменить содержание или теги заметки.",
+    parameters: toolSchemas.updateNote,
+  },
+
+  // === АНАЛИТИКА ===
+  getSpendingByMonth: {
+    description: "Получить расходы по месяцам. Используй для анализа динамики трат во времени.",
+    parameters: toolSchemas.getSpendingByMonth,
+  },
+
+  getTopCategories: {
+    description: "Получить топ категорий по расходам. Используй чтобы показать куда уходит больше всего денег.",
+    parameters: toolSchemas.getTopCategories,
+  },
+
+  getNetWorth: {
+    description: "Получить чистые активы (все счета минус долги). Используй чтобы показать общее финансовое состояние.",
+    parameters: toolSchemas.getNetWorth,
+  },
+
+  getMonthlyTrends: {
+    description: "Получить месячные тренды доходов и расходов. Используй для анализа финансовой динамики.",
+    parameters: toolSchemas.getMonthlyTrends,
   },
 };
 
