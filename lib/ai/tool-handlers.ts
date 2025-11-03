@@ -12,7 +12,7 @@ type TransactionSummaryRow = {
 };
 
 type TransactionRecordRow = {
-  occurred_at: string;
+  date: string;
   amount: number;
   direction: "income" | "expense";
   currency?: string | null;
@@ -631,13 +631,13 @@ export async function handleAIGetTransactions(
       amount,
       direction,
       currency,
-      occurred_at,
+      date,
       note,
       categories(name),
       accounts(name)
     `)
     .eq("user_id", userId)
-    .order("occurred_at", { ascending: false })
+    .order("date", { ascending: false })
     .limit(limit);
 
   if (params.categoryName) {
@@ -670,7 +670,7 @@ export async function handleAIGetTransactions(
 
   // Форматируем для ответа
   const formatted = records.map((t) => ({
-    date: new Date(t.occurred_at).toLocaleDateString('ru-RU'),
+    date: new Date(t.date).toLocaleDateString('ru-RU'),
     amount: (t.amount / 100).toFixed(2),
     direction: t.direction === 'expense' ? 'расход' : 'доход',
     category: t.categories?.name || 'Без категории',
