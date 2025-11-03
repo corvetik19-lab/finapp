@@ -4,6 +4,7 @@
  */
 
 import OpenAI from "openai";
+import { getEmbeddingsModel } from "./openai-client";
 
 // Функция для получения клиента OpenAI (ленивая инициализация)
 function getOpenAIClient() {
@@ -57,7 +58,7 @@ export async function createEmbedding(text: string): Promise<number[]> {
   try {
     const openai = getOpenAIClient();
     const response = await openai.embeddings.create({
-      model: "text-embedding-3-small", // OpenAI: Text Embedding 3 Small (1536 dimensions)
+      model: getEmbeddingsModel(),
       input: text,
       encoding_format: "float",
     });
@@ -78,7 +79,7 @@ export async function createEmbeddings(texts: string[]): Promise<number[][]> {
   try {
     const openai = getOpenAIClient();
     const response = await openai.embeddings.create({
-      model: "text-embedding-3-small",
+      model: getEmbeddingsModel(),
       input: texts,
       encoding_format: "float",
     });

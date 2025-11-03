@@ -131,3 +131,10 @@ export function getCommandsModel() {
 export function getAnalyticsModel() {
   return MODELS.ANALYTICS;
 }
+
+/**
+ * Вспомогательная функция для получения модели embeddings
+ */
+export function getEmbeddingsModel() {
+  return MODELS.EMBEDDINGS;
+}
