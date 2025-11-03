@@ -12,7 +12,7 @@ import UsersManager, { type UserRecord, type RoleOption } from "@/components/set
 import TelegramManager from "@/components/settings/TelegramManager";
 import BackupManager from "@/components/settings/BackupManager";
 import APIKeysManager from "@/components/settings/APIKeysManager";
-import N8nManager from "@/components/settings/N8nManager";
+import N8nManager from "./N8nManager";
 import TourManager from "@/components/settings/TourManager";
 import styles from "@/components/settings/Settings.module.css";
 
