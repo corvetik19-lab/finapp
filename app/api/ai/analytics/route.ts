@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 import { generateText } from "ai";
-import { getAnalyticsModel } from "@/lib/ai/openrouter";
+import { getAnalyticsModel } from "@/lib/ai/openai-client";
 import { createRouteClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 

@@ -1,6 +1,6 @@
 import { generateText } from "ai";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { getCommandsModel } from "./openrouter";
+import { getCommandsModel } from "./openai-client";
 
 /**
  * AI команды через естественный язык

@@ -1,5 +1,5 @@
 import { generateText } from "ai";
-import { getAnalyticsModel } from "./openrouter";
+import { getAnalyticsModel } from "./openai-client";
 
 /**
  * Анализ паттернов трат пользователя через AI

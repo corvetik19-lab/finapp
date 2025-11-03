@@ -1,5 +1,5 @@
 import { generateText } from "ai";
-import { getAnalyticsModel } from "./openrouter";
+import { getAnalyticsModel } from "./openai-client";
 
 /**
  * AI Финансовый советник - комплексный анализ финансового здоровья

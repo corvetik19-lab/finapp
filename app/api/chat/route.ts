@@ -1,5 +1,4 @@
-import { openrouter } from "@/lib/ai/openrouter";
-import { generateText } from "ai";
+import OpenAI from "openai";
 import { createRSCClient } from "@/lib/supabase/server";
 import type { CoreMessage } from "ai";
 
@@ -136,15 +135,26 @@ ${contextInfo}
 - "Какой у меня баланс?"
 `;
 
-    // Временно используем generateText для отладки
-    const result = await generateText({
-      model: openrouter(model || "openai/gpt-4o-mini"),
-      system: systemPrompt,
-      messages: messages,
+    // Используем OpenAI API напрямую
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    const completion = await openai.chat.completions.create({
+      model: model || "gpt-4o-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...messages.map((m: CoreMessage) => ({
+          role: m.role as "user" | "assistant",
+          content: m.content as string,
+        })),
+      ],
       temperature: 0.7,
     });
 
-    return new Response(result.text, {
+    const responseText = completion.choices[0]?.message?.content || "Извините, не смог обработать запрос.";
+
+    return new Response(responseText, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
       },

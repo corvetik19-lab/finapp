@@ -3,7 +3,7 @@
  */
 
 import { generateText } from "ai";
-import { getAnalyticsModel } from "./openrouter";
+import { getAnalyticsModel } from "./openai-client";
 
 /**
  * AI прогнозирование расходов и финансовые сценарии
