@@ -87,11 +87,11 @@ export const MODELS = {
   
   // === EMBEDDINGS MODELS ===
   
-  // Основная модель для embeddings (1536 dimensions, дешёвая)
-  EMBEDDINGS: "text-embedding-3-small",
+  // Основная модель для embeddings (3072 dimensions, максимальная точность)
+  EMBEDDINGS: "text-embedding-3-large",
   
-  // Большая модель embeddings (3072 dimensions, точнее)
-  EMBEDDINGS_LARGE: "text-embedding-3-large",
+  // Компактная модель embeddings (1536 dimensions, экономичная)
+  EMBEDDINGS_SMALL: "text-embedding-3-small",
   
   // Старая модель (legacy, 1536 dimensions)
   EMBEDDINGS_LEGACY: "text-embedding-ada-002",
