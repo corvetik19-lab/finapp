@@ -34,6 +34,7 @@ type ModelGroups = {
   realtime: AIModel[];
   audio: AIModel[];
   specialized: AIModel[];
+  embeddings: AIModel[];
   gpt4: AIModel[];
   other: AIModel[];
   all: AIModel[];
@@ -60,6 +61,7 @@ export default function Chat() {
     realtime: [],
     audio: [],
     specialized: [],
+    embeddings: [],
     gpt4: [],
     other: [],
     all: [],
@@ -113,6 +115,7 @@ export default function Chat() {
             realtime: data.realtime ?? [],
             audio: data.audio ?? [],
             specialized: data.specialized ?? [],
+            embeddings: data.embeddings ?? [],
             gpt4: data.gpt4 ?? [],
             other: data.other ?? [],
             all: data.all ?? [],
@@ -201,6 +204,11 @@ export default function Chat() {
     {
       key: "specialized",
       title: "🛠️ Специализированные",
+    },
+    {
+      key: "embeddings",
+      title: "🔍 Embeddings модели",
+      badge: { text: "VECTOR", className: styles.badgePremium },
     },
     {
       key: "gpt4",

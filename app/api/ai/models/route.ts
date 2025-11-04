@@ -260,6 +260,26 @@ export async function GET() {
       description: "🎯 Классическая GPT-4"
     },
 
+    // === EMBEDDINGS MODELS ===
+    {
+      id: "text-embedding-3-large",
+      name: "Text Embedding 3 Large",
+      is_free: false,
+      description: "🔍 Лучшая модель для embeddings (3072 dimensions)"
+    },
+    {
+      id: "text-embedding-3-small",
+      name: "Text Embedding 3 Small",
+      is_free: false,
+      description: "⚡ Быстрая модель для embeddings (1536 dimensions)"
+    },
+    {
+      id: "text-embedding-ada-002",
+      name: "Text Embedding Ada 002",
+      is_free: false,
+      description: "📦 Legacy embedding модель"
+    },
+
     // === GPT-3.5 (Legacy) ===
     {
       id: "gpt-3.5-turbo",
@@ -302,6 +322,9 @@ export async function GET() {
     specialized: openaiModels.filter(m => 
       ['codex-mini-latest', 'computer-use-preview', 'gpt-image-1', 'gpt-image-1-mini'].includes(m.id)
     ),
+    
+    // Embeddings модели - для векторного поиска
+    embeddings: openaiModels.filter(m => m.id.startsWith('text-embedding')),
     
     // GPT-4 классика - проверенные модели
     gpt4: openaiModels.filter(m => 
