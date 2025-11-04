@@ -45,6 +45,18 @@
   --banner-gradient-start: #3b82f6;
   --banner-gradient-end: #2563eb;
   --banner-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+  
+  /* Platform variables */
+  --surface-primary: #ffffff;
+  --surface-secondary: #f8f9fa;
+  --surface-tertiary: #e9ecef;
+  --surface-hover: #f1f3f5;
+  --text-tertiary: #adb5bd;
+  --border-primary: #dee2e6;
+  --border-hover: #adb5bd;
+  --primary: #6366f1;
+  --primary-dark: #4f46e5;
+  --primary-alpha: rgba(99, 102, 241, 0.1);
 }
 
 .light-theme {

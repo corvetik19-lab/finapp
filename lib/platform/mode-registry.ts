@@ -57,8 +57,8 @@ export const MODE_REGISTRY: Record<string, ModeConfig> = {
       admin: ['owner'],
     },
     routes: {
-      root: '/finance',
-      dashboard: '/finance/dashboard',
+      root: '/dashboard',
+      dashboard: '/dashboard',
       settings: '/settings/modes/finance',
     },
     features: {
@@ -76,7 +76,7 @@ export const MODE_REGISTRY: Record<string, ModeConfig> = {
     icon: 'trending_up',
     color: '#3B82F6',
     description: 'Управление портфелем, акциями, облигациями и аналитика доходности',
-    isEnabled: false, // Feature flag - будет включено позже
+    isEnabled: true, // Включено для демонстрации
     isPremium: true,
     order: 2,
     permissions: {
@@ -107,7 +107,7 @@ export const MODE_REGISTRY: Record<string, ModeConfig> = {
     icon: 'person',
     color: '#8B5CF6',
     description: 'Личный органайзер, заметки, задачи и напоминания',
-    isEnabled: false,
+    isEnabled: true, // Включено для демонстрации
     isPremium: false,
     order: 3,
     permissions: {
