@@ -46,7 +46,7 @@ export default function ModeSwitcher() {
         >
           {current.icon}
         </span>
-        <span className={styles.modeNamedesktop}>{current.name}</span>
+        <span className={styles.modeNameDesktop}>{current.name}</span>
         <span className="material-icons">
           {isOpen ? "expand_less" : "expand_more"}
         </span>

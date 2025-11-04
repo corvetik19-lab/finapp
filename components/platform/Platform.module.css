@@ -1,0 +1,368 @@
+/* Platform Header */
+.platformHeader {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--surface-primary);
+  border-bottom: 1px solid var(--border-primary);
+  height: 64px;
+}
+
+.headerContainer {
+  max-width: 1920px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.headerLogo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 20px;
+}
+
+.headerLogo:hover {
+  color: var(--primary);
+}
+
+.headerLogoIcon {
+  font-size: 28px;
+  color: var(--primary);
+}
+
+.headerSpacer {
+  flex: 1;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Mode Switcher */
+.modeSwitcher {
+  position: relative;
+}
+
+.modeSwitcherButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.modeSwitcherButton:hover {
+  background: var(--surface-secondary);
+  border-color: var(--border-hover);
+}
+
+.modeNameDesktop {
+  font-weight: 500;
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .modeNameDesktop {
+    display: none;
+  }
+}
+
+.modeSwitcherOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.modeSwitcherDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 380px;
+  max-width: 480px;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  z-index: 50;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .modeSwitcherDropdown {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    min-width: 100%;
+    border-radius: 12px 12px 0 0;
+  }
+}
+
+.modeSwitcherHeader {
+  padding: 20px;
+  border-bottom: 1px solid var(--border-primary);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%);
+}
+
+.modeSwitcherHeader h3 {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.modeSwitcherHeader p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.modeList {
+  padding: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.modeItem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 16px;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 8px;
+}
+
+.modeItem:hover:not(.modeItemActive):not(:disabled) {
+  background: var(--surface-hover);
+  transform: translateX(4px);
+}
+
+.modeItemActive {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+  border: 1px solid var(--primary-alpha);
+  cursor: default;
+}
+
+.modeItem:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.modeItemIcon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-secondary);
+  border-radius: 12px;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.modeItem:hover:not(.modeItemActive):not(:disabled) .modeItemIcon {
+  transform: scale(1.1);
+}
+
+.modeItemContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.modeItemHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.modeItemName {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.modeBadgePremium {
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.modeBadgeActive {
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--success);
+  color: white;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.modeBadgeDisabled {
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--surface-tertiary);
+  color: var(--text-tertiary);
+  border-radius: 4px;
+}
+
+.modeItemDescription {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.modeSwitcherFooter {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-primary);
+  background: var(--surface-secondary);
+  text-align: center;
+}
+
+.modeSwitcherFooter p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Notification Center */
+.notificationButton {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.notificationButton:hover {
+  background: var(--surface-secondary);
+  border-color: var(--border-hover);
+}
+
+.notificationBadge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--danger);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--surface-primary);
+}
+
+/* User Menu */
+.userMenuButton {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 6px;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.userMenuButton:hover {
+  background: var(--surface-secondary);
+  border-color: var(--border-hover);
+}
+
+.userAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.userName {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+  .userName {
+    display: none;
+  }
+}
+
+/* Organization Switcher */
+.orgSwitcher {
+  position: relative;
+}
+
+.orgButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.orgButton:hover {
+  background: var(--surface-tertiary);
+  border-color: var(--border-hover);
+}
+
+.orgName {
+  font-weight: 500;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
