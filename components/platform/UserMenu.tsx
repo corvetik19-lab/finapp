@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import styles from "./UserMenu.module.css";
 
 interface UserMenuProps {
@@ -58,7 +59,12 @@ export default function UserMenu({ user }: UserMenuProps) {
       >
         <div className={styles.userAvatar}>
           {user.avatar_url ? (
-            <img src={user.avatar_url} alt={user.full_name || "User"} />
+            <Image 
+              src={user.avatar_url} 
+              alt={user.full_name || "User"} 
+              width={32}
+              height={32}
+            />
           ) : (
             <span>{userInitial.toUpperCase()}</span>
           )}
@@ -81,7 +87,12 @@ export default function UserMenu({ user }: UserMenuProps) {
             <div className={styles.userMenuHeader}>
               <div className={styles.userAvatarLarge}>
                 {user.avatar_url ? (
-                  <img src={user.avatar_url} alt={user.full_name || "User"} />
+                  <Image 
+                    src={user.avatar_url} 
+                    alt={user.full_name || "User"} 
+                    width={48}
+                    height={48}
+                  />
                 ) : (
                   <span>{userInitial.toUpperCase()}</span>
                 )}
