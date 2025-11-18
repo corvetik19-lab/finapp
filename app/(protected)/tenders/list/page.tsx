@@ -3,6 +3,8 @@ import { TendersListClient } from './tenders-list-client';
 import { getTenderStages, getTenderTypes } from '@/lib/tenders/service';
 import styles from '../tenders.module.css';
 
+export const dynamic = 'force-dynamic';
+
 export default async function TendersListPage() {
   // Загружаем справочники для фильтров
   const [stagesResult, typesResult] = await Promise.all([
