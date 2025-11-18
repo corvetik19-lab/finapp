@@ -291,42 +291,94 @@ export async function handleGetExpensesByCategory(params: ToolParameters<"getExp
   const supabase = await createRouteClient();
   const userId = params.userId;
 
-  const query = supabase
+  // Если даты не указаны - берём текущий месяц
+  let startDate = params.startDate;
+  let endDate = params.endDate;
+  
+  // Если указан месяц - вычисляем даты
+  const paramsWithMonth = params as { month?: string; year?: number; startDate?: string; endDate?: string };
+  if (paramsWithMonth.month) {
+    const monthNames: Record<string, number> = {
+      'январь': 0, 'января': 0,
+      'февраль': 1, 'февраля': 1,
+      'март': 2, 'марта': 2,
+      'апрель': 3, 'апреля': 3,
+      'май': 4, 'мая': 4,
+      'июнь': 5, 'июня': 5,
+      'июль': 6, 'июля': 6,
+      'август': 7, 'августа': 7,
+      'сентябрь': 8, 'сентября': 8,
+      'октябрь': 9, 'октября': 9,
+      'ноябрь': 10, 'ноября': 10,
+      'декабрь': 11, 'декабря': 11,
+    };
+    
+    const monthName = paramsWithMonth.month.toLowerCase();
+    const monthIndex = monthNames[monthName];
+    const year = paramsWithMonth.year || new Date().getFullYear();
+    
+    if (monthIndex !== undefined) {
+      startDate = new Date(year, monthIndex, 1).toISOString().split('T')[0];
+      endDate = new Date(year, monthIndex + 1, 0).toISOString().split('T')[0];
+    }
+  }
+  
+  if (!startDate || !endDate) {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth(); // 0-11
+    
+    // Первый день текущего месяца
+    startDate = new Date(year, month, 1).toISOString().split('T')[0];
+    // Последний день текущего месяца
+    endDate = new Date(year, month + 1, 0).toISOString().split('T')[0];
+  }
+
+  console.log(`📊 getExpensesByCategory: ${startDate} - ${endDate}`);
+
+  const { data: transactions, error } = await supabase
     .from("transactions")
-    .select("amount, categories(name)")
+    .select("amount, categories(name), occurred_at")
     .eq("user_id", userId)
-    .eq("direction", "expense");
+    .eq("direction", "expense")
+    .gte("occurred_at", `${startDate}T00:00:00`)
+    .lt("occurred_at", `${endDate}T23:59:59.999Z`);
 
-  if (params.startDate) {
-    query.gte("date", params.startDate);
+  if (error) {
+    console.error("getExpensesByCategory error:", error);
+    return { success: false, message: "Ошибка получения данных: " + error.message };
   }
-  if (params.endDate) {
-    query.lte("date", params.endDate);
-  }
 
-  const { data: transactions } = await query;
-
-  if (!transactions) {
-    return { success: false, message: "Не удалось получить данные" };
+  if (!transactions || transactions.length === 0) {
+    return { 
+      success: false, 
+      message: `За период с ${startDate} по ${endDate} расходов не найдено. Добавьте транзакции!` 
+    };
   }
 
   // Группировка по категориям
   const byCategory: Record<string, number> = {};
+  let total = 0;
+  
   transactions.forEach((t: { amount: number; categories: { name: string }[] | { name: string } | null }) => {
     // Supabase может вернуть как объект, так и массив
     const categories = Array.isArray(t.categories) ? t.categories[0] : t.categories;
     const catName = categories?.name || "Без категории";
-    byCategory[catName] = (byCategory[catName] || 0) + t.amount / 100;
+    const amountRub = Math.abs(t.amount) / 100;
+    byCategory[catName] = (byCategory[catName] || 0) + amountRub;
+    total += amountRub;
   });
 
-  const summary = Object.entries(byCategory)
-    .map(([name, amount]) => `${name}: ${amount} ₽`)
-    .join(", ");
+  // Сортируем по убыванию суммы
+  const sorted = Object.entries(byCategory)
+    .sort(([, a], [, b]) => b - a)
+    .map(([name, amount]) => `${name}: ${amount.toLocaleString('ru-RU')} ₽`)
+    .join("\n");
 
   return {
     success: true,
-    data: byCategory,
-    message: `Расходы по категориям: ${summary}`,
+    data: { byCategory, total, startDate, endDate, count: transactions.length },
+    message: `📊 Расходы за период ${startDate} — ${endDate}:\n\n${sorted}\n\n💰 Общая сумма: ${total.toLocaleString('ru-RU')} ₽\n📝 Транзакций: ${transactions.length}`,
   };
 }
 
@@ -1287,10 +1339,77 @@ export const toolHandlers = {
   deleteFitnessProgram: handleDeleteFitnessProgram,
   addFitnessWorkout: handleAddFitnessWorkout,
   
-  // Заглушки для остальных функций (пока не реализованы)
-  getCategories: async () => ({ success: true, message: "Функция в разработке" }),
-  getAccounts: async () => ({ success: true, message: "Функция в разработке" }),
-  getBudgets: async () => ({ success: true, message: "Функция в разработке" }),
+  // Дополнительные функции просмотра
+  getCategories: async (params: { userId: string }) => {
+    const supabase = createAdminClient();
+    const { data: categories } = await supabase
+      .from("categories")
+      .select("name, type, icon")
+      .eq("user_id", params.userId)
+      .is("deleted_at", null);
+    
+    if (!categories || categories.length === 0) {
+      return { success: false, message: "У вас пока нет категорий. Создайте категорию командой вида 'Создай категорию расходов Еда'" };
+    }
+    
+    const income = categories.filter(c => c.type === "income").map(c => `${c.icon || "💰"} ${c.name}`).join(", ");
+    const expense = categories.filter(c => c.type === "expense").map(c => `${c.icon || "💸"} ${c.name}`).join(", ");
+    
+    return { 
+      success: true, 
+      data: categories,
+      message: `📊 Категории:\n\nДоходы: ${income || "нет"}\nРасходы: ${expense || "нет"}` 
+    };
+  },
+  
+  getAccounts: async (params: { userId: string }) => {
+    const supabase = createAdminClient();
+    const { data: accounts } = await supabase
+      .from("accounts")
+      .select("name, type, balance, currency")
+      .eq("user_id", params.userId)
+      .is("deleted_at", null);
+    
+    if (!accounts || accounts.length === 0) {
+      return { success: false, message: "У вас нет счетов. Добавьте счёт в разделе Карты или командой 'Добавь счёт'" };
+    }
+    
+    const summary = accounts.map(a => `${a.name} (${a.type}): ${a.balance / 100} ${a.currency}`).join("\n");
+    const total = accounts.reduce((sum, a) => sum + a.balance, 0) / 100;
+    
+    return { 
+      success: true, 
+      data: { accounts, total },
+      message: `💳 Ваши счета:\n\n${summary}\n\n💰 Общий баланс: ${total} ₽` 
+    };
+  },
+  
+  getBudgets: async (params: { userId: string }) => {
+    const supabase = createAdminClient();
+    const { data: budgets } = await supabase
+      .from("budgets")
+      .select("*, categories(name)")
+      .eq("user_id", params.userId)
+      .is("deleted_at", null);
+    
+    if (!budgets || budgets.length === 0) {
+      return { success: false, message: "У вас нет бюджетов. Установите бюджет командой вида 'Поставь бюджет 10000 на Еду'" };
+    }
+    
+    const summary = budgets.map((b: { categories?: { name?: string }; spent?: number; amount: number }) => {
+      const categoryName = b.categories?.name || "Без категории";
+      const spent = b.spent ? b.spent / 100 : 0;
+      const limit = b.amount / 100;
+      const percent = Math.round((spent / limit) * 100);
+      return `${categoryName}: ${spent} / ${limit} ₽ (${percent}%)`;
+    }).join("\n");
+    
+    return { 
+      success: true, 
+      data: budgets,
+      message: `📊 Ваши бюджеты:\n\n${summary}` 
+    };
+  },
   getBookmarks: async () => ({ success: true, message: "Функция в разработке" }),
   deleteTransaction: async () => ({ success: true, message: "Функция в разработке" }),
   deleteCategory: async () => ({ success: true, message: "Функция в разработке" }),
@@ -1307,4 +1426,417 @@ export const toolHandlers = {
   getTopCategories: async () => ({ success: true, message: "Функция в разработке" }),
   getNetWorth: async () => ({ success: true, message: "Функция в разработке" }),
   getMonthlyTrends: async () => ({ success: true, message: "Функция в разработке" }),
+  
+  // Обработка чеков
+  processReceipt: async (params: { receiptText: string; accountName?: string; userId: string; preview?: boolean }) => {
+    try {
+      const supabase = createAdminClient();
+      const { receiptText, userId, accountName } = params;
+
+      console.log("📄 Processing receipt for user:", userId);
+
+      // 1. Парсим чек используя OpenAI
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        return { success: false, message: "OpenAI API ключ не настроен" };
+      }
+
+      const parsePrompt = `Проанализируй кассовый чек и верни JSON с такой структурой:
+{
+  "storeName": "название магазина",
+  "date": "дата в формате YYYY-MM-DD (например 2025-11-07)",
+  "items": [
+    {
+      "name": "название товара",
+      "quantity": число,
+      "pricePerUnit": цена_за_единицу_в_рублях,
+      "total": общая_сумма_в_рублях
+    }
+  ],
+  "totalAmount": общая_сумма_чека_в_рублях
+}
+
+ВАЖНО: Дата должна быть строго в формате YYYY-MM-DD (год-месяц-день).
+
+Чек:
+${receiptText}`;
+
+      const parseResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: parsePrompt }],
+          response_format: { type: "json_object" }
+        })
+      });
+
+      if (!parseResponse.ok) {
+        return { success: false, message: "Ошибка парсинга чека" };
+      }
+
+      const parseData = await parseResponse.json();
+      const parsed = JSON.parse(parseData.choices[0].message.content);
+      
+      console.log("📋 Raw parsed data:", parsed);
+      
+      // Проверяем и исправляем дату если нужно
+      let finalDate = new Date().toISOString().split('T')[0]; // По умолчанию сегодня
+      
+      if (parsed.date) {
+        // Если дата в формате DD.MM.YYYY, конвертируем в YYYY-MM-DD
+        if (parsed.date.includes('.')) {
+          const parts = parsed.date.split('.');
+          if (parts.length === 3) {
+            const day = parts[0].padStart(2, '0');
+            const month = parts[1].padStart(2, '0');
+            const year = parts[2];
+            finalDate = `${year}-${month}-${day}`;
+          }
+        } else if (parsed.date.includes('-')) {
+          // Уже в формате YYYY-MM-DD или подобном
+          finalDate = parsed.date;
+        }
+        
+        // Валидация: проверяем что дата не в прошлом больше чем на 1 год
+        const parsedDateObj = new Date(finalDate);
+        const now = new Date();
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(now.getFullYear() - 1);
+        
+        if (parsedDateObj < oneYearAgo || parsedDateObj > now) {
+          console.warn(`⚠️ Invalid date detected: ${finalDate}, using today instead`);
+          finalDate = now.toISOString().split('T')[0];
+        }
+      }
+      
+      parsed.date = finalDate;
+      console.log("✅ Parsed receipt with corrected date:", parsed);
+
+      // Получаем все товары из БД для сопоставления (нужно и для preview, и для сохранения)
+      const { data: products, error: productsError } = await supabase
+        .from("product_items")
+        .select("id, name, category_id, default_unit, categories(id, name, kind)")
+        .eq("user_id", userId)
+        .eq("is_active", true);
+
+      if (productsError) {
+        console.error("❌ Products query error:", productsError);
+      }
+
+      if (!products || products.length === 0) {
+        return {
+          success: false,
+          message: `❌ В системе нет активных товаров. Добавьте товары в разделе "Настройки" → "Товары"`
+        };
+      }
+
+      // Сопоставляем товары из чека с товарами в БД
+      const matchResults: Array<{ 
+        receiptItem: typeof parsed.items[0], 
+        matchedProduct: typeof products[0] | null 
+      }> = [];
+
+      for (const item of parsed.items) {
+        const itemNameLower = item.name.toLowerCase();
+        
+        // 1. Точное совпадение
+        let foundProduct = products.find((p: { name: string }) => 
+          p.name.toLowerCase() === itemNameLower
+        );
+
+        // 2. Частичное совпадение
+        if (!foundProduct) {
+          foundProduct = products.find((p: { name: string }) => {
+            const pNameLower = p.name.toLowerCase();
+            return pNameLower.includes(itemNameLower) || itemNameLower.includes(pNameLower);
+          });
+        }
+
+        matchResults.push({ receiptItem: item, matchedProduct: foundProduct || null });
+      }
+
+      // Если режим preview, возвращаем данные с сопоставлением
+      if (params.preview) {
+        return {
+          success: true,
+          preview: true,
+          data: {
+            storeName: parsed.storeName,
+            date: parsed.date,
+            items: matchResults.map(r => {
+              // Получаем категорию из matchedProduct
+              let categoryName = null;
+              const product = r.matchedProduct as unknown as { categories?: { name: string } | Array<{ name: string }> };
+              
+              if (product?.categories) {
+                // categories может быть массивом или объектом
+                if (Array.isArray(product.categories) && product.categories.length > 0) {
+                  categoryName = product.categories[0].name;
+                } else if (typeof product.categories === 'object' && 'name' in product.categories) {
+                  categoryName = product.categories.name;
+                }
+              }
+              
+              return {
+                receiptName: r.receiptItem.name,
+                quantity: r.receiptItem.quantity,
+                pricePerUnit: r.receiptItem.pricePerUnit,
+                total: r.receiptItem.total,
+                matchedProductId: r.matchedProduct?.id || null,
+                matchedProductName: r.matchedProduct?.name || null,
+                categoryId: r.matchedProduct?.category_id || null,
+                categoryName
+              };
+            }),
+            totalAmount: parsed.totalAmount,
+            availableProducts: products.map(p => {
+              let categoryName = null;
+              const product = p as unknown as { categories?: { name: string } | Array<{ name: string }> };
+              
+              if (product?.categories) {
+                if (Array.isArray(product.categories) && product.categories.length > 0) {
+                  categoryName = product.categories[0].name;
+                } else if (typeof product.categories === 'object' && 'name' in product.categories) {
+                  categoryName = product.categories.name;
+                }
+              }
+              
+              return {
+                id: p.id,
+                name: p.name,
+                categoryId: p.category_id,
+                categoryName,
+                defaultUnit: p.default_unit || "шт"
+              };
+            })
+          },
+          message: "Предпросмотр чека готов"
+        };
+      }
+
+      // 2. Находим или создаём счёт
+      let account;
+      if (accountName) {
+        const { data: accounts } = await supabase
+          .from("accounts")
+          .select("id, name")
+          .eq("user_id", userId)
+          .ilike("name", `%${accountName}%`)
+          .is("deleted_at", null)
+          .limit(1);
+        account = accounts?.[0];
+      }
+      
+      if (!account) {
+        const { data: accounts } = await supabase
+          .from("accounts")
+          .select("id, name")
+          .eq("user_id", userId)
+          .is("deleted_at", null)
+          .limit(1);
+        account = accounts?.[0];
+      }
+
+      if (!account) {
+        return { success: false, message: "Счёт не найден. Создайте счёт сначала." };
+      }
+
+      // 3. Создаём транзакцию
+      const { data: transaction, error: txError } = await supabase
+        .from("transactions")
+        .insert({
+          user_id: userId,
+          account_id: account.id,
+          direction: "expense",
+          amount: -Math.round(parsed.totalAmount * 100), // в копейках, отрицательная
+          currency: "RUB",
+          occurred_at: parsed.date || new Date().toISOString(),
+          note: `Покупка в ${parsed.storeName}`,
+          counterparty: parsed.storeName
+        })
+        .select()
+        .single();
+
+      if (txError || !transaction) {
+        console.error("Transaction error:", txError);
+        return { success: false, message: "Ошибка создания транзакции: " + txError?.message };
+      }
+
+      console.log("✅ Transaction created:", transaction.id);
+
+      // 4. Используем уже загруженные товары и результаты сопоставления
+      console.log(`📦 Using ${products.length} products from DB:`, products.map(p => p.name).join(", "));
+
+      const addedItems = [];
+      const notFoundItems = [];
+
+      // 6. Для не найденных товаров используем AI с умным промптом
+      const unmatchedItems = matchResults.filter(r => !r.matchedProduct);
+      
+      if (unmatchedItems.length > 0 && products.length > 0) {
+        const batchMatchPrompt = `Ты эксперт по сопоставлению товаров. Твоя задача - найти соответствие между длинными названиями из чека и короткими названиями в БД.
+
+ТОВАРЫ ИЗ ЧЕКА (длинные названия):
+${unmatchedItems.map((r, idx) => `${idx + 1}. ${r.receiptItem.name}`).join('\n')}
+
+ТОВАРЫ В БД (короткие названия):
+${products.map((p: { name: string }, idx: number) => `${idx + 1}. ${p.name}`).join('\n')}
+
+ПРАВИЛА СОПОСТАВЛЕНИЯ:
+- Ищи ключевые слова и смысл, игнорируй бренды, вес, объём
+- "Онигири Фуджи с Креветкой 120г" → "Онигири" (ключевое слово)
+- "Батончик Корнлайн кокос 30г" → "Батончик" (категория продукта)
+- "Жевательная резинка Ментос мята свежая" → "Жевательная резинка" (основной продукт)
+- "Coca-Cola Zero 0.5л" → "Кола" (напиток)
+- "Молоко Простоквашино 3.2%" → "Молоко" (продукт)
+
+Верни JSON: {"matches": [{"checkIndex": 1, "dbIndex": 2, "confidence": 0.95}, ...]}
+где checkIndex - номер из чека (1-based), dbIndex - номер из БД (1-based, или 0 если не уверен), confidence - уверенность 0-1.
+Сопоставляй только если уверенность > 0.7`;
+
+        try {
+          const batchResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${apiKey}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              model: "gpt-4o-mini",
+              messages: [{ role: "user", content: batchMatchPrompt }],
+              response_format: { type: "json_object" },
+              temperature: 0.3
+            })
+          });
+
+          if (batchResponse.ok) {
+            const batchData = await batchResponse.json();
+            const result = JSON.parse(batchData.choices[0].message.content);
+            
+            // Применяем результаты AI-сопоставления
+            if (result.matches && Array.isArray(result.matches)) {
+              for (const match of result.matches) {
+                const checkIdx = match.checkIndex - 1;
+                const dbIdx = match.dbIndex - 1;
+                const confidence = match.confidence || 0;
+                
+                if (confidence > 0.7 && checkIdx >= 0 && checkIdx < unmatchedItems.length && dbIdx >= 0 && dbIdx < products.length) {
+                  const resultIdx = matchResults.findIndex(r => r.receiptItem === unmatchedItems[checkIdx].receiptItem);
+                  if (resultIdx !== -1) {
+                    matchResults[resultIdx].matchedProduct = products[dbIdx];
+                    console.log(`🤖 AI matched (${Math.round(confidence * 100)}%): "${unmatchedItems[checkIdx].receiptItem.name}" → "${products[dbIdx].name}"`);
+                  }
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Batch AI matching error:", error);
+        }
+      }
+
+      // 7. Добавляем все найденные позиции в БД и собираем категории
+      const categoryCounts = new Map<string, number>();
+      
+      for (const result of matchResults) {
+        if (result.matchedProduct) {
+          const { error: itemError } = await supabase
+            .from("transaction_items")
+            .insert({
+              user_id: userId,
+              transaction_id: transaction.id,
+              name: result.matchedProduct.name, // Используем короткое название из БД
+              quantity: result.receiptItem.quantity,
+              unit: 'шт',
+              price_per_unit: Math.round(result.receiptItem.pricePerUnit * 100),
+              total_amount: Math.round(result.receiptItem.total * 100),
+              category_id: result.matchedProduct.category_id || null, // Категория товара
+              product_id: result.matchedProduct.id // Связь с товаром из справочника
+            });
+
+          if (!itemError) {
+            const productWithCategory = result.matchedProduct as { name: string; category_id?: string | null; categories?: { name?: string } };
+            const categoryName = productWithCategory.categories?.name || '';
+            addedItems.push(`✅ ${result.receiptItem.name} → ${result.matchedProduct.name}${categoryName ? ` (${categoryName})` : ''}`);
+            
+            // Подсчитываем категории для определения основной категории транзакции
+            if (result.matchedProduct.category_id) {
+              const count = categoryCounts.get(result.matchedProduct.category_id) || 0;
+              categoryCounts.set(result.matchedProduct.category_id, count + 1);
+            }
+          } else {
+            console.error("Item insert error:", itemError);
+          }
+        } else {
+          notFoundItems.push(result.receiptItem.name);
+        }
+      }
+
+      // 7.1. Определяем категорию транзакции по наиболее частой категории товаров
+      if (categoryCounts.size > 0) {
+        let mostFrequentCategoryId: string | null = null;
+        let maxCount = 0;
+        
+        for (const [categoryId, count] of categoryCounts.entries()) {
+          if (count > maxCount) {
+            maxCount = count;
+            mostFrequentCategoryId = categoryId;
+          }
+        }
+        
+        if (mostFrequentCategoryId) {
+          await supabase
+            .from("transactions")
+            .update({ category_id: mostFrequentCategoryId })
+            .eq("id", transaction.id);
+          
+          console.log(`✅ Transaction category set to: ${mostFrequentCategoryId}`);
+        }
+      }
+
+      // 5. Обновляем баланс счёта (пересчитываем)
+      const { data: accountData } = await supabase
+        .from("accounts")
+        .select("balance")
+        .eq("id", account.id)
+        .single();
+      
+      if (accountData) {
+        const newBalance = accountData.balance + transaction.amount;
+        await supabase
+          .from("accounts")
+          .update({ balance: newBalance })
+          .eq("id", account.id);
+      }
+
+      const summary = `✅ Чек обработан!\n\n` +
+        `🏪 Магазин: ${parsed.storeName}\n` +
+        `📅 Дата: ${parsed.date}\n` +
+        `💰 Сумма: ${parsed.totalAmount} ₽\n` +
+        `📦 Товаров: ${parsed.items.length}\n\n` +
+        (addedItems.length > 0 ? `✅ Добавлено позиций: ${addedItems.length}\n${addedItems.join("\n")}\n\n` : "") +
+        (notFoundItems.length > 0 ? `⚠️ Товары не найдены в БД:\n${notFoundItems.join(", ")}\n\nСоздайте эти товары в системе для автоматического распознавания.` : "");
+
+      return {
+        success: true,
+        message: summary,
+        data: {
+          transactionId: transaction.id,
+          addedItems: addedItems.length,
+          notFoundItems: notFoundItems.length
+        }
+      };
+
+    } catch (error) {
+      console.error("processReceipt error:", error);
+      return {
+        success: false,
+        message: "Ошибка обработки чека: " + (error instanceof Error ? error.message : "Unknown error")
+      };
+    }
+  },
 };

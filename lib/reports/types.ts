@@ -59,6 +59,15 @@ export type ReportData = {
     amount: number;
     count: number;
   }>;
+  byProduct: Array<{
+    productName: string;
+    category: string | null;
+    quantity: number;
+    unit: string;
+    totalAmount: number;
+    avgPrice: number;
+    transactionCount: number;
+  }>;
   timeline: Array<{
     date: string;
     income: number;

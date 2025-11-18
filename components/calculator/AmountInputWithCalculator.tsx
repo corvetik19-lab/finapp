@@ -13,6 +13,7 @@ type AmountInputWithCalculatorProps = {
   error?: string;
   className?: string;
   inputClassName?: string;
+  compact?: boolean;
 };
 
 export default function AmountInputWithCalculator({
@@ -23,6 +24,7 @@ export default function AmountInputWithCalculator({
   error,
   className,
   inputClassName,
+  compact = false,
 }: AmountInputWithCalculatorProps) {
   const [showCalculator, setShowCalculator] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
@@ -94,7 +96,7 @@ export default function AmountInputWithCalculator({
   };
 
   return (
-    <div className={`${styles.container} ${className || ""}`} ref={containerRef}>
+    <div className={`${styles.container} ${compact ? styles.compact : ""} ${className || ""}`} ref={containerRef}>
       {label && <label className={styles.label}>{label}</label>}
       
       <div className={styles.inputWrapper}>

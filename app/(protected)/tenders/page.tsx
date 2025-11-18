@@ -1,5 +1,5 @@
-import ModePlaceholder from "@/components/platform/ModePlaceholder";
+import { redirect } from "next/navigation";
 
 export default function TendersPage() {
-  return <ModePlaceholder modeKey="tenders" />;
+  redirect("/tenders/dashboard");
 }

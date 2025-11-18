@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    revalidatePath("/dashboard/plans");
+    revalidatePath("/finance/plans");
     return NextResponse.json({ plan }, { status: 201 });
   } catch (error) {
     console.error("Unexpected error:", error);

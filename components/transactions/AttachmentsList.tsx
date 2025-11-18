@@ -74,19 +74,19 @@ export function AttachmentsList({ transactionId, onDelete, onViewFile }: Attachm
 
       setAttachments(data || []);
       
-      console.log('fetchAttachments: loaded attachments:', data);
+      // console.log('fetchAttachments: loaded attachments:', data);
       
       // Генерируем signed URLs для всех файлов
       const urls: Record<string, string> = {};
       for (const attachment of data || []) {
         if (attachment.storage_path) {
-          console.log('fetchAttachments: generating URL for attachment:', attachment.id, attachment.storage_path);
+          // console.log('fetchAttachments: generating URL for attachment:', attachment.id, attachment.storage_path);
           const url = await getSignedUrl(attachment.storage_path);
           urls[attachment.id] = url;
         }
       }
       
-      console.log('fetchAttachments: generated URLs:', urls);
+      // console.log('fetchAttachments: generated URLs:', urls);
       setSignedUrls(urls);
     } catch (err) {
       console.error('Ошибка загрузки вложений:', err);

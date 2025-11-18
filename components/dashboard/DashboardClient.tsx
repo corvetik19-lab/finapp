@@ -10,10 +10,12 @@ import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist";
 type DashboardClientProps = {
   children: React.ReactNode;
   widgetVisibility: WidgetVisibilityState;
+  showCustomizeButton?: boolean;
 };
 
 export default function DashboardClient({
   children,
+  showCustomizeButton = true,
 }: DashboardClientProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
@@ -24,18 +26,20 @@ export default function DashboardClient({
 
       <div className={styles.topBar}>
         <div className={styles.pageTitle}>Дашборд</div>
-        <div className={styles.topBarActions}>
-          <button
-            type="button"
-            className={styles.settingsBtn}
-            onClick={() => setIsSettingsOpen(true)}
-          >
-            <span className="material-icons" aria-hidden>
-              tune
-            </span>
-            Настроить дашборд
-          </button>
-        </div>
+        {showCustomizeButton && (
+          <div className={styles.topBarActions}>
+            <button
+              type="button"
+              className={styles.settingsBtn}
+              onClick={() => setIsSettingsOpen(true)}
+            >
+              <span className="material-icons" aria-hidden>
+                tune
+              </span>
+              Настроить дашборд
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Чек-лист "Первые шаги" */}
@@ -43,7 +47,7 @@ export default function DashboardClient({
 
       {children}
 
-      {isSettingsOpen && (
+      {showCustomizeButton && isSettingsOpen && (
         <DashboardCustomizer onClose={() => setIsSettingsOpen(false)} />
       )}
     </div>

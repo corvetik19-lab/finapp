@@ -1,0 +1,228 @@
+.container {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.addButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.addButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.form {
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.form h3 {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  color: #212121;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.formGroup label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #424242;
+}
+
+.formGroup input,
+.formGroup select {
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.formGroup input:focus,
+.formGroup select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.required {
+  color: #f44336;
+}
+
+.optional {
+  color: #9e9e9e;
+  font-weight: normal;
+  font-size: 12px;
+}
+
+.formActions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.cancelButton,
+.saveButton {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelButton {
+  background: #e0e0e0;
+  color: #424242;
+}
+
+.cancelButton:hover {
+  background: #d5d5d5;
+}
+
+.saveButton {
+  background: #667eea;
+  color: white;
+}
+
+.saveButton:hover {
+  background: #5568d3;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #757575;
+}
+
+.presetsList {
+  margin-top: 24px;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.emptyState .material-icons {
+  font-size: 64px;
+  color: #e0e0e0;
+  margin-bottom: 16px;
+}
+
+.emptyState p {
+  margin: 8px 0;
+  color: #757575;
+}
+
+.emptyHint {
+  font-size: 14px;
+  color: #9e9e9e !important;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.table thead {
+  background: #f5f5f5;
+}
+
+.table th {
+  padding: 12px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  color: #424242;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.table td {
+  padding: 12px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+  color: #424242;
+}
+
+.table tbody tr:hover {
+  background: #fafafa;
+}
+
+.badgeIncome,
+.badgeExpense {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badgeIncome {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.badgeExpense {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.actionButton {
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  color: #757575;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.actionButton:hover {
+  background: #f5f5f5;
+  color: #212121;
+}
+
+.actionButton .material-icons {
+  font-size: 20px;
+}

@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import styles from "@/components/dashboard/Dashboard.module.css";
 import type { BudgetWithUsage } from "@/lib/budgets/service";
 import type { CategoryRecord } from "@/lib/categories/service";
-import { createBudgetAction } from "@/app/(protected)/dashboard/actions";
+import { createBudgetAction } from "@/app/(protected)/finance/dashboard/actions";
 
 const formSchema = z.object({
   categoryId: z.string().min(1, "Выберите категорию"),

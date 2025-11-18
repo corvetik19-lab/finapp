@@ -308,3 +308,72 @@
     transform: rotate(360deg);
   }
 }
+
+/* Таблица товаров */
+.productTable {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.productTable table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.productTable thead {
+  background: var(--table-header-bg, #f8fafc);
+  border-bottom: 2px solid var(--border-color, #e2e8f0);
+}
+
+.productTable th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-secondary, #64748b);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.productTable tbody tr {
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
+  transition: background-color 0.15s;
+}
+
+.productTable tbody tr:hover {
+  background: var(--hover-bg, #f8fafc);
+}
+
+.productTable td {
+  padding: 12px 16px;
+  color: var(--text-primary, #0f172a);
+}
+
+.productTable tfoot {
+  border-top: 2px solid var(--border-color, #e2e8f0);
+  background: var(--table-footer-bg, #fafafa);
+}
+
+.productTable tfoot td {
+  padding: 14px 16px;
+  font-weight: 600;
+}
+
+.productName {
+  font-weight: 500;
+}
+
+.productQuantity {
+  color: var(--text-secondary, #64748b);
+}
+
+.productAmount {
+  font-weight: 500;
+  text-align: right;
+}
+
+.productPercentage {
+  color: var(--text-secondary, #64748b);
+  text-align: right;
+}

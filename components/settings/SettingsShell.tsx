@@ -11,7 +11,7 @@ import RolesManager, { type RoleRecord } from "@/components/settings/RolesManage
 import UsersManager, { type UserRecord, type RoleOption } from "@/components/settings/UsersManager";
 import TelegramManager from "@/components/settings/TelegramManager";
 import BackupManager from "@/components/settings/BackupManager";
-import APIKeysManager from "@/components/settings/APIKeysManager";
+import ApiKeysManager from "@/components/settings/ApiKeysManager";
 import N8nManager from "./N8nManager";
 import TourManager from "@/components/settings/TourManager";
 import styles from "@/components/settings/Settings.module.css";
@@ -83,7 +83,7 @@ export default function SettingsShell({ profile, categories, planTypes, planPres
     }
 
     if (activeTab === "api") {
-      return <APIKeysManager />;
+      return <ApiKeysManager apiKeys={[]} />;
     }
 
     if (activeTab === "n8n") {

@@ -33,6 +33,7 @@ export type CategoryTransactionItem = {
   currency: string;
   direction: "income" | "expense" | "transfer";
   note: string | null;
+  counterparty: string | null;
   accountName: string | null;
 };
 
@@ -70,6 +71,7 @@ type TransactionWithAccountRow = {
   currency: string | null;
   direction: "income" | "expense" | "transfer" | null;
   note: string | null;
+  counterparty: string | null;
   account:
     | { name: string | null }
     | Array<{ name: string | null }>
@@ -220,7 +222,7 @@ export async function loadCategoryTransactions(
   const supabase = await createRSCClient();
   const { data, error } = await supabase
     .from("transactions")
-    .select("id,occurred_at,amount,currency,direction,note,account:accounts!transactions_account_id_fkey(name)")
+    .select("id,occurred_at,amount,currency,direction,note,counterparty,account:accounts!transactions_account_id_fkey(name)")
     .eq("category_id", categoryId)
     .gte("occurred_at", from)
     .lte("occurred_at", to)
@@ -243,6 +245,7 @@ export async function loadCategoryTransactions(
       currency: row.currency ?? "RUB",
       direction: (row.direction ?? "expense") as "income" | "expense" | "transfer",
       note: row.note,
+      counterparty: row.counterparty ?? null,
       accountName: account?.name ?? null,
     } satisfies CategoryTransactionItem;
   });

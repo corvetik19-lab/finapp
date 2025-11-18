@@ -81,7 +81,7 @@ export async function addCategory(formData: FormData) {
     .from("categories")
     .insert({ user_id: userId, kind, name, parent_id: parentId });
   if (error) throw error;
-  revalidatePath("/settings");
+  revalidatePath("/finance/settings");
 }
 
 export async function addPlanType(formData: FormData) {
@@ -104,7 +104,7 @@ export async function addPlanType(formData: FormData) {
       sort_order: sortOrder,
     });
   if (error) throw error;
-  revalidatePath("/settings");
+  revalidatePath("/finance/settings");
   return { success: true };
 }
 
@@ -131,7 +131,7 @@ export async function updatePlanType(formData: FormData) {
     .eq("user_id", userId);
 
   if (error) throw error;
-  revalidatePath("/settings");
+  revalidatePath("/finance/settings");
   return { success: true };
 }
 
@@ -159,7 +159,7 @@ export async function deletePlanType(formData: FormData) {
     .eq("id", id)
     .eq("user_id", userId);
   if (error) throw error;
-  revalidatePath("/settings");
+  revalidatePath("/finance/settings");
   return { success: true };
 }
 
@@ -202,7 +202,7 @@ export async function addPlanPreset(formData: FormData) {
       sort_order: sortOrder,
     });
   if (error) throw error;
-  revalidatePath("/settings");
+  revalidatePath("/finance/settings");
   return { success: true };
 }
 
@@ -247,7 +247,7 @@ export async function updatePlanPreset(formData: FormData) {
     .eq("id", id)
     .eq("user_id", userId);
   if (error) throw error;
-  revalidatePath("/settings");
+  revalidatePath("/finance/settings");
   return { success: true };
 }
 
@@ -263,7 +263,7 @@ export async function deletePlanPreset(formData: FormData) {
     .eq("id", id)
     .eq("user_id", userId);
   if (error) throw error;
-  revalidatePath("/settings");
+  revalidatePath("/finance/settings");
   return { success: true };
 }
 
@@ -323,7 +323,7 @@ export async function renameCategory(formData: FormData) {
     .eq("id", id)
     .eq("user_id", userId);
   if (error) throw error;
-  revalidatePath("/settings");
+  revalidatePath("/finance/settings");
 }
 
 export async function deleteCategory(formData: FormData) {
@@ -354,5 +354,5 @@ export async function deleteCategory(formData: FormData) {
     .eq("id", id)
     .eq("user_id", userId);
   if (error) throw error;
-  revalidatePath("/settings");
+  revalidatePath("/finance/settings");
 }

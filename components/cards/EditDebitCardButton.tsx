@@ -2,8 +2,8 @@
 
 import { useState, useTransition, useId } from "react";
 import { useRouter } from "next/navigation";
-import { updateCardAction } from "@/app/(protected)/cards/actions";
-import styles from "@/app/(protected)/cards/cards.module.css";
+import { updateCardAction } from "@/app/(protected)/finance/cards/actions";
+import styles from "@/app/(protected)/finance/cards/cards.module.css";
 
 type EditDebitCardButtonProps = {
   cardId: string;

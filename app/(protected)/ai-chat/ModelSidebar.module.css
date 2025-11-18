@@ -1,0 +1,224 @@
+/* Model Selector Sidebar - Right Side */
+.modelSidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 400px;
+  height: 100vh;
+  background: #f7f7f8;
+  border-left: 1px solid #e5e5e5;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 1000;
+  transition: transform 0.3s ease;
+  transform: translateX(0);
+}
+
+.modelSidebar.collapsed {
+  transform: translateX(100%);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #202123;
+}
+
+.closeBtn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  color: #202123;
+  font-size: 20px;
+}
+
+.closeBtn:hover {
+  background: #e5e5e5;
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.modelSearch {
+  position: sticky;
+  top: 0;
+  background: #f7f7f8;
+  padding-bottom: 12px;
+  z-index: 10;
+}
+
+.modelSearchInput {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s;
+  background: white;
+}
+
+.modelSearchInput:focus {
+  border-color: #3b82f6;
+}
+
+.modelGroup {
+  margin-bottom: 20px;
+}
+
+.modelGroupTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modelCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.modelButton {
+  width: 100%;
+  padding: 12px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modelButton:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.modelButton.selected {
+  background: #eff6ff;
+  border-color: #3b82f6;
+}
+
+.modelInfo {
+  flex: 1;
+}
+
+.modelName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #202123;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modelDescription {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.modelBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.badgeTop {
+  background: #3b82f6;
+  color: white;
+}
+
+.badgeNew {
+  background: #10b981;
+  color: white;
+}
+
+.badgePro {
+  background: #8b5cf6;
+  color: white;
+}
+
+.badgeVoice {
+  background: #f59e0b;
+  color: white;
+}
+
+.badgeVector {
+  background: #6366f1;
+  color: white;
+}
+
+.badgeFree {
+  background: #10b981;
+  color: white;
+}
+
+.checkmark {
+  color: #3b82f6;
+  font-size: 18px;
+}
+
+.noResults {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+}
+
+.noResultsIcon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.noResultsText {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.noResultsHint {
+  font-size: 14px;
+  color: #9ca3af;
+}

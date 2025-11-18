@@ -1,3 +1,90 @@
+/* Transaction items display styles */
+.itemsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.itemRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.itemRow:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.itemIcon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.itemContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.itemName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.itemCategory {
+  font-weight: 400;
+  color: #6b7280;
+  font-size: 0.9em;
+}
+
+.itemDetails {
+  font-size: 13px;
+  color: #6b7280;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+}
+
+.itemTotal {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  flex-shrink: 0;
+}
+
+.itemsTotal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 12px 0;
+  margin-top: 8px;
+  border-top: 2px solid #e5e7eb;
+  font-size: 15px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.itemsTotalAmount {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+}
+
+.loadingItems {
+  padding: 20px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+}
+
 /* Transactions page styles following tranz.html design */
 .topBar {
   display: flex;

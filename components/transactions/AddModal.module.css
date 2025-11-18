@@ -4,7 +4,7 @@
 .title{font-size:18px;font-weight:500}
 .close{background:transparent;border:none;border-radius:8px;width:36px;height:36px;display:grid;place-items:center;color:var(--text-secondary);cursor:pointer}
 .close:hover{background:rgba(0,0,0,0.06)}
-.body{padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.body{padding:14px 16px;display:flex;flex-direction:column;gap:12px;flex:1;overflow-y:auto;min-height:0}
 .groupRow{display:flex;flex-direction:column;gap:6px}
 .label{font-size:14px;color:var(--text-secondary)}
 .radioRow{display:flex;gap:14px}

@@ -88,10 +88,10 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     }
 
     // Обновляем кэш всех зависимых страниц
-    revalidatePath("/cards");
-    revalidatePath("/transactions");
-    revalidatePath("/reports");
-    revalidatePath("/dashboard");
+    revalidatePath("/finance/cards");
+    revalidatePath("/finance/transactions");
+    revalidatePath("/finance/reports");
+    revalidatePath("/finance/dashboard");
 
     return NextResponse.json({ success: true });
   } catch (error) {

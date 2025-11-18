@@ -1,7 +1,5 @@
-import { NextRequest } from "next/server";
-import { exportTransactionsAction } from "../actions";
+import { NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
-  const searchParams = Object.fromEntries(request.nextUrl.searchParams.entries());
-  return exportTransactionsAction({ searchParams });
+export async function GET() {
+  return NextResponse.redirect(new URL("/finance/transactions/export", process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"), 301);
 }

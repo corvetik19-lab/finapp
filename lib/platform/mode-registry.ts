@@ -137,7 +137,7 @@ export const MODE_REGISTRY: Record<string, ModeConfig> = {
     icon: 'description',
     color: '#F59E0B',
     description: 'Учёт и управление тендерами, документооборот и аналитика',
-    isEnabled: false,
+    isEnabled: true,
     isPremium: true,
     order: 4,
     permissions: {

@@ -1,10 +1,5 @@
-import BookmarksContent from "./BookmarksContent";
+import { redirect } from "next/navigation";
 
-export const metadata = {
-  title: "Закладки | Finapp",
-  description: "Управление закладками и ссылками",
-};
-
-export default function BookmarksPage() {
-  return <BookmarksContent />;
+export default function BookmarksRedirect() {
+  redirect("/personal/bookmarks");
 }

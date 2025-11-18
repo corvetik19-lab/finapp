@@ -4,19 +4,18 @@ import {
   useMemo,
   useState,
   useEffect,
-  useActionState,
   useTransition,
 } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/components/toast/ToastContext";
 import styles from "@/components/transactions/Transactions.module.css";
-import AmountInputWithCalculator from "@/components/calculator/AmountInputWithCalculator";
 import {
   deleteTransactionAction,
   updateTransactionFromValues,
-  type DeleteTxnState,
-} from "@/app/(protected)/transactions/actions";
+  duplicateTransactionAction,
+} from "@/app/(protected)/finance/transactions/actions";
 import {
   transactionEditFormSchema,
   type TransactionEditFormValues,
@@ -25,6 +24,10 @@ import { formatMoney } from "@/lib/utils/format";
 import { AttachmentsList } from "@/components/transactions/AttachmentsList";
 import { FileUpload } from "@/components/transactions/FileUpload";
 import { FileViewerModal } from "@/components/transactions/FileViewerModal";
+import { getTransactionItems } from "@/lib/transactions/transaction-items-service";
+import { calculateTotalFromItems } from "@/lib/transactions/transaction-items-utils";
+import type { TransactionItem, TransactionItemInput } from "@/types/transaction";
+import { TransactionItems } from "@/components/transactions/TransactionItems";
 
 export type Txn = {
   id: string;
@@ -54,7 +57,9 @@ type Group = {
 };
 
 function formatAmountInput(minor: number) {
-  return (minor / 100).toString();
+  const amount = minor / 100;
+  // Убираем лишние нули после запятой
+  return amount % 1 === 0 ? amount.toFixed(0) : amount.toString();
 }
 
 type TransactionsGroupedListProps = {
@@ -71,9 +76,15 @@ export default function TransactionsGroupedList({
   const catMap = useMemo(() => Object.fromEntries(categories.map((c) => [c.id, c])), [categories]);
   const accMap = useMemo(() => Object.fromEntries(accounts.map((a) => [a.id, a])), [accounts]);
 
+  const [clientTxns, setClientTxns] = useState(txns);
+
+  useEffect(() => {
+    setClientTxns(txns);
+  }, [txns]);
+
   const byDir = useMemo(() => {
     const buckets: Record<string, Txn[]> = {};
-    for (const txn of txns) {
+    for (const txn of clientTxns) {
       if (txn.direction !== "income" && txn.direction !== "expense" && txn.direction !== "transfer") continue;
       const key = `${txn.direction}|${txn.category_id || "uncat"}`;
       if (!buckets[key]) buckets[key] = [];
@@ -102,7 +113,7 @@ export default function TransactionsGroupedList({
     }
 
     return grouped;
-  }, [txns, catMap]);
+  }, [clientTxns, catMap]);
 
   const incomeTotal = useMemo(() => byDir.income.reduce((sum, group) => sum + group.total, 0), [byDir]);
   const expenseTotal = useMemo(() => byDir.expense.reduce((sum, group) => sum + group.total, 0), [byDir]);
@@ -116,15 +127,19 @@ export default function TransactionsGroupedList({
   const [editClosing, setEditClosing] = useState(false);
   const [editKey, setEditKey] = useState(0);
   const { show: showToast } = useToast();
+  const router = useRouter();
   const [removingIds, setRemovingIds] = useState<Record<string, boolean>>({});
   const [viewingFile, setViewingFile] = useState<{
     fileName: string;
     fileUrl: string;
     mimeType: string | null;
   } | null>(null);
+  const [transactionItems, setTransactionItems] = useState<TransactionItem[]>([]);
+  const [loadingItems, setLoadingItems] = useState(false);
+  const [editingItems, setEditingItems] = useState<TransactionItem[]>([]);
 
-  const [deleteState, deleteAction] = useActionState(deleteTransactionAction, { ok: false } as DeleteTxnState);
   const [isSaving, startSaving] = useTransition();
+  const [isDuplicating, startDuplicating] = useTransition();
 
   const {
     register,
@@ -157,6 +172,13 @@ export default function TransactionsGroupedList({
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key !== "Escape") return;
+      
+      // Не закрываем модалку, если фокус в поле ввода
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
+        return;
+      }
+      
       if (editMode) {
         setEditClosing(true);
         setTimeout(() => {
@@ -216,18 +238,43 @@ export default function TransactionsGroupedList({
     if (account) setValue("currency", account.currency, { shouldDirty: true });
   }, [accountValue, accounts, editMode, setValue]);
 
+
+  // Загружаем позиции товаров при выборе транзакции
   useEffect(() => {
-    if (!deleteState) return;
-    if (deleteState.error) {
-      showToast(`❌ Ошибка удаления: ${deleteState.error}`, { type: "error" });
-      setRemovingIds({});
+    if (!selected) {
+      setTransactionItems([]);
+      setEditingItems([]);
       return;
     }
-    if (deleteState.ok) {
-      showToast("✅ Транзакция успешно удалена", { type: "success" });
-      setRemovingIds({});
+    
+    if (editMode) {
+      // В режиме редактирования загружаем позиции для редактирования
+      setLoadingItems(true);
+      getTransactionItems(selected.id)
+        .then((items) => {
+          setEditingItems(items);
+          setTransactionItems([]);
+        })
+        .catch((error) => {
+          console.error("Failed to load transaction items for editing:", error);
+          setEditingItems([]);
+        })
+        .finally(() => setLoadingItems(false));
+    } else {
+      // В режиме просмотра загружаем позиции для отображения
+      setLoadingItems(true);
+      getTransactionItems(selected.id)
+        .then((items) => {
+          setTransactionItems(items);
+          setEditingItems([]);
+        })
+        .catch((error) => {
+          console.error("Failed to load transaction items:", error);
+          setTransactionItems([]);
+        })
+        .finally(() => setLoadingItems(false));
     }
-  }, [deleteState, showToast]);
+  }, [selected, editMode]);
 
   function toggleDir(dir: "income" | "expense" | "transfer") {
     setOpenDir((prev) => {
@@ -275,12 +322,24 @@ export default function TransactionsGroupedList({
         category_id: values.category_id || "",
         amount_major: values.amount_major.replace(/\s+/g, "").replace(/,/g, "."),
       };
-      const result = await updateTransactionFromValues(normalized);
+      
+      // Преобразуем editingItems в TransactionItemInput (убираем поля id, transaction_id, user_id, created_at, updated_at)
+      const itemsToSave: TransactionItemInput[] = editingItems.map((item) => ({
+        name: item.name,
+        quantity: item.quantity,
+        unit: item.unit,
+        price_per_unit: item.price_per_unit,
+        total_amount: item.total_amount,
+        product_id: item.product_id || null,
+      }));
+      
+      const result = await updateTransactionFromValues(normalized, itemsToSave);
       if (!result.ok) {
         showToast(`❌ Ошибка: ${result.error || "Не удалось сохранить"}`, { type: "error" });
         return;
       }
       showToast("✅ Транзакция успешно обновлена", { type: "success" });
+      router.refresh();
       closeEdit();
     });
   });
@@ -293,12 +352,11 @@ export default function TransactionsGroupedList({
     toggleDir: (dir: "income" | "expense" | "transfer") => void;
     openCats: Record<string, boolean>;
     toggleCat: (dir: "income" | "expense" | "transfer", catId: string) => void;
-    setSelected: (txn: Txn | null) => void;
-    setEditMode: (flag: boolean) => void;
+    setSelected: React.Dispatch<React.SetStateAction<Txn | null>>;
+    setEditMode: React.Dispatch<React.SetStateAction<boolean>>;
     setEditKey: React.Dispatch<React.SetStateAction<number>>;
     setRemovingIds: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
     removingIds: Record<string, boolean>;
-    delAction: (formData: FormData) => void;
   };
 
   function DirBlock({
@@ -314,7 +372,6 @@ export default function TransactionsGroupedList({
     setEditKey,
     setRemovingIds,
     removingIds,
-    delAction,
   }: DirBlockProps) {
     const totalCurrency = groups[0]?.txns[0]?.currency || "RUB";
     return (
@@ -404,25 +461,88 @@ export default function TransactionsGroupedList({
 
                             <div className={styles.rowActions} onClick={(e) => e.stopPropagation()}>
                               <div className={`${styles.amount} ${signCls}`}>
-                                {dir === "transfer" ? "" : dir === "income" ? "+" : ""}
-                                {formatMoney(dir === "transfer" ? txn.amount : dir === "income" ? txn.amount : -txn.amount, txn.currency)}
+                                {dir === "transfer" ? "" : dir === "income" ? "+" : "−"}
+                                {formatMoney(Math.abs(txn.amount), txn.currency)}
                               </div>
 
-                              <form
-                                action={(fd) => {
-                                  if (!confirm("Удалить эту транзакцию?")) return;
-                                  setRemovingIds((prev) => ({ ...prev, [txn.id]: true }));
-                                  delAction(fd);
+                              <button
+                                type="button"
+                                className={styles.iconBtn}
+                                title="Дублировать"
+                                aria-label="Дублировать"
+                                disabled={isDuplicating}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  startDuplicating(async () => {
+                                    const result = await duplicateTransactionAction(txn.id);
+                                    if (result.ok) {
+                                      showToast("✅ Транзакция успешно дублирована", { type: "success" });
+                                      router.refresh();
+                                    } else {
+                                      showToast(`❌ Ошибка: ${result.error}`, { type: "error" });
+                                    }
+                                  });
                                 }}
-                                onClick={(e) => e.stopPropagation()}
                               >
-                                <input type="hidden" name="id" value={txn.id} />
-                                <button type="submit" className={styles.iconBtn} title="Удалить" aria-label="Удалить">
-                                  <span className="material-icons" aria-hidden>
-                                    delete
-                                  </span>
-                                </button>
-                              </form>
+                                <span className="material-icons" aria-hidden>
+                                  content_copy
+                                </span>
+                              </button>
+
+                              <button
+                                type="button"
+                                className={styles.iconBtn}
+                                title="Удалить"
+                                aria-label="Удалить"
+                                disabled={removingIds[txn.id]}
+                                onClick={async (e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  if (!confirm("Удалить эту транзакцию?")) return;
+                                  
+                                  const txnId = txn.id;
+                                  setRemovingIds((prev) => ({ ...prev, [txnId]: true }));
+                                  
+                                  try {
+                                    const formData = new FormData();
+                                    formData.append("id", txnId);
+                                    const result = await deleteTransactionAction({ ok: false }, formData);
+                                    
+                                    if (result.ok) {
+                                      showToast("✅ Транзакция успешно удалена", { type: "success" });
+                                      setClientTxns((prev) => prev.filter((item) => item.id !== txnId));
+                                      setRemovingIds((prev) => {
+                                        const next = { ...prev };
+                                        delete next[txnId];
+                                        return next;
+                                      });
+                                      if (selected?.id === txnId) {
+                                        setSelected(null);
+                                      }
+                                      router.refresh();
+                                    } else {
+                                      showToast(`❌ Ошибка: ${result.error}`, { type: "error" });
+                                      setRemovingIds((prev) => {
+                                        const next = { ...prev };
+                                        delete next[txnId];
+                                        return next;
+                                      });
+                                    }
+                                  } catch (error) {
+                                    showToast(`❌ Ошибка удаления: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`, { type: "error" });
+                                    setRemovingIds((prev) => {
+                                      const next = { ...prev };
+                                      delete next[txnId];
+                                      return next;
+                                    });
+                                  }
+                                }}
+                              >
+                                <span className="material-icons" aria-hidden>
+                                  delete
+                                </span>
+                              </button>
 
                               <button
                                 type="button"
@@ -469,7 +589,6 @@ export default function TransactionsGroupedList({
         setEditKey={setEditKey}
         setRemovingIds={setRemovingIds}
         removingIds={removingIds}
-        delAction={(fd) => deleteAction(fd)}
       />
 
       <DirBlock
@@ -485,7 +604,6 @@ export default function TransactionsGroupedList({
         setEditKey={setEditKey}
         setRemovingIds={setRemovingIds}
         removingIds={removingIds}
-        delAction={(fd) => deleteAction(fd)}
       />
 
       <DirBlock
@@ -501,7 +619,6 @@ export default function TransactionsGroupedList({
         setEditKey={setEditKey}
         setRemovingIds={setRemovingIds}
         removingIds={removingIds}
-        delAction={(fd) => deleteAction(fd)}
       />
 
       {viewingFile && (
@@ -514,13 +631,20 @@ export default function TransactionsGroupedList({
       )}
 
       {!editMode && selected && (
-        <div className={styles.modalOverlay} onClick={closeView}>
+        <div 
+          className={styles.modalOverlay} 
+          onClick={(e) => {
+            // Закрываем только если клик именно по overlay, а не по его содержимому
+            if (e.target === e.currentTarget) {
+              closeView();
+            }
+          }}
+        >
           <div
             className={`${styles.modal} ${viewClosing ? styles.closing : ""}`}
             role="dialog"
             aria-modal="true"
             aria-labelledby="txnModalTitle"
-            onClick={(e) => e.stopPropagation()}
           >
             <div className={styles.modalBody}>
               <div className={styles.amountHero}>
@@ -529,7 +653,7 @@ export default function TransactionsGroupedList({
                     {selected.direction === "income" ? "arrow_upward" : selected.direction === "transfer" ? "swap_horiz" : "arrow_downward"}
                   </span>
                   {selected.direction === "income" ? "+" : selected.direction === "transfer" ? "" : "−"}
-                  {formatMoney(selected.amount, selected.currency)}
+                  {formatMoney(Math.abs(selected.amount), selected.currency)}
                 </span>
               </div>
 
@@ -560,7 +684,11 @@ export default function TransactionsGroupedList({
                           Категория
                         </span>
                         <span className={styles.modalValue}>
-                          {selected.category_id ? catMap[selected.category_id]?.name || "—" : "Без категории"}
+                          {selected.direction === "transfer"
+                            ? "—"
+                            : selected.category_id
+                            ? catMap[selected.category_id]?.name ?? "(удалена)"
+                            : "Без категории"}
                         </span>
                       </div>
 
@@ -674,6 +802,49 @@ export default function TransactionsGroupedList({
                 </div>
               </div>
 
+              {/* Позиции товаров */}
+              {transactionItems.length > 0 && (
+                <div className={styles.modalSection}>
+                  <div className={styles.modalSectionTitle}>
+                    <span className="material-icons" style={{ fontSize: 20, marginRight: 8 }}>shopping_cart</span>
+                    Позиции товаров
+                  </div>
+                  <div className={styles.itemsList}>
+                    {transactionItems.map((item) => (
+                      <div key={item.id} className={styles.itemRow}>
+                        <div className={styles.itemIcon}>🛒</div>
+                        <div className={styles.itemContent}>
+                          <div className={styles.itemName}>
+                            {item.name}
+                          </div>
+                          <div className={styles.itemDetails}>
+                            {item.quantity} {item.unit} × {formatMoney(item.price_per_unit, selected.currency)}
+                          </div>
+                        </div>
+                        <div className={styles.itemTotal}>
+                          {formatMoney(item.total_amount, selected.currency)}
+                        </div>
+                      </div>
+                    ))}
+                    <div className={styles.itemsTotal}>
+                      <span>Итого:</span>
+                      <span className={styles.itemsTotalAmount}>
+                        {formatMoney(
+                          transactionItems.reduce((sum, item) => sum + item.total_amount, 0),
+                          selected.currency
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {loadingItems && (
+                <div className={styles.modalSection}>
+                  <div className={styles.loadingItems}>Загрузка позиций товаров...</div>
+                </div>
+              )}
+
               {/* Вложения */}
               <div className={styles.modalSection}>
                 <div className={styles.modalSectionTitle}>Вложения</div>
@@ -688,13 +859,20 @@ export default function TransactionsGroupedList({
       )}
 
       {selected && editMode && (
-        <div className={styles.modalOverlay} onClick={closeEdit}>
+        <div 
+          className={styles.modalOverlay} 
+          onClick={(e) => {
+            // Закрываем только если клик именно по overlay, а не по его содержимому
+            if (e.target === e.currentTarget) {
+              closeEdit();
+            }
+          }}
+        >
           <div
             className={`${styles.modal} ${editClosing ? styles.closing : ""}`}
             role="dialog"
             aria-modal="true"
             aria-labelledby="txnEditTitle"
-            onClick={(e) => e.stopPropagation()}
           >
             <div className={styles.modalBody}>
               <div className={styles.amountHero}>
@@ -703,7 +881,7 @@ export default function TransactionsGroupedList({
                     {selected.direction === "income" ? "arrow_upward" : selected.direction === "transfer" ? "swap_horiz" : "arrow_downward"}
                   </span>
                   {selected.direction === "income" ? "+" : selected.direction === "transfer" ? "" : "−"}
-                  {formatMoney(selected.amount, selected.currency)}
+                  {formatMoney(Math.abs(selected.amount), selected.currency)}
                 </span>
               </div>
 
@@ -747,42 +925,25 @@ export default function TransactionsGroupedList({
                           <span className={styles.modalLabel}>
                             <span className={styles.iconMini}>
                               <span className="material-icons" aria-hidden>
-                                label
-                              </span>
-                            </span>
-                            Категория
-                          </span>
-                          <span className={styles.modalValue}>
-                            <select {...register("category_id")} className={styles.select}>
-                              <option value="">— не выбрана —</option>
-                              {categories
-                                .filter((c) => c.kind !== "transfer")
-                                .map((c) => (
-                                  <option key={c.id} value={c.id}>
-                                    {c.name}
-                                  </option>
-                                ))}
-                            </select>
-                          </span>
-                        </div>
-
-                        <div className={styles.modalRow}>
-                          <span className={styles.modalLabel}>
-                            <span className={styles.iconMini}>
-                              <span className="material-icons" aria-hidden>
                                 payments
                               </span>
                             </span>
                             Сумма (₽)
                           </span>
                           <span className={styles.modalValue}>
-                            <AmountInputWithCalculator
+                            <input
+                              type="text"
+                              inputMode="decimal"
                               value={amountValue}
-                              onChange={(val) => setValue("amount_major", val)}
+                              onChange={(e) => setValue("amount_major", e.target.value)}
                               placeholder="0"
-                              error={errors.amount_major?.message}
-                              inputClassName={styles.input}
+                              className={styles.input}
+                              readOnly
+                              style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
                             />
+                            {errors.amount_major?.message && (
+                              <span className={styles.error}>{errors.amount_major.message}</span>
+                            )}
                           </span>
                         </div>
                       </div>
@@ -876,6 +1037,58 @@ export default function TransactionsGroupedList({
 
                 <input type="hidden" {...register("id")} />
                 <input type="hidden" {...register("currency")} />
+
+                {/* Позиции товаров */}
+                <div className={styles.modalSection}>
+                  <TransactionItems
+                    items={editingItems.map((item) => ({
+                      name: item.name,
+                      quantity: item.quantity,
+                      unit: item.unit,
+                      price_per_unit: item.price_per_unit,
+                      total_amount: item.total_amount,
+                      product_id: item.product_id || null,
+                    }))}
+                    onChange={(items) => {
+                      // Обновляем editingItems, сохраняя существующие id
+                      const updatedItems: TransactionItem[] = items.map((item, index) => ({
+                        id: editingItems[index]?.id || `temp-${index}`,
+                        transaction_id: selected.id,
+                        user_id: "",
+                        name: item.name,
+                        quantity: item.quantity,
+                        unit: item.unit,
+                        price_per_unit: item.price_per_unit,
+                        total_amount: item.total_amount || Math.round(item.quantity * item.price_per_unit),
+                        product_id: editingItems[index]?.product_id || item.product_id || null,
+                        created_at: editingItems[index]?.created_at || new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                      }));
+                      setEditingItems(updatedItems);
+                      
+                      // Автоматически обновляем сумму транзакции
+                      if (items.length > 0) {
+                        const totalMinor = calculateTotalFromItems(items);
+                        const totalMajor = (totalMinor / 100).toFixed(2);
+                        setValue("amount_major", totalMajor);
+                        
+                        // Обновляем категорию транзакции из любого товара у которого есть category_id
+                        // Приоритет: последний добавленный/изменённый товар (он в конце массива)
+                        const itemWithCategory = [...items].reverse().find(item => 
+                          'category_id' in item && item.category_id
+                        );
+                        if (itemWithCategory && itemWithCategory.category_id) {
+                          setValue("category_id", itemWithCategory.category_id);
+                        }
+                      } else {
+                        // Если все товары удалены, очищаем сумму
+                        setValue("amount_major", "");
+                      }
+                    }}
+                    currency={selected.currency}
+                    direction={selected.direction === "transfer" ? undefined : (selected.direction as "income" | "expense")}
+                  />
+                </div>
 
                 {/* Загрузка вложений */}
                 <div className={styles.modalSection}>

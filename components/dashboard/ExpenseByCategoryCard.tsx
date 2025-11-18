@@ -6,7 +6,7 @@ import ExpenseBreakdownDonut from "@/components/reports/ExpenseBreakdownDonut";
 import styles from "@/components/dashboard/Dashboard.module.css";
 import type { DashboardBreakdownPoint } from "@/lib/dashboard/service";
 import { formatMoney } from "@/lib/utils/format";
-import { loadExpenseBreakdownAction } from "@/app/(protected)/dashboard/actions";
+import { loadExpenseBreakdownAction } from "@/app/(protected)/finance/dashboard/actions";
 
 type PresetOption = {
   id: string;

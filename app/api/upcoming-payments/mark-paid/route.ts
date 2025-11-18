@@ -83,8 +83,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: updateError.message }, { status: 400 });
     }
 
-    revalidatePath("/dashboard");
-    revalidatePath("/payments");
+    revalidatePath("/finance/dashboard");
+    revalidatePath("/finance/payments");
 
     return NextResponse.json({ success: true });
   } catch (error) {

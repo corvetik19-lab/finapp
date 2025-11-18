@@ -11,10 +11,10 @@ import {
   deleteNoteAction,
   createNoteLabelAction,
   deleteNoteLabelAction,
-} from "@/app/(protected)/notes/actions";
+} from "@/app/(protected)/personal/notes/actions";
 import type { NoteFormInput } from "@/lib/notes/schema";
-import { fetchTransactionsForSelectAction } from "@/app/(protected)/transactions/actions";
-import { fetchPlansForSelectAction } from "@/app/(protected)/plans/actions";
+import { fetchTransactionsForSelectAction } from "@/app/(protected)/finance/transactions/actions";
+import { fetchPlansForSelectAction } from "@/app/(protected)/finance/plans/actions";
 import type { TransactionSelectItem } from "@/lib/transactions/service";
 import type { PlanSelectItem } from "@/lib/plans/service";
 

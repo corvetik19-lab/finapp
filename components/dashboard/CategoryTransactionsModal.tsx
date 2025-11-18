@@ -103,7 +103,7 @@ export default function CategoryTransactionsModal({
                       </span>
                     </div>
                     <div className={styles.modalTransactionMeta}>
-                      {item.note ? <span>{item.note}</span> : <span>Без описания</span>}
+                      <span>{item.counterparty || item.note || "Без описания"}</span>
                       {item.accountName && <span className={styles.modalTransactionAccount}>{item.accountName}</span>}
                     </div>
                   </li>

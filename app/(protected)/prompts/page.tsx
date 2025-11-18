@@ -1,10 +1,5 @@
-import PromptsContent from "./PromptsContent";
+import { redirect } from "next/navigation";
 
-export const metadata = {
-  title: "Промпты | Finapp",
-  description: "Управление промптами для нейросетей",
-};
-
-export default function PromptsPage() {
-  return <PromptsContent />;
+export default function PromptsRedirect() {
+  redirect("/personal/prompts");
 }

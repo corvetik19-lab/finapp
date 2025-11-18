@@ -72,8 +72,10 @@ export const toolSchemas = {
   }),
 
   getExpensesByCategory: z.object({
-    startDate: z.string().optional().describe("Начальная дата YYYY-MM-DD"),
-    endDate: z.string().optional().describe("Конечная дата YYYY-MM-DD"),
+    startDate: z.string().optional().describe("Начальная дата YYYY-MM-DD. Если не указано - первый день текущего месяца"),
+    endDate: z.string().optional().describe("Конечная дата YYYY-MM-DD. Если не указано - последний день текущего месяца"),
+    month: z.string().optional().describe("Название месяца на русском (например 'ноябрь', 'октябрь'). Если указано - автоматически вычислить startDate и endDate"),
+    year: z.number().optional().describe("Год (например 2024). Используется вместе с month"),
   }),
 
   getAccountBalance: z.object({
@@ -259,6 +261,12 @@ export const toolSchemas = {
 
   getMonthlyTrends: z.object({
     months: z.number().optional().default(12).describe("Количество месяцев"),
+  }),
+
+  // === ОБРАБОТКА ЧЕКОВ ===
+  processReceipt: z.object({
+    receiptText: z.string().describe("Полный текст чека от кассы"),
+    accountName: z.string().optional().describe("Название счёта для списания (по умолчанию - первый счёт)"),
   }),
 };
 
@@ -479,6 +487,12 @@ export const aiTools = {
   getMonthlyTrends: {
     description: "Получить месячные тренды доходов и расходов. Используй для анализа финансовой динамики.",
     parameters: toolSchemas.getMonthlyTrends,
+  },
+
+  // === ОБРАБОТКА ЧЕКОВ ===
+  processReceipt: {
+    description: "Обработать кассовый чек и создать транзакцию с позициями товаров. ИСПОЛЬЗУЙ когда пользователь присылает чек (текст от кассы). Автоматически находит товары в БД, создаёт транзакцию и добавляет позиции.",
+    parameters: toolSchemas.processReceipt,
   },
 };
 

@@ -1,31 +1,17 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import UserProfileDropdown from "./UserProfileDropdown";
 import { NotificationProvider } from "@/contexts/NotificationContext";
-import NotificationBell from "@/components/notifications/NotificationBell";
 import OnboardingTour from "@/components/onboarding/OnboardingTour";
 import TourWrapper from "@/components/onboarding/TourWrapper";
-import Navigation from "./Navigation";
+import ModeSidebar from "@/components/platform/ModeSidebar";
 import styles from "./ProtectedShell.module.css";
-import type { Permission } from "@/lib/auth/permissions";
-import type { NavConfig as NavConfigType } from "@/lib/auth/filterNavigation";
-
-type UserData = {
-  email: string;
-  fullName: string;
-  avatar: string | null;
-};
-
 
 type ProtectedShellProps = {
   children: React.ReactNode;
-  userData: UserData;
-  userPermissions: Permission[];
-  navConfig: NavConfigType[];
 };
 
-export default function ProtectedShell({ children, userData, navConfig: filteredNavConfig }: ProtectedShellProps) {
+export default function ProtectedShell({ children }: ProtectedShellProps) {
   const pathname = usePathname();
   const isAiChatPage = pathname === "/ai-chat";
   
@@ -34,39 +20,10 @@ export default function ProtectedShell({ children, userData, navConfig: filtered
       <NotificationProvider>
         <OnboardingTour />
         <div className={styles.root}>
-        <aside className={styles.sidebar}>
-          <div className={styles.brand}>
-            <span className="material-icons" aria-hidden>
-              account_balance
-            </span>
-            <span>Finapp</span>
-          </div>
-          
-          <Navigation navConfig={filteredNavConfig} />
-        </aside>
+        {/* Mode-specific Sidebar - единственный sidebar */}
+        <ModeSidebar />
+        
         <div className={styles.content}>
-          <header className={styles.header}>
-            <div className={styles.headerLeft}>
-              <span className={styles.greeting}>Привет, {userData.fullName || 'Пользователь'}!</span>
-            </div>
-            <div className={styles.headerCenter}>
-              <div className={styles.searchBox}>
-                <span className="material-icons" aria-hidden>search</span>
-                <input 
-                  type="search" 
-                  placeholder="Поиск..." 
-                  className={styles.searchInput}
-                />
-              </div>
-            </div>
-            <div className={styles.headerRight}>
-              <button className={styles.iconButton} aria-label="Календарь">
-                <span className="material-icons">calendar_month</span>
-              </button>
-              <NotificationBell />
-              <UserProfileDropdown userData={userData} />
-            </div>
-          </header>
           <main className={isAiChatPage ? styles.mainNoScroll : styles.main}>
             {children}
           </main>

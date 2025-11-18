@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import ImportCsvModal from "@/components/transactions/ImportCsvModal";
-import { importTransactionsAction } from "@/app/(protected)/transactions/actions";
+import { importTransactionsAction } from "@/app/(protected)/finance/transactions/actions";
 import type { CsvNormalizedRow } from "@/lib/csv/import-schema";
 
 type Props = {

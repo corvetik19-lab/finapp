@@ -65,6 +65,45 @@ function formatTransactionAmount(amountMinor: number, currency: string) {
   return formatter.format(amountMinor / 100);
 }
 
+function normalizeOccurredAt(value: string): string {
+  try {
+    // Для datetime-local (YYYY-MM-DDTHH:mm) добавляем секунды и timezone offset
+    // Чтобы PostgreSQL сохранил ИМЕННО это время без конвертации
+    if (value.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
+      // Получаем timezone offset в минутах и конвертируем в формат +HH:MM
+      const offset = -new Date().getTimezoneOffset();
+      const hours = Math.floor(Math.abs(offset) / 60).toString().padStart(2, '0');
+      const minutes = (Math.abs(offset) % 60).toString().padStart(2, '0');
+      const sign = offset >= 0 ? '+' : '-';
+      return `${value}:00${sign}${hours}:${minutes}`;
+    }
+    
+    // Если уже есть секунды но нет timezone, добавляем timezone offset
+    if (value.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/) && !value.endsWith('Z') && !value.includes('+') && value.lastIndexOf('-') <= 10) {
+      const offset = -new Date().getTimezoneOffset();
+      const hours = Math.floor(Math.abs(offset) / 60).toString().padStart(2, '0');
+      const minutes = (Math.abs(offset) % 60).toString().padStart(2, '0');
+      const sign = offset >= 0 ? '+' : '-';
+      return `${value}${sign}${hours}:${minutes}`;
+    }
+    
+    // Если уже в формате ISO с Z или timezone, возвращаем как есть
+    if (value.endsWith('Z') || value.includes('+') || (value.includes('-') && value.lastIndexOf('-') > 10)) {
+      return value;
+    }
+    
+    // Для других форматов пытаемся распарсить
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+    
+    return date.toISOString();
+  } catch {
+    return value;
+  }
+}
+
 function buildTransactionSelectLabel(row: TransactionSelectRow): string {
   const date = (() => {
     try {
@@ -230,7 +269,7 @@ const updateSchema = z.object({
       amount_major: z
         .preprocess(
           (v) => (typeof v === "string" ? v.replace(/,/g, ".") : v),
-          z.coerce.number().positive("Сумма должна быть больше 0")
+          z.coerce.number().refine((n) => n !== 0, "Сумма не может быть равна 0")
         )
         .optional(),
       currency: z.string().min(3).max(3).optional(),
@@ -407,7 +446,7 @@ export async function createTransaction(input: InsertTransactionInput): Promise<
     direction: parsed.direction,
     amount: amountMinor,
     currency: parsed.currency,
-    occurred_at: parsed.occurred_at ?? new Date().toISOString(),
+    occurred_at: parsed.occurred_at ? normalizeOccurredAt(parsed.occurred_at) : new Date().toISOString(),
     note: parsed.note ?? null,
     counterparty: parsed.counterparty ?? null,
   };
@@ -547,7 +586,9 @@ export async function updateTransaction(input: UpdateTransactionInput): Promise<
   if (parsed.payload.direction && oldTxn.direction !== "transfer") patch.direction = parsed.payload.direction;
   if (parsed.payload.amount_major !== undefined && oldTxn.direction !== "transfer") patch.amount = Math.round(parsed.payload.amount_major * 100);
   if (parsed.payload.currency) patch.currency = parsed.payload.currency;
-  if (parsed.payload.occurred_at) patch.occurred_at = parsed.payload.occurred_at;
+  if (parsed.payload.occurred_at) {
+    patch.occurred_at = normalizeOccurredAt(parsed.payload.occurred_at);
+  }
   if (parsed.payload.note !== undefined) patch.note = parsed.payload.note;
   if (parsed.payload.counterparty !== undefined) patch.counterparty = parsed.payload.counterparty;
 
@@ -839,6 +880,14 @@ export async function deleteTransaction(id: string): Promise<void> {
   }
 
   await deletePlanTopupsForTransactions(supabase, user.id, [id]);
+
+  // Удаляем связанные позиции товаров
+  const { error: itemsError } = await supabase
+    .from("transaction_items")
+    .delete()
+    .eq("transaction_id", id)
+    .eq("user_id", user.id);
+  if (itemsError) console.error("Error deleting transaction items:", itemsError);
 
   const { error } = await supabase.from("transactions").delete().eq("id", id).eq("user_id", user.id);
   if (error) throw error;

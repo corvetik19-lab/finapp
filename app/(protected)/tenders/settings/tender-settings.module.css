@@ -1,0 +1,717 @@
+/* Контейнер */
+.container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Заголовок */
+.header {
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: #64748b;
+  font-size: 1rem;
+}
+
+/* Вкладки */
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  padding: 0.5rem;
+  background: #f8fafc;
+  border-radius: 0.75rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.tabs::-webkit-scrollbar {
+  height: 6px;
+}
+
+.tabs::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tabs::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.tabs::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: transparent;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tab:hover:not(.tabActive) {
+  color: #475569;
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.tabActive {
+  color: white;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.tabIcon {
+  font-size: 1.125rem;
+}
+
+/* Контент */
+.content {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tabContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Заголовок секции */
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Карточка */
+.card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.cardTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.cardDescription {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Кнопки */
+.primaryButton {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
+}
+
+.primaryButton:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  transform: translateY(-1px);
+}
+
+.secondaryButton {
+  background: white;
+  color: #3b82f6;
+  border: 1px solid #3b82f6;
+  border-radius: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondaryButton:hover {
+  background: #eff6ff;
+  border-color: #2563eb;
+}
+
+.iconButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.125rem;
+  padding: 0.375rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+}
+
+.iconButton:hover {
+  background: #f1f5f9;
+  color: #334155;
+  transform: scale(1.1);
+}
+
+.iconButton svg {
+  transition: all 0.2s ease;
+}
+
+/* Таблица */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead {
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.table td {
+  padding: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.stageName {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.stageIcon {
+  font-size: 1.125rem;
+}
+
+.colorPreview {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.375rem;
+  border: 2px solid #e2e8f0;
+}
+
+.actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+/* Бейджи */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: #eff6ff;
+  color: #3b82f6;
+}
+
+.statusActive {
+  color: #10b981;
+  font-weight: 500;
+}
+
+.statusInactive {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* Сетка */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Карточка типа */
+.typeCard {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.typeCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  border-color: #cbd5e1;
+}
+
+.typeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 0.75rem;
+}
+
+.typeName {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.typeDescription {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.typeFooter {
+  padding-top: 0.75rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.typeCount {
+  font-size: 0.8125rem;
+  color: #94a3b8;
+}
+
+/* Настройки */
+.settingsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.settingItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+  transition: background 0.2s;
+}
+
+.settingItem:hover {
+  background: #f1f5f9;
+}
+
+.settingInfo {
+  flex: 1;
+}
+
+.settingLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+}
+
+.settingIcon {
+  font-size: 1.25rem;
+}
+
+.settingDescription {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* Setting Row */
+.settingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.settingContent {
+  flex: 1;
+}
+
+/* Toggle переключатель */
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggleSlider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: 0.3s;
+  border-radius: 24px;
+}
+
+.toggleSlider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.toggle input:checked + .toggleSlider {
+  background-color: #3b82f6;
+}
+
+.toggle input:checked + .toggleSlider:before {
+  transform: translateX(24px);
+}
+
+/* Правила */
+.rulesList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.ruleItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.ruleIcon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.ruleContent {
+  flex: 1;
+}
+
+.ruleTitle {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+}
+
+.ruleDescription {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* Карточка шаблона */
+.templateCard {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: all 0.2s;
+}
+
+.templateCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.templateIcon {
+  font-size: 3rem;
+  text-align: center;
+}
+
+.templateTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  text-align: center;
+}
+
+.templateDescription {
+  color: #64748b;
+  font-size: 0.875rem;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.templateActions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Карточка интеграции */
+.integrationCard {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.integrationHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.integrationIcon {
+  font-size: 2.5rem;
+}
+
+.integrationTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.integrationDescription {
+  color: #64748b;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.integrationStatus {
+  padding: 0.5rem 0;
+}
+
+/* Информационный блок */
+.infoBox {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.5rem;
+  color: #1e40af;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.infoIcon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+/* Дополнительные стили для модальных окон */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.confirmDialog {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 400px;
+}
+
+.confirmHeader {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.confirmTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.confirmBody {
+  padding: 1.5rem;
+  color: #64748b;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.confirmFooter {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding: 1.5rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.dangerButton {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.625rem 1.5rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(239, 68, 68, 0.3);
+}
+
+.dangerButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  transform: translateY(-1px);
+}
+
+.typeActions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.savingIndicator {
+  font-size: 0.875rem;
+  color: #10b981;
+  font-weight: 500;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Drag and Drop стили */
+.stageGroup {
+  margin-bottom: 2rem;
+}
+
+.groupTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.draggableRow {
+  transition: all 0.2s ease;
+}
+
+.draggableRow:hover {
+  background: #f8fafc !important;
+}
+
+.dragging {
+  opacity: 0.5;
+  background: #e0f2fe !important;
+}
+
+.dragOver {
+  border-top: 3px solid #3b82f6 !important;
+}
+
+.dragHandle {
+  color: #94a3b8;
+  cursor: move;
+  user-select: none;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.dragHandle:hover {
+  color: #64748b;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #94a3b8;
+}
+
+.emptyState p {
+  margin: 0.5rem 0;
+}
+
+.emptyHint {
+  font-size: 0.875rem;
+  color: #cbd5e1;
+}

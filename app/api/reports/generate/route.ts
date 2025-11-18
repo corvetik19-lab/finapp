@@ -117,6 +117,32 @@ export async function POST(req: Request) {
       (accountsRes.data || []).map((a) => [a.id, a.name])
     );
 
+    // Загружаем позиции товаров для транзакций
+    const transactionIds = transactions.map((t: TransactionRow) => t.id);
+    
+    type TransactionItemRow = {
+      transaction_id: string;
+      name: string;
+      quantity: number;
+      unit: string;
+      price_per_unit: number;
+      total_amount: number;
+      category: string | null;
+    };
+    
+    let transactionItems: TransactionItemRow[] = [];
+    
+    if (transactionIds.length > 0) {
+      const { data: itemsData, error: itemsError } = await supabase
+        .from("transaction_items")
+        .select("transaction_id, name, quantity, unit, price_per_unit, total_amount, category")
+        .in("transaction_id", transactionIds);
+      
+      if (!itemsError && itemsData) {
+        transactionItems = itemsData as TransactionItemRow[];
+      }
+    }
+
     // Обработка данных
     const reportData: ReportData = {
       summary: {
@@ -127,6 +153,7 @@ export async function POST(req: Request) {
       },
       byCategory: [],
       byAccount: [],
+      byProduct: [],
       timeline: [],
       transactions: [],
     };
@@ -224,6 +251,52 @@ export async function POST(req: Request) {
       });
     });
     reportData.byAccount.sort((a, b) => b.amount - a.amount);
+
+    // По товарам
+    const productMap = new Map<string, {
+      category: string | null;
+      totalQuantity: number;
+      unit: string;
+      totalAmount: number;
+      totalPrice: number;
+      transactionIds: Set<string>;
+    }>();
+
+    transactionItems.forEach((item) => {
+      const key = item.name;
+      if (!productMap.has(key)) {
+        productMap.set(key, {
+          category: item.category,
+          totalQuantity: 0,
+          unit: item.unit,
+          totalAmount: 0,
+          totalPrice: 0,
+          transactionIds: new Set(),
+        });
+      }
+      const productData = productMap.get(key)!;
+      productData.totalQuantity += item.quantity;
+      productData.totalAmount += item.total_amount / 100; // конвертируем в рубли
+      productData.totalPrice += item.price_per_unit / 100; // конвертируем в рубли
+      productData.transactionIds.add(item.transaction_id);
+    });
+
+    productMap.forEach((value, productName) => {
+      const avgPrice = value.transactionIds.size > 0 
+        ? value.totalPrice / value.transactionIds.size 
+        : 0;
+      
+      reportData.byProduct.push({
+        productName,
+        category: value.category,
+        quantity: value.totalQuantity,
+        unit: value.unit,
+        totalAmount: Number(value.totalAmount.toFixed(2)),
+        avgPrice: Number(avgPrice.toFixed(2)),
+        transactionCount: value.transactionIds.size,
+      });
+    });
+    reportData.byProduct.sort((a, b) => b.totalAmount - a.totalAmount);
 
     // Временная шкала
     let balance = 0;

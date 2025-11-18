@@ -2,6 +2,7 @@
 .root {
   display: flex;
   height: 100vh;
+  padding-top: 64px; /* Высота header */
   overflow: hidden;
   background: var(--background);
   color: var(--text-primary);

@@ -9,7 +9,7 @@ import {
   loadCategorySummaryAction,
   loadCategoryTransactionsAction,
   saveCategoryWidgetPreferencesAction,
-} from "@/app/(protected)/dashboard/actions";
+} from "@/app/(protected)/finance/dashboard/actions";
 import type {
   CategorySummaryPeriod,
   CategorySummaryResult,

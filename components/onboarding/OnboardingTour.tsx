@@ -98,9 +98,9 @@ export default function OnboardingTour() {
       
       // Навигация для определённых шагов
       if (steps[next].id === "transactions") {
-        router.push("/transactions");
+        router.push("/finance/transactions");
       } else if (steps[next].id === "budgets") {
-        router.push("/budgets");
+        router.push("/finance/budgets");
       } else if (steps[next].id === "ai-features") {
         router.push("/ai-chat");
       }
@@ -131,7 +131,7 @@ export default function OnboardingTour() {
   async function finishTour() {
     await updateProgress(steps.length - 1, true);
     setIsVisible(false);
-    router.push("/dashboard");
+    router.push("/finance/dashboard");
   }
 
   if (loading || !isVisible) {

@@ -5,7 +5,7 @@ export const transactionSchema = z.object({
   account_id: z.string().uuid({ message: "Выберите счёт" }),
   category_id: z.string().uuid().optional().nullable(),
   amount_major: z
-    .preprocess((v) => (typeof v === "string" ? v.replace(/,/g, ".") : v), z.coerce.number().positive("Сумма должна быть больше 0"))
+    .preprocess((v) => (typeof v === "string" ? v.replace(/,/g, ".") : v), z.coerce.number().refine((n) => n !== 0, "Сумма не может быть равна 0"))
     .describe("Сумма в рублях, дробная часть через точку"),
   currency: z.string().min(3).max(3).default("RUB"),
   occurred_at: z.string().optional(),
@@ -19,10 +19,10 @@ const amountStringSchema = z
   .string()
   .min(1, "Введите сумму")
   .refine((val) => {
-    const normalized = val.replace(/\s+/g, "").replace(",", ".");
+    const normalized = val.replace(/\s+/g, "").replace(/,/g, ".");
     const num = Number(normalized);
-    return Number.isFinite(num) && num > 0;
-  }, "Сумма должна быть больше 0");
+    return Number.isFinite(num) && num !== 0;
+  }, "Сумма не может быть равна 0");
 
 const optionalUuid = z.union([z.string().uuid(), z.literal(""), z.null()]);
 

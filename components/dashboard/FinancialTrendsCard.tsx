@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import IncomeExpenseChart from "@/components/dashboard/IncomeExpenseChart";
 import styles from "@/components/dashboard/Dashboard.module.css";
-import { loadTrendsAction } from "@/app/(protected)/dashboard/actions";
+import { loadTrendsAction } from "@/app/(protected)/finance/dashboard/actions";
 
 export type FinancialTrendsCardProps = {
   labels: string[];

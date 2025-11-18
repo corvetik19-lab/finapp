@@ -81,7 +81,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Plan not found" }, { status: 404 });
     }
 
-    revalidatePath("/plans");
+    revalidatePath("/finance/plans");
     return NextResponse.json({ plan });
   } catch (error) {
     console.error("Unexpected error:", error);
@@ -117,7 +117,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    revalidatePath("/plans");
+    revalidatePath("/finance/plans");
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Unexpected error:", error);

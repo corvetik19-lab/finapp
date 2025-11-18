@@ -7,6 +7,7 @@ export async function createRSCClient(): Promise<SupabaseClient> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !anon) {
+    console.error("❌ Supabase env vars missing! URL:", !!url, "ANON:", !!anon);
     const stub = {
       auth: {
         async getUser(): Promise<{ data: { user: User | null }; error: AuthError | null }> {
@@ -17,6 +18,7 @@ export async function createRSCClient(): Promise<SupabaseClient> {
     return stub;
   }
   const store = await cookies();
+  
   return createServerClient(url, anon, {
     cookies: {
       get(name: string) {
@@ -45,10 +47,18 @@ export async function createRouteClient(): Promise<SupabaseClient> {
         return store.get(name)?.value;
       },
       set(name: string, value: string, options: CookieOptions) {
-        store.set({ name, value, ...options });
+        try {
+          store.set({ name, value, ...options });
+        } catch {
+          // Ignore cookie errors in RSC context
+        }
       },
       remove(name: string, options: CookieOptions) {
-        store.set({ name, value: "", ...options, maxAge: 0 });
+        try {
+          store.set({ name, value: "", ...options, maxAge: 0 });
+        } catch {
+          // Ignore cookie errors in RSC context
+        }
       },
     },
   });

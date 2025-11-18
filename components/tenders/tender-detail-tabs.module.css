@@ -1,0 +1,78 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: white;
+}
+
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid #e5e7eb;
+  background: linear-gradient(to bottom, #ffffff, #f9fafb);
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 1.5rem;
+}
+
+.tab {
+  padding: 1rem 1.5rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #6b7280;
+  transition: all 0.2s;
+  white-space: nowrap;
+  position: relative;
+  margin-bottom: -2px;
+}
+
+.tab:hover {
+  color: #111827;
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.tab.active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+  font-weight: 600;
+}
+
+.tab :global(.comments-count) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: #3b82f6;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 10px;
+  margin-left: 6px;
+}
+
+.tab.active :global(.comments-count) {
+  background: #2563eb;
+}
+
+.tab.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  border-radius: 0 0 3px 3px;
+}
+
+.content {
+  padding: 2rem;
+  min-height: 400px;
+  background: white;
+}

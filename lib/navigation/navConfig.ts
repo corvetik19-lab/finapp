@@ -1,7 +1,7 @@
 import type { NavConfig } from "@/lib/auth/filterNavigation";
 
 export const NAV_CONFIG: NavConfig[] = [
-  { label: "Дашборд", href: "/dashboard", icon: "insights", requiredPermission: "dashboard:view" },
+  { label: "Дашборд", href: "/finance/dashboard", icon: "insights", requiredPermission: "dashboard:view" },
   { label: "Достижения", href: "/achievements", icon: "emoji_events", requiredPermission: "dashboard:view" },
   
   {
@@ -9,8 +9,8 @@ export const NAV_CONFIG: NavConfig[] = [
     icon: "credit_card",
     requiredPermission: "transactions:view",
     items: [
-      { label: "Дебетовые карты", href: "/cards", icon: "payment", requiredPermission: "transactions:view" },
-      { label: "Кредитные карты", href: "/credit-cards", icon: "credit_card", requiredPermission: "transactions:view" },
+      { label: "Дебетовые карты", href: "/finance/cards", icon: "payment", requiredPermission: "transactions:view" },
+      { label: "Кредитные карты", href: "/finance/credit-cards", icon: "credit_card", requiredPermission: "transactions:view" },
     ]
   },
   
@@ -19,10 +19,11 @@ export const NAV_CONFIG: NavConfig[] = [
     icon: "account_balance_wallet",
     requiredPermission: "transactions:view",
     items: [
-      { label: "Транзакции", href: "/transactions", icon: "list", requiredPermission: "transactions:view" },
-      { label: "Кредиты", href: "/loans", icon: "account_balance", requiredPermission: "transactions:view" },
-      { label: "Платежи", href: "/payments", icon: "receipt_long", requiredPermission: "transactions:view" },
-      { label: "Бюджеты", href: "/budgets", icon: "pie_chart", requiredPermission: "budgets:view" },
+      { label: "Транзакции", href: "/finance/transactions", icon: "list", requiredPermission: "transactions:view" },
+      { label: "Кредиты", href: "/finance/loans", icon: "account_balance", requiredPermission: "transactions:view" },
+      { label: "Платежи", href: "/finance/payments", icon: "receipt_long", requiredPermission: "transactions:view" },
+      { label: "Бюджеты", href: "/finance/budgets", icon: "pie_chart", requiredPermission: "budgets:view" },
+      { label: "Планы", href: "/finance/plans", icon: "flag", requiredPermission: "plans:view" },
     ]
   },
   
@@ -31,9 +32,9 @@ export const NAV_CONFIG: NavConfig[] = [
     icon: "assessment",
     requiredPermission: "reports:view",
     items: [
-      { label: "Отчёты", href: "/reports", icon: "query_stats", requiredPermission: "reports:view" },
-      { label: "Прогнозы", href: "/forecasts", icon: "trending_up", requiredPermission: "reports:view" },
-      { label: "Расширенная аналитика", href: "/analytics/advanced", icon: "analytics", requiredPermission: "reports:view" },
+      { label: "Отчёты", href: "/finance/reports", icon: "query_stats", requiredPermission: "reports:view" },
+      { label: "Прогнозы", href: "/finance/forecasts", icon: "trending_up", requiredPermission: "reports:view" },
+      { label: "Расширенная аналитика", href: "/finance/analytics/advanced", icon: "analytics", requiredPermission: "reports:view" },
     ]
   },
   
@@ -53,14 +54,14 @@ export const NAV_CONFIG: NavConfig[] = [
     icon: "folder",
     requiredPermission: "dashboard:view",
     items: [
-      { label: "Заметки", href: "/notes", icon: "sticky_note_2", requiredPermission: "dashboard:view" },
-      { label: "Планы", href: "/plans", icon: "flag", requiredPermission: "dashboard:view" },
-      { label: "Закладки", href: "/bookmarks", icon: "bookmark", requiredPermission: "dashboard:view" },
-      { label: "Промпты", href: "/prompts", icon: "lightbulb", requiredPermission: "dashboard:view" },
+      { label: "Заметки", href: "/personal/notes", icon: "sticky_note_2", requiredPermission: "dashboard:view" },
+      { label: "Задачи", href: "/personal/tasks", icon: "check_circle", requiredPermission: "dashboard:view" },
+      { label: "Календарь", href: "/personal/calendar", icon: "calendar_month", requiredPermission: "dashboard:view" },
+      { label: "Закладки", href: "/personal/bookmarks", icon: "bookmark", requiredPermission: "dashboard:view" },
+      { label: "Промпты", href: "/personal/prompts", icon: "lightbulb", requiredPermission: "dashboard:view" },
+      { label: "Фитнес", href: "/personal/fitness", icon: "fitness_center", requiredPermission: "dashboard:view" },
     ]
   },
-  
-  { label: "Фитнес", href: "/fitness", icon: "fitness_center", requiredPermission: "dashboard:view" },
   { label: "Уведомления", href: "/notifications", icon: "notifications_active" },
   { label: "Настройки", href: "/settings", icon: "settings", requiredPermission: "settings:view" },
 ];

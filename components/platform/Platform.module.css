@@ -1,7 +1,9 @@
 /* Platform Header */
 .platformHeader {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
   background: var(--surface-primary);
   border-bottom: 1px solid var(--border-primary);
@@ -45,6 +47,77 @@
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+/* Greeting */
+.headerGreeting {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+@media (max-width: 1024px) {
+  .headerGreeting {
+    display: none;
+  }
+}
+
+/* Search */
+.headerSearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  flex: 1;
+  max-width: 400px;
+}
+
+.headerSearch .material-icons {
+  color: var(--text-secondary);
+  font-size: 20px;
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.searchInput::placeholder {
+  color: var(--text-tertiary);
+}
+
+@media (max-width: 768px) {
+  .headerSearch {
+    display: none;
+  }
+}
+
+/* Icon Button (Calendar) */
+.iconButton {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-secondary);
+}
+
+.iconButton:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 /* Mode Switcher */

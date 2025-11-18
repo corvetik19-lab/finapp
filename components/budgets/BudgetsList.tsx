@@ -4,7 +4,7 @@ import { useState } from "react";
 import styles from "@/components/budgets/Budgets.module.css";
 import { BudgetWithUsage } from "@/lib/budgets/service";
 import { formatMoney } from "@/lib/utils/format";
-import { deleteBudget, updateBudget } from "@/app/(protected)/budgets/actions";
+import { deleteBudget, updateBudget } from "@/app/(protected)/finance/budgets/actions";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/toast/ToastContext";
 

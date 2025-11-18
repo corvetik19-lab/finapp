@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 import styles from "@/components/dashboard/Dashboard.module.css";
 import UpcomingPaymentFormModal from "@/components/dashboard/UpcomingPaymentFormModal";
-import { deleteUpcomingPaymentAction } from "@/app/(protected)/dashboard/upcoming-actions";
+import { deleteUpcomingPaymentAction } from "@/app/(protected)/finance/dashboard/upcoming-actions";
 import { useToast } from "@/components/toast/ToastContext";
 import { formatMoney } from "@/lib/utils/format";
 import type { UpcomingPaymentFormData, UpcomingPaymentFormInput } from "@/lib/dashboard/upcoming-payments/schema";

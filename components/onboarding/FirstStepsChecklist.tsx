@@ -48,7 +48,7 @@ export default function FirstStepsChecklist() {
         title: "Добавить счёт",
         description: "Создайте первый счёт (наличные, карта или банк)",
         completed: false,
-        action: "/accounts",
+        action: "/finance/cards",
         icon: "💳",
       },
       {
@@ -56,7 +56,7 @@ export default function FirstStepsChecklist() {
         title: "Добавить транзакцию",
         description: "Запишите первый доход или расход",
         completed: false,
-        action: "/transactions",
+        action: "/finance/transactions",
         icon: "💰",
       },
       {
@@ -64,7 +64,7 @@ export default function FirstStepsChecklist() {
         title: "Создать категорию",
         description: "Настройте категории под свои нужды",
         completed: false,
-        action: "/categories",
+        action: "/finance/settings",
         icon: "📂",
       },
       {
@@ -72,7 +72,7 @@ export default function FirstStepsChecklist() {
         title: "Установить бюджет",
         description: "Создайте первый бюджет для контроля трат",
         completed: false,
-        action: "/budgets",
+        action: "/finance/budgets",
         icon: "🎯",
       },
       {

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import styles from "./Chat.module.css";
+import modelStyles from "./ModelSidebar.module.css";
 import ChatSidebar from "./ChatSidebar";
 import {
   getChatMessagesAction,
@@ -71,9 +72,7 @@ export default function Chat() {
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const modelSelectorRef = useRef<HTMLDivElement>(null);
 
   // Создание нового чата
   const handleNewChat = async () => {
@@ -91,7 +90,6 @@ export default function Chat() {
 
   // Монтирование компонента и загрузка состояния из localStorage
   useEffect(() => {
-    setIsMounted(true);
     const saved = localStorage.getItem('aiChatSidebarCollapsed');
     if (saved !== null) {
       setIsSidebarCollapsed(saved === 'true');
@@ -137,21 +135,6 @@ export default function Chat() {
     }
   }, [isSidebarCollapsed]);
 
-  // Закрываем селектор моделей при клике вне его
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (modelSelectorRef.current && !modelSelectorRef.current.contains(event.target as Node)) {
-        setShowModelSelector(false);
-      }
-    }
-
-    if (showModelSelector) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
-      };
-    }
-  }, [showModelSelector]);
 
   // Фильтрация моделей по поисковому запросу
   const filterModels = (modelList: AIModel[]) => {
@@ -505,56 +488,78 @@ export default function Chat() {
 
   return (
     <div className={styles.container}>
-      {isMounted && (
-        <ChatSidebar
-          currentChatId={currentChatId}
-          onSelectChat={handleSelectChat}
-          onNewChat={handleNewChat}
-          refreshKey={refreshKey}
-          isCollapsed={isSidebarCollapsed}
-          onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-        />
-      )}
+      <ChatSidebar
+        currentChatId={currentChatId}
+        onSelectChat={handleSelectChat}
+        onNewChat={handleNewChat}
+        refreshKey={refreshKey}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+      />
 
       <div className={styles.chatArea}>
         {/* Header */}
         <div className={styles.header}>
-          <h2>ChatGPT</h2>
-          <button
-            className={styles.modelButton}
-            onClick={() => setShowModelSelector(!showModelSelector)}
-            disabled={isLoading}
-          >
-            <span>{selectedModel.split("/")[1] || selectedModel}</span>
-            <span className={styles.totalModelsCount}>
-              {models.all.length}
-            </span>
-            <span style={{ marginLeft: '6px', fontSize: '12px' }}>
-              {showModelSelector ? '▲' : '▼'}
-            </span>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {isSidebarCollapsed && (
+              <button
+                onClick={() => setIsSidebarCollapsed(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '6px',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  color: '#202123',
+                  transition: 'background-color 0.15s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#f7f7f8'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <span className="material-icons" style={{ fontSize: '20px' }}>menu</span>
+              </button>
+            )}
+            <h2>ChatGPT</h2>
+          </div>
+          <div className={styles.modelDropdownWrapper}>
+            <button
+              className={styles.modelButton}
+              onClick={() => setShowModelSelector(!showModelSelector)}
+              disabled={isLoading}
+            >
+              <span>{selectedModel.split("/")[1] || selectedModel}</span>
+              <span className={styles.totalModelsCount}>
+                {models.all.length}
+              </span>
+              <span style={{ marginLeft: '6px', fontSize: '12px' }}>
+                {showModelSelector ? '▲' : '▼'}
+              </span>
+            </button>
+          </div>
         </div>
 
-        {/* Model Selector */}
-        {showModelSelector && (
-          <div className={styles.modelSelector} ref={modelSelectorRef}>
-            {/* Поиск */}
-            <div className={styles.modelSearch}>
+        {/* Model Selector Sidebar */}
+        <div className={`${modelStyles.modelSidebar} ${!showModelSelector ? modelStyles.collapsed : ''}`}>
+          <div className={modelStyles.header}>
+            <div className={modelStyles.title}>Выбор модели</div>
+            <button 
+              className={modelStyles.closeBtn}
+              onClick={() => setShowModelSelector(false)}
+            >
+              ×
+            </button>
+          </div>
+          <div className={modelStyles.content}>
+            <div className={modelStyles.modelSearch}>
               <input
                 type="text"
                 placeholder="🔍 Поиск моделей..."
                 value={modelSearchQuery}
                 onChange={(e) => setModelSearchQuery(e.target.value)}
-                className={styles.modelSearchInput}
+                className={modelStyles.modelSearchInput}
               />
-              {modelSearchQuery && (
-                <button
-                  className={styles.clearSearchBtn}
-                  onClick={() => setModelSearchQuery("")}
-                >
-                  ✕
-                </button>
-              )}
             </div>
 
             {filteredModelGroups.map((group) => {
@@ -563,10 +568,10 @@ export default function Chat() {
               }
 
               return (
-                <section key={group.key}>
-                  <h3>
+                <div key={group.key} className={modelStyles.modelGroup}>
+                  <h3 className={modelStyles.modelGroupTitle}>
                     {group.title}
-                    <span className={styles.modelCount}>{group.models.length}</span>
+                    <span className={modelStyles.modelCount}>{group.models.length}</span>
                   </h3>
                   {group.models.map((model) => (
                     <button
@@ -575,47 +580,46 @@ export default function Chat() {
                         setSelectedModel(model.id);
                         setShowModelSelector(false);
                       }}
-                      className={selectedModel === model.id ? styles.selected : ""}
+                      className={`${modelStyles.modelButton} ${selectedModel === model.id ? modelStyles.selected : ""}`}
                     >
-                      <div className={styles.modelInfo}>
-                        <div className={styles.modelName}>
+                      <div className={modelStyles.modelInfo}>
+                        <div className={modelStyles.modelName}>
                           {model.name}
                           {model.is_free && (
-                            <span className={`${styles.modelBadge} ${styles.badgeFree}`}>
+                            <span className={`${modelStyles.modelBadge} ${modelStyles.badgeFree}`}>
                               FREE
                             </span>
                           )}
                           {group.badge && (
-                            <span className={`${styles.modelBadge} ${group.badge.className}`}>
+                            <span className={`${modelStyles.modelBadge} ${group.badge.className}`}>
                               {group.badge.text}
                             </span>
                           )}
                         </div>
                         {model.description && (
-                          <div className={styles.modelDescription}>{model.description}</div>
+                          <div className={modelStyles.modelDescription}>{model.description}</div>
                         )}
                       </div>
-                      {selectedModel === model.id && <span>✓</span>}
+                      {selectedModel === model.id && <span className={modelStyles.checkmark}>✓</span>}
                     </button>
                   ))}
-                </section>
+                </div>
               );
             })}
 
-            {/* Сообщение если ничего не найдено */}
             {modelSearchQuery && !hasFilteredResults && (
-              <div className={styles.noResults}>
-                <div className={styles.noResultsIcon}>🔍</div>
-                <div className={styles.noResultsText}>
+              <div className={modelStyles.noResults}>
+                <div className={modelStyles.noResultsIcon}>🔍</div>
+                <div className={modelStyles.noResultsText}>
                   Модели не найдены
                 </div>
-                <div className={styles.noResultsHint}>
+                <div className={modelStyles.noResultsHint}>
                   Попробуйте изменить запрос
                 </div>
               </div>
             )}
           </div>
-        )}
+        </div>
 
         {/* Messages */}
         <div className={styles.messages}>

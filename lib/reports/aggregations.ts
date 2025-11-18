@@ -11,17 +11,34 @@ export type ExpenseBreakdown = {
   values: number[]; // major units
 };
 
+export type ProductBreakdown = {
+  labels: string[]; // product names
+  values: number[]; // total amounts in major units
+  quantities: number[]; // total quantities
+  units: string[]; // units
+};
+
 export type ReportAggregates = {
   currency: string;
   monthlyTrend: MonthlyTrend;
   expenseBreakdown: ExpenseBreakdown;
+  productBreakdown: ProductBreakdown;
   periodLabel: string;
 };
 
 type CategoryMap = Record<string, string>;
 
+type TransactionItem = {
+  name: string;
+  quantity: number;
+  unit: string;
+  total_amount: number;
+  occurred_at: string;
+};
+
 type AggregateOptions = {
   categories: CategoryMap;
+  items?: TransactionItem[];
   now?: Date;
 };
 
@@ -108,12 +125,51 @@ export function aggregateReports(
     values: topEntries.map(([, value]) => Number(value.toFixed(2))),
   };
 
+  // Агрегация товаров
+  const productByName = new Map<string, { 
+    totalAmount: number; 
+    totalQuantity: number;
+    unit: string;
+  }>();
+
+  if (options.items) {
+    options.items.forEach((item) => {
+      const occurredAt = new Date(item.occurred_at);
+      // Только товары из текущего месяца
+      if (occurredAt >= startOfCurrentMonth && occurredAt < startOfNextMonth) {
+        const key = item.name;
+        if (!productByName.has(key)) {
+          productByName.set(key, {
+            totalAmount: 0,
+            totalQuantity: 0,
+            unit: item.unit,
+          });
+        }
+        const productData = productByName.get(key)!;
+        productData.totalAmount += toMajor(item.total_amount);
+        productData.totalQuantity += item.quantity;
+      }
+    });
+  }
+
+  const productEntries = Array.from(productByName.entries())
+    .sort((a, b) => b[1].totalAmount - a[1].totalAmount)
+    .slice(0, 10); // топ-10 товаров
+
+  const productBreakdown: ProductBreakdown = {
+    labels: productEntries.map(([name]) => name),
+    values: productEntries.map(([, data]) => Number(data.totalAmount.toFixed(2))),
+    quantities: productEntries.map(([, data]) => Number(data.totalQuantity.toFixed(2))),
+    units: productEntries.map(([, data]) => data.unit),
+  };
+
   const periodLabel = `${MONTH_NAMES_RU[startOfCurrentMonth.getUTCMonth()]} ${startOfCurrentMonth.getUTCFullYear()}`;
 
   return {
     currency,
     monthlyTrend,
     expenseBreakdown,
+    productBreakdown,
     periodLabel,
   };
 }

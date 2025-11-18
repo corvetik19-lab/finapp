@@ -6,7 +6,7 @@ import styles from "@/components/dashboard/Dashboard.module.css";
 import { BudgetWithUsage } from "@/lib/budgets/service";
 import BudgetQuickAddForm from "@/components/dashboard/BudgetQuickAddForm";
 import { CategoryRecord } from "@/lib/categories/service";
-import { deleteBudgetAction } from "@/app/(protected)/dashboard/actions";
+import { deleteBudgetAction } from "@/app/(protected)/finance/dashboard/actions";
 
 export type BudgetSectionProps = {
   budgets: BudgetWithUsage[];

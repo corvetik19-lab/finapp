@@ -2,10 +2,12 @@ import { createRSCClient, createRouteClient } from "@/lib/supabase/helpers";
 import { logger } from "@/lib/logger";
 import {
   CATEGORY_WIDGET_KEY,
+  PRODUCT_WIDGET_KEY,
   WIDGET_VISIBILITY_KEY,
   normalizeWidgetVisibleIds,
   normalizeHiddenWidgets,
   type CategoryWidgetPreferencesState,
+  type ProductWidgetPreferencesState,
   type WidgetVisibilityState,
   type DashboardWidgetKey,
 } from "./shared";
@@ -155,4 +157,73 @@ export function isWidgetVisible(
   visibility: WidgetVisibilityState
 ): boolean {
   return !visibility.hidden.includes(widgetKey);
+}
+
+// Настройки виджета товаров
+const DEFAULT_PRODUCT_PREFERENCES: ProductWidgetPreferencesState = { visibleProducts: [] };
+
+export async function loadProductWidgetPreferences(): Promise<ProductWidgetPreferencesState> {
+  const supabase = await createRSCClient();
+
+  try {
+    const { data, error } = await supabase
+      .from("dashboard_widget_preferences")
+      .select("state")
+      .eq("widget", PRODUCT_WIDGET_KEY)
+      .maybeSingle();
+
+    if (error) {
+      logger.warn("loadProductWidgetPreferences error", { error });
+      return DEFAULT_PRODUCT_PREFERENCES;
+    }
+
+    const rawState = (data?.state ?? {}) as Record<string, unknown>;
+    const visibleProducts = normalizeWidgetVisibleIds(rawState.visibleProducts);
+
+    return { visibleProducts };
+  } catch (unknownError) {
+    logger.error("loadProductWidgetPreferences unexpected", { error: unknownError });
+    return DEFAULT_PRODUCT_PREFERENCES;
+  }
+}
+
+export async function saveProductWidgetPreferences(
+  state: ProductWidgetPreferencesState
+): Promise<void> {
+  const supabase = await createRouteClient();
+
+  try {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError) {
+      logger.warn("saveProductWidgetPreferences auth", { error: userError });
+      return;
+    }
+
+    if (!user) {
+      logger.warn("saveProductWidgetPreferences no user");
+      return;
+    }
+
+    const payload = {
+      user_id: user.id,
+      widget: PRODUCT_WIDGET_KEY,
+      state: {
+        visibleProducts: normalizeWidgetVisibleIds(state.visibleProducts),
+      },
+    };
+
+    const { error } = await supabase
+      .from("dashboard_widget_preferences")
+      .upsert(payload, { onConflict: "user_id,widget" });
+
+    if (error) {
+      logger.warn("saveProductWidgetPreferences upsert", { error });
+    }
+  } catch (unknownError) {
+    logger.error("saveProductWidgetPreferences unexpected", { error: unknownError });
+  }
 }

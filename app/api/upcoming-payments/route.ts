@@ -60,8 +60,8 @@ export async function POST(req: Request) {
       }
     }
 
-    revalidatePath("/dashboard");
-    revalidatePath("/payments");
+    revalidatePath("/finance/dashboard");
+    revalidatePath("/finance/payments");
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import styles from "../../app/(protected)/settings/api/APIKeys.module.css";
+import { useState } from "react";
+import styles from "./ApiKeysManager.module.css";
 
 interface APIKey {
   id: string;
@@ -15,9 +15,13 @@ interface APIKey {
   created_at: string;
 }
 
-export default function APIKeysClient() {
-  const [keys, setKeys] = useState<APIKey[]>([]);
-  const [loading, setLoading] = useState(true);
+interface Props {
+  apiKeys: APIKey[];
+}
+
+export default function ApiKeysManager({ apiKeys: initialKeys }: Props) {
+  const [keys, setKeys] = useState<APIKey[]>(initialKeys);
+  const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [newKey, setNewKey] = useState<string | null>(null);
@@ -28,10 +32,6 @@ export default function APIKeysClient() {
     rate_limit: 1000,
     expires_in_days: 0,
   });
-
-  useEffect(() => {
-    loadKeys();
-  }, []);
 
   async function loadKeys() {
     try {

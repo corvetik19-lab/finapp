@@ -1,4 +1,5 @@
 export const CATEGORY_WIDGET_KEY = "category-management";
+export const PRODUCT_WIDGET_KEY = "product-tracking";
 export const WIDGET_VISIBILITY_KEY = "widget-visibility";
 export const WIDGET_ORDER_KEY = "widget-order";
 
@@ -7,17 +8,21 @@ export const DASHBOARD_WIDGETS = {
   NET_WORTH: "net-worth",
   PLANS: "plans",
   UPCOMING_PAYMENTS: "upcoming-payments",
-  RECENT_NOTES: "recent-notes",
   BUDGET: "budget",
   FINANCIAL_TRENDS: "financial-trends",
   EXPENSE_BY_CATEGORY: "expense-by-category",
   CATEGORY_MANAGEMENT: "category-management",
+  TOP_PRODUCTS: "top-products",
 } as const;
 
 export type DashboardWidgetKey = typeof DASHBOARD_WIDGETS[keyof typeof DASHBOARD_WIDGETS];
 
 export type CategoryWidgetPreferencesState = {
   visibleIds: string[];
+};
+
+export type ProductWidgetPreferencesState = {
+  visibleProducts: string[];
 };
 
 // Настройки порядка виджетов
@@ -30,10 +35,10 @@ export const DEFAULT_WIDGET_ORDER: DashboardWidgetKey[] = [
   DASHBOARD_WIDGETS.BUDGET,
   DASHBOARD_WIDGETS.FINANCIAL_TRENDS,
   DASHBOARD_WIDGETS.EXPENSE_BY_CATEGORY,
+  DASHBOARD_WIDGETS.TOP_PRODUCTS,
   DASHBOARD_WIDGETS.NET_WORTH,
   DASHBOARD_WIDGETS.PLANS,
   DASHBOARD_WIDGETS.UPCOMING_PAYMENTS,
-  DASHBOARD_WIDGETS.RECENT_NOTES,
   DASHBOARD_WIDGETS.CATEGORY_MANAGEMENT,
 ];
 
@@ -74,15 +79,15 @@ export const WIDGET_INFO: Record<DashboardWidgetKey, { title: string; descriptio
     description: "Ближайшие обязательные платежи",
     icon: "event",
   },
-  [DASHBOARD_WIDGETS.RECENT_NOTES]: {
-    title: "Последние заметки",
-    description: "Быстрый доступ к вашим записям",
-    icon: "sticky_note_2",
-  },
   [DASHBOARD_WIDGETS.CATEGORY_MANAGEMENT]: {
     title: "Управление категориями",
     description: "Быстрое редактирование категорий",
     icon: "category",
+  },
+  [DASHBOARD_WIDGETS.TOP_PRODUCTS]: {
+    title: "Управление товарами",
+    description: "Отслеживание и анализ покупок товаров",
+    icon: "inventory_2",
   },
 };
 

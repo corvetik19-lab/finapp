@@ -2,7 +2,7 @@
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import styles from "@/app/(protected)/plans/page.module.css";
+import styles from "@/app/(protected)/finance/plans/page.module.css";
 import { formatMoney } from "@/lib/utils/format";
 import type { PlanWithActivity } from "@/lib/plans/service";
 

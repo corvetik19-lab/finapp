@@ -11,6 +11,7 @@ export interface Organization {
   owner_id: string;
   settings: Record<string, unknown>;
   subscription_plan: string;
+  subscription_tier?: string; // Alias для subscription_plan
   created_at: string;
   updated_at: string;
 }
@@ -57,6 +58,11 @@ export async function getCurrentOrganization(): Promise<Organization | null> {
     .select('*')
     .eq('id', membership.org_id)
     .single();
+
+  if (org) {
+    // Добавляем subscription_tier как alias для subscription_plan
+    org.subscription_tier = org.subscription_plan;
+  }
 
   return org;
 }

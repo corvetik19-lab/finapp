@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import ModeSwitcher from "./ModeSwitcher";
+import UserMenu from "./UserMenu";
+import NotificationCenter from "./NotificationCenter";
+import OrganizationSwitcher from "./OrganizationSwitcher";
 import styles from "./Platform.module.css";
 
 interface PlatformHeaderProps {
@@ -12,67 +15,91 @@ interface PlatformHeaderProps {
   organization?: {
     name: string;
   };
+  organizations?: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    subscription_plan: string;
+  }>;
   notificationCount?: number;
 }
 
 export default function PlatformHeader({
   user,
   organization,
+  organizations = [],
   notificationCount = 0,
 }: PlatformHeaderProps) {
-  const userInitial = user?.full_name?.[0] || user?.email?.[0] || "U";
-
   return (
     <header className={styles.platformHeader}>
       <div className={styles.headerContainer}>
         {/* Logo */}
-        <Link href="/finance/dashboard" className={styles.headerLogo}>
+        <Link href="/dashboard" className={styles.headerLogo}>
           <span className={`material-icons ${styles.headerLogoIcon}`}>
             account_balance
           </span>
-          <span>FinApp Platform</span>
+          <span>FinApp</span>
         </Link>
 
         {/* Mode Switcher */}
         <ModeSwitcher />
 
+        {/* Greeting */}
+        <div className={styles.headerGreeting}>
+          Привет, {user?.full_name || 'Пользователь'}!
+        </div>
+
+        {/* Search */}
+        <div className={styles.headerSearch}>
+          <span className="material-icons">search</span>
+          <input 
+            type="search" 
+            placeholder="Поиск..." 
+            className={styles.searchInput}
+          />
+        </div>
+
         <div className={styles.headerSpacer} />
 
         {/* Actions */}
         <div className={styles.headerActions}>
+          {/* Calendar */}
+          <button className={styles.iconButton} aria-label="Календарь">
+            <span className="material-icons">calendar_month</span>
+          </button>
+
+          {/* Global Settings */}
+          <Link href="/admin/settings" className={styles.iconButton} title="Глобальные настройки">
+            <span className="material-icons">settings</span>
+          </Link>
+
           {/* Organization Switcher */}
-          {organization && (
-            <div className={styles.orgSwitcher}>
-              <button className={styles.orgButton}>
-                <span className="material-icons">business</span>
-                <span className={styles.orgName}>{organization.name}</span>
-              </button>
-            </div>
+          {organization && organizations.length > 0 && (
+            <OrganizationSwitcher
+              currentOrganization={{
+                id: organization.name,
+                name: organization.name,
+                slug: organization.name,
+                subscription_plan: 'free'
+              }}
+              organizations={organizations}
+            />
           )}
 
           {/* Notifications */}
-          <button
-            className={styles.notificationButton}
-            aria-label="Уведомления"
-          >
-            <span className="material-icons">notifications</span>
-            {notificationCount > 0 && (
-              <span className={styles.notificationBadge}>
-                {notificationCount > 99 ? "99+" : notificationCount}
-              </span>
-            )}
-          </button>
+          <NotificationCenter
+            unreadCount={notificationCount}
+          />
 
           {/* User Menu */}
-          <button className={styles.userMenuButton}>
-            <div className={styles.userAvatar}>
-              {userInitial.toUpperCase()}
-            </div>
-            {user?.full_name && (
-              <span className={styles.userName}>{user.full_name}</span>
-            )}
-            <span className="material-icons">expand_more</span>
-          </button>
+          {user && (
+            <UserMenu
+              user={{
+                email: user.email || '',
+                full_name: user.full_name || '',
+              }}
+            />
+          )}
         </div>
       </div>
     </header>

@@ -1,65 +1,63 @@
-/* Обновлено - единый стиль */
+/* ChatGPT Minimalist Sidebar - Light Theme */
 .sidebar {
-  width: 320px;
-  min-height: 0; /* Важно для flex */
-  background: #ffffff !important;
-  border-right: 1px solid #e5e7eb !important;
+  width: 260px;
+  min-height: 0;
+  background: #f7f7f8 !important;
+  border-right: 1px solid #e5e5e5 !important;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  flex-shrink: 0; /* Не сжимается */
+  flex-shrink: 0;
   position: relative;
-  transition: width 0.3s ease, min-width 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .sidebar.collapsed {
-  width: 48px;
-  min-width: 48px;
+  width: 0;
+  min-width: 0;
+  border-right: none !important;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .toggleBtn {
   position: absolute;
   top: 12px;
-  right: 8px;
+  left: 12px;
   width: 32px;
   height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
   z-index: 10;
-  transition: all 0.2s;
+  transition: background-color 0.15s ease;
+  color: #202123;
 }
 
 .toggleBtn:hover {
-  background: #e5e7eb;
-  border-color: #3b82f6;
-}
-
-.collapsed .toggleBtn {
-  left: 50%;
-  transform: translateX(-50%);
-  right: auto;
+  background: #e5e5e5;
 }
 
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px;
-  padding-right: 48px; /* Отступ для toggle button */
-  border-bottom: 1px solid #e5e7eb;
+  padding: 12px 12px 12px 52px;
+  background: #ffffff;
   flex-shrink: 0;
+  border-bottom: 1px solid #e5e5e5;
 }
 
 .title {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 600;
-  color: #111827;
+  color: #202123;
   margin: 0;
+  letter-spacing: 0;
 }
 
 .headerButtons {
@@ -71,18 +69,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: #3b82f6;
-  border: none;
-  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  background: transparent;
+  border: 1px solid #d1d5db;
+  color: #202123;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background-color 0.15s ease;
 }
 
 .newChatBtn:hover {
-  background: #2563eb;
+  background: #e5e5e5;
 }
 
 .newChatBtn.activeMode {
@@ -164,10 +162,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 16px 20px;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
-  color: #6b7280;
+  padding: 12px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e5e5;
+  color: #6e6e80;
   flex-shrink: 0;
 }
 
@@ -176,12 +174,12 @@
   background: transparent;
   border: none;
   outline: none;
-  color: #111827;
-  font-size: 14px;
+  color: #202123;
+  font-size: 13px;
 }
 
 .searchInput::placeholder {
-  color: #9ca3af;
+  color: #8e8ea0;
 }
 
 .clearBtn {
@@ -206,14 +204,14 @@
 /* Список чатов - фиксированная высота */
 .chatList {
   flex: 1;
-  min-height: 0; /* Важно чтобы не менялась высота */
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 8px;
 }
 
 .chatList::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 .chatList::-webkit-scrollbar-track {
@@ -221,12 +219,12 @@
 }
 
 .chatList::-webkit-scrollbar-thumb {
-  background: #cbd5e0;
-  border-radius: 3px;
+  background: #d1d5db;
+  border-radius: 2px;
 }
 
 .chatList::-webkit-scrollbar-thumb:hover {
-  background: #a0aec0;
+  background: #9ca3af;
 }
 
 /* Элемент чата */
@@ -234,18 +232,19 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px;
-  margin-bottom: 4px;
-  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 2px;
+  border-radius: 6px;
   background: transparent;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background-color 0.15s ease;
   position: relative;
-  border: 1px solid transparent;
+  border: none;
+  color: #202123;
 }
 
 .chatItem:hover {
-  background: #f9fafb;
+  background: #e5e5e5;
 }
 
 .chatItem.active {
