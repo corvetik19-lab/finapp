@@ -1,11 +1,12 @@
 import { EmployeeProfileClient } from './employee-profile-client';
 
 interface EmployeeProfilePageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default function EmployeeProfilePage({ params }: EmployeeProfilePageProps) {
-  return <EmployeeProfileClient employeeId={params.id} />;
+export default async function EmployeeProfilePage({ params }: EmployeeProfilePageProps) {
+  const { id } = await params;
+  return <EmployeeProfileClient employeeId={id} />;
 }
