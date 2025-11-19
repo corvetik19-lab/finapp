@@ -17,6 +17,8 @@ export function ClaimsTable({ initialDebts }: ClaimsTableProps) {
   const [filter, setFilter] = useState<ClaimStage | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [plaintiffFilter, setPlaintiffFilter] = useState('');
+  const [defendantFilter, setDefendantFilter] = useState('');
 
   useEffect(() => {
     setDebts(initialDebts);
@@ -25,6 +27,16 @@ export function ClaimsTable({ initialDebts }: ClaimsTableProps) {
   const filteredDebts = debts.filter(debt => {
     // Фильтр по этапу
     if (filter !== 'all' && debt.stage !== filter) return false;
+    
+    // Фильтр по истцу
+    if (plaintiffFilter && !debt.plaintiff?.toLowerCase().includes(plaintiffFilter.toLowerCase())) {
+      return false;
+    }
+    
+    // Фильтр по ответчику
+    if (defendantFilter && !debt.defendant?.toLowerCase().includes(defendantFilter.toLowerCase())) {
+      return false;
+    }
     
     // Поиск по всем текстовым полям
     if (searchQuery) {
@@ -129,10 +141,10 @@ export function ClaimsTable({ initialDebts }: ClaimsTableProps) {
       {/* Панель управления */}
       <div className={styles.controls}>
         <div className={styles.searchBox}>
-          <span className="material-icons">{searchQuery ? 'search' : 'search'}</span>
+          <span className="material-icons">search</span>
           <input
             type="text"
-            placeholder="Поиск по претензиям..."
+            placeholder="Поиск..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className={styles.searchInput}
@@ -146,6 +158,50 @@ export function ClaimsTable({ initialDebts }: ClaimsTableProps) {
           {showFilters ? 'Скрыть фильтры' : 'Показать фильтры'}
         </button>
       </div>
+
+      {/* Дополнительные фильтры */}
+      {showFilters && (
+        <div className={styles.filtersPanel}>
+          <div className={styles.filterGroup}>
+            <label className={styles.filterLabel}>
+              <span className="material-icons">gavel</span>
+              Истец
+            </label>
+            <input
+              type="text"
+              placeholder="Фильтр по истцу..."
+              value={plaintiffFilter}
+              onChange={(e) => setPlaintiffFilter(e.target.value)}
+              className={styles.filterInput}
+            />
+          </div>
+          <div className={styles.filterGroup}>
+            <label className={styles.filterLabel}>
+              <span className="material-icons">person</span>
+              Ответчик
+            </label>
+            <input
+              type="text"
+              placeholder="Фильтр по ответчику..."
+              value={defendantFilter}
+              onChange={(e) => setDefendantFilter(e.target.value)}
+              className={styles.filterInput}
+            />
+          </div>
+          {(plaintiffFilter || defendantFilter) && (
+            <button
+              className={styles.clearFiltersBtn}
+              onClick={() => {
+                setPlaintiffFilter('');
+                setDefendantFilter('');
+              }}
+            >
+              <span className="material-icons">clear</span>
+              Очистить фильтры
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Таблица */}
       <div className={styles.tableWrapper}>
