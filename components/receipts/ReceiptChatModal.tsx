@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import styles from "./ReceiptChatModal.module.css";
+import { recognizeReceiptFile } from "@/lib/ai/receipt-ocr";
 
 interface Message {
   role: "user" | "assistant" | "system";
@@ -61,8 +62,74 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
   const [currentItemIndex, setCurrentItemIndex] = useState<number | null>(null); // Индекс позиции для которой добавляется товар
   const [searchTerms, setSearchTerms] = useState<Record<number, string>>({}); // Поисковые запросы для каждой позиции
   const [categories, setCategories] = useState<Array<{id: string; name: string}>>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Сбрасываем value, чтобы можно было выбрать тот же файл повторно
+    e.target.value = "";
+
+    // Проверка размера (макс 10МБ)
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Файл слишком большой. Максимальный размер 10 МБ");
+      return;
+    }
+
+    setIsUploading(true);
+    const loadingMsg: Message = {
+      role: "assistant",
+      content: "👀 Смотрю на ваш чек, подождите секунду...",
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, loadingMsg]);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const result = await recognizeReceiptFile(formData);
+
+      // Удаляем сообщение о загрузке
+      setMessages((prev) => prev.filter(m => m !== loadingMsg));
+
+      if (result.success) {
+        setInput(result.text);
+        
+        const successMsg: Message = {
+          role: "assistant",
+          content: "✅ Текст чека распознан! Проверьте его ниже и отправьте для анализа.",
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, successMsg]);
+        
+        // Фокус на поле ввода
+        setTimeout(() => textareaRef.current?.focus(), 100);
+      } else {
+        const errorMsg: Message = {
+          role: "assistant",
+          content: `❌ Ошибка: ${result.error}`,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, errorMsg]);
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      setMessages((prev) => prev.filter(m => m !== loadingMsg));
+      const errorMsg: Message = {
+        role: "assistant",
+        content: "❌ Произошла ошибка при загрузке файла",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMsg]);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -444,6 +511,22 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
 
 
         <form className={styles.inputForm} onSubmit={handleSubmit}>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+            accept="image/*,.pdf"
+            style={{ display: "none" }}
+          />
+          <button
+            type="button"
+            className={styles.attachButton}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isProcessing || isUploading}
+            title="Прикрепить фото или PDF чека"
+          >
+            📎
+          </button>
           <textarea
             ref={textareaRef}
             className={styles.textarea}

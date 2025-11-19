@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import type { Tender, TenderStage, TenderStageTemplate } from '@/lib/tenders/types';
-import { formatCurrency, getDeadlineUrgency } from '@/lib/tenders/types';
+import { formatCurrency, getDeadlineUrgency, daysUntilDeadline } from '@/lib/tenders/types';
 import { useToast } from '@/components/toast/ToastContext';
 import { LossReasonModal } from './LossReasonModal';
 import { TenderCommentsSidebar } from './TenderCommentsSidebar';
@@ -668,146 +668,107 @@ export function TenderKanban({ tendersByStage, stages, templates = [], onStageCh
     return (a.order_index || 0) - (b.order_index || 0);
   });
 
-  const getBusinessTimeRemaining = (deadline: string | null) => {
-    if (!deadline) return null;
-    const now = new Date();
-    const end = new Date(deadline);
-    if (isNaN(end.getTime()) || end <= now) {
-      return { days: 0, hours: 0 };
-    }
-
-    const isWeekend = (date: Date) => {
-      const day = date.getDay();
-      return day === 0 || day === 6;
-    };
-
-    const cursor = new Date(now);
-    let totalMs = 0;
-
-    while (cursor < end) {
-      if (isWeekend(cursor)) {
-        cursor.setDate(cursor.getDate() + 1);
-        cursor.setHours(0, 0, 0, 0);
-        continue;
-      }
-
-      const dayEnd = new Date(cursor);
-      dayEnd.setHours(24, 0, 0, 0);
-      const intervalEnd = dayEnd < end ? dayEnd : end;
-      totalMs += intervalEnd.getTime() - cursor.getTime();
-      cursor.setTime(intervalEnd.getTime());
-    }
-
-    const totalMinutes = Math.max(0, Math.floor(totalMs / 60000));
-    return {
-      days: Math.floor(totalMinutes / (60 * 24)),
-      hours: Math.floor((totalMinutes % (60 * 24)) / 60),
-    };
-  };
-
   return (
     <div>
-      {/* Панель управления */}
-      {!hideControls && (
-      <div className={styles.controlPanel}>
-        <label className={styles.controlLabel}>
-          <input
-            type="checkbox"
-            checked={hideEmptyStages}
-            onChange={toggleHideEmptyStages}
-            className={styles.controlCheckbox}
-          />
-          <span>Скрыть пустые этапы</span>
-        </label>
-        <label className={styles.controlLabel}>
-          <input
-            type="checkbox"
-            checked={showArchivedStages}
-            onChange={toggleShowArchivedStages}
-            className={styles.controlCheckbox}
-          />
-          <span>Показать архивные этапы</span>
-        </label>
-        <label className={styles.controlLabel}>
-          <input
-            type="checkbox"
-            checked={showSystemStages}
-            onChange={(e) => {
-              setShowSystemStages(e.target.checked);
-              localStorage.setItem('showSystemStages', String(e.target.checked));
-            }}
-            className={styles.controlCheckbox}
-          />
-          <span>Показать предконтрактные этапы</span>
-        </label>
-        <label className={styles.controlLabel}>
-          <input
-            type="checkbox"
-            checked={showTemplateStages}
-            onChange={(e) => {
-              setShowTemplateStages(e.target.checked);
-              localStorage.setItem('showTemplateStages', String(e.target.checked));
-            }}
-            className={styles.controlCheckbox}
-          />
-          <span>Показать этапы ЗМО</span>
-        </label>
-      </div>
-      )}
+{/* Панель управления */}
+{!hideControls && (
+<div className={styles.controlPanel}>
+<label className={styles.controlLabel}>
+<input
+type="checkbox"
+checked={hideEmptyStages}
+onChange={toggleHideEmptyStages}
+className={styles.controlCheckbox}
+/>
+<span>Скрыть пустые этапы</span>
+</label>
+<label className={styles.controlLabel}>
+<input
+type="checkbox"
+checked={showArchivedStages}
+onChange={toggleShowArchivedStages}
+className={styles.controlCheckbox}
+/>
+<span>Показать архивные этапы</span>
+</label>
+<label className={styles.controlLabel}>
+<input
+type="checkbox"
+checked={showSystemStages}
+onChange={(e) => {
+setShowSystemStages(e.target.checked);
+localStorage.setItem('showSystemStages', String(e.target.checked));
+}}
+className={styles.controlCheckbox}
+/>
+<span>Показать предконтрактные этапы</span>
+</label>
+<label className={styles.controlLabel}>
+<input
+type="checkbox"
+checked={showTemplateStages}
+onChange={(e) => {
+setShowTemplateStages(e.target.checked);
+localStorage.setItem('showTemplateStages', String(e.target.checked));
+}}
+className={styles.controlCheckbox}
+/>
+<span>Показать этапы ЗМО</span>
+</label>
+</div>
+)}
 
-      {/* Разделяем этапы на архивные и активные */}
-      {(() => {
-        const archivedStages = visibleStages.filter(s => s.category === 'archive');
-        const activeStages = visibleStages.filter(s => s.category !== 'archive');
+{/* Разделяем этапы на архивные и активные */}
+{(() => {
+const archivedStages = visibleStages.filter(s => s.category === 'archive');
+const activeStages = visibleStages.filter(s => s.category !== 'archive');
 
-        const renderStages = (stagesToRender: typeof visibleStages, isArchived: boolean, containerRef?: React.RefObject<HTMLDivElement | null>) => {
-          // Разделяем этапы на системные и шаблонные (только для неархивных)
-          const systemStages = isArchived ? [] : stagesToRender.filter(s => s.is_system && s.category !== 'archive');
-          const templateStages = isArchived ? [] : stagesToRender.filter(s => !s.is_system && s.category !== 'archive');
+const renderStages = (stagesToRender: typeof visibleStages, isArchived: boolean, containerRef?: React.RefObject<HTMLDivElement | null>) => {
+// Разделяем этапы на системные и шаблонные (только для неархивных)
+const systemStages = isArchived ? [] : stagesToRender.filter(s => s.is_system && s.category !== 'archive');
+const templateStages = isArchived ? [] : stagesToRender.filter(s => !s.is_system && s.category !== 'archive');
 
-          const renderStageColumn = (stage: typeof stagesToRender[0]) => {
-        const isArchivedStage = stage.category === 'archive';
-        const stats = getStageStats(stage.id);
-        const tenders = optimisticTenders[stage.id] || [];
-        const isDragOver = dragOverStage === stage.id;
-        
-        // Определяем следующий этап
-        const nextStage = (() => {
-          // Для этапов реализации - просто следующий по order_index (без привязки к шаблонам)
-          if (stage.category === 'realization') {
-            return stagesToRender
-              .filter(s => s.category === 'realization')
-              .sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
-              .find(s => (s.order_index || 0) > (stage.order_index || 0));
-          }
-          
-          // Для остальных категорий - учитываем шаблоны
-          if (stage.is_system) {
-            // Для системных этапов - следующий системный этап
-            return visibleStages
-              .filter(s => s.is_system && s.category !== 'archive')
-              .find(s => (s.order_index || 0) > (stage.order_index || 0));
-          } else {
-            // Для шаблонных этапов - следующий этап из того же шаблона
-            // Получаем все этапы текущего шаблона
-            const currentTemplate = templates.find(t => 
-              t.items?.some(item => item.stage_id === stage.id)
-            );
-            
-            if (currentTemplate && currentTemplate.items) {
-              const templateStageIds = currentTemplate.items
-                .sort((a, b) => a.order_index - b.order_index)
-                .map(item => item.stage_id);
-              
-              const currentIndex = templateStageIds.indexOf(stage.id);
-              if (currentIndex !== -1 && currentIndex < templateStageIds.length - 1) {
-                const nextStageId = templateStageIds[currentIndex + 1];
-                return stages.find(s => s.id === nextStageId && s.category !== 'archive');
-              }
-            }
-          }
-          return undefined;
-        })();
+const renderStageColumn = (stage: typeof stagesToRender[0]) => {
+const isArchivedStage = stage.category === 'archive';
+const stats = getStageStats(stage.id);
+const tenders = optimisticTenders[stage.id] || [];
+const isDragOver = dragOverStage === stage.id;
+
+// Определяем следующий этап
+const nextStage = (() => {
+// Для этапов реализации - просто следующий по order_index (без привязки к шаблонам)
+if (stage.category === 'realization') {
+return stagesToRender
+.filter(s => s.category === 'realization')
+.sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
+.find(s => (s.order_index || 0) > (stage.order_index || 0));
+}
+
+// Для остальных категорий - учитываем шаблоны
+if (stage.is_system) {
+// Для системных этапов - следующий системный этап
+return visibleStages
+.filter(s => s.is_system && s.category !== 'archive')
+.find(s => (s.order_index || 0) > (stage.order_index || 0));
+} else {
+// Для шаблонных этапов - следующий этап из того же шаблона
+// Получаем все этапы текущего шаблона
+const currentTemplate = templates.find(t => 
+t.items?.some(item => item.stage_id === stage.id)
+);
+if (currentTemplate && currentTemplate.items) {
+const templateStageIds = currentTemplate.items
+.sort((a, b) => a.order_index - b.order_index)
+.map(item => item.stage_id);
+const currentIndex = templateStageIds.indexOf(stage.id);
+if (currentIndex !== -1 && currentIndex < templateStageIds.length - 1) {
+const nextStageId = templateStageIds[currentIndex + 1];
+return stages.find(s => s.id === nextStageId && s.category !== 'archive');
+}
+}
+return undefined;
+}
+})();
 
         return (
           <React.Fragment key={stage.id}>
@@ -852,7 +813,8 @@ export function TenderKanban({ tendersByStage, stages, templates = [], onStageCh
                   {tenders.map((tender) => {
                       const quickActions = getQuickActions(stage.name);
                       const hasQuickActions = quickActions.length > 0;
-                      const timeRemaining = getBusinessTimeRemaining(tender.submission_deadline);
+                      // Используем daysUntilDeadline для согласованности с реестром (календарные дни)
+                      const daysLeft = daysUntilDeadline(tender.submission_deadline);
                       
                       // Проверяем, нужно ли показывать таймер (только до этапа "Подача" включительно)
                       const normalizedStageName = normalizeStageName(stage.name);
@@ -874,15 +836,19 @@ export function TenderKanban({ tendersByStage, stages, templates = [], onStageCh
                         'змо: подан рассмотрение заявки',
                       ]);
 
-                      const shouldShowTimer = !isArchivedStage && deadlineStages.has(normalizedStageName);
+                      // Не показываем дедлайн для выигранных тендеров
+                      const shouldShowTimer = !isArchivedStage && deadlineStages.has(normalizedStageName) && tender.status !== 'won';
                       
+                      // Проверяем просрочен ли тендер
+                      const isTenderOverdue = daysLeft < 0 && tender.status !== 'won';
+
                       return (
                       <div
                         key={tender.id}
                         draggable
                         onDragStart={() => handleDragStart(tender)}
                         onDragEnd={handleDragEnd}
-                        className={`${styles.tenderCard} ${draggedTender?.id === tender.id ? styles.tenderCardDragging : ''}`}
+                        className={`${styles.tenderCard} ${draggedTender?.id === tender.id ? styles.tenderCardDragging : ''} ${isTenderOverdue ? styles.tenderCardOverdue : ''}`}
                       >
                         {/* Меню быстрых действий */}
                         {hasQuickActions && (
@@ -939,12 +905,23 @@ export function TenderKanban({ tendersByStage, stages, templates = [], onStageCh
                                     {formatDeadline(tender.submission_deadline)}
                                   </div>
 
-                                  {timeRemaining && (
+                                  {daysLeft >= 0 ? (
                                     <div className={styles.deadlineTimer}>
-                                      Осталось: {timeRemaining.days} д {timeRemaining.hours} ч
+                                      Осталось: {daysLeft === 0 ? 'Сегодня' : `${daysLeft} дн.`}
+                                    </div>
+                                  ) : (
+                                    <div className={styles.overdueStatus}>
+                                      ⚠️ Просрочен
                                     </div>
                                   )}
                                 </>
+                              )}
+
+                              {/* Бейдж просрочен для тендеров без таймера */}
+                              {isTenderOverdue && !shouldShowTimer && (
+                                <div className={styles.overdueStatus}>
+                                  ⚠️ Просрочен
+                                </div>
                               )}
 
                               {/* Заказчик */}

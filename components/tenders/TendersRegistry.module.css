@@ -101,6 +101,49 @@
 }
 
 /* Table Body */
+.tbody {
+  position: relative;
+}
+
+/* Group Header */
+.groupHeader {
+  background: #f8fafc;
+  border-top: 2px solid #e2e8f0;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.groupHeader:hover {
+  background: #f8fafc;
+}
+
+.groupHeaderCell {
+  padding: 0.75rem 1rem !important;
+}
+
+.groupHeaderContent {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #1e293b;
+}
+
+.groupHeaderIcon {
+  font-size: 1.125rem;
+}
+
+.groupHeaderTitle {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.groupHeaderCount {
+  color: #64748b;
+  font-weight: 500;
+  font-size: 0.8125rem;
+}
+
 .tr {
   border-bottom: 1px solid #f1f5f9;
   transition: background-color 0.15s ease;
@@ -129,6 +172,15 @@
 
 .trWon:hover {
   background: #dcfce7;
+}
+
+.trOverdue {
+  background: #fef2f2;
+  border-left: 3px solid #ef4444;
+}
+
+.trOverdue:hover {
+  background: #fee2e2;
 }
 
 .td {
@@ -237,6 +289,13 @@
   color: #475569;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
+}
+
+.deadlineDays.overdue {
+  color: #dc2626;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  font-weight: 700;
 }
 
 /* Type */

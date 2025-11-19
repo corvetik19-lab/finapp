@@ -120,26 +120,53 @@ export function TendersRegistry({ tenders, stages, types = [], onDelete }: Tende
     return labels[status];
   };
 
-  const sortedTenders = [...tenders].sort((a, b) => {
-    let comparison = 0;
-    
-    switch (sortBy) {
-      case 'date':
-        comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-        break;
-      case 'nmck':
-        comparison = a.nmck - b.nmck;
-        break;
-      case 'deadline':
-        if (!a.submission_deadline && !b.submission_deadline) return 0;
-        if (!a.submission_deadline) return 1;
-        if (!b.submission_deadline) return -1;
-        comparison = new Date(a.submission_deadline).getTime() - new Date(b.submission_deadline).getTime();
-        break;
+  // Разделяем тендеры на три группы: просроченные, выигранные и активные
+  const overdueTenders: Tender[] = [];
+  const wonTenders: Tender[] = [];
+  const activeTenders: Tender[] = [];
+
+  tenders.forEach(tender => {
+    if (tender.status === 'won') {
+      wonTenders.push(tender);
+    } else {
+      const daysLeft = tender.submission_deadline ? daysUntilDeadline(tender.submission_deadline) : null;
+      const isOverdue = daysLeft !== null && daysLeft < 0;
+      
+      if (isOverdue) {
+        overdueTenders.push(tender);
+      } else {
+        activeTenders.push(tender);
+      }
     }
-    
-    return sortDirection === 'asc' ? comparison : -comparison;
   });
+
+  // Сортируем каждую группу
+  const sortTenders = (tendersToSort: Tender[]) => {
+    return [...tendersToSort].sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case 'date':
+          comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          break;
+        case 'nmck':
+          comparison = a.nmck - b.nmck;
+          break;
+        case 'deadline':
+          if (!a.submission_deadline && !b.submission_deadline) return 0;
+          if (!a.submission_deadline) return 1;
+          if (!b.submission_deadline) return -1;
+          comparison = new Date(a.submission_deadline).getTime() - new Date(b.submission_deadline).getTime();
+          break;
+      }
+      
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  };
+
+  const sortedOverdueTenders = sortTenders(overdueTenders);
+  const sortedWonTenders = sortTenders(wonTenders);
+  const sortedActiveTenders = sortTenders(activeTenders);
 
   if (tenders.length === 0) {
     return (
@@ -225,17 +252,30 @@ export function TendersRegistry({ tenders, stages, types = [], onDelete }: Tende
             </tr>
           </thead>
           <tbody className={styles.tbody}>
-            {sortedTenders.map((tender, index) => {
+            {/* Просроченные тендеры */}
+            {sortedOverdueTenders.length > 0 && (
+              <>
+                <tr className={styles.groupHeader}>
+                  <td colSpan={11} className={styles.groupHeaderCell}>
+                    <div className={styles.groupHeaderContent}>
+                      <span className={styles.groupHeaderIcon}>⚠️</span>
+                      <span className={styles.groupHeaderTitle}>Просроченные</span>
+                      <span className={styles.groupHeaderCount}>({sortedOverdueTenders.length})</span>
+                    </div>
+                  </td>
+                </tr>
+                {sortedOverdueTenders.map((tender, index) => {
               const daysLeft = tender.submission_deadline 
                 ? daysUntilDeadline(tender.submission_deadline)
                 : null;
+              const isOverdue = daysLeft !== null && daysLeft < 0;
               const isUrgent = daysLeft !== null && daysLeft >= 0 && daysLeft <= 3;
               const isWarning = daysLeft !== null && daysLeft > 3 && daysLeft <= 7;
 
               return (
                 <tr
                   key={tender.id}
-                  className={`${styles.tr} ${selectedIds.has(tender.id) ? styles.trSelected : ''} ${tender.status === 'won' ? styles.trWon : ''}`}
+                  className={`${styles.tr} ${selectedIds.has(tender.id) ? styles.trSelected : ''}`}
                 >
                   <td className={styles.tdCheckbox}>
                     <input
@@ -270,12 +310,16 @@ export function TendersRegistry({ tenders, stages, types = [], onDelete }: Tende
                     <div className={styles.amount}>{formatCurrency(tender.nmck / 100)}</div>
                   </td>
                   <td className={styles.td}>
-                    {tender.submission_deadline ? (
+                    {tender.submission_deadline && tender.status !== 'won' ? (
                       <div className={styles.deadline}>
                         <div className={styles.deadlineDate}>
                           {formatDate(tender.submission_deadline)}
                         </div>
-                        {daysLeft !== null && daysLeft >= 0 && (
+                        {isOverdue ? (
+                          <div className={`${styles.deadlineDays} ${styles.overdue}`}>
+                            Срок прошел
+                          </div>
+                        ) : daysLeft !== null && daysLeft >= 0 && (
                           <div className={`${styles.deadlineDays} ${isUrgent ? styles.urgent : isWarning ? styles.warning : ''}`}>
                             {daysLeft === 0 ? 'Сегодня' : `${daysLeft}д`}
                           </div>
@@ -292,7 +336,9 @@ export function TendersRegistry({ tenders, stages, types = [], onDelete }: Tende
                     <div className={styles.stage}>{getStageName(tender)}</div>
                   </td>
                   <td className={styles.td}>
-                    <div className={styles.status}>{getStatusLabel(tender.status)}</div>
+                    <div className={styles.status}>
+                      {isOverdue ? 'Просрочен' : getStatusLabel(tender.status)}
+                    </div>
                   </td>
                   <td className={styles.td}>
                     <div className={styles.actions}>
@@ -313,6 +359,230 @@ export function TendersRegistry({ tenders, stages, types = [], onDelete }: Tende
                 </tr>
               );
             })}
+              </>
+            )}
+
+            {/* Выигранные тендеры */}
+            {sortedWonTenders.length > 0 && (
+              <>
+                <tr className={styles.groupHeader}>
+                  <td colSpan={11} className={styles.groupHeaderCell}>
+                    <div className={styles.groupHeaderContent}>
+                      <span className={styles.groupHeaderIcon}>🏆</span>
+                      <span className={styles.groupHeaderTitle}>Выигранные</span>
+                      <span className={styles.groupHeaderCount}>({sortedWonTenders.length})</span>
+                    </div>
+                  </td>
+                </tr>
+                {sortedWonTenders.map((tender, index) => {
+              const daysLeft = tender.submission_deadline 
+                ? daysUntilDeadline(tender.submission_deadline)
+                : null;
+              const isOverdue = daysLeft !== null && daysLeft < 0;
+              const isUrgent = daysLeft !== null && daysLeft >= 0 && daysLeft <= 3;
+              const isWarning = daysLeft !== null && daysLeft > 3 && daysLeft <= 7;
+
+              return (
+                <tr
+                  key={tender.id}
+                  className={`${styles.tr} ${selectedIds.has(tender.id) ? styles.trSelected : ''}`}
+                >
+                  <td className={styles.tdCheckbox}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(tender.id)}
+                      onChange={() => toggleSelect(tender.id)}
+                      className={styles.checkbox}
+                    />
+                  </td>
+                  <td className={styles.td}>
+                    <button
+                      onClick={() => setViewTenderId(tender.id)}
+                      className={styles.actionButton}
+                      title="Просмотр"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    </button>
+                  </td>
+                  <td className={styles.td}>
+                    <span className={styles.index}>{index + 1}</span>
+                  </td>
+                  <td className={styles.td}>
+                    <div className={styles.customer}>{tender.customer}</div>
+                  </td>
+                  <td className={styles.td}>
+                    <div className={styles.subject}>{tender.subject}</div>
+                  </td>
+                  <td className={styles.td}>
+                    <div className={styles.amount}>{formatCurrency(tender.nmck / 100)}</div>
+                  </td>
+                  <td className={styles.td}>
+                    {tender.submission_deadline && tender.status !== 'won' ? (
+                      <div className={styles.deadline}>
+                        <div className={styles.deadlineDate}>
+                          {formatDate(tender.submission_deadline)}
+                        </div>
+                        {isOverdue ? (
+                          <div className={`${styles.deadlineDays} ${styles.overdue}`}>
+                            Срок прошел
+                          </div>
+                        ) : daysLeft !== null && daysLeft >= 0 && (
+                          <div className={`${styles.deadlineDays} ${isUrgent ? styles.urgent : isWarning ? styles.warning : ''}`}>
+                            {daysLeft === 0 ? 'Сегодня' : `${daysLeft}д`}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className={styles.empty}>-</span>
+                    )}
+                  </td>
+                  <td className={styles.td}>
+                    <div className={styles.type}>{getTypeName(tender)}</div>
+                  </td>
+                  <td className={styles.td}>
+                    <div className={styles.stage}>{getStageName(tender)}</div>
+                  </td>
+                  <td className={styles.td}>
+                    <div className={styles.status}>
+                      {isOverdue ? 'Просрочен' : getStatusLabel(tender.status)}
+                    </div>
+                  </td>
+                  <td className={styles.td}>
+                    <div className={styles.actions}>
+                      {onDelete && (
+                        <button
+                          onClick={() => onDelete(tender.id)}
+                          className={styles.actionButton}
+                          title="Удалить"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+              </>
+            )}
+
+            {/* Активные тендеры */}
+            {sortedActiveTenders.length > 0 && (
+              <>
+                {(sortedOverdueTenders.length > 0 || sortedWonTenders.length > 0) && (
+                  <tr className={styles.groupHeader}>
+                    <td colSpan={11} className={styles.groupHeaderCell}>
+                      <div className={styles.groupHeaderContent}>
+                        <span className={styles.groupHeaderIcon}>📋</span>
+                        <span className={styles.groupHeaderTitle}>Активные</span>
+                        <span className={styles.groupHeaderCount}>({sortedActiveTenders.length})</span>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                {sortedActiveTenders.map((tender, index) => {
+              const daysLeft = tender.submission_deadline 
+                ? daysUntilDeadline(tender.submission_deadline)
+                : null;
+              const isOverdue = daysLeft !== null && daysLeft < 0;
+              const isUrgent = daysLeft !== null && daysLeft >= 0 && daysLeft <= 3;
+              const isWarning = daysLeft !== null && daysLeft > 3 && daysLeft <= 7;
+
+              return (
+                <tr
+                  key={tender.id}
+                  className={`${styles.tr} ${selectedIds.has(tender.id) ? styles.trSelected : ''}`}
+                >
+                  <td className={styles.tdCheckbox}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(tender.id)}
+                      onChange={() => toggleSelect(tender.id)}
+                      className={styles.checkbox}
+                    />
+                  </td>
+                  <td className={styles.td}>
+                    <button
+                      onClick={() => setViewTenderId(tender.id)}
+                      className={styles.actionButton}
+                      title="Просмотр"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    </button>
+                  </td>
+                  <td className={styles.td}>
+                    <span className={styles.index}>{index + 1}</span>
+                  </td>
+                  <td className={styles.td}>
+                    <div className={styles.customer}>{tender.customer}</div>
+                  </td>
+                  <td className={styles.td}>
+                    <div className={styles.subject}>{tender.subject}</div>
+                  </td>
+                  <td className={styles.td}>
+                    <div className={styles.amount}>{formatCurrency(tender.nmck / 100)}</div>
+                  </td>
+                  <td className={styles.td}>
+                    {tender.submission_deadline && tender.status !== 'won' ? (
+                      <div className={styles.deadline}>
+                        <div className={styles.deadlineDate}>
+                          {formatDate(tender.submission_deadline)}
+                        </div>
+                        {isOverdue ? (
+                          <div className={`${styles.deadlineDays} ${styles.overdue}`}>
+                            Срок прошел
+                          </div>
+                        ) : daysLeft !== null && daysLeft >= 0 && (
+                          <div className={`${styles.deadlineDays} ${isUrgent ? styles.urgent : isWarning ? styles.warning : ''}`}>
+                            {daysLeft === 0 ? 'Сегодня' : `${daysLeft}д`}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className={styles.empty}>-</span>
+                    )}
+                  </td>
+                  <td className={styles.td}>
+                    <div className={styles.type}>{getTypeName(tender)}</div>
+                  </td>
+                  <td className={styles.td}>
+                    <div className={styles.stage}>{getStageName(tender)}</div>
+                  </td>
+                  <td className={styles.td}>
+                    <div className={styles.status}>
+                      {isOverdue ? 'Просрочен' : getStatusLabel(tender.status)}
+                    </div>
+                  </td>
+                  <td className={styles.td}>
+                    <div className={styles.actions}>
+                      {onDelete && (
+                        <button
+                          onClick={() => onDelete(tender.id)}
+                          className={styles.actionButton}
+                          title="Удалить"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+              </>
+            )}
           </tbody>
         </table>
       </div>
