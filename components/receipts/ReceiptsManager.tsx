@@ -42,44 +42,70 @@ export default function ReceiptsManager({ initialReceipts }: ReceiptsManagerProp
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
-    const channel = supabase
-      .channel('attachments-changes-desktop')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'attachments',
-        },
-        (payload) => {
-          console.log('New attachment (desktop):', payload.new);
-          const newAttachment = payload.new as Attachment;
-          setReceipts((prev) => {
-            // Проверяем что файл еще не добавлен
-            if (prev.some(r => r.id === newAttachment.id)) {
-              return prev;
-            }
-            return [newAttachment, ...prev];
-          });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'attachments',
-        },
-        (payload) => {
-          console.log('Deleted attachment (desktop):', payload.old);
-          const deletedId = (payload.old as { id: string }).id;
-          setReceipts((prev) => prev.filter(r => r.id !== deletedId));
-        }
-      )
-      .subscribe();
+    // Получаем текущего пользователя и подписываемся на изменения
+    const setupRealtimeSubscription = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.log('No user found for Realtime subscription');
+        return;
+      }
+
+      console.log('Setting up Realtime subscription for user:', user.id);
+
+      const channel = supabase
+        .channel('attachments-changes-desktop')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'attachments',
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload) => {
+            console.log('New attachment (desktop Realtime):', payload.new);
+            const newAttachment = payload.new as Attachment;
+            setReceipts((prev) => {
+              // Проверяем что файл еще не добавлен
+              if (prev.some(r => r.id === newAttachment.id)) {
+                return prev;
+              }
+              return [newAttachment, ...prev];
+            });
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'DELETE',
+            schema: 'public',
+            table: 'attachments',
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload) => {
+            console.log('Deleted attachment (desktop Realtime):', payload.old);
+            const deletedId = (payload.old as { id: string }).id;
+            setReceipts((prev) => prev.filter(r => r.id !== deletedId));
+          }
+        )
+        .subscribe((status) => {
+          console.log('Realtime subscription status:', status);
+        });
+
+      return channel;
+    };
+
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    setupRealtimeSubscription().then((ch) => {
+      if (ch) channel = ch;
+    });
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, []);
 
