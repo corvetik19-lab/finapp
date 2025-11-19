@@ -32,6 +32,12 @@ export interface Debt {
   defendant: string | null;           // Ответчик (должник)
   comments: string | null;            // Комментарии
   
+  // Связанные данные (при join)
+  tender?: {
+    purchase_number: string;
+    customer: string;
+  };
+  
   created_at: string;
   updated_at: string;
   deleted_at: string | null;

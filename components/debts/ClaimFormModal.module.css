@@ -218,6 +218,15 @@
   display: block;
 }
 
+/* Hint Text */
+.hint {
+  color: #6c757d;
+  font-size: 12px;
+  font-style: italic;
+  margin-top: 4px;
+  display: block;
+}
+
 /* Footer */
 .footer {
   display: flex;

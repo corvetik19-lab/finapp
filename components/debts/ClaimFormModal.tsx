@@ -86,11 +86,11 @@ export function ClaimFormModal({ isOpen, onClose, onSubmit, initialData }: Claim
             <div className={styles.radioGroup}>
               <label className={`${styles.radioLabel} ${type === 'owe' ? styles.radioActive : ''}`}>
                 <input type="radio" value="owe" {...register('type')} className={styles.radioInput} /> 
-                Я должен
+                Мы должны
               </label>
               <label className={`${styles.radioLabel} ${type === 'owed' ? styles.radioActive : ''}`}>
                 <input type="radio" value="owed" {...register('type')} className={styles.radioInput} /> 
-                Мне должны
+                Нам должны
               </label>
             </div>
           </div>
@@ -124,20 +124,30 @@ export function ClaimFormModal({ isOpen, onClose, onSubmit, initialData }: Claim
           <div className={styles.row}>
             <div className={styles.formGroup}>
               <label className={styles.label}>Истец</label>
-              <input {...register('plaintiff')} placeholder="Наша организация" className={styles.input} />
+              <input 
+                {...register('plaintiff')} 
+                placeholder={type === 'owed' ? 'Наша организация' : 'Заказчик'}
+                className={styles.input} 
+              />
+              {type === 'owed' && <span className={styles.hint}>При выборе &quot;Нам должны&quot; - истец наша организация</span>}
             </div>
             <div className={styles.formGroup}>
-              <label className={styles.label}>Ответчик (должник)</label>
-              <input {...register('defendant')} placeholder="Должник" className={styles.input} />
+              <label className={styles.label}>Ответчик</label>
+              <input 
+                {...register('defendant')} 
+                placeholder={type === 'owed' ? 'Заказчик (должник)' : 'Наша организация'}
+                className={styles.input} 
+              />
+              {type === 'owe' && <span className={styles.hint}>При выборе &quot;Мы должны&quot; - ответчик наша организация</span>}
             </div>
           </div>
 
           {/* Имя кредитора/должника (основное поле) */}
           <div className={styles.formGroup}>
             <label className={styles.label}>
-              {type === 'owe' ? 'Кому должны (Имя кредитора)' : 'Кто должен (Имя должника)'}
+              {type === 'owe' ? 'Кому мы должны (Имя кредитора)' : 'Кто нам должен (Имя должника)'}
             </label>
-            <input {...register('creditor_debtor_name')} placeholder="Иван Иванов" className={styles.input} />
+            <input {...register('creditor_debtor_name')} placeholder="Название организации" className={styles.input} />
             {errors.creditor_debtor_name && <span className={styles.errorText}>{errors.creditor_debtor_name.message}</span>}
           </div>
 

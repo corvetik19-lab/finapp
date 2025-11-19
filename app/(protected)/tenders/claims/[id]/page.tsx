@@ -14,7 +14,10 @@ async function getClaim(id: string): Promise<Debt | null> {
   
   const { data, error } = await supabase
     .from('debts')
-    .select('*')
+    .select(`
+      *,
+      tender:tenders(purchase_number, customer)
+    `)
     .eq('id', id)
     .single();
     
@@ -59,7 +62,7 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
               <div className={styles.infoItem}>
                 <label className={styles.infoLabel}>Тип</label>
                 <span className={styles.infoValue}>
-                  {claim.type === 'owe' ? 'Я должен' : 'Мне должны'}
+                  {claim.type === 'owe' ? 'Мы должны' : 'Нам должны'}
                 </span>
               </div>
               <div className={styles.infoItem}>
@@ -116,13 +119,21 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
             <div className={styles.card}>
               <h2 className={styles.cardTitle}>🏢 Данные тендера</h2>
               <div className={styles.infoGrid}>
-                {claim.tender_id && (
-                  <div className={styles.infoItem}>
-                    <label className={styles.infoLabel}>ID Тендера</label>
-                    <span className={styles.infoValue}>
-                      {claim.tender_id.slice(0, 8)}...
-                    </span>
-                  </div>
+                {claim.tender_id && claim.tender && (
+                  <>
+                    <div className={styles.infoItem}>
+                      <label className={styles.infoLabel}>Номер тендера</label>
+                      <span className={styles.infoValue}>
+                        {claim.tender.purchase_number}
+                      </span>
+                    </div>
+                    <div className={styles.infoItem}>
+                      <label className={styles.infoLabel}>Заказчик</label>
+                      <span className={styles.infoValue}>
+                        {claim.tender.customer}
+                      </span>
+                    </div>
+                  </>
                 )}
                 {claim.application_number && (
                   <div className={styles.infoItem}>
