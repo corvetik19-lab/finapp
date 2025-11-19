@@ -1,6 +1,7 @@
 "use server";
 
 import OpenAI from "openai";
+import { createRSCClient } from "@/lib/supabase/server";
 
 // Инициализируем клиент OpenAI только на сервере
 const openai = new OpenAI({
@@ -14,23 +15,14 @@ export interface OCRResult {
 }
 
 /**
- * Распознает текст с изображения или PDF чека
+ * Внутренняя функция для обработки буфера файла
  */
-export async function recognizeReceiptFile(formData: FormData): Promise<OCRResult> {
+async function processFileBuffer(buffer: Buffer, mimeType: string): Promise<OCRResult> {
   try {
-    const file = formData.get("file") as File;
-    
-    if (!file) {
-      return { success: false, text: "", error: "Файл не найден" };
-    }
-
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const mimeType = file.type;
-
     // 1. Обработка PDF (текстовый слой)
     if (mimeType === "application/pdf") {
       try {
-        // Polyfill для DOMMatrix (нужен для некоторых версий pdf библиотек в Node.js)
+        // Polyfill для DOMMatrix
         if (!global.DOMMatrix) {
           // @ts-expect-error - Polyfill for missing DOMMatrix in Node.js
           global.DOMMatrix = class DOMMatrix {
@@ -44,7 +36,7 @@ export async function recognizeReceiptFile(formData: FormData): Promise<OCRResul
           };
         }
 
-        // Lazy load pdf-parse чтобы избежать ошибок инициализации
+        // Lazy load pdf-parse
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const pdf = require("pdf-parse");
         
@@ -52,12 +44,8 @@ export async function recognizeReceiptFile(formData: FormData): Promise<OCRResul
         const text = data.text.trim();
         
         if (text.length > 10) {
-          // Если удалось извлечь текст программно
           return { success: true, text };
         }
-        // Если текст пустой, возможно это скан в PDF. 
-        // В данной реализации мы возвращаем ошибку для сканов PDF, 
-        // так как конвертация PDF->Image на Vercel требует тяжелых зависимостей.
         return { 
           success: false, 
           text: "", 
@@ -75,7 +63,7 @@ export async function recognizeReceiptFile(formData: FormData): Promise<OCRResul
       const dataUrl = `data:${mimeType};base64,${base64Image}`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-4o", // Используем самую умную модель для Vision
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
@@ -97,7 +85,7 @@ export async function recognizeReceiptFile(formData: FormData): Promise<OCRResul
                 type: "image_url",
                 image_url: {
                   url: dataUrl,
-                  detail: "high" // Высокая детализация для мелкого текста
+                  detail: "high"
                 }
               }
             ]
@@ -124,6 +112,61 @@ export async function recognizeReceiptFile(formData: FormData): Promise<OCRResul
       success: false, 
       text: "", 
       error: errorMessage || "Ошибка при распознавании файла" 
+    };
+  }
+}
+
+/**
+ * Распознает текст с изображения или PDF чека (из FormData)
+ */
+export async function recognizeReceiptFile(formData: FormData): Promise<OCRResult> {
+  try {
+    const file = formData.get("file") as File;
+    
+    if (!file) {
+      return { success: false, text: "", error: "Файл не найден" };
+    }
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    return processFileBuffer(buffer, file.type);
+
+  } catch (error: unknown) {
+    console.error("Recognize File Error:", error);
+    return { 
+      success: false, 
+      text: "", 
+      error: "Ошибка при обработке файла" 
+    };
+  }
+}
+
+/**
+ * Распознает текст чека, который уже загружен в Supabase Storage
+ */
+export async function recognizeReceiptFromPath(filePath: string, mimeType: string): Promise<OCRResult> {
+  try {
+    const supabase = await createRSCClient();
+    
+    // Скачиваем файл из Storage
+    const { data, error } = await supabase
+      .storage
+      .from('attachments')
+      .download(filePath);
+
+    if (error || !data) {
+      console.error("Download error:", error);
+      return { success: false, text: "", error: "Не удалось скачать файл из хранилища" };
+    }
+
+    const buffer = Buffer.from(await data.arrayBuffer());
+    return processFileBuffer(buffer, mimeType);
+
+  } catch (error: unknown) {
+    console.error("Recognize Path Error:", error);
+    return { 
+      success: false, 
+      text: "", 
+      error: "Ошибка при обработке файла из хранилища" 
     };
   }
 }

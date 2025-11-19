@@ -63,13 +63,13 @@ export default function PlatformHeader({
 
         {/* Actions */}
         <div className={styles.headerActions}>
-          {/* Calendar */}
-          <button className={styles.iconButton} aria-label="Календарь">
+          {/* Calendar - Hidden on mobile */}
+          <button className={`${styles.iconButton} ${styles.hideOnMobile}`} aria-label="Календарь">
             <span className="material-icons">calendar_month</span>
           </button>
 
-          {/* Global Settings */}
-          <Link href="/admin/settings" className={styles.iconButton} title="Глобальные настройки">
+          {/* Global Settings - Hidden on mobile */}
+          <Link href="/admin/settings" className={`${styles.iconButton} ${styles.hideOnMobile}`} title="Глобальные настройки">
             <span className="material-icons">settings</span>
           </Link>
 

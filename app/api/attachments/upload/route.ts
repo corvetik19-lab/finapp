@@ -20,7 +20,7 @@ const ALLOWED_TYPES = [
  * 
  * Body (FormData):
  * - file: File
- * - transactionId: string
+ * - transactionId: string (optional)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -38,9 +38,9 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
     const transactionId = formData.get('transactionId') as string;
 
-    if (!file || !transactionId) {
+    if (!file) {
       return NextResponse.json(
-        { error: 'Отсутствует файл или ID транзакции' },
+        { error: 'Отсутствует файл' },
         { status: 400 }
       );
     }
@@ -64,13 +64,19 @@ export async function POST(request: NextRequest) {
     // Генерируем уникальное имя файла
     const timestamp = Date.now();
     const fileExt = file.name.split('.').pop();
-    const fileName = `${user.id}/${transactionId}/${timestamp}.${fileExt}`;
+    // Если нет транзакции, сохраняем в общую папку receipts
+    const folder = transactionId || 'receipts';
+    const fileName = `${user.id}/${folder}/${timestamp}.${fileExt}`;
+
+    // Конвертируем File в ArrayBuffer для Supabase Storage
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
     // Загружаем в Supabase Storage
     const { error: uploadError } = await supabase
       .storage
       .from('attachments')
-      .upload(fileName, file, {
+      .upload(fileName, buffer, {
         contentType: file.type,
         upsert: false,
       });
@@ -88,11 +94,11 @@ export async function POST(request: NextRequest) {
       .from('attachments')
       .insert({
         user_id: user.id,
-        transaction_id: transactionId,
+        transaction_id: transactionId || null,
         file_name: file.name,
         file_size: file.size,
-        file_type: file.type,
-        storage_path: fileName,
+        mime_type: file.type,
+        file_path: fileName,
       })
       .select()
       .single();
@@ -109,14 +115,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Обновляем счётчик вложений в транзакции
-    await supabase
-      .from('transactions')
-      .update({ attachment_count: (await supabase
-        .from('attachments')
-        .select('id', { count: 'exact' })
-        .eq('transaction_id', transactionId)).count || 0 })
-      .eq('id', transactionId);
+    // Если привязано к транзакции, обновляем счётчик
+    if (transactionId) {
+      await supabase
+        .from('transactions')
+        .update({ attachment_count: (await supabase
+          .from('attachments')
+          .select('id', { count: 'exact' })
+          .eq('transaction_id', transactionId)).count || 0 })
+        .eq('id', transactionId);
+    }
 
     return NextResponse.json(attachment);
   } catch (error) {

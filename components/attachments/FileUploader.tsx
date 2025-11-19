@@ -14,8 +14,8 @@ interface Attachment {
   id: string;
   file_name: string;
   file_size: number;
-  file_type: string;
-  storage_path: string;
+  mime_type: string;
+  file_path: string;
   created_at: string;
 }
 
@@ -97,14 +97,14 @@ export default function FileUploader({
     }
   };
 
-  const handleDelete = async (fileId: string, storagePath: string) => {
+  const handleDelete = async (fileId: string, filePath: string) => {
     if (!confirm('Удалить этот файл?')) return;
 
     try {
       const response = await fetch('/api/attachments/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileId, storagePath }),
+        body: JSON.stringify({ fileId, storagePath: filePath }),
       });
 
       if (!response.ok) {
@@ -123,8 +123,8 @@ export default function FileUploader({
 
   const handlePreview = (file: Attachment) => {
     // Для изображений показываем превью
-    if (file.file_type.startsWith('image/')) {
-      const url = `/api/attachments/view?path=${encodeURIComponent(file.storage_path)}`;
+    if (file.mime_type.startsWith('image/')) {
+      const url = `/api/attachments/view?path=${encodeURIComponent(file.file_path)}`;
       setPreviewUrl(url);
     }
   };
@@ -135,9 +135,9 @@ export default function FileUploader({
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
-  const getFileIcon = (type: string): string => {
-    if (type.startsWith('image/')) return '🖼️';
-    if (type === 'application/pdf') return '📄';
+  const getFileIcon = (mimeType: string): string => {
+    if (mimeType.startsWith('image/')) return '🖼️';
+    if (mimeType === 'application/pdf') return '📄';
     return '📎';
   };
 
@@ -186,7 +186,7 @@ export default function FileUploader({
           {files.map((file) => (
             <div key={file.id} className={styles.fileItem}>
               <div className={styles.fileIcon}>
-                {getFileIcon(file.file_type)}
+                {getFileIcon(file.mime_type)}
               </div>
               
               <div className={styles.fileInfo}>
@@ -197,7 +197,7 @@ export default function FileUploader({
               </div>
 
               <div className={styles.fileActions}>
-                {file.file_type.startsWith('image/') && (
+                {file.mime_type.startsWith('image/') && (
                   <button
                     type="button"
                     className={styles.actionButton}
@@ -209,7 +209,7 @@ export default function FileUploader({
                 )}
                 
                 <a
-                  href={`/api/attachments/download?path=${encodeURIComponent(file.storage_path)}&name=${encodeURIComponent(file.file_name)}`}
+                  href={`/api/attachments/download?path=${encodeURIComponent(file.file_path)}&name=${encodeURIComponent(file.file_name)}`}
                   download
                   className={styles.actionButton}
                   title="Скачать"
@@ -220,7 +220,7 @@ export default function FileUploader({
                 <button
                   type="button"
                   className={styles.actionButton}
-                  onClick={() => handleDelete(file.id, file.storage_path)}
+                  onClick={() => handleDelete(file.id, file.file_path)}
                   title="Удалить"
                 >
                   <span className="material-icons">delete</span>

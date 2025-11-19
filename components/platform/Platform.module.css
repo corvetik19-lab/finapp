@@ -439,3 +439,10 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Hide on mobile */
+@media (max-width: 768px) {
+  .hideOnMobile {
+    display: none !important;
+  }
+}

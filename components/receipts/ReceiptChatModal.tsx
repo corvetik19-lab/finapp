@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import styles from "./ReceiptChatModal.module.css";
-import { recognizeReceiptFile } from "@/lib/ai/receipt-ocr";
+import { recognizeReceiptFile, recognizeReceiptFromPath } from "@/lib/ai/receipt-ocr";
+import { getRecentReceipts, Receipt } from "@/lib/receipts/actions";
 
 interface Message {
   role: "user" | "assistant" | "system";
@@ -63,6 +64,8 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
   const [searchTerms, setSearchTerms] = useState<Record<number, string>>({}); // Поисковые запросы для каждой позиции
   const [categories, setCategories] = useState<Array<{id: string; name: string}>>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
+  const [receipts, setReceipts] = useState<Receipt[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -203,6 +206,60 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
       }
     } catch (error) {
       console.error("Error loading categories:", error);
+    }
+  };
+
+  const handleOpenGallery = async () => {
+    setShowGallery(true);
+    const data = await getRecentReceipts();
+    setReceipts(data);
+  };
+
+  const handleSelectFromGallery = async (receipt: Receipt) => {
+    setShowGallery(false);
+    setIsUploading(true);
+    
+    const loadingMsg: Message = {
+      role: "assistant",
+      content: "👀 Смотрю на ваш чек из галереи...",
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, loadingMsg]);
+
+    try {
+      const result = await recognizeReceiptFromPath(receipt.file_path, receipt.mime_type);
+
+      setMessages((prev) => prev.filter(m => m !== loadingMsg));
+
+      if (result.success) {
+        setInput(result.text);
+        
+        const successMsg: Message = {
+          role: "assistant",
+          content: `✅ Чек "${receipt.file_name}" распознан! Проверьте текст и отправьте.`,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, successMsg]);
+        setTimeout(() => textareaRef.current?.focus(), 100);
+      } else {
+        const errorMsg: Message = {
+          role: "assistant",
+          content: `❌ Ошибка: ${result.error}`,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, errorMsg]);
+      }
+    } catch (error) {
+      console.error("Gallery processing error:", error);
+      setMessages((prev) => prev.filter(m => m !== loadingMsg));
+      const errorMsg: Message = {
+        role: "assistant",
+        content: "❌ Ошибка при обработке файла",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMsg]);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -518,15 +575,26 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
             accept="image/*,.pdf"
             style={{ display: "none" }}
           />
-          <button
-            type="button"
-            className={styles.attachButton}
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isProcessing || isUploading}
-            title="Прикрепить фото или PDF чека"
-          >
-            📎
-          </button>
+          <div className={styles.attachButtons}>
+            <button
+              type="button"
+              className={styles.attachButton}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isProcessing || isUploading}
+              title="Загрузить файл"
+            >
+              📎
+            </button>
+            <button
+              type="button"
+              className={styles.attachButton}
+              onClick={handleOpenGallery}
+              disabled={isProcessing || isUploading}
+              title="Выбрать из галереи"
+            >
+              🖼️
+            </button>
+          </div>
           <textarea
             ref={textareaRef}
             className={styles.textarea}
@@ -551,6 +619,39 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
           автоматически найдёт товары, цены и создаст транзакцию.
         </div>
       </div>
+      
+      {/* Модалка галереи */}
+      {showGallery && (
+        <div className={styles.galleryOverlay} onClick={() => setShowGallery(false)}>
+          <div className={styles.galleryModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.galleryHeader}>
+              <h3>Выбрать из загруженных</h3>
+              <button onClick={() => setShowGallery(false)} className={styles.closeButton}>×</button>
+            </div>
+            <div className={styles.galleryGrid}>
+              {receipts.length === 0 ? (
+                <p className={styles.emptyGallery}>Нет загруженных чеков</p>
+              ) : (
+                receipts.map((receipt) => (
+                  <div 
+                    key={receipt.id} 
+                    className={styles.galleryItem}
+                    onClick={() => handleSelectFromGallery(receipt)}
+                  >
+                    <div className={styles.galleryIcon}>
+                      {receipt.mime_type.startsWith('image/') ? '🖼️' : '📄'}
+                    </div>
+                    <div className={styles.galleryName}>{receipt.file_name}</div>
+                    <div className={styles.galleryDate}>
+                      {new Date(receipt.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       
       {preview && (
         <div className={styles.previewModal} onClick={(e) => e.stopPropagation()}>

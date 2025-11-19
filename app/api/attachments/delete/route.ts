@@ -73,16 +73,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Обновляем счётчик вложений в транзакции
-    const { count } = await supabase
-      .from('attachments')
-      .select('id', { count: 'exact' })
-      .eq('transaction_id', attachment.transaction_id);
+    // Обновляем счётчик вложений в транзакции, только если файл был привязан к транзакции
+    if (attachment.transaction_id) {
+      const { count } = await supabase
+        .from('attachments')
+        .select('id', { count: 'exact' })
+        .eq('transaction_id', attachment.transaction_id);
 
-    await supabase
-      .from('transactions')
-      .update({ attachment_count: count || 0 })
-      .eq('id', attachment.transaction_id);
+      await supabase
+        .from('transactions')
+        .update({ attachment_count: count || 0 })
+        .eq('id', attachment.transaction_id);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

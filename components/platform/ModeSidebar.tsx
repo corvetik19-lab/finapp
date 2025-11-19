@@ -23,6 +23,7 @@ const MODE_MENUS: ModeMenuConfig = {
   finance: [
     { key: 'dashboard', label: 'Дашборд', icon: 'insights', href: '/finance/dashboard' },
     { key: 'transactions', label: 'Транзакции', icon: 'receipt_long', href: '/finance/transactions' },
+    { key: 'receipts', label: 'Чеки', icon: 'receipt', href: '/finance/receipts' },
     { key: 'budgets', label: 'Бюджеты', icon: 'pie_chart', href: '/finance/budgets' },
     { 
       key: 'cards', 
@@ -136,7 +137,7 @@ export default function ModeSidebar() {
     // Если это dashboard или маршруты finance режима, значит finance
     if (modeKey === 'dashboard' || modeKey === 'achievements' || 
         modeKey === 'cards' || modeKey === 'credit-cards' ||
-        modeKey === 'transactions' || modeKey === 'loans' || modeKey === 'payments' || modeKey === 'budgets' ||
+        modeKey === 'transactions' || modeKey === 'receipts' || modeKey === 'loans' || modeKey === 'payments' || modeKey === 'budgets' ||
         modeKey === 'reports' || modeKey === 'forecasts' || modeKey === 'analytics' ||
         modeKey === 'ai-advisor' || modeKey === 'ai-chat' || modeKey === 'ai-analytics' ||
         modeKey === 'plans' || modeKey === 'notifications' || modeKey === 'settings') {

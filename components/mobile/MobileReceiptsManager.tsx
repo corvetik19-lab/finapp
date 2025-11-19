@@ -1,0 +1,181 @@
+"use client";
+
+import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
+import styles from "./MobileReceiptsManager.module.css";
+
+interface Attachment {
+  id: string;
+  file_name: string;
+  file_path: string;
+  mime_type: string;
+  file_size: number | null;
+  created_at: string;
+}
+
+interface MobileReceiptsManagerProps {
+  initialReceipts: Attachment[];
+}
+
+export default function MobileReceiptsManager({ initialReceipts }: MobileReceiptsManagerProps) {
+  const [receipts, setReceipts] = useState<Attachment[]>(initialReceipts);
+  const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      
+      for (let i = 0; i < files.length; i++) {
+        formData.append('files', files[i]);
+      }
+
+      const response = await fetch('/api/attachments/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        router.refresh();
+      } else {
+        setError(data.error || 'Ошибка загрузки файлов');
+      }
+    } catch (err) {
+      console.error('Upload error:', err);
+      setError('Произошла ошибка при загрузке');
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleDelete = async (id: string, filePath: string) => {
+    if (!confirm('Удалить этот чек?')) return;
+
+    try {
+      const response = await fetch('/api/attachments/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileId: id, storagePath: filePath }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setReceipts(receipts.filter(r => r.id !== id));
+      } else {
+        alert(data.error || 'Ошибка удаления');
+      }
+    } catch (err) {
+      console.error('Delete error:', err);
+      alert('Произошла ошибка при удалении');
+    }
+  };
+
+  const formatFileSize = (bytes: number | null) => {
+    if (!bytes) return '—';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  };
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h1>📄 Мои чеки</h1>
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileSelect}
+          accept="image/*,.pdf"
+          multiple
+          style={{ display: 'none' }}
+        />
+        <button
+          className={styles.uploadButton}
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+        >
+          {isUploading ? '⏳ Загрузка...' : '📎 Загрузить'}
+        </button>
+      </div>
+
+      {error && (
+        <div className={styles.error}>
+          <span className="material-icons">error</span>
+          {error}
+        </div>
+      )}
+
+      {receipts.length === 0 ? (
+        <div className={styles.empty}>
+          <span className="material-icons">receipt_long</span>
+          <h3>Нет загруженных чеков</h3>
+          <p>Нажмите кнопку &quot;Загрузить&quot; чтобы добавить чеки</p>
+        </div>
+      ) : (
+        <div className={styles.list}>
+          {receipts.map((receipt) => (
+            <div key={receipt.id} className={styles.item}>
+              <div className={styles.itemIcon}>
+                {receipt.mime_type.startsWith('image/') ? '🖼️' : '📄'}
+              </div>
+              <div className={styles.itemInfo}>
+                <div className={styles.itemName}>{receipt.file_name}</div>
+                <div className={styles.itemMeta}>
+                  {formatFileSize(receipt.file_size)} • {formatDate(receipt.created_at)}
+                </div>
+              </div>
+              <div className={styles.itemActions}>
+                <a
+                  href={`/api/attachments/view?path=${encodeURIComponent(receipt.file_path)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.actionButton}
+                  title="Просмотр"
+                >
+                  <span className="material-icons">visibility</span>
+                </a>
+                <a
+                  href={`/api/attachments/download?path=${encodeURIComponent(receipt.file_path)}&name=${encodeURIComponent(receipt.file_name)}`}
+                  className={styles.actionButton}
+                  title="Скачать"
+                >
+                  <span className="material-icons">download</span>
+                </a>
+                <button
+                  onClick={() => handleDelete(receipt.id, receipt.file_path)}
+                  className={styles.actionButton}
+                  title="Удалить"
+                >
+                  <span className="material-icons">delete</span>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

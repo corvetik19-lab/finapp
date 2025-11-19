@@ -54,6 +54,13 @@ export default function ProtectedShell({ children }: ProtectedShellProps) {
               <span>Расходы</span>
             </Link>
             <Link 
+              href="/mobile/receipts" 
+              className={`${styles.bottomNavItem} ${pathname === '/mobile/receipts' ? styles.active : ''}`}
+            >
+              <span className="material-icons" aria-hidden>receipt</span>
+              <span>Чеки</span>
+            </Link>
+            <Link 
               href="/mobile/payments" 
               className={`${styles.bottomNavItem} ${pathname === '/mobile/payments' ? styles.active : ''}`}
             >
