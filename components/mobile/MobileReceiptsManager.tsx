@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
 import styles from "./MobileReceiptsManager.module.css";
 
 interface Attachment {
@@ -21,8 +20,8 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
   const [receipts, setReceipts] = useState<Attachment[]>(initialReceipts);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const router = useRouter();
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -59,8 +58,14 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
       const data = await response.json();
       console.log('Response data:', data);
 
-      if (data.success) {
-        router.refresh();
+      if (data.success && data.attachments) {
+        // Добавляем новые файлы в начало списка
+        setReceipts(prev => [...data.attachments, ...prev]);
+        
+        // Показываем предупреждение если были ошибки
+        if (data.errors && data.errors.length > 0) {
+          setError(`Некоторые файлы не загружены: ${data.errors.join(', ')}`);
+        }
       } else {
         setError(data.error || 'Ошибка загрузки файлов');
       }
@@ -163,15 +168,23 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
                 </div>
               </div>
               <div className={styles.itemActions}>
-                <a
-                  href={`/api/attachments/view?path=${encodeURIComponent(receipt.file_path)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={() => {
+                    if (receipt.mime_type.startsWith('image/')) {
+                      setPreviewImage({
+                        url: `/api/attachments/view?path=${encodeURIComponent(receipt.file_path)}`,
+                        name: receipt.file_name,
+                      });
+                    } else {
+                      // Для PDF открываем в новой вкладке
+                      window.open(`/api/attachments/view?path=${encodeURIComponent(receipt.file_path)}`, '_blank');
+                    }
+                  }}
                   className={styles.actionButton}
                   title="Просмотр"
                 >
                   <span className="material-icons">visibility</span>
-                </a>
+                </button>
                 <a
                   href={`/api/attachments/download?path=${encodeURIComponent(receipt.file_path)}&name=${encodeURIComponent(receipt.file_name)}`}
                   className={styles.actionButton}
@@ -189,6 +202,31 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Модалка просмотра изображения */}
+      {previewImage && (
+        <div className={styles.previewOverlay} onClick={() => setPreviewImage(null)}>
+          <div className={styles.previewModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.previewHeader}>
+              <h3>{previewImage.name}</h3>
+              <button
+                onClick={() => setPreviewImage(null)}
+                className={styles.closeButton}
+                aria-label="Закрыть"
+              >
+                ×
+              </button>
+            </div>
+            <div className={styles.previewBody}>
+              <img
+                src={previewImage.url}
+                alt={previewImage.name}
+                className={styles.previewImage}
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>
