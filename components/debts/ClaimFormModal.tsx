@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Debt, CLAIM_STAGE_LABELS } from "@/types/debt";
 import { debtFormSchema, DebtFormSchema } from "@/lib/validation/debt";
-import styles from "./DebtFormModal.module.css";
+import styles from "./ClaimFormModal.module.css";
 import { useEffect, useState } from "react";
 import { getTenders } from "@/lib/debts/service";
 

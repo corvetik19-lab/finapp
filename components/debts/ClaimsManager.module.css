@@ -1,7 +1,10 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 0;
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  min-height: 100vh;
+  padding: 0;
 }
 
 .header {
@@ -9,43 +12,69 @@
   justify-content: space-between;
   align-items: center;
   gap: 20px;
+  padding: 32px 40px;
+  background: white;
+  box-shadow: 0 2px 24px rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 0;
 }
 
 .title {
-  font-size: 32px;
-  font-weight: 700;
-  color: #1a1a1a;
+  font-size: 36px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .subtitle {
-  font-size: 15px;
-  color: #666;
-  margin: 4px 0 0 0;
+  font-size: 16px;
+  color: #718096;
+  margin: 8px 0 0 0;
+  font-weight: 500;
 }
 
 .addBtn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
-  background: #2196f3;
+  gap: 12px;
+  padding: 16px 32px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
+  border-radius: 16px;
+  font-size: 15px;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+  letter-spacing: 1px;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.addBtn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+  transition: left 0.3s ease;
+}
+
+.addBtn:hover::before {
+  left: 0;
 }
 
 .addBtn:hover {
-  background: #1976d2;
-  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
-  transform: translateY(-1px);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(102, 126, 234, 0.4);
 }
 
 .addBtn:active {

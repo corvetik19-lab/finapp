@@ -1,0 +1,283 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Header */
+.header {
+  margin-bottom: 32px;
+}
+
+.breadcrumb {
+  margin-bottom: 16px;
+}
+
+.backLink {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.backLink:hover {
+  background: rgba(102, 126, 234, 0.1);
+  color: #5a67d8;
+}
+
+.titleSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.stageBadge {
+  flex-shrink: 0;
+}
+
+.stageIndicator {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stage_new {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.stage_claim {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.stage_court {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.stage_writ {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.stage_bailiff {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.stage_paid {
+  background: #d1fae5;
+  color: #059669;
+}
+
+/* Content */
+.content {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 32px;
+}
+
+.mainInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Cards */
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f0f0f0;
+}
+
+.cardTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Info Grid */
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.infoLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.infoValue {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  word-break: break-word;
+}
+
+.amount {
+  font-size: 20px;
+  font-weight: 700;
+  color: #059669;
+}
+
+/* Payment Status */
+.paymentStatus {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.paymentItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.paymentItem label {
+  font-weight: 500;
+  color: #666;
+}
+
+.totalAmount {
+  font-weight: 700;
+  color: #333;
+}
+
+.paidAmount {
+  font-weight: 700;
+  color: #059669;
+}
+
+.remainingAmount {
+  font-weight: 700;
+  color: #dc2626;
+}
+
+.paymentProgress {
+  background: #f3f4f6;
+  border-radius: 8px;
+  height: 8px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.progressBar {
+  background: linear-gradient(90deg, #059669, #10b981);
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+/* Description and Comments */
+.description,
+.comments {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #555;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .content {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  
+  .sidebar {
+    order: -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+  
+  .titleSection {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .title {
+    font-size: 24px;
+  }
+  
+  .infoGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .card {
+    padding: 20px 16px;
+  }
+  
+  .cardTitle {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 12px;
+  }
+  
+  .header {
+    margin-bottom: 24px;
+  }
+  
+  .content {
+    gap: 20px;
+  }
+  
+  .card {
+    padding: 16px;
+  }
+  
+  .paymentItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
