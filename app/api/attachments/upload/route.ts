@@ -35,98 +35,126 @@ export async function POST(request: NextRequest) {
 
     // Получаем данные из FormData
     const formData = await request.formData();
-    const file = formData.get('file') as File;
+    const files = formData.getAll('files') as File[];
+    const singleFile = formData.get('file') as File;
     const transactionId = formData.get('transactionId') as string;
 
-    if (!file) {
+    // Поддержка как одиночной, так и множественной загрузки
+    const filesToUpload = files.length > 0 ? files : (singleFile ? [singleFile] : []);
+
+    if (filesToUpload.length === 0) {
       return NextResponse.json(
         { error: 'Отсутствует файл' },
         { status: 400 }
       );
     }
 
-    // Валидация размера
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: 'Файл слишком большой. Максимум 10 МБ' },
-        { status: 400 }
-      );
-    }
+    const uploadedAttachments = [];
+    const errors = [];
 
-    // Валидация типа
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      return NextResponse.json(
-        { error: 'Неподдерживаемый тип файла' },
-        { status: 400 }
-      );
-    }
+    // Обрабатываем каждый файл
+    for (let i = 0; i < filesToUpload.length; i++) {
+      const file = filesToUpload[i];
 
-    // Генерируем уникальное имя файла
-    const timestamp = Date.now();
-    const fileExt = file.name.split('.').pop();
-    // Если нет транзакции, сохраняем в общую папку receipts
-    const folder = transactionId || 'receipts';
-    const fileName = `${user.id}/${folder}/${timestamp}.${fileExt}`;
+      // Валидация размера
+      if (file.size > MAX_FILE_SIZE) {
+        errors.push(`${file.name}: Файл слишком большой. Максимум 10 МБ`);
+        continue;
+      }
 
-    // Конвертируем File в ArrayBuffer для Supabase Storage
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+      // Валидация типа
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        errors.push(`${file.name}: Неподдерживаемый тип файла`);
+        continue;
+      }
 
-    // Загружаем в Supabase Storage
-    const { error: uploadError } = await supabase
-      .storage
-      .from('attachments')
-      .upload(fileName, buffer, {
-        contentType: file.type,
-        upsert: false,
-      });
+      // Генерируем уникальное имя файла
+      const timestamp = Date.now() + i; // Добавляем индекс для уникальности
+      const fileExt = file.name.split('.').pop();
+      // Если нет транзакции, сохраняем в общую папку receipts
+      const folder = transactionId || 'receipts';
+      const fileName = `${user.id}/${folder}/${timestamp}.${fileExt}`;
 
-    if (uploadError) {
-      console.error('Storage upload error:', uploadError);
-      return NextResponse.json(
-        { error: 'Ошибка загрузки файла в хранилище' },
-        { status: 500 }
-      );
-    }
+      try {
+        // Конвертируем File в ArrayBuffer для Supabase Storage
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
 
-    // Создаём запись в БД
-    const { data: attachment, error: dbError } = await supabase
-      .from('attachments')
-      .insert({
-        user_id: user.id,
-        transaction_id: transactionId || null,
-        file_name: file.name,
-        file_size: file.size,
-        mime_type: file.type,
-        file_path: fileName,
-      })
-      .select()
-      .single();
+        // Загружаем в Supabase Storage
+        const { error: uploadError } = await supabase
+          .storage
+          .from('attachments')
+          .upload(fileName, buffer, {
+            contentType: file.type,
+            upsert: false,
+          });
 
-    if (dbError) {
-      console.error('Database insert error:', dbError);
-      
-      // Удаляем файл из storage если не удалось записать в БД
-      await supabase.storage.from('attachments').remove([fileName]);
-      
-      return NextResponse.json(
-        { error: 'Ошибка сохранения в базу данных' },
-        { status: 500 }
-      );
+        if (uploadError) {
+          console.error('Storage upload error:', uploadError);
+          errors.push(`${file.name}: Ошибка загрузки в хранилище`);
+          continue;
+        }
+
+        // Создаём запись в БД
+        const { data: attachment, error: dbError } = await supabase
+          .from('attachments')
+          .insert({
+            user_id: user.id,
+            transaction_id: transactionId || null,
+            file_name: file.name,
+            file_size: file.size,
+            mime_type: file.type,
+            file_path: fileName,
+          })
+          .select()
+          .single();
+
+        if (dbError) {
+          console.error('Database insert error:', dbError);
+          
+          // Удаляем файл из storage если не удалось записать в БД
+          await supabase.storage.from('attachments').remove([fileName]);
+          
+          errors.push(`${file.name}: Ошибка сохранения в базу данных`);
+          continue;
+        }
+
+        uploadedAttachments.push(attachment);
+      } catch (err) {
+        console.error(`Error processing file ${file.name}:`, err);
+        errors.push(`${file.name}: Ошибка обработки`);
+      }
     }
 
     // Если привязано к транзакции, обновляем счётчик
-    if (transactionId) {
+    if (transactionId && uploadedAttachments.length > 0) {
+      const { count } = await supabase
+        .from('attachments')
+        .select('id', { count: 'exact' })
+        .eq('transaction_id', transactionId);
+
       await supabase
         .from('transactions')
-        .update({ attachment_count: (await supabase
-          .from('attachments')
-          .select('id', { count: 'exact' })
-          .eq('transaction_id', transactionId)).count || 0 })
+        .update({ attachment_count: count || 0 })
         .eq('id', transactionId);
     }
 
-    return NextResponse.json(attachment);
+    // Возвращаем результат
+    if (uploadedAttachments.length === 0) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: errors.length > 0 ? errors.join('; ') : 'Не удалось загрузить файлы'
+        },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      attachments: uploadedAttachments,
+      errors: errors.length > 0 ? errors : undefined,
+    });
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json(

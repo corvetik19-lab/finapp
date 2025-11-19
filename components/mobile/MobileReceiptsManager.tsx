@@ -26,7 +26,12 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0) return;
+    console.log('Files selected:', files);
+    
+    if (!files || files.length === 0) {
+      console.log('No files selected');
+      return;
+    }
 
     setIsUploading(true);
     setError(null);
@@ -35,15 +40,24 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
       const formData = new FormData();
       
       for (let i = 0; i < files.length; i++) {
-        formData.append('files', files[i]);
+        const file = files[i];
+        console.log(`File ${i}:`, {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+        });
+        formData.append('files', file);
       }
 
+      console.log('Sending upload request...');
       const response = await fetch('/api/attachments/upload', {
         method: 'POST',
         body: formData,
       });
 
+      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (data.success) {
         router.refresh();
@@ -108,8 +122,9 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
           type="file"
           ref={fileInputRef}
           onChange={handleFileSelect}
-          accept="image/*,.pdf"
+          accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf"
           multiple
+          capture="environment"
           style={{ display: 'none' }}
         />
         <button
