@@ -126,16 +126,37 @@ export async function payDebtPartially(id: string, amountPaidMajor: number): Pro
     return updateDebt(id, { amount_paid: newAmountPaid / 100, status: newStatus });
 }
 
-// Получение списка тендеров для автокомплита
+// Получение списка тендеров для автокомплита (только с этапа "Оплата просрочена")
 export async function getTenders(): Promise<Array<{ id: string; number: string; title: string }>> {
   const supabase = await createRSCClient();
+  
+  // Сначала находим этап "Оплата просрочена" в категории "realization"
+  const { data: stage } = await supabase
+    .from('tender_stages')
+    .select('id')
+    .eq('category', 'realization')
+    .ilike('name', '%просроч%')
+    .single();
+  
+  if (!stage) {
+    return [];
+  }
+  
+  // Загружаем тендеры только с этого этапа
   const { data, error } = await supabase
     .from('tenders')
-    .select('id, number, title')
+    .select('id, purchase_number, subject')
+    .eq('stage_id', stage.id)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
     .limit(100);
 
   if (error) throw error;
-  return data || [];
+  
+  // Форматируем данные для селекта
+  return (data || []).map(t => ({
+    id: t.id,
+    number: t.purchase_number,
+    title: t.subject
+  }));
 }

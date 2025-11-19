@@ -22,7 +22,7 @@ export function ClaimFormModal({ isOpen, onClose, onSubmit, initialData }: Claim
     resolver: zodResolver(debtFormSchema),
     defaultValues: {
       type: 'owed' as const, // По умолчанию "Мне должны" для претензий
-      currency: 'RUB',
+      currency: 'RUB', // Всегда RUB по умолчанию
       stage: 'new' as const,
     }
   });
@@ -52,7 +52,7 @@ export function ClaimFormModal({ isOpen, onClose, onSubmit, initialData }: Claim
       } else {
         reset({
           type: 'owed',
-          currency: 'RUB',
+          currency: 'RUB', // Всегда RUB
           stage: 'new',
           amount: undefined,
           date_created: new Date().toISOString().split('T')[0],
@@ -97,9 +97,9 @@ export function ClaimFormModal({ isOpen, onClose, onSubmit, initialData }: Claim
 
           {/* Связь с тендером */}
           <div className={styles.formGroup}>
-            <label className={styles.label}>Тендер (опционально)</label>
+            <label className={styles.label}>Тендер (название)</label>
             <select {...register('tender_id')} className={styles.select}>
-              <option value="">Не выбран</option>
+              <option value="">Выберите тендер с просроченной оплатой</option>
               {tenders.map(tender => (
                 <option key={tender.id} value={tender.id}>
                   {tender.number} - {tender.title}
@@ -141,27 +141,19 @@ export function ClaimFormModal({ isOpen, onClose, onSubmit, initialData }: Claim
             {errors.creditor_debtor_name && <span className={styles.errorText}>{errors.creditor_debtor_name.message}</span>}
           </div>
 
-          {/* Сумма и валюта */}
-          <div className={styles.row}>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Основной долг (сумма)</label>
-              <input 
-                type="number" 
-                step="0.01" 
-                {...register('amount', { valueAsNumber: true })} 
-                className={styles.input}
-                placeholder="0.00" 
-              />
-              {errors.amount && <span className={styles.errorText}>{errors.amount.message}</span>}
-            </div>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Валюта</label>
-              <select {...register('currency')} className={styles.select}>
-                <option value="RUB">RUB</option>
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-              </select>
-            </div>
+          {/* Сумма долга */}
+          <div className={styles.formGroup}>
+            <label className={styles.label}>Основной долг (сумма в рублях)</label>
+            <input 
+              type="number" 
+              step="0.01" 
+              {...register('amount', { valueAsNumber: true })} 
+              className={styles.input}
+              placeholder="0.00" 
+            />
+            {errors.amount && <span className={styles.errorText}>{errors.amount.message}</span>}
+            {/* Скрытое поле для валюты - всегда RUB */}
+            <input type="hidden" {...register('currency')} value="RUB" />
           </div>
 
           {/* Даты */}
