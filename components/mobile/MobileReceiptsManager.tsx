@@ -37,28 +37,40 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        console.log('No user found for Realtime subscription');
+        console.log('❌ No user found for Realtime subscription');
         return;
       }
 
-      console.log('Setting up Realtime subscription for user:', user.id);
+      console.log('🔄 Setting up Realtime subscription for user:', user.id);
 
       const channel = supabase
-        .channel('attachments-changes')
+        .channel('attachments-changes', {
+          config: {
+            broadcast: { self: true },
+          },
+        })
         .on(
           'postgres_changes',
           {
             event: 'INSERT',
             schema: 'public',
             table: 'attachments',
-            filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
-            console.log('New attachment (Realtime):', payload.new);
-            const newAttachment = payload.new as Attachment;
+            console.log('📥 Realtime INSERT event:', payload);
+            const newAttachment = payload.new as Attachment & { user_id: string };
+            
+            // Фильтруем на клиенте по user_id
+            if (newAttachment.user_id !== user.id) {
+              console.log('⏭️ Skipping attachment from different user');
+              return;
+            }
+            
+            console.log('✅ Adding new attachment:', newAttachment.file_name);
             setReceipts((prev) => {
               // Проверяем что файл еще не добавлен
               if (prev.some(r => r.id === newAttachment.id)) {
+                console.log('⚠️ Attachment already exists, skipping');
                 return prev;
               }
               return [newAttachment, ...prev];
@@ -71,16 +83,33 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
             event: 'DELETE',
             schema: 'public',
             table: 'attachments',
-            filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
-            console.log('Deleted attachment (Realtime):', payload.old);
-            const deletedId = (payload.old as { id: string }).id;
-            setReceipts((prev) => prev.filter(r => r.id !== deletedId));
+            console.log('🗑️ Realtime DELETE event:', payload);
+            const oldAttachment = payload.old as { id: string; user_id: string };
+            
+            // Фильтруем на клиенте по user_id
+            if (oldAttachment.user_id !== user.id) {
+              console.log('⏭️ Skipping delete from different user');
+              return;
+            }
+            
+            console.log('✅ Removing attachment:', oldAttachment.id);
+            setReceipts((prev) => prev.filter(r => r.id !== oldAttachment.id));
           }
         )
-        .subscribe((status) => {
-          console.log('Realtime subscription status:', status);
+        .subscribe((status, err) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('✅ Realtime SUBSCRIBED successfully');
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error('❌ Realtime CHANNEL_ERROR:', err);
+          } else if (status === 'TIMED_OUT') {
+            console.error('❌ Realtime TIMED_OUT');
+          } else if (status === 'CLOSED') {
+            console.log('🔌 Realtime CLOSED');
+          } else {
+            console.log('🔄 Realtime status:', status);
+          }
         });
 
       return channel;
