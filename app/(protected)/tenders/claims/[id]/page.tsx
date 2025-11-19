@@ -6,7 +6,7 @@ import Link from "next/link";
 import styles from "./page.module.css";
 
 interface ClaimDetailPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 async function getClaim(id: string): Promise<Debt | null> {
@@ -26,7 +26,8 @@ async function getClaim(id: string): Promise<Debt | null> {
 }
 
 export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) {
-  const claim = await getClaim(params.id);
+  const { id } = await params;
+  const claim = await getClaim(id);
   
   if (!claim) {
     notFound();

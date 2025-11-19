@@ -138,13 +138,34 @@
   background: white;
   border-radius: 16px;
   border: 1px solid #e8e9eb;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: visible;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  -webkit-overflow-scrolling: touch;
+}
+
+.tableWrapper::-webkit-scrollbar {
+  height: 8px;
+}
+
+.tableWrapper::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 0 0 16px 16px;
+}
+
+.tableWrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.tableWrapper::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 1400px;
 }
 
 .table thead {
@@ -163,6 +184,8 @@
   position: sticky;
   top: 0;
   z-index: 10;
+  white-space: nowrap;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
 .table tbody tr {
@@ -186,6 +209,7 @@
   color: #2d3748;
   vertical-align: middle;
   line-height: 1.5;
+  white-space: nowrap;
 }
 
 .idCell {
@@ -406,23 +430,44 @@
 @media (max-width: 1200px) {
   .table {
     font-size: 13px;
+    min-width: 1200px;
   }
   
   .table th,
   .table td {
-    padding: 10px 12px;
+    padding: 14px 16px;
   }
 }
 
 @media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+  
   .tabs {
     overflow-x: auto;
     flex-wrap: nowrap;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  
+  .tabs::-webkit-scrollbar {
+    height: 4px;
+  }
+  
+  .tabs::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+  
+  .tabs::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 2px;
   }
   
   .tab {
     white-space: nowrap;
+    font-size: 13px;
+    padding: 10px 16px;
   }
   
   .controls {
@@ -436,9 +481,32 @@
   
   .tableWrapper {
     overflow-x: auto;
+    border-radius: 12px;
+  }
+  
+  .table {
+    min-width: 1200px;
+  }
+  
+  .table th,
+  .table td {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 12px;
   }
   
   .table {
     min-width: 1000px;
+  }
+  
+  .table th,
+  .table td {
+    padding: 10px 12px;
+    font-size: 12px;
   }
 }
