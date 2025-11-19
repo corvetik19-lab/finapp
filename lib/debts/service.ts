@@ -145,7 +145,7 @@ export async function getTenders(): Promise<Array<{ id: string; number: string; 
   // Загружаем тендеры только с этого этапа
   const { data, error } = await supabase
     .from('tenders')
-    .select('id, purchase_number, subject')
+    .select('id, purchase_number, customer')
     .eq('stage_id', stage.id)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
@@ -157,6 +157,6 @@ export async function getTenders(): Promise<Array<{ id: string; number: string; 
   return (data || []).map(t => ({
     id: t.id,
     number: t.purchase_number,
-    title: t.subject
+    title: t.customer
   }));
 }
