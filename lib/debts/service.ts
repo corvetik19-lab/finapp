@@ -43,6 +43,14 @@ export async function createDebt(input: DebtInsertInput): Promise<Debt> {
       description: input.description || null,
       status: 'active',
       amount_paid: 0,
+      // Новые поля для претензионной работы
+      tender_id: input.tender_id || null,
+      application_number: input.application_number || null,
+      contract_number: input.contract_number || null,
+      stage: input.stage || 'new',
+      plaintiff: input.plaintiff || null,
+      defendant: input.defendant || null,
+      comments: input.comments || null,
     })
     .select()
     .single();
@@ -116,4 +124,18 @@ export async function payDebtPartially(id: string, amountPaidMajor: number): Pro
     const newStatus = newAmountPaid >= debt.amount ? 'paid' : 'partially_paid';
 
     return updateDebt(id, { amount_paid: newAmountPaid / 100, status: newStatus });
+}
+
+// Получение списка тендеров для автокомплита
+export async function getTenders(): Promise<Array<{ id: string; number: string; title: string }>> {
+  const supabase = await createRSCClient();
+  const { data, error } = await supabase
+    .from('tenders')
+    .select('id, number, title')
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
+    .limit(100);
+
+  if (error) throw error;
+  return data || [];
 }

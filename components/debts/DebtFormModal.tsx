@@ -15,11 +15,12 @@ interface DebtFormModalProps {
 }
 
 export function DebtFormModal({ isOpen, onClose, onSubmit, initialData }: DebtFormModalProps) {
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting }, setValue, watch } = useForm<DebtFormSchema>({
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting }, setValue, watch } = useForm({
     resolver: zodResolver(debtFormSchema),
     defaultValues: {
-      type: 'owe',
+      type: 'owe' as const,
       currency: 'RUB',
+      stage: 'new' as const,
       // amount is undefined initially to show placeholder or empty
     }
   });
