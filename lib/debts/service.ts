@@ -11,7 +11,10 @@ export async function getDebts(): Promise<Debt[]> {
   const supabase = await createRSCClient();
   const { data, error } = await supabase
     .from('debts')
-    .select('*')
+    .select(`
+      *,
+      tender:tenders(purchase_number, customer)
+    `)
     .is('deleted_at', null)
     .order('date_created', { ascending: false });
 

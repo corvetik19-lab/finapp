@@ -175,7 +175,7 @@ export function ClaimsTable({ initialDebts }: ClaimsTableProps) {
               filteredDebts.map((debt, index) => (
                 <tr key={debt.id} className={styles.row}>
                   <td className={styles.idCell}>{index + 1}</td>
-                  <td>{debt.tender_id ? `Тендер #${debt.tender_id.slice(0, 8)}` : '—'}</td>
+                  <td>{debt.tender?.purchase_number || '—'}</td>
                   <td>{debt.application_number || '—'}</td>
                   <td>{debt.plaintiff || '—'}</td>
                   <td className={styles.defendant}>{debt.defendant || debt.creditor_debtor_name}</td>
