@@ -2,11 +2,9 @@
 
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { shipmentFormSchema, ShipmentFormInput } from "@/lib/logistics/service";
-import { SHIPMENT_TYPE_LABELS } from "@/types/logistics";
+import { shipmentFormSchema, type ShipmentFormInput } from "@/lib/logistics/validation";
+import { SHIPMENT_TYPE_LABELS, Driver } from "@/types/logistics";
 import { useState, useEffect } from "react";
-import { getDrivers } from "@/lib/logistics/service";
-import { Driver } from "@/types/logistics";
 import styles from "./ShipmentFormModal.module.css";
 
 interface ShipmentFormModalProps {
@@ -38,8 +36,11 @@ export function ShipmentFormModal({
 
   useEffect(() => {
     if (isOpen) {
-      // Загружаем список водителей
-      getDrivers().then(setDrivers).catch(console.error);
+      // Загружаем список водителей через API
+      fetch('/api/logistics/drivers')
+        .then(res => res.json())
+        .then(setDrivers)
+        .catch(console.error);
       reset();
     }
   }, [isOpen, reset]);

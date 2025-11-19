@@ -4,7 +4,7 @@ import { Shipment } from "@/types/logistics";
 import { useState } from "react";
 import { ShipmentsTable } from "./ShipmentsTable";
 import { ShipmentFormModal } from "./ShipmentFormModal";
-import { createShipment, ShipmentFormInput } from "@/lib/logistics/service";
+import type { ShipmentFormInput } from "@/lib/logistics/service";
 import styles from "./ShipmentsManager.module.css";
 
 interface ShipmentsManagerProps {
@@ -19,7 +19,17 @@ export function ShipmentsManager({ initialShipments }: ShipmentsManagerProps) {
   const handleCreate = async (data: ShipmentFormInput): Promise<void> => {
     setIsCreating(true);
     try {
-      const newShipment = await createShipment(data);
+      const response = await fetch('/api/logistics/shipments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create shipment');
+      }
+      
+      const newShipment = await response.json();
       setShipments(prev => [newShipment, ...prev]);
       setIsModalOpen(false);
     } catch (error) {

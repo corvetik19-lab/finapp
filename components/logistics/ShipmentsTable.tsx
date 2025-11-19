@@ -3,7 +3,6 @@
 import { Shipment, SHIPMENT_STATUS_LABELS, ShipmentStatus, STATUS_COLORS } from "@/types/logistics";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { updateShipmentStatus, deleteShipment } from "@/lib/logistics/service";
 import { formatMoney } from "@/lib/utils/format";
 import styles from "./ShipmentsTable.module.css";
 
@@ -45,7 +44,14 @@ export function ShipmentsTable({ initialShipments }: ShipmentsTableProps) {
   const handleDelete = async (id: string) => {
     if (!confirm('Вы уверены, что хотите удалить эту отправку?')) return;
     try {
-      await deleteShipment(id);
+      const response = await fetch(`/api/logistics/shipments/${id}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete shipment');
+      }
+      
       setShipments(prev => prev.filter(s => s.id !== id));
       router.refresh();
     } catch (error) {
@@ -56,7 +62,17 @@ export function ShipmentsTable({ initialShipments }: ShipmentsTableProps) {
 
   const handleStatusChange = async (shipment: Shipment, newStatus: ShipmentStatus) => {
     try {
-      const updated = await updateShipmentStatus(shipment.id, newStatus);
+      const response = await fetch(`/api/logistics/shipments/${shipment.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update status');
+      }
+      
+      const updated = await response.json();
       setShipments(prev => prev.map(s => s.id === updated.id ? updated : s));
       router.refresh();
     } catch (error) {

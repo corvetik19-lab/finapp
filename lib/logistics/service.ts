@@ -1,71 +1,9 @@
-import { z } from "zod";
 import { createRSCClient, createRouteClient } from "@/lib/supabase/helpers";
 import { Shipment, Driver, ShipmentStatusHistory, ShipmentStatus } from "@/types/logistics";
+import { shipmentFormSchema, driverFormSchema, type ShipmentFormInput, type DriverFormInput } from "./validation";
 
-// Схемы валидации
-export const shipmentFormSchema = z.object({
-  type: z.enum(['standard', 'express', 'overnight', 'freight']),
-  
-  // Отправитель
-  sender_name: z.string().min(1, "Укажите имя отправителя"),
-  sender_phone: z.string().optional(),
-  sender_email: z.union([z.string().email(), z.literal("")]).optional(),
-  sender_company: z.string().optional(),
-  sender_street: z.string().min(1, "Укажите адрес отправителя"),
-  sender_city: z.string().min(1, "Укажите город отправителя"),
-  sender_region: z.string().optional(),
-  sender_postal_code: z.string().optional(),
-  sender_country: z.string().min(1, "Укажите страну"),
-  
-  // Получатель
-  recipient_name: z.string().min(1, "Укажите имя получателя"),
-  recipient_phone: z.string().optional(),
-  recipient_email: z.union([z.string().email(), z.literal("")]).optional(),
-  recipient_company: z.string().optional(),
-  recipient_street: z.string().min(1, "Укажите адрес получателя"),
-  recipient_city: z.string().min(1, "Укажите город получателя"),
-  recipient_region: z.string().optional(),
-  recipient_postal_code: z.string().optional(),
-  recipient_country: z.string().min(1, "Укажите страну"),
-  
-  // Груз
-  description: z.string().min(1, "Опишите груз"),
-  weight_kg: z.number().positive().optional(),
-  length_cm: z.number().positive().optional(),
-  width_cm: z.number().positive().optional(),
-  height_cm: z.number().positive().optional(),
-  value_amount: z.number().positive().optional(),
-  
-  // Даты
-  pickup_date: z.string().optional(),
-  estimated_delivery: z.string().optional(),
-  
-  // Финансы  
-  cost_amount: z.number().min(0, "Стоимость не может быть отрицательной"),
-  currency: z.string().default('RUB'),
-  
-  // Исполнители
-  driver_id: z.string().optional(),
-  courier_company: z.string().optional(),
-  
-  // Дополнительно
-  notes: z.string().optional(),
-  special_instructions: z.string().optional(),
-});
-
-export const driverFormSchema = z.object({
-  name: z.string().min(1, "Укажите имя водителя"),
-  phone: z.string().min(1, "Укажите телефон"),
-  license_number: z.string().min(1, "Укажите номер водительского удостоверения"),
-  vehicle_brand: z.string().optional(),
-  vehicle_model: z.string().optional(),
-  vehicle_number: z.string().optional(),
-  vehicle_capacity_kg: z.number().positive().optional(),
-  is_active: z.boolean().default(true),
-});
-
-export type ShipmentFormInput = z.infer<typeof shipmentFormSchema>;
-export type DriverFormInput = z.infer<typeof driverFormSchema>;
+export { shipmentFormSchema, driverFormSchema };
+export type { ShipmentFormInput, DriverFormInput };
 
 // Сервис для работы с отправками
 export async function getShipments(): Promise<Shipment[]> {
@@ -116,57 +54,61 @@ export async function createShipment(input: ShipmentFormInput): Promise<Shipment
     .insert({
       user_id: user.id,
       type: input.type,
+      // tracking_number генерируется автоматически триггером
       
       // Отправитель
       sender_name: input.sender_name,
-      sender_phone: input.sender_phone,
-      sender_email: input.sender_email,
-      sender_company: input.sender_company,
+      sender_phone: input.sender_phone || null,
+      sender_email: input.sender_email || null,
+      sender_company: input.sender_company || null,
       sender_street: input.sender_street,
       sender_city: input.sender_city,
-      sender_region: input.sender_region,
-      sender_postal_code: input.sender_postal_code,
+      sender_region: input.sender_region || null,
+      sender_postal_code: input.sender_postal_code || null,
       sender_country: input.sender_country,
       
       // Получатель
       recipient_name: input.recipient_name,
-      recipient_phone: input.recipient_phone,
-      recipient_email: input.recipient_email,
-      recipient_company: input.recipient_company,
+      recipient_phone: input.recipient_phone || null,
+      recipient_email: input.recipient_email || null,
+      recipient_company: input.recipient_company || null,
       recipient_street: input.recipient_street,
       recipient_city: input.recipient_city,
-      recipient_region: input.recipient_region,
-      recipient_postal_code: input.recipient_postal_code,
+      recipient_region: input.recipient_region || null,
+      recipient_postal_code: input.recipient_postal_code || null,
       recipient_country: input.recipient_country,
       
       // Груз
       description: input.description,
-      weight_kg: input.weight_kg,
-      length_cm: input.length_cm,
-      width_cm: input.width_cm,
-      height_cm: input.height_cm,
+      weight_kg: input.weight_kg || null,
+      length_cm: input.length_cm || null,
+      width_cm: input.width_cm || null,
+      height_cm: input.height_cm || null,
       value_amount: valueMinor,
       
       // Даты
-      pickup_date: input.pickup_date,
-      estimated_delivery: input.estimated_delivery,
+      pickup_date: input.pickup_date || null,
+      estimated_delivery: input.estimated_delivery || null,
       
       // Финансы
       cost_amount: costMinor,
       currency: input.currency,
       
       // Исполнители
-      driver_id: input.driver_id,
-      courier_company: input.courier_company,
+      driver_id: input.driver_id || null,
+      courier_company: input.courier_company || null,
       
       // Дополнительно
-      notes: input.notes,
-      special_instructions: input.special_instructions,
+      notes: input.notes || null,
+      special_instructions: input.special_instructions || null,
     })
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Supabase error:', error);
+    throw error;
+  }
   return transformShipmentFromDB(data) as Shipment;
 }
 
