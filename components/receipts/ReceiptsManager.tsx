@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { createBrowserClient } from "@supabase/ssr";
 import styles from './ReceiptsManager.module.css';
-import { useRouter } from 'next/navigation';
 
 interface Attachment {
   id: string;
@@ -34,7 +34,54 @@ export default function ReceiptsManager({ initialReceipts }: ReceiptsManagerProp
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const router = useRouter();
+
+  // Realtime подписка на изменения в таблице attachments
+  useEffect(() => {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const channel = supabase
+      .channel('attachments-changes-desktop')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'attachments',
+        },
+        (payload) => {
+          console.log('New attachment (desktop):', payload.new);
+          const newAttachment = payload.new as Attachment;
+          setReceipts((prev) => {
+            // Проверяем что файл еще не добавлен
+            if (prev.some(r => r.id === newAttachment.id)) {
+              return prev;
+            }
+            return [newAttachment, ...prev];
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'attachments',
+        },
+        (payload) => {
+          console.log('Deleted attachment (desktop):', payload.old);
+          const deletedId = (payload.old as { id: string }).id;
+          setReceipts((prev) => prev.filter(r => r.id !== deletedId));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
@@ -67,14 +114,21 @@ export default function ReceiptsManager({ initialReceipts }: ReceiptsManagerProp
         body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error('Ошибка загрузки файла');
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Ошибка загрузки файла');
       }
 
-      const newReceipt: Attachment = await response.json();
-      
-      setReceipts(prev => [newReceipt, ...prev]);
-      router.refresh();
+      // Realtime подписка автоматически добавит файлы в список
+      // Но добавим локально для мгновенного отклика
+      if (data.attachments && data.attachments.length > 0) {
+        setReceipts(prev => {
+          const newIds = data.attachments.map((a: Attachment) => a.id);
+          const filtered = prev.filter(r => !newIds.includes(r.id));
+          return [...data.attachments, ...filtered];
+        });
+      }
 
       // Очищаем input
       if (fileInputRef.current) {
@@ -97,12 +151,15 @@ export default function ReceiptsManager({ initialReceipts }: ReceiptsManagerProp
         body: JSON.stringify({ fileId, storagePath: filePath }),
       });
 
-      if (!response.ok) {
+      const data = await response.json();
+
+      if (!data.success) {
         throw new Error('Ошибка удаления файла');
       }
 
+      // Realtime подписка автоматически удалит файл из списка
+      // Но удалим локально для мгновенного отклика
       setReceipts(prev => prev.filter(f => f.id !== fileId));
-      router.refresh();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Ошибка удаления');
     }

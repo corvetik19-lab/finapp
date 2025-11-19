@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
+import { createBrowserClient } from "@supabase/ssr";
 import styles from "./MobileReceiptsManager.module.css";
 
 interface Attachment {
@@ -22,6 +24,54 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
   const [error, setError] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Realtime подписка на изменения в таблице attachments
+  useEffect(() => {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const channel = supabase
+      .channel('attachments-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'attachments',
+        },
+        (payload) => {
+          console.log('New attachment:', payload.new);
+          const newAttachment = payload.new as Attachment;
+          setReceipts((prev) => {
+            // Проверяем что файл еще не добавлен
+            if (prev.some(r => r.id === newAttachment.id)) {
+              return prev;
+            }
+            return [newAttachment, ...prev];
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'attachments',
+        },
+        (payload) => {
+          console.log('Deleted attachment:', payload.old);
+          const deletedId = (payload.old as { id: string }).id;
+          setReceipts((prev) => prev.filter(r => r.id !== deletedId));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -220,10 +270,13 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
               </button>
             </div>
             <div className={styles.previewBody}>
-              <img
+              <Image
                 src={previewImage.url}
                 alt={previewImage.name}
+                width={800}
+                height={600}
                 className={styles.previewImage}
+                unoptimized
               />
             </div>
           </div>
