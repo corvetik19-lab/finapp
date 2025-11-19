@@ -86,19 +86,23 @@ export default function PlatformHeader({
             />
           )}
 
-          {/* Notifications */}
-          <NotificationCenter
-            unreadCount={notificationCount}
-          />
-
-          {/* User Menu */}
-          {user && (
-            <UserMenu
-              user={{
-                email: user.email || '',
-                full_name: user.full_name || '',
-              }}
+          {/* Notifications - Hidden on mobile */}
+          <div className={styles.hideOnMobile}>
+            <NotificationCenter
+              unreadCount={notificationCount}
             />
+          </div>
+
+          {/* User Menu - Hidden on mobile */}
+          {user && (
+            <div className={styles.hideOnMobile}>
+              <UserMenu
+                user={{
+                  email: user.email || '',
+                  full_name: user.full_name || '',
+                }}
+              />
+            </div>
           )}
         </div>
       </div>
