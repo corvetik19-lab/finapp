@@ -2,79 +2,75 @@
 .container {
   max-width: 100%;
   margin: 0 auto;
-  padding: 24px;
-  background: #f8fafc;
-  border-radius: 16px;
+  padding: 0;
+  background: transparent;
 }
 
 /* Табы */
 .tabs {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   margin-bottom: 24px;
-  padding: 6px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  padding: 4px;
+  background: #f3f4f6;
+  border-radius: 8px;
   overflow-x: auto;
   overflow-y: hidden;
+  width: fit-content;
 }
 
 .tab {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 20px;
+  padding: 8px 16px;
   background: transparent;
   border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #64748b;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
   white-space: nowrap;
-  min-width: fit-content;
 }
 
 .tab:hover {
-  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  color: #111827;
+  background: rgba(0,0,0,0.03);
 }
 
 .activeTab {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  font-weight: 700;
-  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+  background: #ffffff;
+  color: #111827;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .activeTab:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  background: #ffffff;
 }
 
 .badge {
-  background: rgba(255, 255, 255, 0.2);
-  color: inherit;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-  min-width: 20px;
+  background: #e5e7eb;
+  color: #374151;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  min-width: 18px;
   text-align: center;
 }
 
 .activeTab .badge {
-  background: rgba(255, 255, 255, 0.25);
-  color: white;
+  background: #f3f4f6;
+  color: #111827;
 }
 
 /* Панель управления */
 .controls {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: center;
   margin-bottom: 20px;
   flex-wrap: wrap;
@@ -88,66 +84,68 @@
 
 .searchBox .material-icons {
   position: absolute;
-  left: 16px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #94a3b8;
-  font-size: 20px;
+  color: #9ca3af;
+  font-size: 18px;
   z-index: 1;
 }
 
 .searchInput {
   width: 100%;
-  padding: 14px 16px 14px 50px;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
+  padding: 10px 12px 10px 40px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
   font-size: 14px;
-  color: #1e293b;
+  color: #111827;
   background: white;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
 }
 
 .searchInput:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #111827;
+  box-shadow: none;
 }
 
 .searchInput::placeholder {
-  color: #94a3b8;
+  color: #9ca3af;
 }
 
 .filterBtn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 14px 20px;
+  gap: 6px;
+  padding: 10px 16px;
   background: white;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  color: #475569;
-  font-weight: 600;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  color: #374151;
+  font-weight: 500;
+  font-size: 14px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
   white-space: nowrap;
 }
 
 .filterBtn:hover {
-  border-color: #cbd5e1;
-  background: #f8fafc;
-  transform: translateY(-1px);
+  border-color: #d1d5db;
+  background: #f9fafb;
 }
 
 .filterBtn .material-icons {
   font-size: 18px;
+  color: #6b7280;
 }
 
 /* Таблица */
 .tableWrapper {
   overflow-x: auto;
   background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   margin-bottom: 16px;
 }
 
@@ -158,56 +156,57 @@
 }
 
 .table th {
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  padding: 16px 12px;
+  background: #f9fafb;
+  padding: 12px 16px;
   text-align: left;
-  font-weight: 700;
-  color: #334155;
-  font-size: 13px;
+  font-weight: 600;
+  color: #4b5563;
+  font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 2px solid #e2e8f0;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #e5e7eb;
   white-space: nowrap;
 }
 
-.table th:first-child {
-  border-radius: 16px 0 0 0;
-}
-
-.table th:last-child {
-  border-radius: 0 16px 0 0;
-}
-
 .table td {
-  padding: 16px 12px;
-  border-bottom: 1px solid #f1f5f9;
+  padding: 16px;
+  border-bottom: 1px solid #f3f4f6;
   vertical-align: top;
   font-size: 14px;
-  color: #475569;
+  color: #111827;
+}
+
+.row:last-child td {
+  border-bottom: none;
 }
 
 .row:hover {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: #f9fafb;
 }
 
 .row:hover td {
-  border-color: #e2e8f0;
+  border-color: #f3f4f6;
 }
 
 /* Специальные ячейки */
 .trackingCell {
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .trackingNumber {
-  color: #667eea;
-  font-family: 'Monaco', 'Menlo', monospace;
+  color: #111827;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 13px;
   margin-bottom: 4px;
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
 }
 
 .shipmentType {
-  font-size: 16px;
+  font-size: 13px;
+  color: #6b7280;
 }
 
 .contactCell {
@@ -215,98 +214,130 @@
 }
 
 .contactName {
-  font-weight: 600;
-  color: #1e293b;
+  font-weight: 500;
+  color: #111827;
   margin-bottom: 2px;
 }
 
 .contactCompany {
   font-size: 12px;
-  color: #64748b;
+  color: #6b7280;
   margin-bottom: 2px;
 }
 
 .contactPhone {
   font-size: 12px;
-  color: #94a3b8;
-  font-family: 'Monaco', 'Menlo', monospace;
+  color: #9ca3af;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .routeCell {
-  text-align: center;
-  min-width: 120px;
+  text-align: left;
+  min-width: 140px;
 }
 
 .routeFrom {
-  font-size: 12px;
-  color: #10b981;
+  font-size: 13px;
+  color: #111827;
   margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.routeFrom::before {
+  content: '';
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
 }
 
 .routeArrow {
-  font-size: 16px;
-  color: #94a3b8;
-  margin: 2px 0;
+  font-size: 14px;
+  color: #d1d5db;
+  margin: 2px 0 2px 2px;
+  padding-left: 9px; /* выравнивание под кружком */
+  border-left: 1px dashed #d1d5db;
+  height: 12px;
 }
 
 .routeTo {
-  font-size: 12px;
-  color: #ef4444;
+  font-size: 13px;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.routeTo::before {
+  content: '';
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ef4444;
 }
 
 .descriptionCell {
   max-width: 200px;
-  word-wrap: break-word;
+  color: #4b5563;
+  font-size: 13px;
 }
 
 .amountCell {
-  font-weight: 700;
-  color: #059669;
+  font-weight: 600;
+  color: #111827;
   text-align: right;
+  font-feature-settings: "tnum";
 }
 
 .statusSelect {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 20px;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   text-align: center;
   min-width: 100px;
 }
 
+.statusSelect:hover {
+  opacity: 0.9;
+}
+
 .statusSelect:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+  border-color: rgba(0,0,0,0.1);
 }
 
 .actions {
   display: flex;
-  gap: 8px;
-  justify-content: center;
+  gap: 4px;
+  justify-content: flex-end;
 }
 
 .actionBtn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: none;
-  border-radius: 8px;
-  background: #f1f5f9;
-  color: #64748b;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #9ca3af;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
 }
 
 .actionBtn:hover {
-  background: #667eea;
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  background: #f3f4f6;
+  color: #111827;
+  border-color: #e5e7eb;
 }
 
 .actionBtn .material-icons {
@@ -317,10 +348,9 @@
 .empty {
   text-align: center;
   padding: 48px 24px;
-  color: #94a3b8;
-  font-size: 16px;
-  font-weight: 500;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #6b7280;
+  font-size: 14px;
+  background: white;
 }
 
 /* Информация о результатах */
@@ -328,38 +358,30 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
-  background: white;
-  border-radius: 12px;
-  color: #64748b;
-  font-size: 14px;
+  padding: 12px 0;
+  color: #6b7280;
+  font-size: 13px;
   font-weight: 500;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 /* Адаптивность */
 @media (max-width: 1024px) {
-  .container {
-    padding: 16px;
+  .tableWrapper {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
   }
   
   .tabs {
-    padding-bottom: 0;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  .table {
-    min-width: 1000px;
+    width: 100%;
+    margin-bottom: 16px;
   }
 }
 
 @media (max-width: 768px) {
-  .container {
-    padding: 12px;
-  }
-  
   .controls {
     flex-direction: column;
+    align-items: stretch;
   }
   
   .searchBox {
@@ -368,15 +390,6 @@
   
   .table th,
   .table td {
-    padding: 12px 8px;
-    font-size: 12px;
-  }
-  
-  .contactCell {
-    min-width: 140px;
-  }
-  
-  .routeCell {
-    min-width: 100px;
+    padding: 12px;
   }
 }
