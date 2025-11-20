@@ -184,10 +184,6 @@ export function ShipmentsTable({ initialShipments }: ShipmentsTableProps) {
                       value={shipment.status}
                       onChange={(e) => handleStatusChange(shipment, e.target.value as ShipmentStatus)}
                       className={styles.statusSelect}
-                      style={{ 
-                        backgroundColor: STATUS_COLORS[shipment.status],
-                        color: 'white'
-                      }}
                     >
                       {Object.entries(SHIPMENT_STATUS_LABELS).map(([status, label]) => (
                         <option key={status} value={status}>
