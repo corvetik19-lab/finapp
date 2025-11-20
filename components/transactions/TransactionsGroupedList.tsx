@@ -100,7 +100,7 @@ export default function TransactionsGroupedList({
       grouped[dir].push({
         category: catId === "uncat" ? undefined : catMap[catId],
         txns: sorted,
-        total: sorted.reduce((sum, item) => sum + Number(item.amount), 0),
+        total: sorted.reduce((sum, item) => sum + Math.abs(Number(item.amount)), 0),
       });
     }
 
