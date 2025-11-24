@@ -876,12 +876,17 @@ export default function TransactionsGroupedList({
           >
             <div className={styles.modalBody}>
               <div className={styles.amountHero}>
-                <span className={`${styles.badgeAmount} ${selected.direction === "income" ? styles.badgeIncome : selected.direction === "transfer" ? styles.badgeTransfer : styles.badgeExpense}`}>
+                <span className={`${styles.badgeAmount} ${directionValue === "income" ? styles.badgeIncome : directionValue === "transfer" ? styles.badgeTransfer : styles.badgeExpense}`}>
                   <span className="material-icons" aria-hidden style={{ fontSize: 18 }}>
-                    {selected.direction === "income" ? "arrow_upward" : selected.direction === "transfer" ? "swap_horiz" : "arrow_downward"}
+                    {directionValue === "income" ? "arrow_upward" : directionValue === "transfer" ? "swap_horiz" : "arrow_downward"}
                   </span>
-                  {selected.direction === "income" ? "+" : selected.direction === "transfer" ? "" : "−"}
-                  {formatMoney(Math.abs(selected.amount), selected.currency)}
+                  {directionValue === "income" ? "+" : directionValue === "transfer" ? "" : "−"}
+                  {formatMoney(
+                    amountValue 
+                      ? Math.round(parseFloat(amountValue.replace(/\s/g, '').replace(',', '.') || "0") * 100) 
+                      : 0, 
+                    selected.currency
+                  )}
                 </span>
               </div>
 
