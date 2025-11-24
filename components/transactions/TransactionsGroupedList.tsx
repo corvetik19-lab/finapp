@@ -1042,6 +1042,7 @@ export default function TransactionsGroupedList({
                 <div className={styles.modalSection}>
                   <TransactionItems
                     items={editingItems.map((item) => ({
+                      id: item.id,
                       name: item.name,
                       quantity: item.quantity,
                       unit: item.unit,
@@ -1050,27 +1051,32 @@ export default function TransactionsGroupedList({
                       product_id: item.product_id || null,
                     }))}
                     onChange={(items) => {
-                      // Обновляем editingItems, сохраняя существующие id
-                      const updatedItems: TransactionItem[] = items.map((item, index) => ({
-                        id: editingItems[index]?.id || `temp-${index}`,
-                        transaction_id: selected.id,
-                        user_id: "",
-                        name: item.name,
-                        quantity: item.quantity,
-                        unit: item.unit,
-                        price_per_unit: item.price_per_unit,
-                        total_amount: item.total_amount || Math.round(item.quantity * item.price_per_unit),
-                        product_id: editingItems[index]?.product_id || item.product_id || null,
-                        created_at: editingItems[index]?.created_at || new Date().toISOString(),
-                        updated_at: new Date().toISOString(),
-                      }));
+                      // Обновляем editingItems, используя id для сопоставления
+                      const updatedItems: TransactionItem[] = items.map((item, index) => {
+                        // Ищем существующий элемент по id, если он есть
+                        const existingItem = item.id ? editingItems.find(ei => ei.id === item.id) : undefined;
+                        
+                        return {
+                          id: item.id || existingItem?.id || `temp-${Date.now()}-${index}`,
+                          transaction_id: selected.id,
+                          user_id: "",
+                          name: item.name,
+                          quantity: item.quantity,
+                          unit: item.unit,
+                          price_per_unit: item.price_per_unit,
+                          total_amount: item.total_amount || Math.round(item.quantity * item.price_per_unit),
+                          product_id: item.product_id || existingItem?.product_id || null,
+                          created_at: existingItem?.created_at || new Date().toISOString(),
+                          updated_at: new Date().toISOString(),
+                        };
+                      });
                       setEditingItems(updatedItems);
                       
                       // Автоматически обновляем сумму транзакции
                       if (items.length > 0) {
                         const totalMinor = calculateTotalFromItems(items);
                         const totalMajor = (totalMinor / 100).toFixed(2);
-                        setValue("amount_major", totalMajor);
+                        setValue("amount_major", totalMajor, { shouldValidate: true, shouldDirty: true });
                         
                         // Обновляем категорию транзакции из любого товара у которого есть category_id
                         // Приоритет: последний добавленный/изменённый товар (он в конце массива)
@@ -1078,11 +1084,11 @@ export default function TransactionsGroupedList({
                           'category_id' in item && item.category_id
                         );
                         if (itemWithCategory && itemWithCategory.category_id) {
-                          setValue("category_id", itemWithCategory.category_id);
+                          setValue("category_id", itemWithCategory.category_id, { shouldValidate: true, shouldDirty: true });
                         }
                       } else {
                         // Если все товары удалены, очищаем сумму
-                        setValue("amount_major", "");
+                        setValue("amount_major", "", { shouldValidate: true, shouldDirty: true });
                       }
                     }}
                     currency={selected.currency}

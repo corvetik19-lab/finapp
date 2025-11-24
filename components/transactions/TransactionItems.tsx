@@ -8,8 +8,8 @@ import type { ProductItem } from "@/types/product-item";
 import AmountInputWithCalculator from "@/components/calculator/AmountInputWithCalculator";
 
 type TransactionItemsProps = {
-  items: TransactionItemInput[];
-  onChange: (items: TransactionItemInput[]) => void;
+  items: (TransactionItemInput & { id?: string })[];
+  onChange: (items: (TransactionItemInput & { id?: string })[]) => void;
   currency?: string;
   direction?: "income" | "expense";
 };
@@ -17,8 +17,8 @@ type TransactionItemsProps = {
 export function TransactionItems({ items, onChange, currency = "RUB", direction }: TransactionItemsProps) {
   const [isExpanded, setIsExpanded] = useState(items.length > 0);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [editingItem, setEditingItem] = useState<TransactionItemInput | null>(null);
-  const [newItem, setNewItem] = useState<TransactionItemInput>({
+  const [editingItem, setEditingItem] = useState<(TransactionItemInput & { id?: string }) | null>(null);
+  const [newItem, setNewItem] = useState<TransactionItemInput & { id?: string }>({
     name: "",
     quantity: 1,
     unit: "шт",
