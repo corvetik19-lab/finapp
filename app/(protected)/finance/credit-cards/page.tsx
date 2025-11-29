@@ -1,20 +1,28 @@
 import CreditCardsPageClient from "@/components/credit-cards/CreditCardsPageClient";
 import { createRSCClient } from "@/lib/supabase/server";
+import { getCurrentCompanyId } from "@/lib/platform/organization";
 
 // Делаем страницу динамической
 export const dynamic = 'force-dynamic';
 
 export default async function CreditCardsPage() {
   const supabase = await createRSCClient();
+  const companyId = await getCurrentCompanyId();
 
   // Загружаем кредитные карты (счета типа 'card' с credit_limit)
-  const { data: cardsData } = await supabase
+  let query = supabase
     .from("accounts")
     .select("*")
     .eq("type", "card")
     .not("credit_limit", "is", null) // Только кредитные карты (с кредитным лимитом)
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
+
+  if (companyId) {
+    query = query.eq("company_id", companyId);
+  }
+
+  const { data: cardsData } = await query;
 
   const cards = (cardsData ?? []).map((card) => ({
     id: card.id,

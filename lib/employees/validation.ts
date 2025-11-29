@@ -14,7 +14,14 @@ export const createEmployeeSchema = z.object({
     .string()
     .email('Неверный формат email')
     .toLowerCase(),
-  role: z.enum(['admin', 'manager', 'tender_specialist', 'accountant', 'logistics', 'viewer'] as const),
+  // role_id - новое поле, ссылка на роль из таблицы roles
+  role_id: z.string().uuid('Неверный ID роли').optional().nullable(),
+  // role - старое поле для обратной совместимости (или принимает UUID role_id)
+  role: z.union([
+    z.enum(['admin', 'manager', 'tender_specialist', 'accountant', 'logistics', 'viewer'] as const),
+    z.string().uuid(), // Принимаем UUID роли
+    z.string().min(1), // Или любую строку (название роли)
+  ]).optional(),
   
   // Опциональные поля
   phone: z.string().max(20).optional().nullable(),
@@ -27,6 +34,7 @@ export const createEmployeeSchema = z.object({
     .nullable(),
   position: z.string().max(100).optional().nullable(),
   department: z.string().max(100).optional().nullable(),
+  department_id: z.string().uuid('Неверный ID отдела').optional().nullable(),
   status: z.enum(['active', 'inactive', 'vacation', 'dismissed'] as const).optional(),
   hire_date: z
     .string()
@@ -64,6 +72,7 @@ export const updateEmployeeSchema = z.object({
   avatar_url: z.string().url().optional().nullable(),
   position: z.string().max(100).optional().nullable(),
   department: z.string().max(100).optional().nullable(),
+  department_id: z.string().uuid().optional().nullable(),
   employee_number: z.string().max(50).optional().nullable(),
   hire_date: z
     .string()
@@ -77,7 +86,14 @@ export const updateEmployeeSchema = z.object({
     .refine((val) => !val || !isNaN(Date.parse(val)), 'Неверная дата')
     .optional()
     .nullable(),
-  role: z.enum(['admin', 'manager', 'tender_specialist', 'accountant', 'logistics', 'viewer'] as const).optional(),
+  // role_id - ссылка на роль из таблицы roles
+  role_id: z.string().uuid().optional().nullable(),
+  // role - для обратной совместимости
+  role: z.union([
+    z.enum(['admin', 'manager', 'tender_specialist', 'accountant', 'logistics', 'viewer'] as const),
+    z.string().uuid(),
+    z.string().min(1),
+  ]).optional(),
   status: z.enum(['active', 'inactive', 'vacation', 'dismissed'] as const).optional(),
   permissions: z.record(z.string(), z.boolean()).optional(),
   address: z.string().max(500).optional().nullable(),

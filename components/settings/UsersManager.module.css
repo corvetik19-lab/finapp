@@ -357,6 +357,42 @@
   cursor: pointer;
 }
 
+.passwordWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.passwordWrapper .formInput {
+  padding-right: 44px;
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.passwordToggle:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.passwordToggle .material-icons {
+  font-size: 20px;
+}
+
 .modalFooter {
   display: flex;
   justify-content: flex-end;

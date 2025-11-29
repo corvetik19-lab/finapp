@@ -21,11 +21,11 @@ export default async function TenderPage({ params }: TenderPageProps) {
   // Получение тендера и справочников
   const { id } = await params;
   const tenderResult = await getTenderById(id);
-  
+
   if (tenderResult.error || !tenderResult.data) {
     notFound();
   }
-  
+
   const typesResult = await getTenderTypes(tenderResult.data.company_id);
 
   // Загружаем список сотрудников компании
@@ -40,9 +40,16 @@ export default async function TenderPage({ params }: TenderPageProps) {
   const { data: templates } = await supabase
     .from('tender_stage_templates')
     .select('*, items:tender_stage_template_items(*)')
-    .or(`company_id.eq.${tenderResult.data.company_id},is_system.eq.true`)
+    .or(`company_id.is.null,company_id.eq.${tenderResult.data.company_id}`)
     .eq('is_active', true)
     .order('name');
+
+  // Загружаем этапы для истории
+  const { data: stages } = await supabase
+    .from('tender_stages')
+    .select('*')
+    .or(`company_id.eq.${tenderResult.data.company_id},company_id.is.null`)
+    .order('order_index');
 
   return (
     <TenderDetailClient
@@ -50,6 +57,7 @@ export default async function TenderPage({ params }: TenderPageProps) {
       types={typesResult.data || []}
       employees={employees || []}
       templates={templates || []}
+      stages={stages || []}
     />
   );
 }

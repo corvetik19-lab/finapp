@@ -1,0 +1,172 @@
+.container {
+  padding: 1rem 0;
+}
+
+.loading {
+  text-align: center;
+  padding: 1rem;
+  color: #64748b;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badge {
+  background: #ef4444;
+  color: white;
+  font-size: 0.625rem;
+  font-weight: 700;
+  padding: 0.125rem 0.375rem;
+  border-radius: 9999px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.markAllButton {
+  padding: 0.375rem 0.75rem;
+  background: transparent;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.markAllButton:hover {
+  background: #f8fafc;
+  color: #1e293b;
+}
+
+.empty {
+  text-align: center;
+  padding: 2rem;
+  color: #94a3b8;
+}
+
+.emptyIcon {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 0.5rem;
+  opacity: 0.5;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.notification {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.notification:hover {
+  background: #f8fafc;
+}
+
+.unread {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.unread:hover {
+  background: #dbeafe;
+}
+
+.notificationIcon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.notificationContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.notificationTitle {
+  font-weight: 500;
+  color: #1e293b;
+  font-size: 0.875rem;
+  margin-bottom: 0.125rem;
+}
+
+.notificationMessage {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+}
+
+.notificationMeta {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.625rem;
+  color: #94a3b8;
+}
+
+.notificationTime {
+  color: #94a3b8;
+}
+
+.notificationEmployee {
+  color: #64748b;
+}
+
+.deleteButton {
+  background: none;
+  border: none;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+  padding: 0.25rem;
+}
+
+.notification:hover .deleteButton {
+  opacity: 1;
+}
+
+.deleteButton:hover {
+  color: #ef4444;
+}
+
+.showMoreButton {
+  width: 100%;
+  padding: 0.75rem;
+  background: transparent;
+  border: 1px dashed #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: all 0.2s;
+}
+
+.showMoreButton:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}

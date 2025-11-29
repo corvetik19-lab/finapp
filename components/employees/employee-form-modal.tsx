@@ -2,11 +2,28 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createEmployeeSchema, type CreateEmployeeFormData } from '@/lib/employees/validation';
 import type { Employee } from '@/lib/employees/types';
-import { EMPLOYEE_ROLE_LABELS, EMPLOYEE_STATUS_LABELS } from '@/lib/employees/types';
+import { EMPLOYEE_STATUS_LABELS } from '@/lib/employees/types';
 import styles from './employee-form-modal.module.css';
+
+// Тип роли из API
+interface CompanyRole {
+  id: string;
+  name: string;
+  description: string;
+  permissions: string[];
+  color: string;
+  is_system: boolean;
+}
+
+// Тип отдела из API
+interface Department {
+  id: string;
+  name: string;
+  color: string;
+}
 
 interface EmployeeFormModalProps {
   isOpen: boolean;
@@ -29,12 +46,16 @@ export function EmployeeFormModal({
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [createAccount, setCreateAccount] = useState(false);
+  const [companyRoles, setCompanyRoles] = useState<CompanyRole[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [loadingRoles, setLoadingRoles] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    watch,
   } = useForm<CreateEmployeeFormData>({
     resolver: zodResolver(createEmployeeSchema),
     defaultValues: {
@@ -43,6 +64,47 @@ export function EmployeeFormModal({
       status: 'active',
     },
   });
+
+  // Загрузка ролей компании
+  const loadCompanyRoles = useCallback(async () => {
+    if (!companyId) return;
+    
+    setLoadingRoles(true);
+    try {
+      const response = await fetch(`/api/roles?company_id=${companyId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setCompanyRoles(data.roles || []);
+      }
+    } catch (err) {
+      console.error('Error loading roles:', err);
+    } finally {
+      setLoadingRoles(false);
+    }
+  }, [companyId]);
+
+  // Загрузка отделов компании
+  const loadDepartments = useCallback(async () => {
+    if (!companyId) return;
+    
+    try {
+      const response = await fetch(`/api/departments?companyId=${companyId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setDepartments(data || []);
+      }
+    } catch (err) {
+      console.error('Error loading departments:', err);
+    }
+  }, [companyId]);
+
+  // Загружаем роли и отделы при открытии модалки
+  useEffect(() => {
+    if (isOpen && companyId) {
+      loadCompanyRoles();
+      loadDepartments();
+    }
+  }, [isOpen, companyId, loadCompanyRoles, loadDepartments]);
 
   // Заполняем форму при редактировании
   useEffect(() => {
@@ -56,28 +118,36 @@ export function EmployeeFormModal({
         birth_date: employee.birth_date || undefined,
         position: employee.position || undefined,
         department: employee.department || undefined,
+        department_id: employee.department_id || undefined,
         role: employee.role,
         status: employee.status || 'active',
         hire_date: employee.hire_date || undefined,
         work_schedule: employee.work_schedule || undefined,
         notes: employee.notes || undefined,
       });
-    } else if (mode === 'create' && isOpen) {
+    } else if (mode === 'create' && isOpen && companyRoles.length > 0) {
+      // Устанавливаем первую роль по умолчанию (обычно "Наблюдатель тендеров")
+      const defaultRole = companyRoles.find(r => r.name === 'Наблюдатель тендеров') || companyRoles[companyRoles.length - 1];
       reset({
         company_id: companyId,
-        role: 'viewer',
+        role_id: defaultRole?.id || null,
+        role: defaultRole?.id || 'viewer', // Для обратной совместимости
         status: 'active',
       });
     }
-  }, [mode, employee, isOpen, reset, companyId]);
+  }, [mode, employee, isOpen, reset, companyId, companyRoles]);
 
   const onSubmit = async (data: CreateEmployeeFormData) => {
     try {
       setIsSubmitting(true);
       setError(null);
 
+      // Если role содержит UUID (новая система), это role_id
+      const isRoleUUID = data.role && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.role);
+      
       const payload = {
         ...data,
+        role_id: isRoleUUID ? data.role : data.role_id, // Если role - это UUID, используем его как role_id
         create_user_account: createAccount,
       };
 
@@ -235,12 +305,19 @@ export function EmployeeFormModal({
                 {/* Отдел */}
                 <div className={styles.field}>
                   <label className={styles.label}>Отдел</label>
-                  <input
-                    type="text"
-                    {...register('department')}
-                    className={styles.input}
-                    placeholder="Тендерный отдел"
-                  />
+                  <select {...register('department_id')} className={styles.select}>
+                    <option value="">Не назначен</option>
+                    {departments.map((dept) => (
+                      <option key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </option>
+                    ))}
+                  </select>
+                  {departments.length === 0 && (
+                    <p className={styles.hint}>
+                      💡 Создайте отделы в <a href="/admin/settings/departments" target="_blank">Настройках → Отделы</a>
+                    </p>
+                  )}
                 </div>
 
                 {/* Роль */}
@@ -248,19 +325,32 @@ export function EmployeeFormModal({
                   <label className={styles.label}>
                     Роль в системе <span className={styles.required}>*</span>
                   </label>
-                  <select {...register('role')} className={styles.select}>
-                    {Object.entries(EMPLOYEE_ROLE_LABELS).map(([key, label]) => (
-                      <option key={key} value={key}>
-                        {label}
-                      </option>
-                    ))}
+                  <select {...register('role')} className={styles.select} disabled={loadingRoles}>
+                    {loadingRoles ? (
+                      <option>Загрузка ролей...</option>
+                    ) : companyRoles.length > 0 ? (
+                      companyRoles.map((role) => (
+                        <option key={role.id} value={role.id}>
+                          {role.name}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="viewer">Наблюдатель</option>
+                    )}
                   </select>
                   {errors.role && (
                     <p className={styles.errorText}>{errors.role.message}</p>
                   )}
-                  <p className={styles.hint}>
-                    💡 Роль определяет права доступа в системе
-                  </p>
+                  {/* Показываем описание выбранной роли */}
+                  {companyRoles.length > 0 && (() => {
+                    const selectedRoleId = watch('role');
+                    const selectedRole = companyRoles.find(r => r.id === selectedRoleId);
+                    return (
+                      <p className={styles.hint}>
+                        💡 {selectedRole?.description || 'Роль определяет права доступа в системе'}
+                      </p>
+                    );
+                  })()}
                 </div>
 
                 {/* Статус */}

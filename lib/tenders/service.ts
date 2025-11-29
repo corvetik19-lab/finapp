@@ -125,11 +125,11 @@ export async function getTenders(
 
     const tenders = (data as unknown as RawTenderWithCount[]).map((t) => {
       const commentsCount = t.tender_comments?.[0]?.count ?? 0;
-      
+
       // Создаем копию и удаляем временное поле
       const tender = { ...t };
       delete tender.tender_comments;
-      
+
       return {
         ...tender,
         comments_count: commentsCount,
@@ -215,9 +215,9 @@ export async function createTender(
     }
 
     if (existingTender) {
-      return { 
-        data: null, 
-        error: `Тендер с номером "${input.purchase_number}" уже существует в системе` 
+      return {
+        data: null,
+        error: `Тендер с номером "${input.purchase_number}" уже существует в системе`
       };
     }
 
@@ -238,7 +238,7 @@ export async function createTender(
           stageId = templateStages.stage_id;
         }
       }
-      
+
       // Если stage_id всё ещё не определён, берём первый системный этап
       if (!stageId) {
         const { data: firstStage } = await supabase
@@ -294,6 +294,13 @@ export async function updateTender(
   try {
     const supabase = await createRouteClient();
 
+    // Получаем текущую версию тендера для сравнения
+    const { data: oldTender } = await supabase
+      .from('tenders')
+      .select('*')
+      .eq('id', tenderId)
+      .single();
+
     const { data, error } = await supabase
       .from('tenders')
       .update(input)
@@ -310,6 +317,43 @@ export async function updateTender(
     if (error) {
       console.error('Error updating tender:', error);
       return { data: null, error: error.message };
+    }
+
+    // Если обновление успешно и есть старая версия, записываем изменения
+    if (oldTender) {
+      const changes: { field: string; old: unknown; new: unknown }[] = [];
+
+      if (input.status && input.status !== oldTender.status) {
+        changes.push({ field: 'status', old: oldTender.status, new: input.status });
+      }
+      if (input.nmck && input.nmck !== oldTender.nmck) {
+        changes.push({ field: 'nmck', old: oldTender.nmck, new: input.nmck });
+      }
+      if (input.submission_deadline && input.submission_deadline !== oldTender.submission_deadline) {
+        changes.push({ field: 'submission_deadline', old: oldTender.submission_deadline, new: input.submission_deadline });
+      }
+      if (input.manager_id && input.manager_id !== oldTender.manager_id) {
+        changes.push({ field: 'manager_id', old: oldTender.manager_id, new: input.manager_id });
+      }
+
+      if (changes.length > 0) {
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData.user) {
+          const { error: historyError } = await supabase
+            .from('tender_field_history')
+            .insert(
+              changes.map((c) => ({
+                tender_id: tenderId,
+                field_name: c.field,
+                old_value: c.old ? String(c.old) : null,
+                new_value: c.new ? String(c.new) : null,
+                changed_by: userData.user.id,
+              }))
+            );
+
+          if (historyError) console.error('Error logging history:', historyError);
+        }
+      }
     }
 
     return { data, error: null };
@@ -409,12 +453,12 @@ export async function getTenderStages(
       .order('category')
       .order('order_index');
 
-    // Получаем только этапы компании (системных этапов больше нет)
+    // Получаем этапы компании и системные
     if (companyId) {
-      query = query.eq('company_id', companyId);
+      query = query.or(`company_id.eq.${companyId},company_id.is.null`);
     } else {
-      // Если нет companyId, возвращаем пустой массив
-      return { data: [], error: null };
+      // Если нет companyId, возвращаем только системные
+      query = query.is('company_id', null);
     }
 
     const { data, error } = await query;
@@ -470,7 +514,7 @@ export async function getTenderTypes(
       const methods = ((type.tender_type_methods as Array<Record<string, unknown>>) || [])
         .map((ttm: Record<string, unknown>) => ttm.procurement_method)
         .filter((m: unknown) => m && typeof m === 'object' && (m as Record<string, unknown>).is_active);
-      
+
       return {
         ...type,
         methods,
@@ -581,7 +625,9 @@ export async function getTendersByStage(
         *,
         stage:tender_stages(*),
         type:tender_types(*),
-        manager:profiles!tenders_manager_id_fkey(id, full_name, avatar_url)
+        manager:profiles!tenders_manager_id_fkey(id, full_name, avatar_url),
+        tender_comments(content, created_at),
+        tender_tasks(title, due_date, status)
       `
       )
       .eq('company_id', companyId)
@@ -597,10 +643,39 @@ export async function getTendersByStage(
       return { data: {}, stages: stages || [], error: tendersError.message };
     }
 
+    // Обрабатываем данные для добавления last_comment и next_task
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const processedTenders = (tenders || []).map((t: any) => {
+      // Получаем последний комментарий
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const lastComment = t.tender_comments?.sort((a: any, b: any) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )[0];
+
+      // Получаем следующую задачу (не выполненную, с ближайшим дедлайном)
+      const nextTask = t.tender_tasks
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ?.filter((task: any) => task.status !== 'completed')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ?.sort((a: any, b: any) => {
+          if (!a.due_date) return 1;
+          if (!b.due_date) return -1;
+          return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+        })[0];
+
+      return {
+        ...t,
+        last_comment: lastComment ? { content: lastComment.content, created_at: lastComment.created_at } : undefined,
+        next_task: nextTask ? { title: nextTask.title, due_date: nextTask.due_date } : undefined,
+        tender_comments: undefined, // Очищаем лишние данные
+        tender_tasks: undefined,
+      };
+    });
+
     // Группируем тендеры по этапам
     const grouped: Record<string, Tender[]> = {};
     stages?.forEach((stage: TenderStage) => {
-      grouped[stage.id] = tenders?.filter((t: Tender) => t.stage_id === stage.id) || [];
+      grouped[stage.id] = processedTenders.filter((t: Tender) => t.stage_id === stage.id);
     });
 
     return { data: grouped, stages: stages || [], error: null };
@@ -621,25 +696,73 @@ export async function getTenderHistory(tenderId: string) {
   try {
     const supabase = await createRouteClient();
 
-    const { data, error } = await supabase
+    // 1. Получаем историю этапов
+    const { data: stageHistory, error: stageError } = await supabase
       .from('tender_stage_history')
       .select(
         `
         *,
         from_stage:tender_stages!tender_stage_history_from_stage_id_fkey(*),
-        to_stage:tender_stages!tender_stage_history_to_stage_id_fkey(*),
-        changed_by_user:profiles!tender_stage_history_changed_by_fkey(id, full_name, avatar_url)
+        to_stage:tender_stages!tender_stage_history_to_stage_id_fkey(*)
       `
       )
-      .eq('tender_id', tenderId)
-      .order('created_at', { ascending: false });
+      .eq('tender_id', tenderId);
 
-    if (error) {
-      console.error('Error fetching tender history:', error);
-      return { data: [], error: error.message };
+    if (stageError) {
+      console.error('Error fetching tender stage history:', stageError);
+      // Не прерываем, попробуем получить хотя бы историю полей
     }
 
-    return { data: data || [], error: null };
+    // 2. Получаем историю полей
+    const { data: fieldHistory, error: fieldError } = await supabase
+      .from('tender_field_history')
+      .select('*')
+      .eq('tender_id', tenderId);
+
+    if (fieldError) {
+      console.error('Error fetching tender field history:', fieldError);
+    }
+
+    // 3. Собираем ID пользователей для получения информации о них
+    const userIds = new Set<string>();
+    fieldHistory?.forEach(h => userIds.add(h.changed_by));
+    stageHistory?.forEach(h => {
+      if (h.changed_by) userIds.add(h.changed_by);
+    });
+
+    // Если есть ID, получаем пользователей из employees
+    // (так как profiles может не быть доступна или не существовать)
+    const usersMap: Record<string, { id: string; full_name: string; avatar_url?: string }> = {};
+    if (userIds.size > 0) {
+      const { data: users } = await supabase
+        .from('employees')
+        .select('user_id, full_name, avatar_url') // Используем user_id для маппинга
+        .in('user_id', Array.from(userIds));
+
+      if (users) {
+        users.forEach((u) => {
+          if (u.user_id) usersMap[u.user_id] = { id: u.user_id, full_name: u.full_name, avatar_url: u.avatar_url || undefined };
+        });
+      }
+    }
+
+    // 4. Объединяем и сортируем
+    const combinedHistory = [
+      ...(stageHistory || []).map((item) => ({
+        ...item,
+        type: 'stage_change' as const,
+        created_at: item.created_at,
+        changed_by_user: item.changed_by ? (usersMap[item.changed_by] || { id: item.changed_by, full_name: 'Неизвестный' }) : { id: 'system', full_name: 'Система' },
+      })),
+      ...(fieldHistory || []).map((item) => ({
+        ...item,
+        type: 'field_change' as const,
+        created_at: item.created_at,
+        changed_by_user: usersMap[item.changed_by] || { id: item.changed_by, full_name: 'Неизвестный' },
+      })),
+    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    return { data: combinedHistory, error: null };
   } catch (error) {
     console.error('Error in getTenderHistory:', error);
     return { data: [], error: 'Ошибка при загрузке истории' };

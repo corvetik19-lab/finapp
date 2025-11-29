@@ -11,6 +11,7 @@ import ExpenseByCategoryCard from "@/components/dashboard/ExpenseByCategoryCard"
 import CategoryManagementCard from "@/components/dashboard/CategoryManagementCard";
 import { loadCategoryWidgetPreferences, loadProductWidgetPreferences, loadWidgetVisibility, isWidgetVisible } from "@/lib/dashboard/preferences/service";
 import UpcomingPaymentsCard from "@/components/dashboard/UpcomingPaymentsCard";
+import { getCurrentCompanyId } from "@/lib/platform/organization";
 
 // Делаем страницу динамической
 export const dynamic = 'force-dynamic';
@@ -54,19 +55,26 @@ export default async function DashboardPage() {
   const productPrefs = await loadProductWidgetPreferences();
   const widgetVisibility = await loadWidgetVisibility();
   
-  // Получаем текущего пользователя
+  // Получаем текущего пользователя и компанию
   const { data: { user } } = await supabase.auth.getUser();
+  const companyId = await getCurrentCompanyId();
 
   // Загружаем топ-товары за текущий месяц
   const now = new Date();
   const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
   const startOfNextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
   
-  const { data: transactionsForProducts } = await supabase
+  let txQuery = supabase
     .from("transactions")
     .select("id")
     .gte("occurred_at", startOfMonth.toISOString())
     .lt("occurred_at", startOfNextMonth.toISOString());
+
+  if (companyId) {
+    txQuery = txQuery.eq("company_id", companyId);
+  }
+
+  const { data: transactionsForProducts } = await txQuery;
 
   const transactionIds = (transactionsForProducts || []).map((t) => t.id);
   
@@ -148,18 +156,30 @@ export default async function DashboardPage() {
   ];
 
   // Загружаем счета пользователя из базы
-  const { data: accountsRaw = [] } = await supabase
+  let accountsQuery = supabase
     .from("accounts")
     .select("id,name,balance,currency,type,credit_limit")
     .is("deleted_at", null)
     .order("name", { ascending: true });
 
+  if (companyId) {
+    accountsQuery = accountsQuery.eq("company_id", companyId);
+  }
+
+  const { data: accountsRaw = [] } = await accountsQuery;
+
   // Загружаем кредиты
-  const { data: loansRaw = [] } = await supabase
+  let loansQuery = supabase
     .from("loans")
     .select("id,name,principal_amount,principal_paid,currency,status")
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
+
+  if (companyId) {
+    loansQuery = loansQuery.eq("company_id", companyId);
+  }
+
+  const { data: loansRaw = [] } = await loansQuery;
 
   const accountsByType: Record<
     string,

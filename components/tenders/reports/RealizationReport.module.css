@@ -1,0 +1,803 @@
+.container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.headerInfo {
+  flex: 1;
+  min-width: 200px;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.titleIcon {
+  font-size: 1.5rem;
+}
+
+.subtitle {
+  color: #64748b;
+  margin: 0;
+  font-size: 0.938rem;
+}
+
+.headerActions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.periodButtons {
+  display: flex;
+  background: #f1f5f9;
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.periodBtn {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.periodBtn:hover:not(:disabled) {
+  color: #3b82f6;
+}
+
+.periodBtnActive {
+  background: white;
+  color: #3b82f6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.periodBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.exportBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.exportBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+}
+
+.btnIcon {
+  font-size: 1rem;
+}
+
+/* Loading */
+.loadingOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Metrics Grid */
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.metricCard {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s;
+}
+
+.metricCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.metricPrimary {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-color: #93c5fd;
+}
+
+.metricSuccess {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border-color: #6ee7b7;
+}
+
+.metricDanger {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border-color: #fca5a5;
+}
+
+.metricInfo {
+  background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%);
+  border-color: #fcd34d;
+}
+
+.metricIcon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.metricContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.metricValue {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.2;
+}
+
+.metricLabel {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.metricSub {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+.metricSub strong {
+  color: #3b82f6;
+  font-weight: 700;
+}
+
+/* Progress Card */
+.progressCard {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.progressTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.progressPercent {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #3b82f6;
+}
+
+.progressBarContainer {
+  margin-bottom: 12px;
+}
+
+.progressBar {
+  height: 12px;
+  background: #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.5s ease;
+}
+
+.progressStats {
+  display: flex;
+  gap: 24px;
+}
+
+.progressStat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.813rem;
+  color: #64748b;
+}
+
+.progressDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* Secondary Metrics */
+.secondaryMetrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.secondaryCard {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+}
+
+.secondaryIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.secondaryValue {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.secondaryLabel {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+/* Alerts Grid */
+.alertsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.alertCard {
+  background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%);
+  border-radius: 16px;
+  padding: 20px;
+  border: 2px solid #fbbf24;
+}
+
+.alertCard.alertDanger {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border-color: #ef4444;
+}
+
+.alertTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #92400e;
+  margin: 0 0 16px 0;
+}
+
+.alertCard.alertDanger .alertTitle {
+  color: #991b1b;
+}
+
+.alertList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.alertItem {
+  background: white;
+  border-radius: 10px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.alertCritical {
+  border-color: #fca5a5;
+}
+
+.alertWarning {
+  border-color: #fcd34d;
+}
+
+.alertItemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.alertPurchase {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.alertBadge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badgeCritical {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.badgeWarning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badgeNormal {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.alertItemInfo {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 8px;
+}
+
+.tab {
+  padding: 10px 20px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.938rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 8px 8px 0 0;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  color: #3b82f6;
+  background: #f1f5f9;
+}
+
+.tabActive {
+  color: #3b82f6;
+  background: #eff6ff;
+  border-bottom: 2px solid #3b82f6;
+  margin-bottom: -10px;
+}
+
+/* Tab Content */
+.tabContent {
+  min-height: 400px;
+}
+
+.overviewGrid,
+.dynamicsSection {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+/* Chart Cards */
+.chartCard {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+}
+
+.chartTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 16px 0;
+}
+
+.chartWrapperSmall {
+  height: 200px;
+}
+
+.chartWrapperLarge {
+  height: 300px;
+}
+
+/* Stages List */
+.stagesList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.stageItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.stageIndicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+}
+
+.stageName {
+  flex: 1;
+  font-size: 0.813rem;
+  font-weight: 500;
+  color: #334155;
+}
+
+.stageCount {
+  font-size: 0.813rem;
+  font-weight: 600;
+  color: #3b82f6;
+}
+
+.stageValue {
+  font-size: 0.813rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+/* Finance Stats */
+.financeStats {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.financeStat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.financeLabel {
+  font-size: 0.813rem;
+  color: #64748b;
+}
+
+.financeValue {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.financeBar {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.financeBarFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+/* Timing Stats */
+.timingStats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.timingStat {
+  text-align: center;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 10px;
+}
+
+.timingValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.timingLabel {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+/* Empty State */
+.emptyState {
+  padding: 40px 20px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+/* Table */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.table th,
+.table td {
+  padding: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.table th {
+  text-align: left;
+  font-weight: 600;
+  color: #64748b;
+  background: #f8fafc;
+}
+
+.table tbody tr:hover {
+  background: #f8fafc;
+}
+
+/* Badges */
+.rankBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.executorName,
+.customerName {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.roleBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #f1f5f9;
+  color: #64748b;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.activeBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #dbeafe;
+  color: #2563eb;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.completedBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #dcfce7;
+  color: #166534;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.problemBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.rateBadge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.813rem;
+}
+
+/* Insights */
+.insightsCard {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-radius: 16px;
+  padding: 20px;
+  margin-top: 24px;
+  border: 2px solid #93c5fd;
+}
+
+.insightsTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e40af;
+  margin: 0 0 16px 0;
+}
+
+.insightsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.insightItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.875rem;
+  color: #1e40af;
+}
+
+.insightIcon {
+  font-size: 1.25rem;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .metricsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .secondaryMetrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .alertsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .timingStats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .headerActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .periodButtons {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .exportBtn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .metricsGrid,
+  .secondaryMetrics,
+  .overviewGrid,
+  .dynamicsSection {
+    grid-template-columns: 1fr;
+  }
+
+  .tabs {
+    flex-wrap: wrap;
+  }
+  
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 8px 12px;
+    font-size: 0.813rem;
+  }
+
+  .title {
+    font-size: 1.25rem;
+  }
+
+  .metricValue {
+    font-size: 1.5rem;
+  }
+  
+  .table {
+    font-size: 0.75rem;
+  }
+  
+  .table th,
+  .table td {
+    padding: 8px 6px;
+  }
+  
+  .timingStats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .progressStats {
+    flex-wrap: wrap;
+  }
+}

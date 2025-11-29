@@ -5,6 +5,7 @@ import AddFundsModal from "./AddFundsModal";
 import TransferModalLauncher from "./TransferModalLauncher";
 import DeleteDebitCardButton from "@/components/cards/DeleteDebitCardButton";
 import EditDebitCardButton from "@/components/cards/EditDebitCardButton";
+import { getCurrentCompanyId } from "@/lib/platform/organization";
 
 // Делаем страницу динамической
 export const dynamic = 'force-dynamic';
@@ -70,17 +71,24 @@ function usagePercent(available: number, limit: number | null | undefined) {
 
 export default async function CardsPage() {
   const supabase = await createRSCClient();
+  const companyId = await getCurrentCompanyId();
 
   const { data: auth } = await supabase.auth.getUser();
   const userId = auth.user?.id;
 
-  const { data: accountsRaw } = await supabase
+  let accountsQuery = supabase
     .from("accounts")
     .select("id,name,currency,balance")
     .eq("type", "card")
     .is("credit_limit", null) // Только дебетовые карты (без кредитного лимита)
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
+
+  if (companyId) {
+    accountsQuery = accountsQuery.eq("company_id", companyId);
+  }
+
+  const { data: accountsRaw } = await accountsQuery;
   const accountsData: CardRow[] = (accountsRaw ?? []) as CardRow[];
 
   let stashes: StashRow[] = [];

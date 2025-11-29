@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createRouteClient } from '@/lib/supabase/helpers';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const supabase = await createRouteClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -13,22 +13,32 @@ export async function GET() {
       );
     }
 
-    // Получаем company_id пользователя
-    const { data: profile } = await supabase
-      .from('company_members')
-      .select('company_id')
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .single();
+    const { searchParams } = new URL(request.url);
+    const companyIdParam = searchParams.get('company_id');
+    let targetCompanyId = companyIdParam;
 
-    if (!profile?.company_id) {
+    // Если company_id не передан, пытаемся определить его по пользователю
+    if (!targetCompanyId) {
+      // Получаем company_id пользователя (берем первую активную компанию)
+      const { data: member } = await supabase
+        .from('company_members')
+        .select('company_id')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+
+      targetCompanyId = member?.company_id;
+    }
+
+    if (!targetCompanyId) {
       return NextResponse.json(
         { error: 'User is not a member of any company' },
         { status: 403 }
       );
     }
 
-    // Получаем шаблоны компании
+    // Получаем шаблоны: системные (company_id IS NULL) + шаблоны компании
     const { data: templates, error } = await supabase
       .from('tender_stage_templates')
       .select(`
@@ -60,7 +70,7 @@ export async function GET() {
           )
         )
       `)
-      .eq('company_id', profile.company_id)
+      .or(`company_id.is.null,company_id.eq.${targetCompanyId}`)
       .order('name');
 
     if (error) {

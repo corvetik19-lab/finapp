@@ -5,6 +5,7 @@ import { TenderKanban } from '@/components/tenders/tender-kanban';
 import { AddContractModal } from '@/components/tenders/AddContractModal';
 import type { Tender, TenderStage } from '@/lib/tenders/types';
 import { subscribeToStagesUpdates } from '@/lib/tenders/events';
+import { useToast } from '@/components/toast/ToastContext';
 import styles from '../tenders.module.css';
 
 interface TenderRealizationClientProps {
@@ -20,6 +21,7 @@ export function TenderRealizationClient({ stages: initialStages, companyId }: Te
   const [error, setError] = useState<string | null>(null);
   const [allowBackwardMovement, setAllowBackwardMovement] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const toast = useToast();
 
   const loadTenders = useCallback(async () => {
     if (!companyId) {
@@ -135,8 +137,10 @@ export function TenderRealizationClient({ stages: initialStages, companyId }: Te
 
   const handleSelectTender = async (tender: Tender) => {
     try {
-      // Находим первый этап реализации
-      const firstRealizationStage = stages.find(s => s.category === 'realization' && s.order_index === 0) || stages[0];
+      // Находим первый этап реализации (Новые контракты в реализацию)
+      const firstRealizationStage = stages.find(s => 
+        s.name === 'Новые контракты в реализацию' || s.order_index === 0
+      ) || stages[0];
       
       if (!firstRealizationStage) {
         alert('Не найден этап реализации');
@@ -157,9 +161,27 @@ export function TenderRealizationClient({ stages: initialStages, companyId }: Te
         throw new Error('Ошибка добавления контракта');
       }
 
+      // Создаём/привязываем заказчика
+      if (tender.customer) {
+        try {
+          await fetch('/api/tenders/customers/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              tender_id: tender.id,
+              customer_name: tender.customer,
+              region: tender.city || null
+            }),
+          });
+        } catch (customerErr) {
+          console.error('Error creating customer:', customerErr);
+          // Не блокируем добавление контракта если заказчик не создался
+        }
+      }
+
       setShowAddModal(false);
       await loadTenders();
-      alert(`Контракт "${tender.customer}" добавлен в реализацию`);
+      toast.show(`Контракт "${tender.customer}" добавлен в реализацию`, { type: 'success', duration: 4000 });
     } catch (err) {
       console.error('Error adding contract:', err);
       alert('Ошибка при добавлении контракта');

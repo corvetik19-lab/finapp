@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import type { SupabaseClient, User, AuthError } from "@supabase/supabase-js";
+import { cache } from "react";
 
 // Server Component client (read-only cookies)
 export async function createRSCClient(): Promise<SupabaseClient> {
@@ -63,3 +64,11 @@ export async function createRouteClient(): Promise<SupabaseClient> {
     },
   });
 }
+
+/**
+ * Cached user retrieval for RSC to prevent rate limiting
+ */
+export const getCachedUser = cache(async () => {
+  const supabase = await createRSCClient();
+  return supabase.auth.getUser();
+});

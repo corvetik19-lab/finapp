@@ -1,4 +1,5 @@
 import { createRSCClient } from "@/lib/supabase/helpers";
+import { getCurrentCompanyId } from "@/lib/platform/organization";
 
 const MONTH_LABELS_RU_SHORT = [
   "янв",
@@ -68,6 +69,7 @@ export type DashboardOverviewOptions = {
 
 export async function loadDashboardOverview(monthsBack = 8, options?: DashboardOverviewOptions): Promise<DashboardOverview> {
   const supabase = await createRSCClient();
+  const companyId = await getCurrentCompanyId();
   const now = new Date();
 
   const hasCustomRange = Boolean(options?.from && options?.to);
@@ -84,13 +86,20 @@ export async function loadDashboardOverview(monthsBack = 8, options?: DashboardO
   const startBound = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate()));
   const endBound = new Date(Date.UTC(endDate.getUTCFullYear(), endDate.getUTCMonth(), endDate.getUTCDate(), 23, 59, 59, 999));
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("transactions")
     .select("occurred_at,amount,currency,direction,category_id,category:categories(id,name)")
     .gte("occurred_at", startBound.toISOString())
     .lte("occurred_at", endBound.toISOString())
     .order("occurred_at", { ascending: true })
     .limit(2000);
+
+  // Фильтруем по company_id если есть
+  if (companyId) {
+    query = query.eq("company_id", companyId);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
 

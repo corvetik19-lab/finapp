@@ -1,19 +1,37 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import { getAvailableModes, getModeConfig } from "@/lib/platform/mode-registry";
 import styles from "./Platform.module.css";
 
-export default function ModeSwitcher() {
+interface ModeSwitcherProps {
+  allowedModes?: string[];
+}
+
+export default function ModeSwitcher({ allowedModes }: ModeSwitcherProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [currentMode, setCurrentMode] = useState<string>("finance");
 
-  const availableModes = getAvailableModes();
+  // Filter modes based on allowedModes prop
+  const allModes = getAvailableModes();
+  const availableModes = allowedModes && allowedModes.length > 0
+    ? allModes.filter(mode => allowedModes.includes(mode.key))
+    : allModes;
+  
+  // Если доступен только один режим - не показываем переключатель
+  const singleModeOnly = availableModes.length === 1;
 
   useEffect(() => {
+    // Если мы в админке или глобальных настройках, сбрасываем активный режим
+    if (pathname.startsWith('/admin') || pathname.startsWith('/settings')) {
+      setCurrentMode('');
+      return;
+    }
+
     // Определяем текущий режим из URL
     const modeKey = pathname.split("/")[1];
     const mode = getModeConfig(modeKey);
@@ -30,8 +48,29 @@ export default function ModeSwitcher() {
     setIsOpen(false);
   };
 
-  const current = getModeConfig(currentMode);
+  const current = (pathname.startsWith('/admin') || pathname.startsWith('/settings'))
+    ? { name: 'Администрирование', icon: 'settings', color: '#64748b' }
+    : getModeConfig(currentMode);
+
   if (!current) return null;
+
+  // Если доступен только один режим - показываем только название без возможности переключения
+  if (singleModeOnly && !pathname.startsWith('/admin') && !pathname.startsWith('/settings')) {
+    const singleMode = availableModes[0];
+    return (
+      <div className={styles.modeSwitcher}>
+        <div className={styles.modeSwitcherStatic}>
+          <span
+            className="material-icons"
+            style={{ color: singleMode.color }}
+          >
+            {singleMode.icon}
+          </span>
+          <span className={styles.modeNameDesktop}>{singleMode.name}</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.modeSwitcher}>
@@ -52,7 +91,7 @@ export default function ModeSwitcher() {
         </span>
       </button>
 
-      {isOpen && (
+      {isOpen && typeof document !== 'undefined' && createPortal(
         <>
           <div
             className={styles.modeSwitcherOverlay}
@@ -109,7 +148,8 @@ export default function ModeSwitcher() {
               <p>Скоро появятся новые режимы! 🚀</p>
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );

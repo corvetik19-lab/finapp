@@ -1,18 +1,19 @@
 import { redirect } from "next/navigation";
-import { createRSCClient } from "@/lib/supabase/helpers";
+import { createRSCClient, getCachedUser } from "@/lib/supabase/server";
 import UsersManager from "@/components/settings/UsersManager";
 
 export const dynamic = 'force-dynamic';
 
 export default async function UsersSettingsPage() {
-  const supabase = await createRSCClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await getCachedUser();
 
   if (!user) {
     redirect("/login");
   }
+  
+  const supabase = await createRSCClient();
 
   // Получаем роли
   const { data: rolesData = [] } = await supabase
@@ -55,22 +56,48 @@ export default async function UsersSettingsPage() {
     .select("user_id, role_id, roles(name, color)")
     .returns<Array<{user_id: string; role_id: string; roles: {name: string; color: string} | null}>>();
 
-  // Формируем список пользователей с ролями
-  const users = usersData.map(u => {
-    const userRole = userRolesData?.find(ur => ur.user_id === u.id);
-    const isAdmin = u.id === user?.id;
-    return {
-      id: u.id,
-      email: u.email || "",
-      full_name: u.user_metadata?.full_name || null,
-      role_id: userRole?.role_id || null,
-      role_name: userRole?.roles?.name || null,
-      role_color: userRole?.roles?.color || null,
-      created_at: u.created_at,
-      last_sign_in_at: u.last_sign_in_at ?? null,
-      is_admin: isAdmin,
-    };
-  });
+  // Получаем профили для фильтрации супер-админов (используем admin client)
+  let profilesData: Array<{id: string; global_role: string | null}> = [];
+  if (serviceKey) {
+    const { createClient } = await import("@supabase/supabase-js");
+    const adminClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      serviceKey,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
+    const { data } = await adminClient
+      .from("profiles")
+      .select("id, global_role");
+    profilesData = data || [];
+  }
+
+  // Формируем список пользователей с ролями, исключая супер-админов
+  const users = usersData
+    .filter(u => {
+      // Исключаем супер-админов из списка
+      const profile = profilesData?.find(p => p.id === u.id);
+      return profile?.global_role !== 'super_admin';
+    })
+    .map(u => {
+      const userRole = userRolesData?.find(ur => ur.user_id === u.id);
+      const isAdmin = u.id === user?.id;
+      return {
+        id: u.id,
+        email: u.email || "",
+        full_name: u.user_metadata?.full_name || null,
+        role_id: userRole?.role_id || null,
+        role_name: userRole?.roles?.name || null,
+        role_color: userRole?.roles?.color || null,
+        created_at: u.created_at,
+        last_sign_in_at: u.last_sign_in_at ?? null,
+        is_admin: isAdmin,
+      };
+    });
 
   // Формируем опции ролей для селектов
   const roles = (rolesData || []).map(r => ({

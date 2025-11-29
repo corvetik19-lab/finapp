@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRouteClient } from '@/lib/supabase/helpers';
+import { getTenderHistory } from '@/lib/tenders/service';
 
 export async function GET(
   request: NextRequest,
@@ -18,17 +19,13 @@ export async function GET(
 
     const { id } = await params;
 
-    // Получаем историю изменений этапов
-    const { data: history, error } = await supabase
-      .from('tender_stage_history')
-      .select('*')
-      .eq('tender_id', id)
-      .order('created_at', { ascending: false });
+    // Используем сервисную функцию для получения полной истории (этапы + поля)
+    const { data: history, error } = await getTenderHistory(id);
 
     if (error) {
       console.error('Error fetching tender history:', error);
       return NextResponse.json(
-        { error: 'Failed to fetch tender history' },
+        { error: `Failed to fetch tender history: ${error}` },
         { status: 500 }
       );
     }

@@ -2,6 +2,7 @@ import type { UpcomingPayment } from "@/components/dashboard/UpcomingPaymentsCar
 import styles from "./page.module.css";
 import { createRSCClient } from "@/lib/supabase/helpers";
 import PaymentsPageClient from "@/components/payments/PaymentsPageClient";
+import { getCurrentCompanyId } from "@/lib/platform/organization";
 
 // Делаем страницу динамической
 export const dynamic = 'force-dynamic';
@@ -45,7 +46,9 @@ function getCurrency(payments: UpcomingPayment[]): string {
 
 export default async function PaymentsPage() {
   const supabase = await createRSCClient();
-  const { data, error } = await supabase
+  const companyId = await getCurrentCompanyId();
+
+  let query = supabase
     .from("upcoming_payments")
     .select(`
       id,name,due_date,amount_minor,currency,account_name,account_id,direction,status,paid_at,paid_transaction_id,
@@ -53,6 +56,12 @@ export default async function PaymentsPage() {
       transactions:paid_transaction_id(account_id,accounts:account_id(name))
     `)
     .order("due_date", { ascending: true });
+
+  if (companyId) {
+    query = query.eq("company_id", companyId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("PaymentsPage: failed to load upcoming_payments", error);

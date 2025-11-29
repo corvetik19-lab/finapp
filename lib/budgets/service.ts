@@ -1,5 +1,6 @@
 import { createRSCClient } from "@/lib/supabase/helpers";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getCurrentCompanyId } from "@/lib/platform/organization";
 
 export type BudgetRow = {
   id: string;
@@ -250,10 +251,18 @@ const commonSelect =
 
 export async function listBudgetsWithUsage(): Promise<BudgetWithUsage[]> {
   const supabase = await createRSCClient();
-  const { data, error } = await supabase
+  const companyId = await getCurrentCompanyId();
+
+  let query = supabase
     .from("budgets")
     .select(commonSelect)
     .order("period_start", { ascending: false });
+
+  if (companyId) {
+    query = query.eq("company_id", companyId);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
 

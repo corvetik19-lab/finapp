@@ -11,9 +11,17 @@ import { loadStageTemplates } from '@/lib/tenders/template-service';
 import { subscribeToStagesUpdates } from '@/lib/tenders/events';
 import styles from '../tenders.module.css';
 
+interface Platform {
+  id: string;
+  name: string;
+  short_name: string | null;
+}
+
 interface TenderDepartmentClientProps {
   stages: TenderStage[];
   types: TenderType[];
+  companyId: string;
+  platforms?: Platform[];
 }
 
 const ARCHIVED_STAGE_NAMES = [
@@ -26,7 +34,8 @@ const ARCHIVED_STAGE_NAMES = [
 
 const normalizeStageName = (name: string | null | undefined) => (name || '').trim().toLowerCase();
 
-export function TenderDepartmentClient({ stages: initialStages, types }: TenderDepartmentClientProps) {
+export function TenderDepartmentClient({ stages: initialStages, types, companyId, platforms = [] }: TenderDepartmentClientProps) {
+  console.log('TenderDepartmentClient mounted with companyId:', companyId);
   const [tenders, setTenders] = useState<Tender[]>([]);
   const [tendersByStage, setTendersByStage] = useState<Record<string, Tender[]>>({});
   const [loading, setLoading] = useState(true);
@@ -42,12 +51,15 @@ export function TenderDepartmentClient({ stages: initialStages, types }: TenderD
   const [templates, setTemplates] = useState<TenderStageTemplate[]>([]);
   const [stages, setStages] = useState<TenderStage[]>(initialStages);
 
-  // TODO: Получить company_id из контекста пользователя
-  const companyId = '74b4c286-ca75-4eb4-9353-4db3d177c939';
+  // Фильтруем тендеры только по этапам тендерного отдела
+  const departmentTenders = useMemo(() => {
+    const stageIds = new Set(stages.map(s => s.id));
+    return tenders.filter(t => stageIds.has(t.stage_id));
+  }, [tenders, stages]);
 
-  // Фильтруем тендеры
+  // Фильтруем тендеры по ответственным (из тендеров тендерного отдела)
   const filteredTenders = useMemo(() => {
-    return tenders.filter(tender => {
+    return departmentTenders.filter(tender => {
       if (filters.responsible_ids && filters.responsible_ids.length > 0) {
         // Проверяем есть ли хотя бы один из выбранных ответственных в массиве responsible
         const hasResponsible = tender.responsible?.some(
@@ -57,7 +69,7 @@ export function TenderDepartmentClient({ stages: initialStages, types }: TenderD
       }
       return true;
     });
-  }, [tenders, filters]);
+  }, [departmentTenders, filters]);
 
   // Статистика
   const archivedStageSet = useMemo(
@@ -82,10 +94,10 @@ export function TenderDepartmentClient({ stages: initialStages, types }: TenderD
     return { totalCount, totalSum, totalProfit };
   }, [filteredTenders, archivedStageSet]);
 
-  // Уникальные ответственные из всех тендеров
+  // Уникальные ответственные из тендеров тендерного отдела
   const managers = useMemo(() => {
     const uniqueResponsibles = new Map();
-    tenders.forEach(tender => {
+    departmentTenders.forEach(tender => {
       tender.responsible?.forEach(resp => {
         if (resp.employee) {
           uniqueResponsibles.set(resp.employee.id, {
@@ -96,7 +108,7 @@ export function TenderDepartmentClient({ stages: initialStages, types }: TenderD
       });
     });
     return Array.from(uniqueResponsibles.values());
-  }, [tenders]);
+  }, [departmentTenders]);
 
   const loadTenders = useCallback(async () => {
     try {
@@ -130,9 +142,10 @@ export function TenderDepartmentClient({ stages: initialStages, types }: TenderD
 
   // Загрузка шаблонов этапов
   const loadTemplates = useCallback(async () => {
-    const data = await loadStageTemplates();
+    if (!companyId) return;
+    const data = await loadStageTemplates(companyId);
     setTemplates(data);
-  }, []);
+  }, [companyId]);
 
   // Загрузка этапов тендерного отдела
   const loadStages = useCallback(async () => {
@@ -348,6 +361,7 @@ export function TenderDepartmentClient({ stages: initialStages, types }: TenderD
         types={types}
         templates={templates}
         managers={employees}
+        platforms={platforms}
         eisData={eisData}
       />
     </div>

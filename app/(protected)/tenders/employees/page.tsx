@@ -1,5 +1,21 @@
 import { EmployeesListClient } from './employees-list-client';
+import { getCurrentCompanyId } from '@/lib/platform/organization';
 
-export default function TenderEmployeesPage() {
-  return <EmployeesListClient />;
+export default async function TenderEmployeesPage() {
+  const companyId = await getCurrentCompanyId();
+
+  if (!companyId) {
+    // Теоретически не должно происходить, так как доступ к разделу ограничен,
+    // но на всякий случай покажем понятное сообщение.
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold text-red-600">Компания не найдена</h1>
+        <p className="text-slate-600 mt-2">
+          Для работы с сотрудниками необходимо быть привязанным к компании.
+        </p>
+      </div>
+    );
+  }
+
+  return <EmployeesListClient companyId={companyId} />;
 }

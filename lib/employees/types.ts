@@ -40,6 +40,7 @@ export interface Employee {
   // Рабочие данные
   position?: string;
   department?: string;
+  department_id?: string;
   employee_number?: string;
   hire_date?: string;
   dismissal_date?: string;
@@ -112,7 +113,9 @@ export interface CreateEmployeeData {
   birth_date?: string | null;
   position?: string | null;
   department?: string | null;
-  role: EmployeeRole;
+  department_id?: string | null;
+  role?: EmployeeRole | string; // Может быть enum или UUID роли (опционально если есть role_id)
+  role_id?: string | null;
   status?: EmployeeStatus;
   hire_date?: string | null;
   work_schedule?: string | null;
@@ -132,10 +135,12 @@ export interface UpdateEmployeeData {
   avatar_url?: string | null;
   position?: string | null;
   department?: string | null;
+  department_id?: string | null;
   employee_number?: string | null;
   hire_date?: string | null;
   dismissal_date?: string | null;
-  role?: EmployeeRole;
+  role?: EmployeeRole | string; // Может быть enum или UUID роли
+  role_id?: string | null;
   status?: EmployeeStatus;
   permissions?: Record<string, boolean>;
   address?: string | null;
@@ -166,11 +171,14 @@ export interface EmployeeFilters {
 // =====================================================
 
 export interface EmployeeStats {
-  total_count: number;
-  active_count: number;
-  inactive_count: number;
-  on_vacation_count: number;
-  by_role: Record<EmployeeRole, number>;
+  total: number;
+  total_count?: number; // alias для обратной совместимости
+  active_count?: number;
+  inactive_count?: number;
+  on_vacation_count?: number;
+  by_role?: Record<string, number>;
+  by_status?: Record<string, number>;
+  by_department?: Record<string, number>;
 }
 
 // =====================================================
@@ -213,48 +221,61 @@ export const EMPLOYEE_STATUS_COLORS: Record<EmployeeStatus, string> = {
 };
 
 // =====================================================
-// Права доступа по ролям
+// Права доступа по ролям (базовые, для совместимости)
+// Детальные права настраиваются в Настройки -> Роли
 // =====================================================
 
 export const ROLE_PERMISSIONS: Record<EmployeeRole, string[]> = {
   admin: [
-    'employees.view',
-    'employees.create',
-    'employees.update',
-    'employees.delete',
-    'tenders.view',
-    'tenders.create',
-    'tenders.update',
-    'tenders.delete',
-    'reports.view',
-    'settings.manage',
+    'employees:view', 'employees:view_all', 'employees:create', 'employees:edit', 'employees:delete',
+    'tenders:view', 'tenders:view_all', 'tenders:create', 'tenders:edit', 'tenders:delete',
+    'tenders:stages', 'tenders:stages:move_forward', 'tenders:stages:move_backward',
+    'tenders:calc:view', 'tenders:calc:create', 'tenders:calc:edit', 'tenders:calc:approve',
+    'tenders:docs:view', 'tenders:docs:upload', 'tenders:docs:delete',
+    'tenders:review:view', 'tenders:review:approve', 'tenders:review:reject',
+    'tenders:assign:manager', 'tenders:assign:specialist', 'tenders:assign:calculator',
+    'tenders:analytics:view', 'tenders:analytics:reports',
+    'reports:view', 'reports:export',
+    'admin:view', 'roles:manage', 'org:settings',
   ],
   manager: [
-    'employees.view',
-    'employees.create',
-    'employees.update',
-    'tenders.view',
-    'tenders.create',
-    'tenders.update',
-    'reports.view',
+    'employees:view', 'employees:view_all', 'employees:create', 'employees:edit',
+    'tenders:view', 'tenders:view_all', 'tenders:create', 'tenders:edit',
+    'tenders:stages', 'tenders:stages:move_forward',
+    'tenders:calc:view', 'tenders:calc:approve',
+    'tenders:docs:view', 'tenders:docs:upload',
+    'tenders:review:view', 'tenders:review:comment',
+    'tenders:assign:specialist', 'tenders:assign:calculator',
+    'tenders:analytics:view',
+    'reports:view',
   ],
   tender_specialist: [
-    'employees.view',
-    'tenders.view',
-    'tenders.create',
-    'tenders.update',
+    'employees:view',
+    'tenders:view', 'tenders:view_own', 'tenders:create', 'tenders:edit_own',
+    'tenders:stages:move_forward',
+    'tenders:calc:view', 'tenders:calc:create', 'tenders:calc:edit',
+    'tenders:docs:view', 'tenders:docs:upload',
   ],
   accountant: [
-    'employees.view',
-    'tenders.view',
-    'reports.view',
+    'employees:view',
+    'tenders:view', 'tenders:view_all',
+    'tenders:calc:view', 'tenders:calc:view_margin',
+    'tenders:docs:view', 'tenders:docs:download',
+    'tenders:contract:view',
+    'tenders:analytics:view', 'tenders:analytics:finance',
+    'reports:view', 'reports:export',
   ],
   logistics: [
-    'employees.view',
-    'tenders.view',
+    'employees:view',
+    'tenders:view', 'tenders:view_own',
+    'tenders:docs:view', 'tenders:docs:download',
+    'tenders:contract:view',
   ],
   viewer: [
-    'employees.view',
-    'tenders.view',
+    'employees:view',
+    'tenders:view', 'tenders:view_all',
+    'tenders:calc:view',
+    'tenders:docs:view',
+    'tenders:analytics:view',
   ],
 };

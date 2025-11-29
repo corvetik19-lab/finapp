@@ -4,6 +4,16 @@
   gap: 24px;
 }
 
+/* Top Section - кнопки навигации вверху */
+.topSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-primary);
+  margin-bottom: 8px;
+}
+
 .section {
   display: flex;
   flex-direction: column;
@@ -58,4 +68,56 @@
 
 .item.active .material-icons {
   color: var(--primary);
+}
+
+/* Back Section */
+.backSection {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-primary);
+}
+
+.backLink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.backLink:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.backLink .material-icons {
+  font-size: 18px;
+}
+
+.adminLink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(29, 78, 216, 0.1) 100%);
+  color: #3b82f6;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.adminLink:hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(29, 78, 216, 0.2) 100%);
+  color: #1d4ed8;
+}
+
+.adminLink .material-icons {
+  font-size: 18px;
 }

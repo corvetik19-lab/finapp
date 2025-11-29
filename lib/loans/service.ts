@@ -1,5 +1,6 @@
 import { createRSCClient } from "@/lib/supabase/helpers";
 import type { Loan, LoanRecord, LoanSummary } from "./types";
+import { getCurrentCompanyId } from "@/lib/platform/organization";
 
 // Конвертация записи БД в Loan объект
 export function mapLoanRecord(record: LoanRecord): Loan {
@@ -53,12 +54,19 @@ function checkIfPaidThisMonth(lastPaymentDate: string | null): boolean {
 // Загрузка всех кредитов пользователя
 export async function loadLoans(): Promise<Loan[]> {
   const supabase = await createRSCClient();
+  const companyId = await getCurrentCompanyId();
   
-  const { data, error } = await supabase
+  let query = supabase
     .from("loans")
     .select("*")
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
+
+  if (companyId) {
+    query = query.eq("company_id", companyId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Failed to load loans:", error);

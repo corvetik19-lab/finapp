@@ -68,7 +68,7 @@ export interface Tender {
   id: string;
   company_id: string;
   created_by: string;
-  
+
   // Основная информация
   purchase_number: string;
   project_name: string | null;
@@ -79,30 +79,31 @@ export interface Tender {
   template_id: string | null; // шаблон этапов (ФЗ-44, ЗМО и т.д.)
   customer: string;
   city: string | null;
-  platform: string | null; // электронная площадка
+  platform: string | null; // электронная площадка (текст для совместимости)
+  platform_id: string | null; // ID площадки из справочника
   eis_url: string | null; // ссылка на ЕИС
   currency: string; // валюта (RUB, USD, EUR)
-  
+
   // Финансы (в копейках)
   nmck: number; // начальная максимальная цена контракта
   our_price: number | null;
   contract_price: number | null;
   application_security: number | null; // обеспечение заявки
   contract_security: number | null; // обеспечение контракта
-  
+
   // Просчёт тендера
   purchase_cost: number | null; // закупка
   logistics_cost: number | null; // логистика
   bid_price: number | null; // цена для торгов
   other_costs: number | null; // прочие затраты
   planned_profit: number | null; // планируемая прибыль
-  
+
   // Даты
   submission_deadline: string;
   auction_date: string | null;
   results_date: string | null;
   review_date: string | null;
-  
+
   // Риски
   delivery_days_tz: number | null; // срок поставки по ТЗ (дней)
   delivery_days_actual: number | null; // фактические сроки поставки (дней)
@@ -113,7 +114,7 @@ export interface Tender {
   penalties: string | null; // штрафы
   customer_check: string | null; // проверка заказчика
   supplier_check: string | null; // проверка поставщика
-  
+
   // Обратить внимание
   is_defense_order: boolean | null; // гособорон заказ
   national_regime: string | null; // нац. режим
@@ -124,36 +125,36 @@ export interface Tender {
   contract_duration: string | null; // срок действия контракта
   clarification_requests: string | null; // запросы на разъяснения
   other_notes: string | null; // другое
-  
+
   // Результат
   legal_entity_id: string | null; // юр. лицо
   show_to_investors: boolean; // показать тендер инвесторам
-  
+
   // Ответственные
   manager_id: string | null; // менеджер
   specialist_id: string | null; // тендерный специалист
   investor_id: string | null; // инвестор
   executor_id: string | null; // ответственный за реализацию
-  
+
   // Статус и этап
   stage_id: string;
   status: TenderStatus;
-  
+
   // Метаданные
   comment: string | null;
   tags: string[] | null;
   metadata: Record<string, unknown>;
-  
+
   // Информация о победителе (для этапа "Проиграли")
   winner_inn: string | null;
   winner_name: string | null;
   winner_price: number | null; // в копейках
-  
+
   // Временные метки
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
-  
+
   // Joined data (опционально при запросах с JOIN)
   stage?: TenderStage;
   type?: TenderType;
@@ -164,6 +165,8 @@ export interface Tender {
   executor?: UserProfile;
   creator?: UserProfile;
   responsible?: Array<{ employee: UserProfile }>; // Множественные ответственные из tender_responsible
+  last_comment?: { content: string; created_at: string };
+  next_task?: { title: string; due_date: string };
 }
 
 export interface UserProfile {
@@ -182,14 +185,40 @@ export interface TenderStageHistory {
   changed_by: string;
   comment: string | null;
   created_at: string;
-  
+
   // Joined data
   from_stage?: TenderStage;
   to_stage?: TenderStage;
   changed_by_user?: UserProfile;
 }
 
-export type AttachmentDocumentType = 
+export interface TenderFieldHistory {
+  id: string;
+  tender_id: string;
+  field_name: string;
+  old_value: string | null;
+  new_value: string | null;
+  changed_by: string;
+  created_at: string;
+
+  // Joined data
+  changed_by_user?: UserProfile;
+}
+
+export interface TenderTask {
+  id: string;
+  tender_id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  priority: string;
+  due_date: string | null;
+  assigned_to: string | null;
+  created_by: string;
+  created_at: string;
+}
+
+export type AttachmentDocumentType =
   | 'application' // заявка
   | 'contract' // договор
   | 'protocol' // протокол
@@ -208,7 +237,7 @@ export interface TenderAttachment {
   metadata: Record<string, unknown>;
   created_at: string;
   deleted_at: string | null;
-  
+
   // Joined data
   uploader?: UserProfile;
 }
@@ -223,7 +252,7 @@ export interface TenderComment {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
-  
+
   // Joined data
   author?: UserProfile;
   replies?: TenderComment[];
@@ -234,14 +263,14 @@ export interface TenderComment {
 
 export interface CreateTenderInput {
   company_id: string;
-  
+
   // Обязательные поля
   purchase_number: string;
   subject: string;
   customer: string;
   nmck: number;
   submission_deadline: string;
-  
+
   // Опциональные поля
   stage_id?: string; // Опционально, определяется автоматически на основе template_id
   project_name?: string;
@@ -355,7 +384,7 @@ export function kopecksToRubles(kopecks: number): number {
  */
 export function formatCurrency(kopecks: number | null | undefined, currency: string = 'RUB'): string {
   if (kopecks === null || kopecks === undefined) return '—';
-  
+
   const rubles = kopecksToRubles(kopecks);
   return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
@@ -406,7 +435,7 @@ export function daysUntilDeadline(deadline: string): number {
  */
 export function getDeadlineUrgency(deadline: string): 'urgent' | 'warning' | 'normal' | 'passed' {
   if (isDeadlinePassed(deadline)) return 'passed';
-  
+
   const days = daysUntilDeadline(deadline);
   if (days <= 1) return 'urgent';
   if (days <= 3) return 'warning';

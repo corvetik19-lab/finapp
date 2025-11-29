@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createRSCClient, createRouteClient } from "@/lib/supabase/helpers";
+import { getCurrentCompanyId } from "@/lib/platform/organization";
 
 export type PlanSelectItem = {
   id: string;
@@ -109,7 +110,8 @@ type SupabaseClientLike =
 
 async function queryPlansForSelect(
   client: SupabaseClientLike,
-  params: ListPlansForSelectParams = {}
+  params: ListPlansForSelectParams = {},
+  companyId?: string | null
 ): Promise<PlanSelectItem[]> {
   const { limit = 20, search, ids } = params;
 
@@ -119,6 +121,10 @@ async function queryPlansForSelect(
     .from("plans")
     .select("*")
     .order("updated_at", { ascending: false });
+
+  if (companyId) {
+    query = query.eq("company_id", companyId);
+  }
 
   if (ids && ids.length > 0) {
     query = query.in("id", ids).limit(ids.length);
@@ -164,14 +170,16 @@ export async function listPlansForSelect(
   params: ListPlansForSelectParams = {}
 ): Promise<PlanSelectItem[]> {
   const supabase = await createRSCClient();
-  return queryPlansForSelect(supabase, params);
+  const companyId = await getCurrentCompanyId();
+  return queryPlansForSelect(supabase, params, companyId);
 }
 
 export async function listPlansForSelectRoute(
   params: ListPlansForSelectParams = {}
 ): Promise<PlanSelectItem[]> {
   const supabase = await createRouteClient();
-  return queryPlansForSelect(supabase, params);
+  const companyId = await getCurrentCompanyId();
+  return queryPlansForSelect(supabase, params, companyId);
 }
 
 export type PlanActivityItem = {
@@ -308,7 +316,9 @@ export async function listPlansWithActivity(): Promise<PlanWithActivity[]> {
     return [];
   }
 
-  const { data, error } = await supabase
+  const companyId = await getCurrentCompanyId();
+
+  let query = supabase
     .from("plans")
     .select(
       `
@@ -336,6 +346,12 @@ export async function listPlansWithActivity(): Promise<PlanWithActivity[]> {
     )
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
+
+  if (companyId) {
+    query = query.eq("company_id", companyId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("listPlansWithActivity", error);

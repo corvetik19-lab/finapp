@@ -96,11 +96,27 @@ export function ShipmentsManager({ initialShipments }: ShipmentsManagerProps) {
           <div className={styles.statIcon}>⏰</div>
           <div className={styles.statInfo}>
             <div className={styles.statValue}>
-              {shipments.filter(s => ['draft', 'confirmed'].includes(s.status)).length}
+              {shipments.filter(s => ['draft', 'confirmed', 'pending_pickup'].includes(s.status)).length}
             </div>
             <div className={styles.statLabel}>В ожидании</div>
           </div>
         </div>
+      </div>
+
+      {/* Быстрые действия */}
+      <div className={styles.quickActions}>
+        <button className={styles.quickActionBtn} onClick={() => setIsModalOpen(true)}>
+          <span className="material-icons">add_circle</span>
+          Новая отправка
+        </button>
+        <button className={styles.quickActionBtn}>
+          <span className="material-icons">file_download</span>
+          Экспорт
+        </button>
+        <button className={styles.quickActionBtn}>
+          <span className="material-icons">print</span>
+          Печать накладных
+        </button>
       </div>
 
       {/* Таблица */}

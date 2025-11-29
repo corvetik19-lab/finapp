@@ -10,6 +10,12 @@ import type { EISTenderData } from '@/lib/tenders/eis-mock-data';
 import { useToast } from '@/components/toast/ToastContext';
 import styles from './tender-form-modal.module.css';
 
+interface Platform {
+  id: string;
+  name: string;
+  short_name: string | null;
+}
+
 interface TenderFormModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -18,6 +24,7 @@ interface TenderFormModalProps {
   types: TenderType[];
   templates?: TenderStageTemplate[]; // Шаблоны этапов
   managers?: Array<{ id: string; full_name: string; role?: string }>;
+  platforms?: Platform[]; // Справочник площадок
   tender?: Tender | null; // Для режима редактирования
   eisData?: EISTenderData | null; // Данные из ЕИС для автозаполнения
   mode?: 'create' | 'edit';
@@ -31,6 +38,7 @@ export function TenderFormModal({
   types,
   templates = [],
   managers = [],
+  platforms = [],
   tender = null,
   eisData = null,
   mode = 'create',
@@ -78,6 +86,7 @@ export function TenderFormModal({
         type_id: tender.type_id || undefined,
         city: tender.city || undefined,
         platform: tender.platform || undefined,
+        platform_id: tender.platform_id || undefined,
         our_price: tender.our_price ? tender.our_price / 100 : undefined, // копейки -> рубли
         contract_price: tender.contract_price ? tender.contract_price / 100 : undefined, // копейки -> рубли
         application_security: tender.application_security ? tender.application_security / 100 : undefined, // копейки -> рубли
@@ -92,6 +101,13 @@ export function TenderFormModal({
         comment: tender.comment || undefined,
         tags: tender.tags || undefined,
       });
+      
+      // Устанавливаем выбранный шаблон
+      if (tender.template_id) {
+        setSelectedTemplateId(tender.template_id);
+      } else {
+        setSelectedTemplateId('system');
+      }
     } else if (mode === 'create' && eisData && isOpen) {
       // Автозаполнение данными из ЕИС
       const typeId = types.find(t => 
@@ -151,12 +167,28 @@ export function TenderFormModal({
       return newMethods;
     });
     
-    // Автовыбор шаблона для ЗМО
+    // Автовыбор шаблона в зависимости от типа закупки
     if (selectedType?.name === 'ЗМО') {
       const zmoTemplate = templates.find(t => t.name === 'ЗМО');
       if (zmoTemplate) {
         setSelectedTemplateId(prev => {
           if (prev !== zmoTemplate.id) return zmoTemplate.id;
+          return prev;
+        });
+        setIsTemplateLockedByType(prev => {
+          if (prev !== true) return true;
+          return prev;
+        });
+      }
+    } else if (selectedType?.name === 'ФЗ-44' || selectedType?.name === 'ФЗ-223') {
+      // Ищем шаблон по точному имени или по вхождению (для надежности)
+      const systemTemplate = templates.find(t => 
+        t.name === 'Системный (ФЗ-44/223)' || 
+        (t.is_system && t.name.includes('ФЗ-44/223'))
+      );
+      if (systemTemplate) {
+        setSelectedTemplateId(prev => {
+          if (prev !== systemTemplate.id) return systemTemplate.id;
           return prev;
         });
         setIsTemplateLockedByType(prev => {
@@ -218,6 +250,10 @@ export function TenderFormModal({
         contract_security: data.contract_security ? Math.round(data.contract_security * 100) : undefined,
         // Добавляем список ответственных (фильтруем пустые значения)
         responsible_ids: responsibleIds.filter(id => id !== ''),
+        // Преобразуем пустые строки в undefined для дат и опциональных полей
+        auction_date: data.auction_date || undefined,
+        results_date: data.results_date || undefined,
+        review_date: data.review_date || undefined,
         // Преобразуем пустые строки в undefined только для опциональных foreign key полей
         investor_id: data.investor_id || undefined,
         executor_id: data.executor_id || undefined,
@@ -225,9 +261,10 @@ export function TenderFormModal({
         template_id: selectedTemplateId || undefined,
       };
 
-      // Удаляем undefined значения из payload
+      // Удаляем undefined значения и пустые строки из payload для дат
       Object.keys(payload).forEach(key => {
-        if (payload[key as keyof typeof payload] === undefined) {
+        const value = payload[key as keyof typeof payload];
+        if (value === undefined || value === '') {
           delete payload[key as keyof typeof payload];
         }
       });
@@ -481,12 +518,26 @@ export function TenderFormModal({
                     <label className={styles.label}>
                       Электронная площадка
                     </label>
-                    <input
-                      type="text"
-                      {...register('platform')}
-                      className={styles.input}
-                      placeholder="РТС-тендер, ЭТП ГПБ и т.д."
-                    />
+                    {platforms.length > 0 ? (
+                      <select
+                        {...register('platform_id')}
+                        className={styles.select}
+                      >
+                        <option value="">Выберите площадку</option>
+                        {platforms.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        {...register('platform')}
+                        className={styles.input}
+                        placeholder="РТС-тендер, ЭТП ГПБ и т.д."
+                      />
+                    )}
                   </div>
                 </div>
               </div>

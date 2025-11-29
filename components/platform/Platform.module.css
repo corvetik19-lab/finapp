@@ -1,3 +1,50 @@
+/* Impersonation Banner */
+.impersonationBanner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 101;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  padding: 8px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.impersonationBanner .material-icons {
+  font-size: 20px;
+}
+
+.impersonationExitButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-left: 16px;
+}
+
+.impersonationExitButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.impersonationExitButton .material-icons {
+  font-size: 16px;
+}
+
 /* Platform Header */
 .platformHeader {
   position: fixed;
@@ -8,6 +55,11 @@
   background: var(--surface-primary);
   border-bottom: 1px solid var(--border-primary);
   height: 64px;
+}
+
+/* Offset header when impersonation banner is shown */
+.platformHeader.withBanner {
+  top: 40px;
 }
 
 .headerContainer {
@@ -120,9 +172,86 @@
   color: var(--text-primary);
 }
 
+/* Finance Quick Access Button */
+.financeButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.financeButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  color: white;
+}
+
+.financeButton .material-icons {
+  font-size: 20px;
+}
+
+.financeButtonText {
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .financeButton {
+    padding: 8px 12px;
+  }
+  
+  .financeButtonText {
+    display: none;
+  }
+}
+
+/* Admin Button for Organization Admins */
+.adminButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.adminButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  color: white;
+}
+
+.adminButton .material-icons {
+  font-size: 20px;
+}
+
+@media (max-width: 768px) {
+  .adminButton {
+    padding: 8px 12px;
+  }
+}
+
 /* Mode Switcher */
 .modeSwitcher {
   position: relative;
+  z-index: 201;
 }
 
 .modeSwitcherButton {
@@ -143,6 +272,17 @@
   border-color: var(--border-hover);
 }
 
+.modeSwitcherStatic {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
 .modeNameDesktop {
   font-weight: 500;
   display: block;
@@ -157,21 +297,21 @@
 .modeSwitcherOverlay {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: 9998;
   background: rgba(0, 0, 0, 0.1);
 }
 
 .modeSwitcherDropdown {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
+  position: fixed;
+  top: 72px;
+  left: 120px;
   min-width: 380px;
   max-width: 480px;
   background: var(--surface-primary);
   border: 1px solid var(--border-primary);
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  z-index: 50;
+  z-index: 9999;
   overflow: hidden;
 }
 

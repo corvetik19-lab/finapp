@@ -1,4 +1,5 @@
 import { createRSCClient } from "@/lib/supabase/helpers";
+import { getCurrentCompanyId } from "@/lib/platform/organization";
 
 export type UpcomingPaymentRecord = {
   id: string;
@@ -15,13 +16,14 @@ export type UpcomingPaymentRecord = {
 
 export async function loadUpcomingPayments(limit = 10): Promise<UpcomingPaymentRecord[]> {
   const supabase = await createRSCClient();
+  const companyId = await getCurrentCompanyId();
   // Use local midnight converted to UTC, so we include all of "today" in user's local timezone
   const todayStartLocal = new Date();
   todayStartLocal.setHours(0, 0, 0, 0);
   const todayStartUtcIso = todayStartLocal.toISOString();
 
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from("upcoming_payments")
       .select(`
         id,name,due_date,amount_minor,currency,account_name,account_id,direction,status,paid_at,paid_transaction_id,
@@ -31,6 +33,12 @@ export async function loadUpcomingPayments(limit = 10): Promise<UpcomingPaymentR
       .gte("due_date", todayStartUtcIso)
       .order("due_date", { ascending: true })
       .limit(limit);
+
+    if (companyId) {
+      query = query.eq("company_id", companyId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.warn("loadUpcomingPayments", error);

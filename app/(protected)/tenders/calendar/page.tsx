@@ -1,89 +1,71 @@
-'use client';
+import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
+import { createRSCClient } from '@/lib/supabase/helpers';
+import { getCalendarData } from '@/lib/tenders/calendar-service';
+import TenderCalendarClient from '@/components/tenders/calendar/TenderCalendarClient';
 
-import { useState, useEffect, useCallback } from 'react';
-import { TenderCalendar } from '@/components/tenders/TenderCalendar';
-import { DayEventsModal } from '@/components/tenders/DayEventsModal';
-import type { Tender } from '@/lib/tenders/types';
-import styles from '../tenders.module.css';
+export const dynamic = 'force-dynamic';
 
-interface CalendarEvent {
-  id: string;
-  date: Date;
-  type: 'submission' | 'results' | 'deadline' | 'task';
-  tender?: Tender;
-  title: string;
-  description?: string;
+function LoadingState() {
+  return (
+    <div style={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      minHeight: '400px' 
+    }}>
+      <div style={{
+        width: '48px',
+        height: '48px',
+        border: '4px solid #e2e8f0',
+        borderTopColor: '#667eea',
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite',
+      }} />
+    </div>
+  );
 }
 
-export default function TenderCalendarPage() {
-  const [tenders, setTenders] = useState<Tender[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedEvents, setSelectedEvents] = useState<CalendarEvent[]>([]);
-  const [showModal, setShowModal] = useState(false);
+export default async function TenderCalendarPage() {
+  const supabase = await createRSCClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const companyId = '74b4c286-ca75-4eb4-9353-4db3d177c939';
+  if (!user) {
+    redirect('/login');
+  }
 
-  const loadTenders = useCallback(async () => {
-    try {
-      setLoading(true);
-      
-      const response = await fetch(
-        `/api/tenders?company_id=${companyId}&limit=1000`
-      );
-      if (!response.ok) throw new Error('Failed');
-      
-      const data = await response.json();
-      setTenders(data || []);
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [companyId]);
+  // Получаем company_id пользователя
+  const { data: profiles } = await supabase
+    .from('company_members')
+    .select('company_id')
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .order('joined_at', { ascending: false })
+    .limit(1);
 
-  useEffect(() => {
-    loadTenders();
-  }, [loadTenders]);
+  const profile = profiles?.[0];
+  const companyId = profile?.company_id;
 
-  const handleDateClick = (date: Date, events: CalendarEvent[]) => {
-    setSelectedDate(date);
-    setSelectedEvents(events);
-    setShowModal(true);
-  };
-
-  if (loading) {
+  if (!companyId) {
     return (
-      <div className={styles.tendersContainer}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3rem 0' }}>
-          <div style={{ fontSize: '2rem' }}>⏳ Загрузка...</div>
-        </div>
+      <div style={{ padding: '48px', textAlign: 'center', color: '#64748b' }}>
+        <h2>Компания не найдена</h2>
+        <p>Пожалуйста, выберите или создайте компанию в настройках.</p>
       </div>
     );
   }
 
+  // Загружаем данные календаря
+  const calendarData = await getCalendarData({ companyId });
+
   return (
-    <div className={styles.tendersContainer}>
-      {/* Header */}
-      <div className={styles.pageHeader}>
-        <div>
-          <h1 className={styles.pageTitle}>Календарь тендеров</h1>
-          <p className={styles.pageDescription}>
-            Все важные даты и события по тендерам
-          </p>
-        </div>
-      </div>
-
-      {/* Calendar */}
-      <TenderCalendar tenders={tenders} onDateClick={handleDateClick} />
-
-      {/* Day Events Modal */}
-      <DayEventsModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        date={selectedDate}
-        events={selectedEvents}
+    <Suspense fallback={<LoadingState />}>
+      <TenderCalendarClient 
+        initialData={calendarData} 
+        companyId={companyId} 
       />
-    </div>
+    </Suspense>
   );
 }

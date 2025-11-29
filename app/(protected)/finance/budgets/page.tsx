@@ -6,25 +6,33 @@ import { createBudget } from "./actions";
 import BudgetsList from "@/components/budgets/BudgetsList";
 import BudgetForm from "@/components/budgets/BudgetForm";
 import SavingsDistribution from "@/components/budgets/SavingsDistribution";
+import { getCurrentCompanyId } from "@/lib/platform/organization";
 
 // Делаем страницу динамической
 export const dynamic = 'force-dynamic';
 
 export default async function BudgetsPage() {
   const supabase = await createRSCClient();
+  const companyId = await getCurrentCompanyId();
 
   // Загружаем категории доходов, расходов и "both" (доход+расход)
-  const { data: categoriesRaw } = await supabase
+  let categoriesQuery = supabase
     .from("categories")
     .select("id,name,kind")
     .in("kind", ["income", "expense", "both"])
     .order("kind", { ascending: false })
     .order("name", { ascending: true });
 
+  if (companyId) {
+    categoriesQuery = categoriesQuery.eq("company_id", companyId);
+  }
+
+  const { data: categoriesRaw } = await categoriesQuery;
+
   const categories = (categoriesRaw ?? []) as { id: string; name: string; kind: "income" | "expense" | "transfer" | "both" }[];
 
   // Загружаем кредитные карты (карты с лимитом)
-  const { data: accountsRaw } = await supabase
+  let accountsQuery = supabase
     .from("accounts")
     .select("id,name,type")
     .eq("type", "card")
@@ -33,16 +41,28 @@ export default async function BudgetsPage() {
     .is("deleted_at", null)
     .order("name", { ascending: true });
 
+  if (companyId) {
+    accountsQuery = accountsQuery.eq("company_id", companyId);
+  }
+
+  const { data: accountsRaw } = await accountsQuery;
+
   const creditCards = (accountsRaw ?? []) as { id: string; name: string; type: string }[];
 
   // Загружаем дебетовые карты для распределения экономии с балансами
-  const { data: debitAccountsRaw, error: debitError } = await supabase
+  let debitAccountsQuery = supabase
     .from("accounts")
     .select("id,name,type,credit_limit,balance")
     .eq("type", "card")
     .eq("archived", false)
     .is("deleted_at", null)
     .order("name", { ascending: true });
+
+  if (companyId) {
+    debitAccountsQuery = debitAccountsQuery.eq("company_id", companyId);
+  }
+
+  const { data: debitAccountsRaw, error: debitError } = await debitAccountsQuery;
 
   if (debitError) {
     console.error("Error loading debit cards:", debitError);

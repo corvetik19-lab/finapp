@@ -45,28 +45,38 @@ export function TenderInfoTab({ tender, types, templates = [], employees = [], o
     setAvailableMethods(newMethods);
   }, [formData.type_id, types]);
 
-  // Автоматический выбор шаблона при изменении типа
-  useEffect(() => {
-    if (!formData.type_id) {
-      // Если тип не выбран, устанавливаем системный и блокируем
-      setSelectedTemplateId('system');
-      setIsTemplateLockedByType(true);
-      return;
-    }
-
-    const selectedType = types.find(t => t.id === formData.type_id);
-    const zmoTemplate = templates.find(t => t.name === 'ЗМО');
-
-    // Автовыбор шаблона для ЗМО
-    if (selectedType?.name === 'ЗМО' && zmoTemplate) {
-      setSelectedTemplateId(prev => prev !== zmoTemplate.id ? zmoTemplate.id : prev);
-      setIsTemplateLockedByType(true);
-    } else {
-      // Для остальных типов выбираем системный шаблон и блокируем
-      setSelectedTemplateId('system');
-      setIsTemplateLockedByType(true);
-    }
-  }, [formData.type_id, types, templates]);
+    // Автоматический выбор шаблона при изменении типа
+    useEffect(() => {
+      if (!formData.type_id) {
+        // Если тип не выбран, разблокируем выбор
+        setIsTemplateLockedByType(false);
+        return;
+      }
+  
+      const selectedType = types.find(t => t.id === formData.type_id);
+      
+      // Автовыбор шаблона для ЗМО
+      if (selectedType?.name === 'ЗМО') {
+        const zmoTemplate = templates.find(t => t.name === 'ЗМО');
+        if (zmoTemplate) {
+          setSelectedTemplateId(prev => prev !== zmoTemplate.id ? zmoTemplate.id : prev);
+          setIsTemplateLockedByType(true);
+        }
+      } else if (selectedType?.name === 'ФЗ-44' || selectedType?.name === 'ФЗ-223') {
+        // Автовыбор для ФЗ-44/223
+        const systemTemplate = templates.find(t => 
+          t.name === 'Системный (ФЗ-44/223)' || 
+          (t.is_system && t.name.includes('ФЗ-44/223'))
+        );
+        if (systemTemplate) {
+          setSelectedTemplateId(prev => prev !== systemTemplate.id ? systemTemplate.id : prev);
+          setIsTemplateLockedByType(true);
+        }
+      } else {
+        // Для остальных типов разрешаем ручной выбор
+        setIsTemplateLockedByType(false);
+      }
+    }, [formData.type_id, types, templates]);
 
   const getRoleLabel = (role?: string | null) => {
     if (!role) return null;
@@ -248,7 +258,7 @@ export function TenderInfoTab({ tender, types, templates = [], employees = [], o
               >
                 <option value="system">🔧 Системный шаблон</option>
                 {templates
-                  .filter(t => t.name === 'ЗМО' && t.is_active)
+                  .filter(t => t.is_active)
                   .map((template) => (
                     <option key={template.id} value={template.id}>
                       {template.icon} {template.name}

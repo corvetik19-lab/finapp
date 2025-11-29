@@ -1,16 +1,16 @@
 import { ReactNode } from "react";
-import SettingsNav from "@/components/settings/SettingsNav";
+import AdminSettingsNav from "@/components/settings/AdminSettingsNav";
 import styles from "./settings-layout.module.css";
 
-export default function SettingsLayout({ children }: { children: ReactNode }) {
+export default function AdminSettingsLayout({ children }: { children: ReactNode }) {
   return (
     <div className={styles.container}>
       <div className={styles.sidebar}>
         <div className={styles.header}>
-          <h1 className={styles.title}>Настройки</h1>
-          <p className={styles.subtitle}>Управление приложением и организацией</p>
+          <h1 className={styles.title}>Админ настройки</h1>
+          <p className={styles.subtitle}>Управление платформой</p>
         </div>
-        <SettingsNav />
+        <AdminSettingsNav />
       </div>
       <div className={styles.content}>
         {children}

@@ -2,6 +2,7 @@
 
 import { createRouteClient } from "@/lib/supabase/helpers";
 import type { ProductItem, ProductItemInput, ProductItemUpdate } from "@/types/product-item";
+import { getCurrentCompanyId } from "@/lib/platform/organization";
 
 /**
  * Получить все активные товары пользователя
@@ -19,6 +20,8 @@ export async function getProductItems(
     throw new Error("Пользователь не авторизован");
   }
 
+  const companyId = await getCurrentCompanyId();
+
   let query = supabase
     .from("product_items")
     .select(`
@@ -30,6 +33,10 @@ export async function getProductItems(
       )
     `)
     .eq("user_id", user.id);
+
+  if (companyId) {
+    query = query.eq("company_id", companyId);
+  }
 
   if (activeOnly) {
     query = query.eq("is_active", true);
@@ -81,7 +88,9 @@ export async function searchProductItems(
     throw new Error("Пользователь не авторизован");
   }
 
-  const { data, error } = await supabase
+  const companyId = await getCurrentCompanyId();
+
+  let dbQuery = supabase
     .from("product_items")
     .select(`
       *,
@@ -96,6 +105,12 @@ export async function searchProductItems(
     .ilike("name", `%${query}%`)
     .order("name", { ascending: true })
     .limit(50); // Увеличиваем лимит для фильтрации на клиенте
+
+  if (companyId) {
+    dbQuery = dbQuery.eq("company_id", companyId);
+  }
+
+  const { data, error } = await dbQuery;
 
   if (error) {
     console.error("Error searching product items:", error);
@@ -137,10 +152,13 @@ export async function createProductItem(input: ProductItemInput): Promise<Produc
     throw new Error("Пользователь не авторизован");
   }
 
+  const companyId = await getCurrentCompanyId();
+
   const { data, error } = await supabase
     .from("product_items")
     .insert({
       user_id: user.id,
+      company_id: companyId,
       name: input.name,
       default_unit: input.default_unit,
       default_price_per_unit: input.default_price_per_unit || null,

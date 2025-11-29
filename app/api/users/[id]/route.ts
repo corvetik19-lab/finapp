@@ -12,10 +12,34 @@ export async function PATCH(
     const { email, password, full_name } = body;
 
     const supabase = await createRouteClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
 
-    if (authError || !user) {
+    if (authError || !currentUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Получаем профили для проверки ролей
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('global_role')
+      .eq('id', currentUser.id)
+      .single();
+
+    const { data: targetProfile } = await supabase
+      .from('profiles')
+      .select('global_role')
+      .eq('id', id)
+      .single();
+
+    // Защита иерархии:
+    // 1. Только супер-админ может редактировать других супер-админов
+    if (targetProfile?.global_role === 'super_admin') {
+      if (currentProfile?.global_role !== 'super_admin') {
+        return NextResponse.json(
+          { error: "Only Super Admin can modify other Super Admins" },
+          { status: 403 }
+        );
+      }
     }
 
     // Используем Admin API для обновления пользователя
@@ -99,18 +123,43 @@ export async function DELETE(
   try {
     const { id } = await params;
     const supabase = await createRouteClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
 
-    if (authError || !user) {
+    if (authError || !currentUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Нельзя удалить самого себя
-    if (user.id === id) {
+    if (currentUser.id === id) {
       return NextResponse.json(
         { error: "Cannot delete yourself" },
         { status: 400 }
       );
+    }
+
+    // Получаем профили для проверки ролей
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('global_role')
+      .eq('id', currentUser.id)
+      .single();
+
+    const { data: targetProfile } = await supabase
+      .from('profiles')
+      .select('global_role')
+      .eq('id', id)
+      .single();
+
+    // Защита иерархии:
+    // 1. Супер-админа удалить нельзя (или только другим супер-админом)
+    // Требование: "админ ... кроме удаления самого суперадмина"
+    if (targetProfile?.global_role === 'super_admin') {
+      if (currentProfile?.global_role !== 'super_admin') {
+        return NextResponse.json(
+          { error: "Only Super Admin can delete Super Admins" },
+          { status: 403 }
+        );
+      }
     }
 
     // Используем Admin API для удаления пользователя
@@ -150,3 +199,4 @@ export async function DELETE(
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+

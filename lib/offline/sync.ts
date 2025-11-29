@@ -57,7 +57,6 @@ class SyncService {
       return { success: 0, failed: 0 };
     }
 
-    this.isSyncing = true;
     let successCount = 0;
     let failedCount = 0;
 
@@ -68,6 +67,9 @@ class SyncService {
         console.log("[Sync] No pending operations");
         return { success: 0, failed: 0 };
       }
+
+      // Устанавливаем флаг синхронизации только если есть операции
+      this.isSyncing = true;
 
       console.log(`[Sync] Syncing ${operations.length} operations...`);
 

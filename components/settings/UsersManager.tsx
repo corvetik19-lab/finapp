@@ -53,6 +53,10 @@ export default function UsersManager({ users: initialUsers, roles }: UsersManage
     role_id: "",
   });
 
+  // Состояние для показа/скрытия пароля
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
+  const [showEditPassword, setShowEditPassword] = useState(false);
+
   const handleCreateUser = async () => {
     if (!createForm.email.trim() || !createForm.password.trim()) {
       alert("Email и пароль обязательны");
@@ -382,13 +386,25 @@ export default function UsersManager({ users: initialUsers, roles }: UsersManage
 
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Пароль *</label>
-                <input
-                  type="password"
-                  className={styles.formInput}
-                  value={createForm.password}
-                  onChange={e => setCreateForm({ ...createForm, password: e.target.value })}
-                  placeholder="Минимум 6 символов"
-                />
+                <div className={styles.passwordWrapper}>
+                  <input
+                    type={showCreatePassword ? "text" : "password"}
+                    className={styles.formInput}
+                    value={createForm.password}
+                    onChange={e => setCreateForm({ ...createForm, password: e.target.value })}
+                    placeholder="Минимум 6 символов"
+                  />
+                  <button
+                    type="button"
+                    className={styles.passwordToggle}
+                    onClick={() => setShowCreatePassword(!showCreatePassword)}
+                    title={showCreatePassword ? "Скрыть пароль" : "Показать пароль"}
+                  >
+                    <span className="material-icons">
+                      {showCreatePassword ? "visibility_off" : "visibility"}
+                    </span>
+                  </button>
+                </div>
               </div>
 
               <div className={styles.formGroup}>
@@ -467,13 +483,25 @@ export default function UsersManager({ users: initialUsers, roles }: UsersManage
 
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Новый пароль (оставьте пустым, чтобы не менять)</label>
-                <input
-                  type="password"
-                  className={styles.formInput}
-                  value={editForm.password}
-                  onChange={e => setEditForm({ ...editForm, password: e.target.value })}
-                  placeholder="Минимум 6 символов"
-                />
+                <div className={styles.passwordWrapper}>
+                  <input
+                    type={showEditPassword ? "text" : "password"}
+                    className={styles.formInput}
+                    value={editForm.password}
+                    onChange={e => setEditForm({ ...editForm, password: e.target.value })}
+                    placeholder="Минимум 6 символов"
+                  />
+                  <button
+                    type="button"
+                    className={styles.passwordToggle}
+                    onClick={() => setShowEditPassword(!showEditPassword)}
+                    title={showEditPassword ? "Скрыть пароль" : "Показать пароль"}
+                  >
+                    <span className="material-icons">
+                      {showEditPassword ? "visibility_off" : "visibility"}
+                    </span>
+                  </button>
+                </div>
               </div>
 
               <div className={styles.formGroup}>

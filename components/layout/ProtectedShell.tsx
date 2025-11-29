@@ -1,29 +1,77 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import OnboardingTour from "@/components/onboarding/OnboardingTour";
 import TourWrapper from "@/components/onboarding/TourWrapper";
 import ModeSidebar from "@/components/platform/ModeSidebar";
 import styles from "./ProtectedShell.module.css";
 
+type ActiveOrgInfo = {
+  companyId: string;
+  companyName: string;
+  organizationName: string;
+} | null;
+
 type ProtectedShellProps = {
   children: React.ReactNode;
+  activeOrganization?: ActiveOrgInfo;
 };
 
-export default function ProtectedShell({ children }: ProtectedShellProps) {
+export default function ProtectedShell({ children, activeOrganization }: ProtectedShellProps) {
   const pathname = usePathname();
   const isAiChatPage = pathname === "/ai-chat";
+  const [isExiting, setIsExiting] = useState(false);
+
+  const handleExitOrganization = async () => {
+    if (isExiting) return;
+    if (!confirm('Выйти из организации и вернуться к своим данным?')) return;
+
+    setIsExiting(true);
+    try {
+      const res = await fetch('/api/organizations/exit-active', { method: 'POST' });
+      if (res.ok) {
+        // Перезагрузка текущей страницы
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Error exiting organization:', error);
+      setIsExiting(false);
+    }
+  };
   
   return (
     <TourWrapper>
       <NotificationProvider>
         <OnboardingTour />
         <div className={styles.root}>
-        {/* Mode-specific Sidebar - единственный sidebar */}
+        {/* Mode-specific Sidebar */}
         <ModeSidebar />
         
         <div className={styles.content}>
+          {/* Banner for active organization */}
+          {activeOrganization && (
+            <div className={styles.orgBanner}>
+              <div className={styles.orgBannerContent}>
+                <span className={styles.orgBannerIcon}>🏢</span>
+                <span className={styles.orgBannerLabel}>Работаете от имени:</span>
+                <span className={styles.orgBannerName}>{activeOrganization.organizationName}</span>
+              </div>
+              <button 
+                className={styles.orgBannerButton}
+                onClick={handleExitOrganization}
+                disabled={isExiting}
+              >
+                {isExiting ? '⏳' : (
+                  <>
+                    <span className="material-icons">logout</span>
+                    <span>Выйти</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
           <main className={isAiChatPage ? styles.mainNoScroll : styles.main}>
             {children}
           </main>

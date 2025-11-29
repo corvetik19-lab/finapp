@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createRSCClient } from '@/lib/supabase/helpers';
 import { getTenderStages, getTenderTypes } from '@/lib/tenders/service';
+import { getPlatforms } from '@/lib/dictionaries/platforms-service';
 import { TenderDepartmentClient } from './tender-department-client';
 
 export default async function TenderDepartmentPage() {
@@ -14,18 +15,27 @@ export default async function TenderDepartmentPage() {
   }
 
   // Получаем company_id пользователя
-  const { data: profile } = await supabase
+  const { data: profiles } = await supabase
     .from('company_members')
     .select('company_id')
     .eq('user_id', user.id)
     .eq('status', 'active')
-    .single();
+    .order('joined_at', { ascending: false })
+    .limit(1);
+  
+  const profile = profiles?.[0];
 
   const companyId = profile?.company_id || null;
 
-  // Загружаем этапы тендерного отдела и типы (только из настроек компании)
-  const { data: stages } = await getTenderStages(companyId);
-  const { data: types } = await getTenderTypes(companyId);
+  // Загружаем этапы тендерного отдела, типы и площадки
+  const [stagesResult, typesResult, platforms] = await Promise.all([
+    getTenderStages(companyId),
+    getTenderTypes(companyId),
+    getPlatforms({ is_active: true }),
+  ]);
+  
+  const stages = stagesResult.data;
+  const types = typesResult.data;
   
   // Включаем этапы тендерного отдела и архивные этапы
   const allStages = stages?.filter((s) => s.category === 'tender_dept' || s.category === 'archive') || [];
@@ -39,7 +49,12 @@ export default async function TenderDepartmentPage() {
 
   return (
     <div className="h-full">
-      <TenderDepartmentClient stages={departmentStages} types={types || []} />
+      <TenderDepartmentClient 
+        stages={departmentStages} 
+        types={types || []} 
+        companyId={companyId || ''} 
+        platforms={platforms}
+      />
     </div>
   );
 }

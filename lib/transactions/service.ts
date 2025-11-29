@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createRSCClient, createRouteClient } from "@/lib/supabase/helpers";
 import { transactionSchema, transferSchema, type TransferInput as TransferInputSchemaType } from "@/lib/validation/transaction";
+import { getCurrentCompanyId } from "@/lib/platform/organization";
 
 export type TransactionDirection = "income" | "expense" | "transfer";
 
@@ -285,6 +286,7 @@ export async function listTransactions(
   opts: { withCount?: boolean } = {}
 ): Promise<{ data: TransactionRecord[]; count?: number | null }> {
   const supabase = await createRSCClient();
+  const companyId = await getCurrentCompanyId();
   const {
     limit = 100,
     offset = 0,
@@ -310,6 +312,11 @@ export async function listTransactions(
     .select(selectColumns, selectOptions)
     .order(orderBy, { ascending: orderDir === "asc" })
     .range(offset, offset + limit - 1);
+
+  // Фильтруем по company_id
+  if (companyId) {
+    query = query.eq("company_id", companyId);
+  }
 
   if (direction && direction !== "all") {
     query = query.eq("direction", direction);
@@ -431,6 +438,7 @@ export type InsertTransactionInput = z.infer<typeof transactionSchema>;
 
 export async function createTransaction(input: InsertTransactionInput): Promise<TransactionRecord> {
   const supabase = await createRouteClient();
+  const companyId = await getCurrentCompanyId();
   const {
     data: { user },
     error: authError,
@@ -449,6 +457,7 @@ export async function createTransaction(input: InsertTransactionInput): Promise<
     occurred_at: parsed.occurred_at ? normalizeOccurredAt(parsed.occurred_at) : new Date().toISOString(),
     note: parsed.note ?? null,
     counterparty: parsed.counterparty ?? null,
+    company_id: companyId,
   };
 
   // Получаем информацию о счёте для определения типа

@@ -24,9 +24,27 @@ export async function getEmployees(
 ) {
   const supabase = await createClient();
   
+  // Get list of super_admin user IDs to exclude from employees list
+  const { data: superAdmins } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('global_role', 'super_admin');
+  
+  const superAdminIds = new Set((superAdmins || []).map(sa => sa.id));
+  
+  // Подгружаем связанную роль из таблицы roles
   let query = supabase
     .from('employees')
-    .select('*', { count: 'exact' })
+    .select(`
+      *,
+      role_data:roles!employees_role_id_fkey(
+        id,
+        name,
+        description,
+        color,
+        permissions
+      )
+    `, { count: 'exact' })
     .eq('company_id', companyId)
     .is('deleted_at', null);
   
@@ -73,10 +91,41 @@ export async function getEmployees(
     console.error('Error fetching employees:', result.error);
     throw new Error(result.error.message);
   }
+
+  // Filter out super admins from the list (server-side filtering)
+  const filteredData = (result.data || []).filter((emp: { user_id?: string }) => 
+    !emp.user_id || !superAdminIds.has(emp.user_id)
+  );
+
+  // Подсчёт тендеров для каждого сотрудника
+  const employeeIds = filteredData.map((e: { id: string }) => e.id);
+  
+  let tendersCountMap: Record<string, number> = {};
+  
+  if (employeeIds.length > 0) {
+    const { data: tenderCounts } = await supabase
+      .from('tenders')
+      .select('responsible_id')
+      .in('responsible_id', employeeIds)
+      .is('deleted_at', null);
+    
+    if (tenderCounts) {
+      tendersCountMap = tenderCounts.reduce((acc: Record<string, number>, t: { responsible_id: string }) => {
+        acc[t.responsible_id] = (acc[t.responsible_id] || 0) + 1;
+        return acc;
+      }, {});
+    }
+  }
+
+  // Добавляем tenders_count к каждому сотруднику
+  const employeesWithTenders = filteredData.map((emp: Employee) => ({
+    ...emp,
+    tenders_count: tendersCountMap[emp.id] || 0,
+  }));
   
   return {
-    data: result.data as Employee[],
-    count: result.count || 0,
+    data: employeesWithTenders,
+    count: filteredData.length,
     page,
     limit,
   };
@@ -88,9 +137,19 @@ export async function getEmployees(
 export async function getEmployeeById(id: string) {
   const supabase = await createClient();
   
+  // Подгружаем данные роли
   const result = await supabase
     .from('employees')
-    .select('*')
+    .select(`
+      *,
+      role_data:roles!employees_role_id_fkey(
+        id,
+        name,
+        description,
+        color,
+        permissions
+      )
+    `)
     .eq('id', id)
     .is('deleted_at', null)
     .single();
@@ -100,7 +159,54 @@ export async function getEmployeeById(id: string) {
     throw new Error(result.error.message);
   }
   
-  return result.data as Employee;
+  return result.data as Employee & { role_data?: { id: string; name: string; description: string; color: string; permissions: string[] } };
+}
+
+/**
+ * Получить статистику сотрудника по тендерам
+ */
+export async function getEmployeeTenderStats(employeeId: string) {
+  const supabase = await createClient();
+  
+  // Получаем тендеры, назначенные на сотрудника
+  const { data: tenders, error } = await supabase
+    .from('tenders')
+    .select('id, status, nmck')
+    .eq('responsible_id', employeeId)
+    .is('deleted_at', null);
+  
+  if (error) {
+    console.error('Error fetching employee tender stats:', error);
+    return {
+      total: 0,
+      won: 0,
+      lost: 0,
+      in_progress: 0,
+      success_rate: 0,
+      total_nmck: 0,
+      won_nmck: 0
+    };
+  }
+  
+  const total = tenders?.length || 0;
+  const won = tenders?.filter(t => t.status === 'won').length || 0;
+  const lost = tenders?.filter(t => t.status === 'lost').length || 0;
+  const in_progress = tenders?.filter(t => ['draft', 'preparation', 'submitted', 'consideration'].includes(t.status)).length || 0;
+  const completed = won + lost;
+  const success_rate = completed > 0 ? Math.round((won / completed) * 100) : 0;
+  
+  const total_nmck = tenders?.reduce((sum, t) => sum + (t.nmck || 0), 0) || 0;
+  const won_nmck = tenders?.filter(t => t.status === 'won').reduce((sum, t) => sum + (t.nmck || 0), 0) || 0;
+  
+  return {
+    total,
+    won,
+    lost,
+    in_progress,
+    success_rate,
+    total_nmck,
+    won_nmck
+  };
 }
 
 /**
@@ -204,16 +310,52 @@ export async function deleteEmployee(id: string) {
 export async function getEmployeesStats(companyId: string): Promise<EmployeeStats> {
   const supabase = await createClient();
   
-  const result = await supabase.rpc('get_employees_stats', {
-    p_company_id: companyId,
-  });
+  // Получаем всех сотрудников для подсчёта статистики
+  const result = await supabase
+    .from('employees')
+    .select('status, department, role, role_id')
+    .eq('company_id', companyId)
+    .is('deleted_at', null);
   
   if (result.error) {
     console.error('Error fetching employees stats:', result.error);
     throw new Error(result.error.message);
   }
   
-  return result.data[0] as EmployeeStats;
+  const employees = result.data || [];
+  
+  // Подсчёт по статусам
+  const by_status: Record<string, number> = {};
+  employees.forEach(e => {
+    const status = e.status || 'active';
+    by_status[status] = (by_status[status] || 0) + 1;
+  });
+  
+  // Подсчёт по отделам
+  const by_department: Record<string, number> = {};
+  employees.forEach(e => {
+    if (e.department) {
+      by_department[e.department] = (by_department[e.department] || 0) + 1;
+    }
+  });
+  
+  // Подсчёт по ролям
+  const by_role: Record<string, number> = {};
+  employees.forEach(e => {
+    const role = e.role_id || e.role || 'viewer';
+    by_role[role] = (by_role[role] || 0) + 1;
+  });
+  
+  return {
+    total: employees.length,
+    total_count: employees.length,
+    active_count: by_status['active'] || 0,
+    inactive_count: by_status['inactive'] || 0,
+    on_vacation_count: by_status['vacation'] || 0,
+    by_status,
+    by_department,
+    by_role,
+  };
 }
 
 /**

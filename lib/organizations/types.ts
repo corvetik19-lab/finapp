@@ -1,16 +1,22 @@
 // Типы для организационной структуры
 
+export type AppMode = 'finance' | 'tenders' | 'personal' | 'investments';
+
 export interface Organization {
   id: string;
   name: string;
+  slug?: string; // Добавлено для совместимости
   description: string | null;
   logo_url: string | null;
   website: string | null;
   settings: OrganizationSettings;
+  allowed_modes: AppMode[]; 
   contact_email: string | null;
   contact_phone: string | null;
   address: Address | null;
   status: 'active' | 'suspended' | 'archived';
+  is_active: boolean; // Добавлено (из миграции)
+  subscription_plan?: string; // Добавлено (в миграции subscription_plan)
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -94,6 +100,7 @@ export interface CompanyMember {
 }
 
 export interface MemberPermissions {
+  allowed_modes?: AppMode[]; // НОВОЕ
   tenders: {
     create: boolean;
     read: boolean;
@@ -126,21 +133,25 @@ export interface CompanyInvitation {
 // Helper функции для прав доступа
 export const DEFAULT_PERMISSIONS: Record<CompanyRole, MemberPermissions> = {
   admin: {
+    allowed_modes: ['finance', 'tenders', 'personal', 'investments'],
     tenders: { create: true, read: true, update: true, delete: true },
     reports: { view: true, export: true },
     settings: { manage: true },
   },
   manager: {
+    allowed_modes: ['tenders'],
     tenders: { create: true, read: true, update: true, delete: true },
     reports: { view: true, export: true },
     settings: { manage: false },
   },
   specialist: {
+    allowed_modes: ['tenders'],
     tenders: { create: false, read: true, update: true, delete: false },
     reports: { view: true, export: false },
     settings: { manage: false },
   },
   viewer: {
+    allowed_modes: ['tenders'],
     tenders: { create: false, read: true, update: false, delete: false },
     reports: { view: true, export: false },
     settings: { manage: false },

@@ -1,15 +1,21 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import type { TenderStageHistory, TenderStage } from '@/lib/tenders/types';
+import { formatCurrency } from '@/lib/tenders/types';
+import type { TenderStageHistory, TenderFieldHistory, TenderStage } from '@/lib/tenders/types';
+import styles from './tender-history.module.css';
 
 interface TenderHistoryProps {
   tenderId: string;
   stages: TenderStage[];
 }
 
+type HistoryItem =
+  | (TenderStageHistory & { type: 'stage_change' })
+  | (TenderFieldHistory & { type: 'field_change' });
+
 export function TenderHistory({ tenderId, stages }: TenderHistoryProps) {
-  const [history, setHistory] = useState<TenderStageHistory[]>([]);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,7 +26,8 @@ export function TenderHistory({ tenderId, stages }: TenderHistoryProps) {
 
       const response = await fetch(`/api/tenders/${tenderId}/history`);
       if (!response.ok) {
-        throw new Error('Ошибка загрузки истории');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Ошибка загрузки истории');
       }
 
       const data = await response.json();
@@ -53,31 +60,56 @@ export function TenderHistory({ tenderId, stages }: TenderHistoryProps) {
     });
   };
 
+  const getFieldName = (field: string) => {
+    const map: Record<string, string> = {
+      status: 'Статус',
+      nmck: 'НМЦК',
+      submission_deadline: 'Дата подачи',
+      manager_id: 'Менеджер',
+      stage_id: 'Этап',
+    };
+    return map[field] || field;
+  };
+
+  const formatFieldValue = (field: string, value: string | null) => {
+    if (!value || value === 'null') return '—';
+    if (field === 'nmck') return formatCurrency(Number(value));
+    if (field === 'submission_deadline') return formatDate(value);
+    if (field === 'status') {
+      const statusMap: Record<string, string> = {
+        active: 'Активен',
+        won: 'Выигран',
+        lost: 'Проигран',
+        archived: 'В архиве',
+      };
+      return statusMap[value] || value;
+    }
+    return value;
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className={styles.centerState}>
+        <div className={styles.spinner}></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center py-12">
-        <div className="text-red-600 mb-2">⚠️ Ошибка</div>
-        <p className="text-gray-600">{error}</p>
+      <div className={styles.centerState}>
+        <div className={styles.errorTitle}>⚠️ Ошибка</div>
+        <p className={styles.emptyText}>{error}</p>
       </div>
     );
   }
 
   if (history.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="text-6xl mb-4">📋</div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          История пуста
-        </h3>
-        <p className="text-gray-600">
+      <div className={styles.centerState}>
+        <div className={styles.emptyIcon}>📋</div>
+        <h3 className={styles.emptyTitle}>История пуста</h3>
+        <p className={styles.emptyText}>
           Изменения этапов тендера будут отображаться здесь
         </p>
       </div>
@@ -85,51 +117,83 @@ export function TenderHistory({ tenderId, stages }: TenderHistoryProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className={styles.container}>
       {history.map((item, index) => (
-        <div
-          key={item.id}
-          className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-        >
-          <div className="flex items-start gap-4">
+        <div key={item.id} className={styles.card}>
+          <div className={styles.itemLayout}>
             {/* Timeline indicator */}
-            <div className="flex flex-col items-center">
-              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                <span className="material-icons text-blue-600 text-xl">
-                  swap_horiz
+            <div className={styles.timelineColumn}>
+              <div className={`${styles.timelineIcon} ${item.type === 'stage_change' ? styles.iconStage : styles.iconField}`}>
+                <span className="material-icons">
+                  {item.type === 'stage_change' ? 'swap_horiz' : 'edit'}
                 </span>
               </div>
               {index < history.length - 1 && (
-                <div className="w-0.5 h-full bg-gray-200 mt-2"></div>
+                <div className={styles.timelineLine}></div>
               )}
             </div>
 
             {/* Content */}
-            <div className="flex-1">
-              <div className="flex items-start justify-between mb-2">
+            <div className={styles.contentColumn}>
+              <div className={styles.header}>
                 <div>
-                  <h4 className="font-semibold text-gray-900">
-                    Изменение этапа
+                  <h4 className={styles.title}>
+                    {item.type === 'stage_change'
+                      ? 'Смена этапа'
+                      : `Изменение поля "${getFieldName('field_name' in item ? item.field_name : '')}"`}
                   </h4>
-                  <p className="text-sm text-gray-600">
-                    {formatDate(item.created_at)}
-                  </p>
+                  <div className={styles.meta}>
+                    <span className={styles.date}>{formatDate(item.created_at)}</span>
+                    <div className={styles.userInfo}>
+                      <div className={styles.avatar}>
+                        {item.changed_by_user?.avatar_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={item.changed_by_user.avatar_url}
+                            alt=""
+                            className={styles.avatar}
+                          />
+                        ) : (
+                          item.changed_by_user?.full_name?.[0] || '?'
+                        )}
+                      </div>
+                      <span className={styles.userName}>
+                        {item.changed_by_user?.full_name || 'Пользователь'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 mb-2">
-                <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
-                  {getStageName(item.from_stage_id)}
-                </span>
-                <span className="material-icons text-gray-400">arrow_forward</span>
-                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                  {getStageName(item.to_stage_id)}
-                </span>
-              </div>
+              {item.type === 'stage_change' ? (
+                <div className={styles.stageChangeBlock}>
+                  <span className={styles.stageTag}>
+                    {getStageName((item as TenderStageHistory).from_stage_id)}
+                  </span>
+                  <span className={`material-icons ${styles.arrowIcon}`}>arrow_forward</span>
+                  <span className={`${styles.stageTag} ${styles.stageTagNew}`}>
+                    {getStageName((item as TenderStageHistory).to_stage_id)}
+                  </span>
+                </div>
+              ) : (
+                'field_name' in item && (
+                  <div className={styles.fieldChangeBlock}>
+                    <span className={styles.oldValue}>
+                      {formatFieldValue(item.field_name, item.old_value)}
+                    </span>
+                    <span className={`material-icons ${styles.arrowIcon}`}>arrow_forward</span>
+                    <span className={styles.newValue}>
+                      {formatFieldValue(item.field_name, item.new_value)}
+                    </span>
+                  </div>
+                )
+              )}
 
-              {item.comment && (
-                <div className="mt-2 p-3 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-gray-700">{item.comment}</p>
+              {item.type === 'stage_change' && (item as TenderStageHistory).comment && (
+                <div className={styles.commentBlock}>
+                  <p className={styles.commentText}>
+                    &quot;{(item as TenderStageHistory).comment}&quot;
+                  </p>
                 </div>
               )}
             </div>

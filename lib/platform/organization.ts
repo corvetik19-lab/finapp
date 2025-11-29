@@ -1,250 +1,235 @@
-/**
- * Organization helpers для работы с мультитенантностью
+﻿/**
+ * Organization helpers    
  */
 
-import { createRouteClient } from "@/lib/supabase/server";
-
-export interface Organization {
-  id: string;
-  name: string;
-  slug: string;
-  owner_id: string;
-  settings: Record<string, unknown>;
-  subscription_plan: string;
-  subscription_tier?: string; // Alias для subscription_plan
-  created_at: string;
-  updated_at: string;
-}
-
-export interface OrganizationMember {
-  id: string;
-  org_id: string;
-  user_id: string;
-  role: 'owner' | 'admin' | 'member' | 'viewer';
-  permissions: Record<string, unknown>;
-  created_at: string;
-}
-
-export interface OrganizationModeSettings {
-  id: string;
-  org_id: string;
-  mode_key: string;
-  is_enabled: boolean;
-  settings: Record<string, unknown>;
-}
+import { createRouteClient, getCachedUser } from "@/lib/supabase/server";
+import { AppMode, Organization, MemberPermissions } from "@/lib/organizations/types";
+import { cache } from "react";
 
 /**
- * Получить текущую организацию пользователя
+ *    
  */
-export async function getCurrentOrganization(): Promise<Organization | null> {
+export const getCurrentOrganization = cache(async (): Promise<Organization | null> => {
+  const { data: { user } } = await getCachedUser();
+  if (!user) {
+    return null;
+  }
+
   const supabase = await createRouteClient();
-  
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
 
-  // Получаем первую организацию пользователя
+  //    
   const { data: membership } = await supabase
-    .from('organization_members')
-    .select('org_id')
+    .from('company_members')
+    .select('company_id')
     .eq('user_id', user.id)
-    .order('created_at', { ascending: true })
+    .eq('status', 'active')
     .limit(1)
     .single();
 
-  if (!membership) return null;
+  if (!membership) {
+    return null;
+  }
 
-  const { data: org } = await supabase
-    .from('organizations')
-    .select('*')
-    .eq('id', membership.org_id)
+  //    
+  const { data: company } = await supabase
+    .from('companies')
+    .select('organization:organizations(*)')
+    .eq('id', membership.company_id)
     .single();
 
-  if (org) {
-    // Добавляем subscription_tier как alias для subscription_plan
-    org.subscription_tier = org.subscription_plan;
+  if (!company || !company.organization) {
+    return null;
+  }
+
+  //    Organization (casting as unknown needed because of join structure)
+  const org = company.organization as unknown as Organization;
+  
+  // ,  allowed_modes  
+  if (!Array.isArray(org.allowed_modes)) {
+    org.allowed_modes = [];
   }
 
   return org;
-}
+});
 
 /**
- * Получить все организации пользователя
+ *  ID   
  */
-export async function getUserOrganizations(): Promise<Organization[]> {
-  const supabase = await createRouteClient();
-  
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  const { data: memberships } = await supabase
-    .from('organization_members')
-    .select('org_id')
-    .eq('user_id', user.id);
-
-  if (!memberships || memberships.length === 0) return [];
-
-  const orgIds = memberships.map(m => m.org_id);
-  
-  const { data: orgs } = await supabase
-    .from('organizations')
-    .select('*')
-    .in('id', orgIds)
-    .order('created_at', { ascending: true });
-
-  return orgs || [];
-}
-
-/**
- * Получить роль пользователя в организации
- */
-export async function getUserRole(orgId: string): Promise<string | null> {
-  const supabase = await createRouteClient();
-  
-  const { data: { user } } = await supabase.auth.getUser();
+export const getCurrentCompanyId = cache(async (): Promise<string | null> => {
+  const { data: { user } } = await getCachedUser();
   if (!user) return null;
 
-  const { data: membership } = await supabase
-    .from('organization_members')
-    .select('role')
-    .eq('org_id', orgId)
+  const supabase = await createRouteClient();
+
+  //   active_company_id   ( -    )
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('active_company_id, global_role')
+    .eq('id', user.id)
+    .single();
+
+  //  -     -  
+  if (profile?.active_company_id && profile?.global_role === 'super_admin') {
+    return profile.active_company_id;
+  }
+
+  //  -  active_company_id -    (System Company)
+  if (profile?.global_role === 'super_admin') {
+    // Ищем системную организацию по описанию
+    const { data: systemOrg } = await supabase
+      .from('organizations')
+      .select('id')
+      .ilike('description', '%системная организация супер-администратора%')
+      .limit(1)
+      .single();
+
+    if (systemOrg) {
+      const { data: systemCompany } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('organization_id', systemOrg.id)
+        .limit(1)
+        .single();
+
+      return systemCompany?.id || null;
+    }
+  }
+
+  //     
+  const { data: memberships } = await supabase
+    .from('company_members')
+    .select('company_id')
     .eq('user_id', user.id)
-    .single();
+    .eq('status', 'active')
+    .order('joined_at', { ascending: false })
+    .limit(1);
 
-  return membership?.role || null;
-}
-
-/**
- * Проверить, является ли пользователь владельцем организации
- */
-export async function isOrganizationOwner(orgId: string): Promise<boolean> {
-  const supabase = await createRouteClient();
-  
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return false;
-
-  const { data: org } = await supabase
-    .from('organizations')
-    .select('owner_id')
-    .eq('id', orgId)
-    .single();
-
-  return org?.owner_id === user.id;
-}
+  return memberships?.[0]?.company_id || null;
+});
 
 /**
- * Проверить, является ли пользователь админом или владельцем
+ *      ( -)
+ *  null     
  */
-export async function isOrganizationAdmin(orgId: string): Promise<boolean> {
-  const role = await getUserRole(orgId);
-  return role === 'owner' || role === 'admin';
-}
+export const getActiveOrganizationInfo = cache(async (): Promise<{
+  companyId: string;
+  companyName: string;
+  organizationName: string;
+} | null> => {
+  const { data: { user } } = await getCachedUser();
+  if (!user) return null;
 
-/**
- * Получить настройки режима для организации
- */
-export async function getModeSetting(
-  orgId: string,
-  modeKey: string
-): Promise<OrganizationModeSettings | null> {
   const supabase = await createRouteClient();
 
-  const { data } = await supabase
-    .from('organization_mode_settings')
-    .select('*')
-    .eq('org_id', orgId)
-    .eq('mode_key', modeKey)
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('active_company_id, global_role')
+    .eq('id', user.id)
     .single();
 
-  return data;
-}
+  if (!profile?.active_company_id || profile?.global_role !== 'super_admin') {
+    return null;
+  }
+
+  const { data: company } = await supabase
+    .from('companies')
+    .select('id, name, organization:organizations(name)')
+    .eq('id', profile.active_company_id)
+    .single();
+
+  if (!company) return null;
+
+  const org = company.organization as unknown as { name: string };
+
+  return {
+    companyId: company.id,
+    companyName: company.name,
+    organizationName: org?.name || ''
+  };
+});
+
 
 /**
- * Получить все настройки режимов для организации
- */
-export async function getAllModeSettings(
-  orgId: string
-): Promise<OrganizationModeSettings[]> {
-  const supabase = await createRouteClient();
-
-  const { data } = await supabase
-    .from('organization_mode_settings')
-    .select('*')
-    .eq('org_id', orgId)
-    .order('mode_key');
-
-  return data || [];
-}
-
-/**
- * Проверить, включён ли режим для организации
+ * ,     
  */
 export async function isModeEnabled(
   orgId: string,
-  modeKey: string
+  modeKey: AppMode
 ): Promise<boolean> {
-  const setting = await getModeSetting(orgId, modeKey);
-  return setting?.is_enabled ?? false;
+  const supabase = await createRouteClient();
+
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('allowed_modes')
+    .eq('id', orgId)
+    .single();
+
+  if (!org || !org.allowed_modes) return false;
+  
+  return (org.allowed_modes as string[]).includes(modeKey);
 }
 
 /**
- * Создать новую организацию
+ *     
  */
-export async function createOrganization(
-  name: string,
-  slug: string
-): Promise<Organization | null> {
-  const supabase = await createRouteClient();
-  
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+export async function hasUserModeAccess(mode: AppMode): Promise<boolean> {
+  const { data: { user } } = await getCachedUser();
+  if (!user) {
+    return false;
+  }
 
-  // Создаём организацию
-  const { data: org, error } = await supabase
-    .from('organizations')
-    .insert({
-      name,
-      slug,
-      owner_id: user.id,
-    })
-    .select()
+  const supabase = await createRouteClient();
+
+  // 1.  -
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('global_role')
+    .eq('id', user.id)
     .single();
 
-  if (error || !org) return null;
+  if (profileError) {
+    console.error('hasUserModeAccess: Profile fetch error', profileError);
+  }
 
-  // Добавляем пользователя как владельца
-  await supabase
-    .from('organization_members')
-    .insert({
-      org_id: org.id,
-      user_id: user.id,
-      role: 'owner',
-    });
+  if (profile?.global_role === 'super_admin') {
+    return true;
+  }
 
-  // Создаём дефолтные настройки режимов
-  await supabase
-    .from('organization_mode_settings')
-    .insert([
-      {
-        org_id: org.id,
-        mode_key: 'finance',
-        is_enabled: true,
-      },
-      {
-        org_id: org.id,
-        mode_key: 'investments',
-        is_enabled: false,
-      },
-      {
-        org_id: org.id,
-        mode_key: 'personal',
-        is_enabled: false,
-      },
-      {
-        org_id: org.id,
-        mode_key: 'tenders',
-        is_enabled: false,
-      },
-    ]);
+  const org = await getCurrentOrganization();
+  if (!org) {
+    return false;
+  }
 
-  return org;
+  // ,     
+  //       -
+  if (!org.allowed_modes?.includes(mode)) {
+    return false;
+  }
+
+  // 3.     company_members
+  const { data: member } = await supabase
+    .from('company_members')
+    .select('role, permissions')
+    .eq('user_id', user.id)
+    //    company_id,      
+    //      (  getCurrentOrganization)
+    .eq('status', 'active')
+    .limit(1)
+    .single();
+
+  if (!member) {
+    return false;
+  }
+
+  //        
+  if (member.role === 'admin') {
+    return true;
+  }
+
+  //  permissions
+  const permissions = member.permissions as unknown as MemberPermissions;
+  const allowedModes = permissions?.allowed_modes;
+  const hasAccess = allowedModes?.includes(mode) || false;
+  
+  return hasAccess;
 }

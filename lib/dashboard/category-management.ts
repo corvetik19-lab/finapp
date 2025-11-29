@@ -1,4 +1,5 @@
 import { createRSCClient } from "@/lib/supabase/helpers";
+import { getCurrentCompanyId } from "@/lib/platform/organization";
 
 const MS_IN_DAY = 24 * 60 * 60 * 1000;
 
@@ -138,7 +139,9 @@ export async function loadCategorySummary(params: CategorySummaryParams = {}): P
   const limit = params.limit ?? 6;
 
   const supabase = await createRSCClient();
-  const { data, error } = await supabase
+  const companyId = await getCurrentCompanyId();
+
+  let query = supabase
     .from("transactions")
     .select("amount,currency,direction,occurred_at,category:categories(id,name,kind)")
     .gte("occurred_at", from)
@@ -146,6 +149,12 @@ export async function loadCategorySummary(params: CategorySummaryParams = {}): P
     .not("category_id", "is", null)
     .order("occurred_at", { ascending: false })
     .limit(2000);
+
+  if (companyId) {
+    query = query.eq("company_id", companyId);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
 

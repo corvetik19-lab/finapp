@@ -14,6 +14,7 @@ import ImportCsvTrigger from "@/components/transactions/ImportCsvTrigger";
 import ExportCsvButton from "@/components/transactions/ExportCsvButton";
 import ClientPaginatedList from "@/components/transactions/ClientPaginatedList";
 import { type Txn as GroupTxn } from "@/components/transactions/TransactionsGroupedList";
+import { getCurrentCompanyId } from "@/lib/platform/organization";
 
 type Account = { id: string; name: string; currency: string; balance: number; type: string; credit_limit: number | null };
 type Category = { id: string; name: string; kind: "income" | "expense" | "transfer" | "both" };
@@ -30,23 +31,34 @@ export default async function TransactionsPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const supabase = await createRSCClient();
+  const companyId = await getCurrentCompanyId();
 
   // Загружаем счета (карты, наличные и т.д.)
-  // RLS автоматически фильтрует по текущему пользователю
-  const { data: accountsData = [] } = await supabase
+  let accountsQuery = supabase
     .from("accounts")
     .select("id,name,currency,balance,type,credit_limit")
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
 
+  if (companyId) {
+    accountsQuery = accountsQuery.eq("company_id", companyId);
+  }
+
+  const { data: accountsData = [] } = await accountsQuery;
+
   // Загружаем кредиты
-  // RLS автоматически фильтрует по текущему пользователю
-  const { data: loansData = [] } = await supabase
+  let loansQuery = supabase
     .from("loans")
     .select("id,name,bank,principal_amount,principal_paid,currency")
     .is("deleted_at", null)
     .eq("status", "active")
     .order("created_at", { ascending: true });
+
+  if (companyId) {
+    loansQuery = loansQuery.eq("company_id", companyId);
+  }
+
+  const { data: loansData = [] } = await loansQuery;
 
   // Объединяем счета и кредиты в один массив
   const accounts: Account[] = [
@@ -68,10 +80,16 @@ export default async function TransactionsPage({
     })),
   ];
 
-  const { data: categories = [] } = await supabase
+  let categoriesQuery = supabase
     .from("categories")
     .select("id,name,kind")
     .order("name", { ascending: true });
+
+  if (companyId) {
+    categoriesQuery = categoriesQuery.eq("company_id", companyId);
+  }
+
+  const { data: categories = [] } = await categoriesQuery;
 
   // Parse filters from URL
   const sp = await searchParams;

@@ -28,6 +28,32 @@ export async function POST(req: Request) {
       );
     }
 
+    // ПРОВЕРКА ПРАВ НА НАЗНАЧЕНИЕ РОЛИ
+    // Если указана роль, проверяем, имеет ли право текущий пользователь ее назначить
+    if (role_id) {
+      const { data: roleData } = await supabase
+        .from("roles")
+        .select("name")
+        .eq("id", role_id)
+        .single();
+
+      if (roleData && (roleData.name === 'super_admin' || roleData.name === 'admin')) {
+        // Только super_admin может назначать администраторов
+        const { data: currentProfile } = await supabase
+          .from('profiles')
+          .select('global_role')
+          .eq('id', currentUser.id)
+          .single();
+
+        if (currentProfile?.global_role !== 'super_admin') {
+          return NextResponse.json(
+            { error: "Only Super Admin can create Admin users" },
+            { status: 403 }
+          );
+        }
+      }
+    }
+
     // Используем Admin API для создания пользователя
     // Примечание: Требуется service_role_key в переменных окружения
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -120,3 +146,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+

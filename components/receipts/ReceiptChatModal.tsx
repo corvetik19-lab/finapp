@@ -66,6 +66,7 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null); // Выбранный чек из галереи для удаления после сохранения
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -218,6 +219,7 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
   const handleSelectFromGallery = async (receipt: Receipt) => {
     setShowGallery(false);
     setIsUploading(true);
+    setSelectedReceipt(receipt); // Сохраняем выбранный чек для удаления после сохранения транзакции
     
     const loadingMsg: Message = {
       role: "assistant",
@@ -493,6 +495,23 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
       setMessages((prev) => [...prev, assistantMessage]);
 
       if (data.success) {
+        // Удаляем чек из базы если он был выбран из галереи
+        if (selectedReceipt) {
+          try {
+            await fetch("/api/attachments/delete", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                fileId: selectedReceipt.id,
+                storagePath: selectedReceipt.file_path
+              })
+            });
+            console.log("✅ Чек удалён из базы:", selectedReceipt.file_name);
+          } catch (deleteError) {
+            console.error("Ошибка удаления чека:", deleteError);
+          }
+        }
+        
         // Очищаем localStorage при успешном сохранении
         localStorage.removeItem('receiptChatInput');
         localStorage.removeItem('receiptChatPreview');

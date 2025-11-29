@@ -25,6 +25,20 @@ export default async function SettingsOverviewPage() {
       </div>
 
       <div className={styles.grid}>
+        {/* Подписка */}
+        <div className={styles.card}>
+          <div className={styles.cardIcon} style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
+            <span className="material-icons">card_membership</span>
+          </div>
+          <h3 className={styles.cardTitle}>Подписка</h3>
+          <p className={styles.cardDesc}>
+            Информация о тарифе и сроках
+          </p>
+          <a href="/settings/subscription" className={styles.cardLink}>
+            Подробнее →
+          </a>
+        </div>
+
         {/* Организация */}
         <div className={styles.card}>
           <div className={styles.cardIcon} style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)" }}>

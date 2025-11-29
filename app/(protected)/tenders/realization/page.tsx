@@ -14,12 +14,15 @@ export default async function TenderRealizationPage() {
   }
 
   // Получаем company_id пользователя
-  const { data: profile } = await supabase
+  const { data: profiles } = await supabase
     .from('company_members')
     .select('company_id')
     .eq('user_id', user.id)
     .eq('status', 'active')
-    .single();
+    .order('joined_at', { ascending: false })
+    .limit(1);
+  
+  const profile = profiles?.[0];
 
   const companyId = profile?.company_id || null;
 

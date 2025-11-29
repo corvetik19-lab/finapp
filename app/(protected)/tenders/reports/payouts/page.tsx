@@ -111,8 +111,8 @@ export default function PayoutsReportPage() {
       <div className={styles.pageHeader}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h1 className={styles.pageTitle}>💸 Отчет по выплатам</h1>
-            <p className={styles.pageDescription}>Расходы по категориям</p>
+            <h1 className={styles.pageTitle}>💸 Расходы</h1>
+            <p className={styles.pageDescription}>Выплаты поставщикам, сотрудникам и прочие расходы</p>
           </div>
           <button className={`${styles.btn} ${styles.btnPrimary}`}>
             📥 Экспорт

@@ -34,10 +34,10 @@ export function AddContractModal({ isOpen, onClose, onSelect, companyId }: AddCo
       const stagesData = await stagesResponse.json();
       const allStages = stagesData.data || [];
       
-      // Находим этапы "Договор подписан. Ждём заключения"
+      // Находим этапы "Договор подписан"
       const readyStages = allStages.filter((stage: { name: string; id: string }) => 
-        stage.name === 'Договор подписан. Ждём заключения' || 
-        stage.name === 'ЗМО: Договор подписан. Ждём заключения'
+        stage.name === 'Договор подписан' || 
+        stage.name === 'ЗМО: Договор подписан'
       );
       
       if (readyStages.length === 0) {
@@ -88,7 +88,7 @@ export function AddContractModal({ isOpen, onClose, onSelect, companyId }: AddCo
           <div>
             <h2 className={styles.modalTitle}>Добавить контракт в реализацию</h2>
             <p className={styles.modalSubtitle}>
-              Выберите закупку из этапа &quot;Договор подписан. Ждём заключения&quot;
+              Выберите закупку из этапа &quot;Договор подписан&quot;
             </p>
           </div>
           <button onClick={onClose} className={styles.closeButton} aria-label="Закрыть">
@@ -137,7 +137,7 @@ export function AddContractModal({ isOpen, onClose, onSelect, companyId }: AddCo
               <p>
                 {searchQuery 
                   ? 'По вашему запросу ничего не найдено' 
-                  : 'Нет закупок на этапе "Договор подписан. Ждём заключения"'
+                  : 'Нет закупок на этапе "Договор подписан"'
                 }
               </p>
             </div>

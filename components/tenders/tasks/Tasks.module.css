@@ -1,0 +1,1009 @@
+.container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.titleIcon {
+  font-size: 32px;
+}
+
+.subtitle {
+  color: #64748b;
+  margin: 0;
+  font-size: 15px;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.viewModeButtons {
+  display: flex;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.viewModeBtn {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #64748b;
+  transition: all 0.2s;
+}
+
+.viewModeBtn:hover {
+  color: #1e293b;
+}
+
+.viewModeBtnActive {
+  background: white;
+  color: #667eea;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.createButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.createButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.createButton span {
+  font-size: 18px;
+}
+
+/* Stats Grid */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s;
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.statIcon {
+  font-size: 24px;
+}
+
+.statContent {
+  display: flex;
+  flex-direction: column;
+}
+
+.statValue {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.statLabel {
+  font-size: 12px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statWarning {
+  border-left: 4px solid #f59e0b;
+}
+
+.statInfo {
+  border-left: 4px solid #3b82f6;
+}
+
+.statSuccess {
+  border-left: 4px solid #10b981;
+}
+
+.statDanger {
+  border-left: 4px solid #ef4444;
+}
+
+.statUrgent {
+  border-left: 4px solid #dc2626;
+}
+
+/* Filters */
+.filters {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 250px;
+  max-width: 400px;
+  padding: 10px 16px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.searchIcon {
+  font-size: 16px;
+  color: #94a3b8;
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: #1e293b;
+}
+
+.searchInput::placeholder {
+  color: #94a3b8;
+}
+
+.filterGroup {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filterSelect {
+  padding: 10px 16px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #1e293b;
+  cursor: pointer;
+  min-width: 150px;
+}
+
+.filterSelect:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+/* Task List */
+.taskList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.emptyIcon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.emptyState h3 {
+  font-size: 20px;
+  color: #1e293b;
+  margin: 0 0 8px;
+}
+
+.emptyState p {
+  color: #64748b;
+  margin: 0 0 24px;
+}
+
+/* Task Card */
+.taskCard {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s;
+  overflow: hidden;
+}
+
+.taskCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.taskOverdue {
+  border-left: 4px solid #ef4444;
+  background: linear-gradient(to right, #fef2f2, white);
+}
+
+.taskDueToday {
+  border-left: 4px solid #f59e0b;
+  background: linear-gradient(to right, #fffbeb, white);
+}
+
+.taskMain {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 20px;
+}
+
+.taskCheckbox {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #cbd5e1;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: white;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.taskCheckbox:hover {
+  border-color: #667eea;
+}
+
+.taskCheckboxChecked {
+  background: #10b981;
+  border-color: #10b981;
+}
+
+.taskContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.taskHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.taskTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.taskTitleCompleted {
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
+.taskBadges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.badgeOverdue,
+.badgeToday,
+.badgePriority,
+.badgeStatus {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.badgeOverdue {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.badgeToday {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.badgePriority {
+  color: white;
+}
+
+.badgeStatus {
+  color: white;
+}
+
+.taskDescription {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+.checklistProgress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.checklistBar {
+  flex: 1;
+  max-width: 200px;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.checklistBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.checklistText {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.taskMeta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.taskMetaItem {
+  font-size: 13px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.taskMetaOverdue {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.taskTenderLink {
+  font-size: 13px;
+  color: #667eea;
+  text-decoration: none;
+}
+
+.taskTenderLink:hover {
+  text-decoration: underline;
+}
+
+.taskTags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.taskTag {
+  padding: 2px 8px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.taskActions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.taskActionBtn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #f1f5f9;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.taskActionBtn:hover {
+  background: #e2e8f0;
+}
+
+.taskActionBtnDanger:hover {
+  background: #fef2f2;
+}
+
+/* Task Checklist */
+.taskChecklist {
+  padding: 16px 20px;
+  padding-top: 0;
+  padding-left: 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checklistItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.checklistCheckbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #cbd5e1;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: white;
+  transition: all 0.2s;
+}
+
+.checklistCheckbox:hover {
+  border-color: #667eea;
+}
+
+.checklistCheckboxChecked {
+  background: #10b981;
+  border-color: #10b981;
+}
+
+.checklistTextCompleted {
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
+/* Board View */
+.boardView {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  min-height: 500px;
+}
+
+@media (max-width: 1024px) {
+  .boardView {
+    grid-template-columns: 1fr;
+  }
+}
+
+.boardColumn {
+  background: #f8fafc;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.boardColumnHeader {
+  padding: 16px;
+  background: white;
+  border-top: 4px solid #667eea;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.boardColumnHeader h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  flex: 1;
+}
+
+.boardColumnCount {
+  padding: 2px 8px;
+  background: #e2e8f0;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.boardColumnBody {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.boardCard {
+  background: white;
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s;
+}
+
+.boardCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.boardCardOverdue {
+  border-left: 3px solid #ef4444;
+}
+
+.boardCardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.boardCardPriority {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+.boardCardTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.boardCardDescription {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0 0 8px;
+  line-height: 1.4;
+}
+
+.boardCardProgress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.boardCardProgress span {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.boardCardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.boardCardOverdueText {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.boardCardAssignee {
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: white;
+}
+
+.boardCardActions {
+  padding-top: 8px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.boardCardStatusSelect {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* Drag handle */
+.boardCardDragHandle {
+  color: #94a3b8;
+  font-size: 12px;
+  cursor: grab;
+  padding: 0 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.boardCard:hover .boardCardDragHandle {
+  opacity: 1;
+}
+
+/* Drag and Drop */
+.boardCard[draggable="true"] {
+  cursor: grab;
+}
+
+.boardCard[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.boardCardDragging {
+  opacity: 0.5;
+  transform: rotate(3deg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.dragging {
+  opacity: 0.5;
+}
+
+.boardColumnDragOver {
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.boardColumnDragOver .boardColumnBody {
+  min-height: 100px;
+  border: 2px dashed #667eea;
+  border-radius: 8px;
+}
+
+/* Expand icon for checklist */
+.expandIcon {
+  font-size: 10px;
+  color: #94a3b8;
+  transition: transform 0.2s;
+}
+
+/* Board card checklist */
+.boardCardChecklist {
+  padding: 8px 0;
+  border-top: 1px solid #e2e8f0;
+  margin-top: 8px;
+}
+
+.boardChecklistItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.boardChecklistItem:hover {
+  background: #f8fafc;
+}
+
+.boardChecklistCheckbox {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #cbd5e1;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: white;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.boardChecklistChecked {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-color: #667eea;
+}
+
+.boardChecklistText {
+  font-size: 12px;
+  color: #334155;
+  line-height: 1.3;
+}
+
+.boardChecklistTextDone {
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
+/* Modal */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal {
+  background: white;
+  border-radius: 16px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.modalHeader h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.modalClose {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #f1f5f9;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  color: #64748b;
+  transition: all 0.2s;
+}
+
+.modalClose:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.modalBody {
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formGroup label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.formGroup input,
+.formGroup textarea,
+.formGroup select {
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.formGroup input:focus,
+.formGroup textarea:focus,
+.formGroup select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.formGroup textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 600px) {
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Checklist Editor */
+.checklistEditor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.checklistEditorItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.checklistEditorItem button {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: #ef4444;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.checklistEditorItem button:hover {
+  background: #fef2f2;
+}
+
+.checklistEditorAdd {
+  display: flex;
+  gap: 8px;
+}
+
+.checklistEditorAdd input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.checklistEditorAdd button {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: #667eea;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.checklistEditorAdd button:hover {
+  background: #5a67d8;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+  margin-top: auto;
+}
+
+.btnSecondary,
+.btnPrimary {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btnSecondary {
+  background: #f1f5f9;
+  border: none;
+  color: #64748b;
+}
+
+.btnSecondary:hover {
+  background: #e2e8f0;
+}
+
+.btnPrimary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
+}
+
+.btnPrimary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}

@@ -1,8 +1,12 @@
 import { TenderStageTemplate } from './types';
 
-export async function loadStageTemplates(): Promise<TenderStageTemplate[]> {
+export async function loadStageTemplates(companyId?: string): Promise<TenderStageTemplate[]> {
   try {
-    const response = await fetch('/api/tenders/stage-templates');
+    const url = companyId 
+      ? `/api/tenders/stage-templates?company_id=${companyId}`
+      : '/api/tenders/stage-templates';
+      
+    const response = await fetch(url);
     if (!response.ok) throw new Error('Failed to load templates');
     const result = await response.json();
     return result.data || [];

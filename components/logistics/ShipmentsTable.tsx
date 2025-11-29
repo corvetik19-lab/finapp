@@ -253,14 +253,21 @@ export function ShipmentsTable({ initialShipments }: ShipmentsTableProps) {
                   
                   <td className={styles.actions}>
                     <button
-                      className={styles.actionBtn}
-                      onClick={() => router.push(`/logistics/shipments/${shipment.id}`)}
+                      className={`${styles.actionBtn} ${styles.viewBtn}`}
+                      onClick={() => router.push(`/tenders/logistics/${shipment.id}`)}
                       title="Подробнее"
                     >
                       <span className="material-icons">visibility</span>
                     </button>
                     <button
-                      className={styles.actionBtn}
+                      className={`${styles.actionBtn} ${styles.editBtn}`}
+                      onClick={() => router.push(`/tenders/logistics/${shipment.id}`)}
+                      title="Редактировать"
+                    >
+                      <span className="material-icons">edit</span>
+                    </button>
+                    <button
+                      className={`${styles.actionBtn} ${styles.deleteBtn}`}
                       onClick={() => handleDelete(shipment.id)}
                       title="Удалить"
                     >

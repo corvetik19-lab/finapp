@@ -3,12 +3,12 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { TenderHeader } from '@/components/tenders/tender-header';
 import { TenderDetailTabs } from '@/components/tenders/tender-detail-tabs';
-import type { Tender, TenderType, TenderStageTemplate } from '@/lib/tenders/types';
+import type { Tender, TenderType, TenderStageTemplate, TenderStage } from '@/lib/tenders/types';
 import styles from './tender-detail.module.css';
 
 interface TenderDetailClientProps {
   tender: Tender;
-  stages?: never;
+  stages: TenderStage[];
   types?: TenderType[];
   templates?: TenderStageTemplate[];
   employees?: Array<{ id: string; full_name: string; role?: string }>;
@@ -24,7 +24,7 @@ const ARCHIVED_STAGE_NAMES = [
 
 const normalizeStageName = (name?: string | null) => (name || '').trim().toLowerCase();
 
-export function TenderDetailClient({ tender, types = [], templates = [], employees = [] }: TenderDetailClientProps) {
+export function TenderDetailClient({ tender, stages, types = [], templates = [], employees = [] }: TenderDetailClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromRegistry = searchParams.get('from') === 'registry';
@@ -63,6 +63,7 @@ export function TenderDetailClient({ tender, types = [], templates = [], employe
         <div className={styles.tabsWrapper}>
           <TenderDetailTabs
             tender={tender}
+            stages={stages}
             types={types}
             templates={templates}
             employees={employees}

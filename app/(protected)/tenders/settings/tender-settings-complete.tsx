@@ -695,13 +695,15 @@ function TypesTab({ types, onAdd, onEdit, onDelete }: {
                 )}
               </h3>
               <div className={styles.typeActions}>
-                <button onClick={() => onEdit(type)} className={styles.iconButton} title="Редактировать">
-                  ✏️
-                </button>
                 {!type.is_system && (
-                  <button onClick={() => onDelete(type.id)} className={styles.iconButton} title="Удалить">
-                    🗑️
-                  </button>
+                  <>
+                    <button onClick={() => onEdit(type)} className={styles.iconButton} title="Редактировать">
+                      ✏️
+                    </button>
+                    <button onClick={() => onDelete(type.id)} className={styles.iconButton} title="Удалить">
+                      🗑️
+                    </button>
+                  </>
                 )}
               </div>
             </div>
