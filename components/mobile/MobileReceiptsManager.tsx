@@ -82,21 +82,44 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
         .on(
           'postgres_changes',
           {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'attachments',
+          },
+          (payload) => {
+            console.log('📝 [Mobile] Realtime UPDATE event:', payload);
+            const updatedAttachment = payload.new as Attachment & { user_id: string };
+            
+            // Фильтруем на клиенте по user_id
+            if (updatedAttachment.user_id !== user.id) {
+              console.log('⏭️ [Mobile] Skipping update from different user');
+              return;
+            }
+            
+            console.log('✅ [Mobile] Updating attachment:', updatedAttachment.file_name);
+            setReceipts((prev) => prev.map(r => 
+              r.id === updatedAttachment.id ? updatedAttachment : r
+            ));
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
             event: 'DELETE',
             schema: 'public',
             table: 'attachments',
           },
           (payload) => {
-            console.log('🗑️ Realtime DELETE event:', payload);
+            console.log('🗑️ [Mobile] Realtime DELETE event:', payload);
             const oldAttachment = payload.old as { id: string; user_id: string };
             
             // Фильтруем на клиенте по user_id
             if (oldAttachment.user_id !== user.id) {
-              console.log('⏭️ Skipping delete from different user');
+              console.log('⏭️ [Mobile] Skipping delete from different user');
               return;
             }
             
-            console.log('✅ Removing attachment:', oldAttachment.id);
+            console.log('✅ [Mobile] Removing attachment:', oldAttachment.id);
             setReceipts((prev) => prev.filter(r => r.id !== oldAttachment.id));
           }
         )

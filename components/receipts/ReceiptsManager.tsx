@@ -93,6 +93,29 @@ export default function ReceiptsManager({ initialReceipts }: ReceiptsManagerProp
         .on(
           'postgres_changes',
           {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'attachments',
+          },
+          (payload) => {
+            console.log('📝 [Desktop] Realtime UPDATE event:', payload);
+            const updatedAttachment = payload.new as Attachment & { user_id: string };
+            
+            // Фильтруем на клиенте по user_id
+            if (updatedAttachment.user_id !== user.id) {
+              console.log('⏭️ [Desktop] Skipping update from different user');
+              return;
+            }
+            
+            console.log('✅ [Desktop] Updating attachment:', updatedAttachment.file_name);
+            setReceipts((prev) => prev.map(r => 
+              r.id === updatedAttachment.id ? updatedAttachment : r
+            ));
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
             event: 'DELETE',
             schema: 'public',
             table: 'attachments',
