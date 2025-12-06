@@ -49,7 +49,9 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
 
       // Используем фильтр по user_id на уровне сервера
       const ch = supabase
-        .channel(`receipts-sync-${user.id}`)
+        .channel(`receipts-sync-${user.id}`, {
+          config: { broadcast: { self: true } },
+        })
         .on(
           'postgres_changes',
           {
