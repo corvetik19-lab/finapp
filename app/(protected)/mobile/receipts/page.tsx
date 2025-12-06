@@ -12,6 +12,8 @@ export default async function MobileReceiptsPage() {
   const { data: attachments } = await supabase
     .from('attachments')
     .select('*')
+    // Показываем чеки текущей компании и старые записи без company_id
+    .or(`company_id.is.null`)
     .order('created_at', { ascending: false });
 
   return <MobileReceiptsManager initialReceipts={attachments || []} />;

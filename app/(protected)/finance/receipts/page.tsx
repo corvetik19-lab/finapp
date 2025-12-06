@@ -17,7 +17,8 @@ export default async function ReceiptsPage() {
     .order('created_at', { ascending: false });
 
   if (companyId) {
-    query = query.eq('company_id', companyId);
+    // Показываем чеки текущей компании и старые записи без company_id (до фикса)
+    query = query.or(`company_id.eq.${companyId},company_id.is.null`);
   }
 
   const { data: attachments } = await query;

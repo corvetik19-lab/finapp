@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRSCClient } from '@/lib/supabase/server';
+import { getCurrentCompanyId } from '@/lib/platform/organization';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +33,9 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Компания для фильтрации данных в UI
+    const companyId = await getCurrentCompanyId();
 
     // Получаем данные из FormData
     const formData = await request.formData();
@@ -101,6 +105,7 @@ export async function POST(request: NextRequest) {
           .insert({
             user_id: user.id,
             transaction_id: transactionId || null,
+            company_id: companyId || null,
             file_name: file.name,
             file_size: file.size,
             mime_type: file.type,
