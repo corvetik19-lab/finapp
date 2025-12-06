@@ -45,39 +45,32 @@ export default function ReceiptsManager({ initialReceipts }: ReceiptsManagerProp
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
     // Получаем текущего пользователя и подписываемся на изменения
     const setupRealtimeSubscription = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
         console.log('❌ [Desktop] No user found for Realtime subscription');
-        return;
+        return null;
       }
-
       console.log('🔄 [Desktop] Setting up Realtime subscription for user:', user.id);
 
-      const channel = supabase
-        .channel('attachments-changes-desktop', {
-          config: {
-            broadcast: { self: true },
-          },
-        })
+      // Используем фильтр по user_id на уровне сервера
+      const ch = supabase
+        .channel(`receipts-sync-${user.id}`)
         .on(
           'postgres_changes',
           {
             event: 'INSERT',
             schema: 'public',
             table: 'attachments',
+            filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
             console.log('📥 [Desktop] Realtime INSERT event:', payload);
-            const newAttachment = payload.new as Attachment & { user_id: string };
-            
-            // Фильтруем на клиенте по user_id
-            if (newAttachment.user_id !== user.id) {
-              console.log('⏭️ [Desktop] Skipping attachment from different user');
-              return;
-            }
+            const newAttachment = payload.new as Attachment;
             
             console.log('✅ [Desktop] Adding new attachment:', newAttachment.file_name);
             setReceipts((prev) => {
@@ -96,16 +89,11 @@ export default function ReceiptsManager({ initialReceipts }: ReceiptsManagerProp
             event: 'UPDATE',
             schema: 'public',
             table: 'attachments',
+            filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
             console.log('📝 [Desktop] Realtime UPDATE event:', payload);
-            const updatedAttachment = payload.new as Attachment & { user_id: string };
-            
-            // Фильтруем на клиенте по user_id
-            if (updatedAttachment.user_id !== user.id) {
-              console.log('⏭️ [Desktop] Skipping update from different user');
-              return;
-            }
+            const updatedAttachment = payload.new as Attachment;
             
             console.log('✅ [Desktop] Updating attachment:', updatedAttachment.file_name);
             setReceipts((prev) => prev.map(r => 
@@ -119,16 +107,11 @@ export default function ReceiptsManager({ initialReceipts }: ReceiptsManagerProp
             event: 'DELETE',
             schema: 'public',
             table: 'attachments',
+            filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
             console.log('🗑️ [Desktop] Realtime DELETE event:', payload);
-            const oldAttachment = payload.old as { id: string; user_id: string };
-            
-            // Фильтруем на клиенте по user_id
-            if (oldAttachment.user_id !== user.id) {
-              console.log('⏭️ [Desktop] Skipping delete from different user');
-              return;
-            }
+            const oldAttachment = payload.old as { id: string };
             
             console.log('✅ [Desktop] Removing attachment:', oldAttachment.id);
             setReceipts((prev) => prev.filter(r => r.id !== oldAttachment.id));
@@ -148,10 +131,8 @@ export default function ReceiptsManager({ initialReceipts }: ReceiptsManagerProp
           }
         });
 
-      return channel;
+      return ch;
     };
-
-    let channel: ReturnType<typeof supabase.channel> | null = null;
 
     setupRealtimeSubscription().then((ch) => {
       if (ch) channel = ch;
@@ -159,6 +140,7 @@ export default function ReceiptsManager({ initialReceipts }: ReceiptsManagerProp
 
     return () => {
       if (channel) {
+        console.log('🔌 [Desktop] Removing Realtime channel');
         supabase.removeChannel(channel);
       }
     };

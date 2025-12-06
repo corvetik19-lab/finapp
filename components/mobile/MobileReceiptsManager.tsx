@@ -34,45 +34,39 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
     // Получаем текущего пользователя и подписываемся на изменения
     const setupRealtimeSubscription = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        console.log('❌ No user found for Realtime subscription');
-        return;
+        console.log('❌ [Mobile] No user found for Realtime subscription');
+        return null;
       }
 
-      console.log('🔄 Setting up Realtime subscription for user:', user.id);
+      console.log('🔄 [Mobile] Setting up Realtime subscription for user:', user.id);
 
-      const channel = supabase
-        .channel('attachments-changes', {
-          config: {
-            broadcast: { self: true },
-          },
-        })
+      // Используем фильтр по user_id на уровне сервера
+      const ch = supabase
+        .channel(`receipts-sync-${user.id}`)
         .on(
           'postgres_changes',
           {
             event: 'INSERT',
             schema: 'public',
             table: 'attachments',
+            filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
-            console.log('📥 Realtime INSERT event:', payload);
-            const newAttachment = payload.new as Attachment & { user_id: string };
+            console.log('📥 [Mobile] Realtime INSERT event:', payload);
+            const newAttachment = payload.new as Attachment;
             
-            // Фильтруем на клиенте по user_id
-            if (newAttachment.user_id !== user.id) {
-              console.log('⏭️ Skipping attachment from different user');
-              return;
-            }
-            
-            console.log('✅ Adding new attachment:', newAttachment.file_name);
+            console.log('✅ [Mobile] Adding new attachment:', newAttachment.file_name);
             setReceipts((prev) => {
               // Проверяем что файл еще не добавлен
               if (prev.some(r => r.id === newAttachment.id)) {
-                console.log('⚠️ Attachment already exists, skipping');
+                console.log('⚠️ [Mobile] Attachment already exists, skipping');
                 return prev;
               }
               return [newAttachment, ...prev];
@@ -85,16 +79,11 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
             event: 'UPDATE',
             schema: 'public',
             table: 'attachments',
+            filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
             console.log('📝 [Mobile] Realtime UPDATE event:', payload);
-            const updatedAttachment = payload.new as Attachment & { user_id: string };
-            
-            // Фильтруем на клиенте по user_id
-            if (updatedAttachment.user_id !== user.id) {
-              console.log('⏭️ [Mobile] Skipping update from different user');
-              return;
-            }
+            const updatedAttachment = payload.new as Attachment;
             
             console.log('✅ [Mobile] Updating attachment:', updatedAttachment.file_name);
             setReceipts((prev) => prev.map(r => 
@@ -108,16 +97,11 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
             event: 'DELETE',
             schema: 'public',
             table: 'attachments',
+            filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
             console.log('🗑️ [Mobile] Realtime DELETE event:', payload);
-            const oldAttachment = payload.old as { id: string; user_id: string };
-            
-            // Фильтруем на клиенте по user_id
-            if (oldAttachment.user_id !== user.id) {
-              console.log('⏭️ [Mobile] Skipping delete from different user');
-              return;
-            }
+            const oldAttachment = payload.old as { id: string };
             
             console.log('✅ [Mobile] Removing attachment:', oldAttachment.id);
             setReceipts((prev) => prev.filter(r => r.id !== oldAttachment.id));
@@ -125,22 +109,20 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
         )
         .subscribe((status, err) => {
           if (status === 'SUBSCRIBED') {
-            console.log('✅ Realtime SUBSCRIBED successfully');
+            console.log('✅ [Mobile] Realtime SUBSCRIBED successfully');
           } else if (status === 'CHANNEL_ERROR') {
-            console.error('❌ Realtime CHANNEL_ERROR:', err);
+            console.error('❌ [Mobile] Realtime CHANNEL_ERROR:', err);
           } else if (status === 'TIMED_OUT') {
-            console.error('❌ Realtime TIMED_OUT');
+            console.error('❌ [Mobile] Realtime TIMED_OUT');
           } else if (status === 'CLOSED') {
-            console.log('🔌 Realtime CLOSED');
+            console.log('🔌 [Mobile] Realtime CLOSED');
           } else {
-            console.log('🔄 Realtime status:', status);
+            console.log('🔄 [Mobile] Realtime status:', status);
           }
         });
 
-      return channel;
+      return ch;
     };
-
-    let channel: ReturnType<typeof supabase.channel> | null = null;
 
     setupRealtimeSubscription().then((ch) => {
       if (ch) channel = ch;
@@ -148,6 +130,7 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
 
     return () => {
       if (channel) {
+        console.log('🔌 [Mobile] Removing Realtime channel');
         supabase.removeChannel(channel);
       }
     };
