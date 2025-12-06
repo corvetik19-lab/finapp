@@ -65,58 +65,28 @@ export default function ReceiptsManager({ initialReceipts }: ReceiptsManagerProp
         .on(
           'postgres_changes',
           {
-            event: 'INSERT',
+            event: '*',
             schema: 'public',
             table: 'attachments',
             filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
-            console.log('📥 [Desktop] Realtime INSERT event:', payload);
-            const newAttachment = payload.new as Attachment;
-            
-            console.log('✅ [Desktop] Adding new attachment:', newAttachment.file_name);
-            setReceipts((prev) => {
-              // Проверяем что файл еще не добавлен
-              if (prev.some(r => r.id === newAttachment.id)) {
-                console.log('⚠️ [Desktop] Attachment already exists, skipping');
-                return prev;
-              }
-              return [newAttachment, ...prev];
-            });
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'attachments',
-            filter: `user_id=eq.${user.id}`,
-          },
-          (payload) => {
-            console.log('📝 [Desktop] Realtime UPDATE event:', payload);
-            const updatedAttachment = payload.new as Attachment;
-            
-            console.log('✅ [Desktop] Updating attachment:', updatedAttachment.file_name);
-            setReceipts((prev) => prev.map(r => 
-              r.id === updatedAttachment.id ? updatedAttachment : r
-            ));
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: 'DELETE',
-            schema: 'public',
-            table: 'attachments',
-            filter: `user_id=eq.${user.id}`,
-          },
-          (payload) => {
-            console.log('🗑️ [Desktop] Realtime DELETE event:', payload);
-            const oldAttachment = payload.old as { id: string };
-            
-            console.log('✅ [Desktop] Removing attachment:', oldAttachment.id);
-            setReceipts((prev) => prev.filter(r => r.id !== oldAttachment.id));
+            console.log('🔔 [Desktop] Realtime event:', payload);
+            if (payload.eventType === 'INSERT') {
+              const newAttachment = payload.new as Attachment;
+              setReceipts((prev) => {
+                if (prev.some(r => r.id === newAttachment.id)) return prev;
+                return [newAttachment, ...prev];
+              });
+            } else if (payload.eventType === 'UPDATE') {
+              const updatedAttachment = payload.new as Attachment;
+              setReceipts((prev) => prev.map(r =>
+                r.id === updatedAttachment.id ? updatedAttachment : r
+              ));
+            } else if (payload.eventType === 'DELETE') {
+              const oldAttachment = payload.old as { id: string };
+              setReceipts((prev) => prev.filter(r => r.id !== oldAttachment.id));
+            }
           }
         )
         .subscribe((status, err) => {
