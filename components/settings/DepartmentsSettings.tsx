@@ -1,8 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import styles from "./DepartmentsSettings.module.css";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Pencil, Trash2, Users, UserPlus, Building2, Loader2, Info } from "lucide-react";
 
 interface Employee {
   id: string;
@@ -51,7 +61,6 @@ export default function DepartmentsSettings({
   const [showModal, setShowModal] = useState(false);
   const [editingDept, setEditingDept] = useState<Department | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -216,316 +225,44 @@ export default function DepartmentsSettings({
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h2 className={styles.title}>Управление отделами</h2>
-          <p className={styles.subtitle}>
-            Создавайте отделы и назначайте сотрудников
-          </p>
-        </div>
-        <button className={styles.btnPrimary} onClick={handleCreate}>
-          <span className="material-icons">add</span>
-          Создать отдел
-        </button>
-      </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between"><div><h2 className="text-xl font-bold">Управление отделами</h2><p className="text-sm text-muted-foreground">Создавайте отделы и назначайте сотрудников</p></div><Button onClick={handleCreate}><Plus className="h-4 w-4 mr-1" />Создать отдел</Button></div>
 
-      <div className={styles.departmentsList}>
-        {departments.map(dept => (
-          <div key={dept.id} className={styles.departmentCard}>
-            <div className={styles.departmentHeader}>
-              <div className={styles.departmentInfo}>
-                <div 
-                  className={styles.departmentColor} 
-                  style={{ backgroundColor: dept.color }}
-                />
-                <div>
-                  <div className={styles.departmentName}>
-                    {dept.name}
-                    {dept.parent && (
-                      <span className={styles.parentBadge}>
-                        ← {dept.parent.name}
-                      </span>
-                    )}
-                  </div>
-                  <div className={styles.departmentDescription}>
-                    {dept.description || "Без описания"}
-                  </div>
-                </div>
-              </div>
-              <div className={styles.departmentActions}>
-                <button
-                  className={styles.btnIcon}
-                  onClick={() => handleAssignEmployees(dept)}
-                  title="Назначить сотрудников"
-                >
-                  <span className="material-icons">group_add</span>
-                </button>
-                <button
-                  className={styles.btnIcon}
-                  onClick={() => handleEdit(dept)}
-                  title="Редактировать"
-                >
-                  <span className="material-icons">edit</span>
-                </button>
-                <button
-                  className={styles.btnIconDanger}
-                  onClick={() => handleDelete(dept)}
-                  title="Удалить"
-                >
-                  <span className="material-icons">delete</span>
-                </button>
-              </div>
-            </div>
-            
-            <div className={styles.departmentMeta}>
-              <div className={styles.metaItem}>
-                <span className="material-icons">people</span>
-                <span>{dept.employees_count} сотрудников</span>
-              </div>
-              {dept.head && (
-                <div className={styles.metaItem}>
-                  <span className="material-icons">person</span>
-                  <span>Руководитель: {dept.head.full_name}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-
-        {departments.length === 0 && (
-          <div className={styles.emptyState}>
-            <span className="material-icons">business</span>
-            <p>Нет созданных отделов</p>
-            <button className={styles.btnSecondary} onClick={handleCreate}>
-              Создать первый отдел
-            </button>
-          </div>
-        )}
+      <div className="space-y-3">
+        {departments.map(dept => <Card key={dept.id}><CardContent className="pt-4"><div className="flex items-start justify-between"><div className="flex items-center gap-3"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: dept.color }} /><div><div className="font-medium">{dept.name}{dept.parent && <Badge variant="outline" className="ml-2 text-xs">← {dept.parent.name}</Badge>}</div><div className="text-sm text-muted-foreground">{dept.description || "Без описания"}</div></div></div><div className="flex gap-1"><Button variant="ghost" size="icon" onClick={() => handleAssignEmployees(dept)} title="Назначить"><UserPlus className="h-4 w-4" /></Button><Button variant="ghost" size="icon" onClick={() => handleEdit(dept)} title="Редактировать"><Pencil className="h-4 w-4" /></Button><Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(dept)} title="Удалить"><Trash2 className="h-4 w-4" /></Button></div></div><div className="flex gap-4 mt-3 text-sm text-muted-foreground"><div className="flex items-center gap-1"><Users className="h-4 w-4" />{dept.employees_count} сотр.</div>{dept.head && <div>Рук.: {dept.head.full_name}</div>}</div></CardContent></Card>)}
+        {departments.length === 0 && <div className="text-center py-12"><Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-2" /><p>Нет созданных отделов</p><Button variant="outline" className="mt-2" onClick={handleCreate}>Создать первый отдел</Button></div>}
       </div>
 
       {/* Модалка создания/редактирования */}
-      {showModal && (
-        <div className={styles.modalOverlay} onClick={() => setShowModal(false)}>
-          <div 
-            className={`${styles.modal} ${isFullscreen ? styles.modalFullscreen : ''}`}
-            onClick={e => e.stopPropagation()}
-          >
-            <div className={styles.modalHeader}>
-              <h3>{editingDept ? "Редактировать отдел" : "Создать отдел"}</h3>
-              <div className={styles.modalHeaderActions}>
-                <button
-                  className={styles.fullscreenBtn}
-                  onClick={() => setIsFullscreen(!isFullscreen)}
-                  title={isFullscreen ? "Свернуть" : "Развернуть"}
-                >
-                  <span className="material-icons">
-                    {isFullscreen ? "fullscreen_exit" : "fullscreen"}
-                  </span>
-                </button>
-                <button
-                  className={styles.closeBtn}
-                  onClick={() => setShowModal(false)}
-                >
-                  <span className="material-icons">close</span>
-                </button>
-              </div>
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent><DialogHeader><DialogTitle>{editingDept ? "Редактировать отдел" : "Создать отдел"}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1"><Label>Название *</Label><Input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Отдел продаж, Бухгалтерия" /></div>
+            <div className="space-y-1"><Label>Описание</Label><Textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="Краткое описание" rows={2} /></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1"><Label>Руководитель</Label><Select value={formData.head_id} onValueChange={v => setFormData({ ...formData, head_id: v })}><SelectTrigger><SelectValue placeholder="Не назначен" /></SelectTrigger><SelectContent><SelectItem value="">Не назначен</SelectItem>{employees.map(e => <SelectItem key={e.id} value={e.id}>{e.full_name}</SelectItem>)}</SelectContent></Select></div>
+              <div className="space-y-1"><Label>Родительский</Label><Select value={formData.parent_id} onValueChange={v => setFormData({ ...formData, parent_id: v })}><SelectTrigger><SelectValue placeholder="Нет" /></SelectTrigger><SelectContent><SelectItem value="">Нет (корневой)</SelectItem>{departments.filter(d => d.id !== editingDept?.id).map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent></Select></div>
             </div>
-
-            <div className={styles.modalBody}>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Название отдела *</label>
-                <input
-                  type="text"
-                  className={styles.formInput}
-                  value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Например: Отдел продаж, Бухгалтерия"
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Описание</label>
-                <textarea
-                  className={styles.formTextarea}
-                  value={formData.description}
-                  onChange={e => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Краткое описание отдела"
-                  rows={3}
-                />
-              </div>
-
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Руководитель</label>
-                  <select
-                    className={styles.formSelect}
-                    value={formData.head_id}
-                    onChange={e => setFormData({ ...formData, head_id: e.target.value })}
-                  >
-                    <option value="">Не назначен</option>
-                    {employees.map(emp => (
-                      <option key={emp.id} value={emp.id}>{emp.full_name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Родительский отдел</label>
-                  <select
-                    className={styles.formSelect}
-                    value={formData.parent_id}
-                    onChange={e => setFormData({ ...formData, parent_id: e.target.value })}
-                  >
-                    <option value="">Нет (корневой)</option>
-                    {departments
-                      .filter(d => d.id !== editingDept?.id)
-                      .map(dept => (
-                        <option key={dept.id} value={dept.id}>{dept.name}</option>
-                      ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Цвет</label>
-                <div className={styles.colorPicker}>
-                  {COLORS.map(color => (
-                    <button
-                      key={color}
-                      type="button"
-                      className={`${styles.colorOption} ${formData.color === color ? styles.colorSelected : ''}`}
-                      style={{ backgroundColor: color }}
-                      onClick={() => setFormData({ ...formData, color })}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.modalFooter}>
-              <button
-                className={styles.btnSecondary}
-                onClick={() => setShowModal(false)}
-                disabled={isSaving}
-              >
-                Отмена
-              </button>
-              <button
-                className={styles.btnPrimary}
-                onClick={handleSave}
-                disabled={isSaving}
-              >
-                {isSaving ? "Сохранение..." : editingDept ? "Сохранить" : "Создать"}
-              </button>
-            </div>
+            <div className="space-y-1"><Label>Цвет</Label><div className="flex gap-2 flex-wrap">{COLORS.map(c => <button key={c} type="button" className={`w-6 h-6 rounded-full border-2 ${formData.color === c ? 'border-foreground' : 'border-transparent'}`} style={{ backgroundColor: c }} onClick={() => setFormData({ ...formData, color: c })} />)}</div></div>
           </div>
-        </div>
-      )}
+          <DialogFooter><Button variant="outline" onClick={() => setShowModal(false)} disabled={isSaving}>Отмена</Button><Button onClick={handleSave} disabled={isSaving}>{isSaving ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Сохранение...</> : editingDept ? 'Сохранить' : 'Создать'}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Модалка назначения сотрудников */}
-      {showAssignModal && assigningDept && (
-        <div className={styles.modalOverlay} onClick={() => setShowAssignModal(false)}>
-          <div 
-            className={`${styles.modal} ${isFullscreen ? styles.modalFullscreen : ''}`}
-            onClick={e => e.stopPropagation()}
-          >
-            <div className={styles.modalHeader}>
-              <h3>
-                Назначить сотрудников в отдел &laquo;{assigningDept.name}&raquo;
-              </h3>
-              <div className={styles.modalHeaderActions}>
-                <button
-                  className={styles.fullscreenBtn}
-                  onClick={() => setIsFullscreen(!isFullscreen)}
-                  title={isFullscreen ? "Свернуть" : "Развернуть"}
-                >
-                  <span className="material-icons">
-                    {isFullscreen ? "fullscreen_exit" : "fullscreen"}
-                  </span>
-                </button>
-                <button
-                  className={styles.closeBtn}
-                  onClick={() => setShowAssignModal(false)}
-                >
-                  <span className="material-icons">close</span>
-                </button>
-              </div>
+      <Dialog open={showAssignModal} onOpenChange={setShowAssignModal}>
+        <DialogContent className="max-w-lg"><DialogHeader><DialogTitle>Назначить сотрудников в &laquo;{assigningDept?.name}&raquo;</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground"><Info className="h-4 w-4" />Выберите сотрудников для назначения в отдел</div>
+            <div className="max-h-64 overflow-y-auto space-y-2">
+              {employees.map(emp => { const isSelected = selectedEmployees.includes(emp.id); const currentDept = departments.find(d => d.id === emp.department_id); return (<label key={emp.id} className={`flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-muted ${isSelected ? 'bg-muted' : ''}`}><Checkbox checked={isSelected} onCheckedChange={() => toggleEmployee(emp.id)} /><div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium">{emp.avatar_url ? <Image src={emp.avatar_url} alt="" fill className="rounded-full object-cover" /> : emp.full_name.charAt(0)}</div><div className="flex-1"><div className="text-sm font-medium">{emp.full_name}</div>{currentDept && currentDept.id !== assigningDept?.id && <div className="text-xs text-muted-foreground">Сейчас: {currentDept.name}</div>}</div></label>); })}
+              {employees.length === 0 && <div className="text-center py-4 text-muted-foreground">Нет доступных сотрудников</div>}
             </div>
-
-            <div className={styles.modalBody}>
-              <div className={styles.assignInfo}>
-                <span className="material-icons">info</span>
-                Выберите сотрудников для назначения в отдел. 
-                Сотрудники будут перемещены из текущего отдела.
-              </div>
-
-              <div className={styles.employeesList}>
-                {employees.map(emp => {
-                  const isSelected = selectedEmployees.includes(emp.id);
-                  const currentDept = departments.find(d => d.id === emp.department_id);
-                  
-                  return (
-                    <label 
-                      key={emp.id} 
-                      className={`${styles.employeeItem} ${isSelected ? styles.employeeSelected : ''}`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleEmployee(emp.id)}
-                      />
-                      <div className={styles.employeeAvatar}>
-                        {emp.avatar_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={emp.avatar_url} alt="" />
-                        ) : (
-                          <span>{emp.full_name.charAt(0)}</span>
-                        )}
-                      </div>
-                      <div className={styles.employeeInfo}>
-                        <div className={styles.employeeName}>{emp.full_name}</div>
-                        {currentDept && currentDept.id !== assigningDept.id && (
-                          <div className={styles.employeeDept}>
-                            Сейчас: {currentDept.name}
-                          </div>
-                        )}
-                      </div>
-                    </label>
-                  );
-                })}
-
-                {employees.length === 0 && (
-                  <div className={styles.emptyEmployees}>
-                    Нет доступных сотрудников
-                  </div>
-                )}
-              </div>
-
-              <div className={styles.selectedCount}>
-                Выбрано: {selectedEmployees.length} из {employees.length}
-              </div>
-            </div>
-
-            <div className={styles.modalFooter}>
-              <button
-                className={styles.btnSecondary}
-                onClick={() => setShowAssignModal(false)}
-                disabled={isSaving}
-              >
-                Отмена
-              </button>
-              <button
-                className={styles.btnPrimary}
-                onClick={handleSaveAssignments}
-                disabled={isSaving}
-              >
-                {isSaving ? "Сохранение..." : "Сохранить назначения"}
-              </button>
-            </div>
+            <div className="text-sm text-muted-foreground">Выбрано: {selectedEmployees.length} из {employees.length}</div>
           </div>
-        </div>
-      )}
+          <DialogFooter><Button variant="outline" onClick={() => setShowAssignModal(false)} disabled={isSaving}>Отмена</Button><Button onClick={handleSaveAssignments} disabled={isSaving}>{isSaving ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Сохранение...</> : 'Сохранить'}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

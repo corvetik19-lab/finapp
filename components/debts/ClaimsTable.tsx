@@ -5,7 +5,13 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { updateDebt, deleteDebt } from "@/lib/debts/service";
 import { formatMoney } from "@/lib/utils/format";
-import styles from "./ClaimsTable.module.css";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Search, Filter, X, Eye, Trash2, Gavel, User } from "lucide-react";
 
 interface ClaimsTableProps {
   initialDebts: Debt[];
@@ -83,230 +89,57 @@ export function ClaimsTable({ initialDebts }: ClaimsTableProps) {
     return acc;
   }, {} as Record<ClaimStage, number>);
 
+  const stages: (ClaimStage | 'all')[] = ['all', 'new', 'claim', 'court', 'writ', 'bailiff', 'paid'];
+  const stageLabelsMap: Record<ClaimStage | 'all', string> = { all: 'Все', ...CLAIM_STAGE_LABELS };
+
   return (
-    <div className={styles.container}>
-      {/* Табы фильтрации */}
-      <div className={styles.tabs}>
-        <button
-          className={`${styles.tab} ${filter === 'all' ? styles.activeTab : ''}`}
-          onClick={() => setFilter('all')}
-        >
-          Все записи о претензиях
-          {debts.length > 0 && <span className={styles.badge}>{debts.length}</span>}
-        </button>
-        <button
-          className={`${styles.tab} ${filter === 'new' ? styles.activeTab : ''}`}
-          onClick={() => setFilter('new')}
-        >
-          {CLAIM_STAGE_LABELS.new}
-          {stageCounts.new > 0 && <span className={styles.badge}>{stageCounts.new}</span>}
-        </button>
-        <button
-          className={`${styles.tab} ${filter === 'claim' ? styles.activeTab : ''}`}
-          onClick={() => setFilter('claim')}
-        >
-          {CLAIM_STAGE_LABELS.claim}
-          {stageCounts.claim > 0 && <span className={styles.badge}>{stageCounts.claim}</span>}
-        </button>
-        <button
-          className={`${styles.tab} ${filter === 'court' ? styles.activeTab : ''}`}
-          onClick={() => setFilter('court')}
-        >
-          {CLAIM_STAGE_LABELS.court}
-          {stageCounts.court > 0 && <span className={styles.badge}>{stageCounts.court}</span>}
-        </button>
-        <button
-          className={`${styles.tab} ${filter === 'writ' ? styles.activeTab : ''}`}
-          onClick={() => setFilter('writ')}
-        >
-          {CLAIM_STAGE_LABELS.writ}
-          {stageCounts.writ > 0 && <span className={styles.badge}>{stageCounts.writ}</span>}
-        </button>
-        <button
-          className={`${styles.tab} ${filter === 'bailiff' ? styles.activeTab : ''}`}
-          onClick={() => setFilter('bailiff')}
-        >
-          {CLAIM_STAGE_LABELS.bailiff}
-          {stageCounts.bailiff > 0 && <span className={styles.badge}>{stageCounts.bailiff}</span>}
-        </button>
-        <button
-          className={`${styles.tab} ${filter === 'paid' ? styles.activeTab : ''}`}
-          onClick={() => setFilter('paid')}
-        >
-          {CLAIM_STAGE_LABELS.paid}
-          {stageCounts.paid > 0 && <span className={styles.badge}>{stageCounts.paid}</span>}
-        </button>
-      </div>
-
-      {/* Панель управления */}
-      <div className={styles.controls}>
-        <div className={styles.searchBox}>
-          <span className="material-icons">search</span>
-          <input
-            type="text"
-            placeholder="Поиск..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={styles.searchInput}
-          />
+    <Card>
+      <CardContent className="pt-4 space-y-4">
+        <div className="flex flex-wrap gap-2">
+          {stages.map((s) => (<Button key={s} variant={filter === s ? "default" : "outline"} size="sm" onClick={() => setFilter(s)}>{stageLabelsMap[s]}{s === 'all' ? (debts.length > 0 && <Badge variant="secondary" className="ml-2">{debts.length}</Badge>) : (stageCounts[s] > 0 && <Badge variant="secondary" className="ml-2">{stageCounts[s]}</Badge>)}</Button>))}
         </div>
-        <button
-          className={styles.filterBtn}
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <span className="material-icons">filter_list</span>
-          {showFilters ? 'Скрыть фильтры' : 'Показать фильтры'}
-        </button>
-      </div>
 
-      {/* Дополнительные фильтры */}
-      {showFilters && (
-        <div className={styles.filtersPanel}>
-          <div className={styles.filterGroup}>
-            <label className={styles.filterLabel}>
-              <span className="material-icons">gavel</span>
-              Истец
-            </label>
-            <input
-              type="text"
-              placeholder="Фильтр по истцу..."
-              value={plaintiffFilter}
-              onChange={(e) => setPlaintiffFilter(e.target.value)}
-              className={styles.filterInput}
-            />
+        <div className="flex gap-4">
+          <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="Поиск..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" /></div>
+          <Button variant="outline" onClick={() => setShowFilters(!showFilters)}><Filter className="h-4 w-4 mr-2" />{showFilters ? 'Скрыть' : 'Фильтры'}</Button>
+        </div>
+
+        {showFilters && (
+          <div className="flex gap-4 p-4 bg-muted/50 rounded-lg">
+            <div className="flex-1 space-y-2"><div className="flex items-center gap-2 text-sm"><Gavel className="h-4 w-4" />Истец</div><Input placeholder="Фильтр по истцу..." value={plaintiffFilter} onChange={(e) => setPlaintiffFilter(e.target.value)} /></div>
+            <div className="flex-1 space-y-2"><div className="flex items-center gap-2 text-sm"><User className="h-4 w-4" />Ответчик</div><Input placeholder="Фильтр по ответчику..." value={defendantFilter} onChange={(e) => setDefendantFilter(e.target.value)} /></div>
+            {(plaintiffFilter || defendantFilter) && <Button variant="ghost" size="sm" onClick={() => { setPlaintiffFilter(''); setDefendantFilter(''); }}><X className="h-4 w-4 mr-1" />Очистить</Button>}
           </div>
-          <div className={styles.filterGroup}>
-            <label className={styles.filterLabel}>
-              <span className="material-icons">person</span>
-              Ответчик
-            </label>
-            <input
-              type="text"
-              placeholder="Фильтр по ответчику..."
-              value={defendantFilter}
-              onChange={(e) => setDefendantFilter(e.target.value)}
-              className={styles.filterInput}
-            />
-          </div>
-          {(plaintiffFilter || defendantFilter) && (
-            <button
-              className={styles.clearFiltersBtn}
-              onClick={() => {
-                setPlaintiffFilter('');
-                setDefendantFilter('');
-              }}
-            >
-              <span className="material-icons">clear</span>
-              Очистить фильтры
-            </button>
-          )}
-        </div>
-      )}
+        )}
 
-      {/* Таблица */}
-      <div className={styles.tableWrapper}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>№ Тендера</th>
-              <th>№ Заявки</th>
-              <th>Истец</th>
-              <th>Ответчик</th>
-              <th>Основной долг</th>
-              <th>№ Договора</th>
-              <th>Этап</th>
-              <th>Комментарии</th>
-              <th>Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredDebts.length === 0 ? (
-              <tr>
-                <td colSpan={10} className={styles.empty}>
-                  {searchQuery ? 'Ничего не найдено' : 'Нет претензий'}
-                </td>
-              </tr>
-            ) : (
-              filteredDebts.map((debt, index) => (
-                <tr key={debt.id} className={styles.row}>
-                  <td className={styles.idCell}>{index + 1}</td>
-                  <td>{debt.tender?.purchase_number || '—'}</td>
-                  <td>{debt.application_number || '—'}</td>
-                  <td>{debt.plaintiff || '—'}</td>
-                  <td className={styles.defendant}>{debt.defendant || debt.creditor_debtor_name}</td>
-                  <td className={styles.amount}>
-                    {formatMoney(debt.amount, debt.currency)}
-                  </td>
-                  <td>{debt.contract_number || '—'}</td>
-                  <td>
-                    <select
-                      value={debt.stage}
-                      onChange={(e) => handleStageChange(debt, e.target.value as ClaimStage)}
-                      className={`${styles.stageSelect} ${styles[`stage_${debt.stage}`]}`}
-                    >
-                      <option value="new">{CLAIM_STAGE_LABELS.new}</option>
-                      <option value="claim">{CLAIM_STAGE_LABELS.claim}</option>
-                      <option value="court">{CLAIM_STAGE_LABELS.court}</option>
-                      <option value="writ">{CLAIM_STAGE_LABELS.writ}</option>
-                      <option value="bailiff">{CLAIM_STAGE_LABELS.bailiff}</option>
-                      <option value="paid">{CLAIM_STAGE_LABELS.paid}</option>
-                    </select>
-                  </td>
-                  <td className={styles.comments}>
-                    {debt.comments ? (
-                      <span title={debt.comments}>
-                        {debt.comments.length > 30 ? `${debt.comments.slice(0, 30)}...` : debt.comments}
-                      </span>
-                    ) : '—'}
-                  </td>
-                  <td className={styles.actions}>
-                    <button
-                      className={styles.actionBtn}
-                      onClick={() => router.push(`/tenders/claims/${debt.id}`)}
-                      title="Открыть"
-                    >
-                      <span className="material-icons">visibility</span>
-                    </button>
-                    <button
-                      className={styles.actionBtn}
-                      onClick={() => handleDelete(debt.id)}
-                      title="Удалить"
-                    >
-                      <span className="material-icons">delete</span>
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Пагинация */}
-      <div className={styles.pagination}>
-        <span className={styles.paginationInfo}>
-          Строк на странице: 10
-        </span>
-        <span className={styles.paginationInfo}>
-          0 - 0 из 0
-        </span>
-        <div className={styles.paginationButtons}>
-          <button disabled className={styles.paginationBtn}>
-            <span className="material-icons">first_page</span>
-          </button>
-          <button disabled className={styles.paginationBtn}>
-            <span className="material-icons">chevron_left</span>
-          </button>
-          <span className={styles.pageNumber}>1</span>
-          <button disabled className={styles.paginationBtn}>
-            <span className="material-icons">chevron_right</span>
-          </button>
-          <button disabled className={styles.paginationBtn}>
-            <span className="material-icons">last_page</span>
-          </button>
+        <div className="border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader><TableRow><TableHead>ID</TableHead><TableHead>№ Тендера</TableHead><TableHead>№ Заявки</TableHead><TableHead>Истец</TableHead><TableHead>Ответчик</TableHead><TableHead>Долг</TableHead><TableHead>№ Договора</TableHead><TableHead>Этап</TableHead><TableHead>Комментарии</TableHead><TableHead>Действия</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {filteredDebts.length === 0 ? (<TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">{searchQuery ? 'Ничего не найдено' : 'Нет претензий'}</TableCell></TableRow>) : (
+                filteredDebts.map((debt, index) => (
+                  <TableRow key={debt.id}>
+                    <TableCell className="font-medium">{index + 1}</TableCell>
+                    <TableCell>{debt.tender?.purchase_number || '—'}</TableCell>
+                    <TableCell>{debt.application_number || '—'}</TableCell>
+                    <TableCell>{debt.plaintiff || '—'}</TableCell>
+                    <TableCell className="font-medium">{debt.defendant || debt.creditor_debtor_name}</TableCell>
+                    <TableCell className="font-bold">{formatMoney(debt.amount, debt.currency)}</TableCell>
+                    <TableCell>{debt.contract_number || '—'}</TableCell>
+                    <TableCell><Select value={debt.stage} onValueChange={(v) => handleStageChange(debt, v as ClaimStage)}><SelectTrigger className="w-32"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(CLAIM_STAGE_LABELS).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}</SelectContent></Select></TableCell>
+                    <TableCell className="max-w-[150px] truncate" title={debt.comments || ''}>{debt.comments || '—'}</TableCell>
+                    <TableCell><div className="flex gap-1"><Button variant="ghost" size="icon" onClick={() => router.push(`/tenders/claims/${debt.id}`)}><Eye className="h-4 w-4" /></Button><Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(debt.id)}><Trash2 className="h-4 w-4" /></Button></div></TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
-      </div>
-    </div>
+
+        <div className="flex items-center justify-end gap-4 text-sm text-muted-foreground">
+          <span>Показано: {filteredDebts.length} из {debts.length}</span>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

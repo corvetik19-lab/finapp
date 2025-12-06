@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import styles from "./Backup.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { HardDrive, Download, RefreshCw, Trash2, Loader2, Package } from "lucide-react";
 
 interface Backup {
   name: string;
@@ -158,92 +161,40 @@ export default function BackupClient() {
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>💾 Резервное копирование</h1>
-        <p className={styles.subtitle}>
-          Создавайте резервные копии и восстанавливайте данные
-        </p>
+    <div className="space-y-6">
+      <div><h1 className="text-2xl font-bold flex items-center gap-2"><HardDrive className="h-6 w-6" />Резервное копирование</h1><p className="text-muted-foreground">Создавайте копии и восстанавливайте данные</p></div>
+
+      {message && <Alert variant={message.type === "error" ? "destructive" : "default"}><AlertDescription>{message.text}</AlertDescription></Alert>}
+
+      <div className="flex gap-3">
+        <Button onClick={() => createBackup(false)} disabled={creating}>{creating ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Создаём...</> : <><Package className="h-4 w-4 mr-1" />Создать копию</>}</Button>
+        <Button variant="outline" onClick={() => createBackup(true)} disabled={creating}>{creating ? "Создаём..." : <><Download className="h-4 w-4 mr-1" />Создать и скачать</>}</Button>
       </div>
 
-      {message && (
-        <div className={`${styles.message} ${styles[message.type]}`}>
-          {message.type === "success" ? "✅" : "❌"} {message.text}
-        </div>
-      )}
+      <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Автоматические копии каждое воскресенье в 02:00. Хранятся 5 последних. Включают: счета, категории, транзакции, бюджеты, планы.</p></CardContent></Card>
 
-      <div className={styles.actions}>
-        <button
-          className={styles.createBtn}
-          onClick={() => createBackup(false)}
-          disabled={creating}
-        >
-          {creating ? "Создаём..." : "📦 Создать резервную копию"}
-        </button>
-        <button
-          className={styles.downloadBtn}
-          onClick={() => createBackup(true)}
-          disabled={creating}
-        >
-          {creating ? "Создаём..." : "⬇️ Создать и скачать"}
-        </button>
-      </div>
-
-      <div className={styles.info}>
-        <h3>ℹ️ Информация</h3>
-        <ul>
-          <li>Резервные копии создаются автоматически каждое воскресенье в 02:00</li>
-          <li>Хранятся последние 5 копий</li>
-          <li>Включают: счета, категории, транзакции, бюджеты, планы</li>
-          <li>Восстановление не удаляет текущие данные</li>
-        </ul>
-      </div>
-
-      <div className={styles.backupsList}>
-        <h2>Доступные резервные копии</h2>
-
-        {loading ? (
-          <div className={styles.loading}>Загрузка...</div>
-        ) : backups.length === 0 ? (
-          <div className={styles.empty}>
-            <div className={styles.emptyIcon}>📦</div>
-            <p>Резервных копий пока нет</p>
-            <p className={styles.emptyHint}>Создайте первую копию нажав кнопку выше</p>
-          </div>
-        ) : (
-          <div className={styles.grid}>
-            {backups.map((backup) => (
-              <div key={backup.path} className={styles.backupCard}>
-                <div className={styles.backupHeader}>
-                  <div className={styles.backupIcon}>💾</div>
-                  <div className={styles.backupInfo}>
-                    <div className={styles.backupName}>{backup.name}</div>
-                    <div className={styles.backupMeta}>
-                      {formatDate(backup.created_at)} • {formatSize(backup.size)}
-                    </div>
+      <Card>
+        <CardHeader><CardTitle>Доступные копии</CardTitle></CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+          ) : backups.length === 0 ? (
+            <div className="text-center py-8"><Package className="h-12 w-12 mx-auto text-muted-foreground mb-2" /><p className="text-muted-foreground">Копий пока нет</p></div>
+          ) : (
+            <div className="space-y-3">
+              {backups.map((backup) => (
+                <div key={backup.path} className="flex items-center justify-between p-3 rounded-lg border">
+                  <div className="flex items-center gap-3"><HardDrive className="h-5 w-5 text-muted-foreground" /><div><p className="font-medium">{backup.name}</p><p className="text-sm text-muted-foreground">{formatDate(backup.created_at)} • {formatSize(backup.size)}</p></div></div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => restoreBackup(backup.path)} disabled={restoring || deleting !== null}>{restoring ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}</Button>
+                    <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteBackup(backup.path, backup.name)} disabled={deleting !== null || restoring}>{deleting === backup.path ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}</Button>
                   </div>
                 </div>
-                <div className={styles.backupActions}>
-                  <button
-                    className={styles.restoreBtn}
-                    onClick={() => restoreBackup(backup.path)}
-                    disabled={restoring || deleting !== null}
-                  >
-                    {restoring ? "Восстанавливаем..." : "🔄 Восстановить"}
-                  </button>
-                  <button
-                    className={styles.deleteBtn}
-                    onClick={() => deleteBackup(backup.path, backup.name)}
-                    disabled={deleting !== null || restoring}
-                  >
-                    {deleting === backup.path ? "Удаляем..." : "🗑️"}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -4,16 +4,19 @@ import { useState } from 'react';
 import { Organization } from '@/lib/auth/types';
 import { toggleOrganizationStatus, joinOrganizationAsAdmin, deleteOrganization } from '@/lib/admin/organizations';
 import { useRouter } from 'next/navigation';
-import styles from './OrganizationsList.module.css';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { CheckCircle, Trash2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface OrganizationsListProps {
     organizations: Organization[];
     isSuperAdmin: boolean;
-    memberOrgIds?: string[];
     activeOrgId?: string | null;
 }
 
-export function OrganizationsList({ organizations, isSuperAdmin, memberOrgIds = [], activeOrgId }: OrganizationsListProps) {
+export function OrganizationsList({ organizations, isSuperAdmin, activeOrgId }: OrganizationsListProps) {
     const router = useRouter();
     const [loadingId, setLoadingId] = useState<string | null>(null);
 
@@ -65,130 +68,35 @@ export function OrganizationsList({ organizations, isSuperAdmin, memberOrgIds = 
     };
 
     return (
-        <div className={styles.container}>
-            <table className={styles.table}>
-                <thead className={styles.thead}>
-                    <tr>
-                        <th className={styles.th}>Название</th>
-                        <th className={styles.th}>Статус</th>
-                        <th className={styles.th}>План</th>
-                        <th className={styles.th}>Создана</th>
-                        <th className={styles.th} style={{ textAlign: 'right' }}>Действия</th>
-                    </tr>
-                </thead>
-                <tbody className={styles.tbody}>
+        <div className="border rounded-lg overflow-hidden">
+            <Table>
+                <TableHeader><TableRow><TableHead>Название</TableHead><TableHead>Статус</TableHead><TableHead>План</TableHead><TableHead>Создана</TableHead><TableHead className="text-right">Действия</TableHead></TableRow></TableHeader>
+                <TableBody>
                     {organizations.map((org) => {
-                        const isMember = memberOrgIds.includes(org.id);
-                        const isSystemOrg = org.name === 'Личное пространство'; // Системная организация
-                        const isActiveOrg = activeOrgId === org.id; // Это активная организация
-
+                        const isSystemOrg = org.name === 'Личное пространство';
+                        const isActiveOrg = activeOrgId === org.id;
                         return (
-                            <tr key={org.id} className={loadingId === org.id ? styles.loading : ''}>
-                                <td className={styles.td}>
-                                    <div className={styles.orgInfo}>
-                                        <span className={styles.orgName}>
-                                            {org.name}
-                                            {isSystemOrg && <span style={{ marginLeft: '8px', fontSize: '10px', background: '#e0e7ff', color: '#4338ca', padding: '2px 6px', borderRadius: '4px' }}>SYSTEM</span>}
-                                        </span>
-                                        <span className={styles.orgDesc}>{org.description || 'Нет описания'}</span>
+                            <TableRow key={org.id} className={cn(loadingId === org.id && 'opacity-50')}>
+                                <TableCell>
+                                    <div className="font-medium">{org.name}{isSystemOrg && <Badge variant="secondary" className="ml-2 text-xs">SYSTEM</Badge>}</div>
+                                    <div className="text-sm text-muted-foreground">{org.description || 'Нет описания'}</div>
+                                </TableCell>
+                                <TableCell><Badge variant={org.is_active ? 'default' : 'destructive'}>{org.is_active ? 'Активна' : 'Остановлена'}</Badge></TableCell>
+                                <TableCell><Badge variant="outline">{org.subscription_plan}</Badge></TableCell>
+                                <TableCell className="text-sm text-muted-foreground">{new Date(org.created_at).toLocaleDateString()}</TableCell>
+                                <TableCell>
+                                    <div className="flex items-center justify-end gap-2">
+                                        {!isSystemOrg && (isActiveOrg ? <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200"><CheckCircle className="h-3 w-3 mr-1" />Работаю</Badge> : <Button size="sm" onClick={() => handleJoinOrganization(org.id)} disabled={loadingId === org.id}>Войти</Button>)}
+                                        <Button variant="outline" size="sm" onClick={() => router.push(`/admin/settings/organization/${org.id}`)}>Управление</Button>
+                                        {isSuperAdmin && !isSystemOrg && <><Button variant={org.is_active ? 'destructive' : 'default'} size="sm" onClick={() => handleToggleStatus(org.id, org.is_active)} disabled={loadingId === org.id}>{loadingId === org.id ? '...' : org.is_active ? 'Блокировать' : 'Активировать'}</Button><Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(org.id, org.name)} disabled={loadingId === org.id}><Trash2 className="h-4 w-4" /></Button></>}
                                     </div>
-                                </td>
-                                <td className={styles.td}>
-                                    <span className={`${styles.statusBadge} ${org.is_active ? styles.active : styles.suspended}`}>
-                                        {org.is_active ? 'Активна' : 'Остановлена'}
-                                    </span>
-                                </td>
-                                <td className={styles.td}>
-                                    <span className={styles.planBadge}>
-                                        {org.subscription_plan}
-                                    </span>
-                                </td>
-                                <td className={`${styles.td} ${styles.date}`}>
-                                    {new Date(org.created_at).toLocaleDateString()}
-                                </td>
-                                <td className={styles.td}>
-                                    <div className={styles.actions}>
-                                        {!isSystemOrg && (
-                                            isActiveOrg ? (
-                                                <span 
-                                                    className={styles.activeOrgBadge}
-                                                    style={{ 
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        gap: '4px',
-                                                        padding: '6px 12px',
-                                                        background: '#dcfce7',
-                                                        color: '#166534',
-                                                        borderRadius: '6px',
-                                                        fontSize: '13px',
-                                                        fontWeight: 500
-                                                    }}
-                                                >
-                                                    <span className="material-icons" style={{ fontSize: '16px' }}>check_circle</span>
-                                                    Работаю
-                                                </span>
-                                            ) : isMember ? (
-                                                <button
-                                                    onClick={() => handleJoinOrganization(org.id)}
-                                                    disabled={loadingId === org.id}
-                                                    className={`${styles.button} ${styles.buttonPrimary}`}
-                                                    title="Переключиться на эту организацию"
-                                                >
-                                                    Войти
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    onClick={() => handleJoinOrganization(org.id)}
-                                                    disabled={loadingId === org.id}
-                                                    className={`${styles.button} ${styles.buttonPrimary}`}
-                                                    title="Войти в организацию как администратор"
-                                                >
-                                                    Войти
-                                                </button>
-                                            )
-                                        )}
-                                        
-                                        <button
-                                            onClick={() => router.push(`/admin/settings/organization/${org.id}`)}
-                                            className={`${styles.button} ${styles.buttonManage}`}
-                                        >
-                                            Управление
-                                        </button>
-                                        
-                                        {isSuperAdmin && !isSystemOrg && (
-                                            <>
-                                                <button
-                                                    onClick={() => handleToggleStatus(org.id, org.is_active)}
-                                                    disabled={loadingId === org.id}
-                                                    className={`${styles.button} ${org.is_active ? styles.buttonDanger : styles.buttonSuccess}`}
-                                                >
-                                                    {loadingId === org.id ? '...' : org.is_active ? 'Блокировать' : 'Активировать'}
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(org.id, org.name)}
-                                                    disabled={loadingId === org.id}
-                                                    className={`${styles.button} ${styles.buttonDanger}`}
-                                                    title="Удалить организацию навсегда"
-                                                    style={{ marginLeft: '0.5rem' }}
-                                                >
-                                                    <span className="material-icons" style={{ fontSize: '1.2rem' }}>delete</span>
-                                                </button>
-                                            </>
-                                        )}
-                                    </div>
-                                </td>
-                            </tr>
+                                </TableCell>
+                            </TableRow>
                         );
                     })}
-                    {organizations.length === 0 && (
-                        <tr>
-                            <td colSpan={5} className={styles.emptyState}>
-                                Нет организаций. Создайте первую!
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
+                    {organizations.length === 0 && <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Нет организаций. Создайте первую!</TableCell></TableRow>}
+                </TableBody>
+            </Table>
         </div>
     );
 }

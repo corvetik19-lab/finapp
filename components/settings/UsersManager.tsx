@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import styles from "./UsersManager.module.css";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { UserPlus, Pencil, Trash2, ShieldCheck, Lock, Users, Eye, EyeOff, Award, Loader2 } from "lucide-react";
+import { useToast } from "@/components/toast/ToastContext";
 
 export type UserRecord = {
   id: string;
@@ -29,6 +37,7 @@ type UsersManagerProps = {
 
 export default function UsersManager({ users: initialUsers, roles }: UsersManagerProps) {
   const router = useRouter();
+  const toast = useToast();
   const [users, setUsers] = useState<UserRecord[]>(initialUsers);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -85,10 +94,11 @@ export default function UsersManager({ users: initialUsers, roles }: UsersManage
       setUsers([...users, data.user]);
       setShowCreateModal(false);
       setCreateForm({ email: "", password: "", full_name: "", role_id: "" });
+      toast.show("Пользователь создан", { type: "success" });
       router.refresh();
-      alert("Пользователь успешно создан! Учётные данные:\nEmail: " + createForm.email + "\nПароль: " + createForm.password);
     } catch (error) {
       console.error("Create user error:", error);
+      toast.show("Ошибка при создании пользователя", { type: "error" });
       alert(error instanceof Error ? error.message : "Ошибка при создании пользователя");
     } finally {
       setIsSaving(false);
@@ -133,10 +143,11 @@ export default function UsersManager({ users: initialUsers, roles }: UsersManage
       setShowEditModal(false);
       setSelectedUser(null);
       setEditForm({ email: "", password: "", full_name: "" });
+      toast.show("Пользователь обновлён", { type: "success" });
       router.refresh();
-      alert("Пользователь успешно обновлён");
     } catch (error) {
       console.error("Edit user error:", error);
+      toast.show("Ошибка при обновлении пользователя", { type: "error" });
       alert(error instanceof Error ? error.message : "Ошибка при обновлении пользователя");
     } finally {
       setIsSaving(false);
@@ -171,10 +182,11 @@ export default function UsersManager({ users: initialUsers, roles }: UsersManage
       setShowAssignModal(false);
       setSelectedUser(null);
       setAssignForm({ role_id: "" });
+      toast.show("Роль назначена", { type: "success" });
       router.refresh();
     } catch (error) {
       console.error("Assign role error:", error);
-      alert(error instanceof Error ? error.message : "Ошибка при назначении роли");
+      toast.show(error instanceof Error ? error.message : "Ошибка при назначении роли", { type: "error" });
     } finally {
       setIsSaving(false);
     }
@@ -197,10 +209,11 @@ export default function UsersManager({ users: initialUsers, roles }: UsersManage
       }
 
       setUsers(users.filter(u => u.id !== user.id));
+      toast.show("Пользователь удалён", { type: "success" });
       router.refresh();
     } catch (error) {
       console.error("Delete user error:", error);
-      alert(error instanceof Error ? error.message : "Ошибка при удалении пользователя");
+      toast.show(error instanceof Error ? error.message : "Ошибка при удалении пользователя", { type: "error" });
     }
   };
 
@@ -244,353 +257,45 @@ export default function UsersManager({ users: initialUsers, roles }: UsersManage
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h2 className={styles.title}>Управление пользователями</h2>
-          <p className={styles.subtitle}>
-            Создавайте пользователей и назначайте им роли
-          </p>
-        </div>
-        <button className={styles.btnPrimary} onClick={() => setShowCreateModal(true)}>
-          <span className="material-icons">person_add</span>
-          Создать пользователя
-        </button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between"><div><h2 className="text-xl font-bold">Управление пользователями</h2><p className="text-sm text-muted-foreground">Создавайте пользователей и назначайте роли</p></div><Button onClick={() => setShowCreateModal(true)}><UserPlus className="h-4 w-4 mr-1" />Создать пользователя</Button></div>
+
+      <div className="border rounded-lg overflow-hidden">
+        <Table><TableHeader><TableRow><TableHead>Пользователь</TableHead><TableHead>Email</TableHead><TableHead>Роль</TableHead><TableHead>Создан</TableHead><TableHead>Посл. вход</TableHead><TableHead className="w-32">Действия</TableHead></TableRow></TableHeader>
+          <TableBody>{users.map(user => <TableRow key={user.id}><TableCell><div className="flex items-center gap-2"><div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium">{getInitials(user.full_name, user.email)}</div><div><span className="font-medium">{user.full_name || "Не указано"}</span>{user.is_admin && <Badge variant="secondary" className="ml-2 text-xs"><ShieldCheck className="h-3 w-3 mr-1" />Админ</Badge>}</div></div></TableCell><TableCell>{user.email}</TableCell><TableCell>{user.role_name ? <Badge style={{ backgroundColor: user.role_color || "#667eea" }}>{user.role_name}</Badge> : user.is_admin ? <Badge className="bg-yellow-500">Полный доступ</Badge> : <span className="text-muted-foreground text-sm">Без роли</span>}</TableCell><TableCell className="text-sm">{formatDate(user.created_at)}</TableCell><TableCell className="text-sm">{formatDate(user.last_sign_in_at)}</TableCell><TableCell><div className="flex gap-1">{!user.is_admin ? <><Button variant="ghost" size="icon" onClick={() => openEditModal(user)} title="Редактировать"><Pencil className="h-4 w-4" /></Button><Button variant="ghost" size="icon" onClick={() => openAssignModal(user)} title="Назначить роль"><Award className="h-4 w-4" /></Button><Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteUser(user)} title="Удалить"><Trash2 className="h-4 w-4" /></Button></> : <span className="flex items-center gap-1 text-xs text-muted-foreground"><Lock className="h-3 w-3" />Защищён</span>}</div></TableCell></TableRow>)}</TableBody>
+        </Table>
+        {users.length === 0 && <div className="text-center py-12"><Users className="h-12 w-12 mx-auto text-muted-foreground mb-2" /><p>Нет пользователей</p></div>}
       </div>
 
-      <div className={styles.usersTable}>
-        <table>
-          <thead>
-            <tr>
-              <th>Пользователь</th>
-              <th>Email</th>
-              <th>Роль</th>
-              <th>Создан</th>
-              <th>Последний вход</th>
-              <th>Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map(user => (
-              <tr key={user.id}>
-                <td>
-                  <div className={styles.userCell}>
-                    <div className={styles.userAvatar}>
-                      {getInitials(user.full_name, user.email)}
-                    </div>
-                    <div>
-                      <div className={styles.userName}>
-                        {user.full_name || "Не указано"}
-                        {user.is_admin && (
-                          <span className={styles.adminBadge}>
-                            <span className="material-icons">verified</span>
-                            Администратор
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td>{user.email}</td>
-                <td>
-                  {user.role_name ? (
-                    <span 
-                      className={styles.roleBadge}
-                      style={{ backgroundColor: user.role_color || "#667eea" }}
-                    >
-                      {user.role_name}
-                    </span>
-                  ) : user.is_admin ? (
-                    <span className={styles.roleBadge} style={{ backgroundColor: "#fbbf24" }}>
-                      Полный доступ
-                    </span>
-                  ) : (
-                    <span className={styles.noRole}>Без роли</span>
-                  )}
-                </td>
-                <td>{formatDate(user.created_at)}</td>
-                <td>{formatDate(user.last_sign_in_at)}</td>
-                <td>
-                  <div className={styles.actions}>
-                    {!user.is_admin && (
-                      <>
-                        <button
-                          className={styles.btnIcon}
-                          onClick={() => openEditModal(user)}
-                          title="Редактировать"
-                        >
-                          <span className="material-icons">edit</span>
-                        </button>
-                        <button
-                          className={styles.btnIcon}
-                          onClick={() => openAssignModal(user)}
-                          title="Назначить роль"
-                        >
-                          <span className="material-icons">badge</span>
-                        </button>
-                        <button
-                          className={styles.btnIconDanger}
-                          onClick={() => handleDeleteUser(user)}
-                          title="Удалить"
-                        >
-                          <span className="material-icons">delete</span>
-                        </button>
-                      </>
-                    )}
-                    {user.is_admin && (
-                      <span className={styles.adminProtected}>
-                        <span className="material-icons">lock</span>
-                        Защищён
-                      </span>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {users.length === 0 && (
-          <div className={styles.emptyState}>
-            <span className="material-icons">people</span>
-            <p>Нет созданных пользователей</p>
-          </div>
-        )}
-      </div>
-
-      {/* Модальное окно создания пользователя */}
-      {showCreateModal && (
-        <div className={styles.modalOverlay} onClick={() => setShowCreateModal(false)}>
-          <div className={styles.modal} onClick={e => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h3>Создать пользователя</h3>
-              <button
-                className={styles.closeBtn}
-                onClick={() => setShowCreateModal(false)}
-              >
-                <span className="material-icons">close</span>
-              </button>
-            </div>
-
-            <div className={styles.modalBody}>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Email *</label>
-                <input
-                  type="email"
-                  className={styles.formInput}
-                  value={createForm.email}
-                  onChange={e => setCreateForm({ ...createForm, email: e.target.value })}
-                  placeholder="user@example.com"
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Пароль *</label>
-                <div className={styles.passwordWrapper}>
-                  <input
-                    type={showCreatePassword ? "text" : "password"}
-                    className={styles.formInput}
-                    value={createForm.password}
-                    onChange={e => setCreateForm({ ...createForm, password: e.target.value })}
-                    placeholder="Минимум 6 символов"
-                  />
-                  <button
-                    type="button"
-                    className={styles.passwordToggle}
-                    onClick={() => setShowCreatePassword(!showCreatePassword)}
-                    title={showCreatePassword ? "Скрыть пароль" : "Показать пароль"}
-                  >
-                    <span className="material-icons">
-                      {showCreatePassword ? "visibility_off" : "visibility"}
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Полное имя</label>
-                <input
-                  type="text"
-                  className={styles.formInput}
-                  value={createForm.full_name}
-                  onChange={e => setCreateForm({ ...createForm, full_name: e.target.value })}
-                  placeholder="Иван Иванов"
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Роль</label>
-                <select
-                  className={styles.formSelect}
-                  value={createForm.role_id}
-                  onChange={e => setCreateForm({ ...createForm, role_id: e.target.value })}
-                >
-                  <option value="">Без роли</option>
-                  {roles.map(role => (
-                    <option key={role.id} value={role.id}>
-                      {role.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className={styles.modalFooter}>
-              <button
-                className={styles.btnSecondary}
-                onClick={() => setShowCreateModal(false)}
-                disabled={isSaving}
-              >
-                Отмена
-              </button>
-              <button
-                className={styles.btnPrimary}
-                onClick={handleCreateUser}
-                disabled={isSaving}
-              >
-                {isSaving ? "Создание..." : "Создать"}
-              </button>
-            </div>
-          </div>
+      {/* Модалка создания */}
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}><DialogContent><DialogHeader><DialogTitle>Создать пользователя</DialogTitle></DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-1"><Label>Email *</Label><Input type="email" value={createForm.email} onChange={e => setCreateForm({ ...createForm, email: e.target.value })} placeholder="user@example.com" /></div>
+          <div className="space-y-1"><Label>Пароль *</Label><div className="relative"><Input type={showCreatePassword ? "text" : "password"} value={createForm.password} onChange={e => setCreateForm({ ...createForm, password: e.target.value })} placeholder="Минимум 6 символов" /><button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" onClick={() => setShowCreatePassword(!showCreatePassword)}>{showCreatePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></div>
+          <div className="space-y-1"><Label>Полное имя</Label><Input value={createForm.full_name} onChange={e => setCreateForm({ ...createForm, full_name: e.target.value })} placeholder="Иван Иванов" /></div>
+          <div className="space-y-1"><Label>Роль</Label><Select value={createForm.role_id} onValueChange={v => setCreateForm({ ...createForm, role_id: v })}><SelectTrigger><SelectValue placeholder="Без роли" /></SelectTrigger><SelectContent><SelectItem value="">Без роли</SelectItem>{roles.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}</SelectContent></Select></div>
         </div>
-      )}
+        <DialogFooter><Button variant="outline" onClick={() => setShowCreateModal(false)} disabled={isSaving}>Отмена</Button><Button onClick={handleCreateUser} disabled={isSaving}>{isSaving ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Создание...</> : 'Создать'}</Button></DialogFooter>
+      </DialogContent></Dialog>
 
-      {/* Модальное окно редактирования пользователя */}
-      {showEditModal && selectedUser && (
-        <div className={styles.modalOverlay} onClick={() => setShowEditModal(false)}>
-          <div className={styles.modal} onClick={e => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h3>Редактировать пользователя</h3>
-              <button
-                className={styles.closeBtn}
-                onClick={() => setShowEditModal(false)}
-              >
-                <span className="material-icons">close</span>
-              </button>
-            </div>
-
-            <div className={styles.modalBody}>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Email *</label>
-                <input
-                  type="email"
-                  className={styles.formInput}
-                  value={editForm.email}
-                  onChange={e => setEditForm({ ...editForm, email: e.target.value })}
-                  placeholder="user@example.com"
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Новый пароль (оставьте пустым, чтобы не менять)</label>
-                <div className={styles.passwordWrapper}>
-                  <input
-                    type={showEditPassword ? "text" : "password"}
-                    className={styles.formInput}
-                    value={editForm.password}
-                    onChange={e => setEditForm({ ...editForm, password: e.target.value })}
-                    placeholder="Минимум 6 символов"
-                  />
-                  <button
-                    type="button"
-                    className={styles.passwordToggle}
-                    onClick={() => setShowEditPassword(!showEditPassword)}
-                    title={showEditPassword ? "Скрыть пароль" : "Показать пароль"}
-                  >
-                    <span className="material-icons">
-                      {showEditPassword ? "visibility_off" : "visibility"}
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Полное имя</label>
-                <input
-                  type="text"
-                  className={styles.formInput}
-                  value={editForm.full_name}
-                  onChange={e => setEditForm({ ...editForm, full_name: e.target.value })}
-                  placeholder="Иван Иванов"
-                />
-              </div>
-            </div>
-
-            <div className={styles.modalFooter}>
-              <button
-                className={styles.btnSecondary}
-                onClick={() => setShowEditModal(false)}
-                disabled={isSaving}
-              >
-                Отмена
-              </button>
-              <button
-                className={styles.btnPrimary}
-                onClick={handleEditUser}
-                disabled={isSaving}
-              >
-                {isSaving ? "Сохранение..." : "Сохранить"}
-              </button>
-            </div>
-          </div>
+      {/* Модалка редактирования */}
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}><DialogContent><DialogHeader><DialogTitle>Редактировать пользователя</DialogTitle></DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-1"><Label>Email *</Label><Input type="email" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} placeholder="user@example.com" /></div>
+          <div className="space-y-1"><Label>Новый пароль (оставьте пустым)</Label><div className="relative"><Input type={showEditPassword ? "text" : "password"} value={editForm.password} onChange={e => setEditForm({ ...editForm, password: e.target.value })} placeholder="Минимум 6 символов" /><button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" onClick={() => setShowEditPassword(!showEditPassword)}>{showEditPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></div>
+          <div className="space-y-1"><Label>Полное имя</Label><Input value={editForm.full_name} onChange={e => setEditForm({ ...editForm, full_name: e.target.value })} placeholder="Иван Иванов" /></div>
         </div>
-      )}
+        <DialogFooter><Button variant="outline" onClick={() => setShowEditModal(false)} disabled={isSaving}>Отмена</Button><Button onClick={handleEditUser} disabled={isSaving}>{isSaving ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Сохранение...</> : 'Сохранить'}</Button></DialogFooter>
+      </DialogContent></Dialog>
 
-      {/* Модальное окно назначения роли */}
-      {showAssignModal && selectedUser && (
-        <div className={styles.modalOverlay} onClick={() => setShowAssignModal(false)}>
-          <div className={styles.modal} onClick={e => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h3>Назначить роль</h3>
-              <button
-                className={styles.closeBtn}
-                onClick={() => setShowAssignModal(false)}
-              >
-                <span className="material-icons">close</span>
-              </button>
-            </div>
-
-            <div className={styles.modalBody}>
-              <p className={styles.modalText}>
-                Пользователь: <strong>{selectedUser.email}</strong>
-              </p>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Выберите роль</label>
-                <select
-                  className={styles.formSelect}
-                  value={assignForm.role_id}
-                  onChange={e => setAssignForm({ role_id: e.target.value })}
-                >
-                  <option value="">Без роли</option>
-                  {roles.map(role => (
-                    <option key={role.id} value={role.id}>
-                      {role.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className={styles.modalFooter}>
-              <button
-                className={styles.btnSecondary}
-                onClick={() => setShowAssignModal(false)}
-                disabled={isSaving}
-              >
-                Отмена
-              </button>
-              <button
-                className={styles.btnPrimary}
-                onClick={handleAssignRole}
-                disabled={isSaving}
-              >
-                {isSaving ? "Сохранение..." : "Назначить"}
-              </button>
-            </div>
-          </div>
+      {/* Модалка назначения роли */}
+      <Dialog open={showAssignModal} onOpenChange={setShowAssignModal}><DialogContent><DialogHeader><DialogTitle>Назначить роль</DialogTitle></DialogHeader>
+        <div className="space-y-4">
+          <p className="text-sm">Пользователь: <strong>{selectedUser?.email}</strong></p>
+          <div className="space-y-1"><Label>Выберите роль</Label><Select value={assignForm.role_id} onValueChange={v => setAssignForm({ role_id: v })}><SelectTrigger><SelectValue placeholder="Без роли" /></SelectTrigger><SelectContent><SelectItem value="">Без роли</SelectItem>{roles.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}</SelectContent></Select></div>
         </div>
-      )}
+        <DialogFooter><Button variant="outline" onClick={() => setShowAssignModal(false)} disabled={isSaving}>Отмена</Button><Button onClick={handleAssignRole} disabled={isSaving}>{isSaving ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Сохранение...</> : 'Назначить'}</Button></DialogFooter>
+      </DialogContent></Dialog>
     </div>
   );
 }

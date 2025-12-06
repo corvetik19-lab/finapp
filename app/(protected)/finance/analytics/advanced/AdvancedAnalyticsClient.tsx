@@ -14,7 +14,10 @@ import {
   ArcElement,
 } from "chart.js";
 import { Line, Bar } from "react-chartjs-2";
-import styles from "./AdvancedAnalytics.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Loader2, BarChart3, Thermometer, TrendingUp, Heart, ClipboardList } from "lucide-react";
 import PeriodComparisonView from "@/components/analytics/PeriodComparisonView";
 import SeasonalityView from "@/components/analytics/SeasonalityView";
 import TrendsView from "@/components/analytics/TrendsView";
@@ -123,34 +126,32 @@ export default function AdvancedAnalyticsClient() {
   };
 
   const getChangeClass = (change: number, inverse = false) => {
-    if (change === 0) return styles.neutral;
+    if (change === 0) return "text-muted-foreground";
     const isPositive = inverse ? change < 0 : change > 0;
-    return isPositive ? styles.positive : styles.negative;
+    return isPositive ? "text-green-600" : "text-red-600";
   };
 
   const getPeriodLabel = () => {
     switch (period) {
-      case "month":
-        return "месяцем";
-      case "quarter":
-        return "кварталом";
-      case "year":
-        return "годом";
+      case "month": return "месяцем";
+      case "quarter": return "кварталом";
+      case "year": return "годом";
     }
   };
 
   if (loading) {
     return (
-      <div className={styles.container}>
-        <div className={styles.loading}>Загрузка аналитики...</div>
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-muted-foreground">Загрузка аналитики...</span>
       </div>
     );
   }
 
   if (!data) {
     return (
-      <div className={styles.container}>
-        <div className={styles.error}>Не удалось загрузить данные</div>
+      <div className="flex items-center justify-center py-16 text-destructive">
+        Не удалось загрузить данные
       </div>
     );
   }
@@ -201,235 +202,114 @@ export default function AdvancedAnalyticsClient() {
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className={styles.title}>Расширенная аналитика</h1>
-          <p className={styles.subtitle}>Детальный анализ ваших финансов</p>
+          <h1 className="text-2xl font-bold">Расширенная аналитика</h1>
+          <p className="text-muted-foreground">Детальный анализ ваших финансов</p>
         </div>
-        <div className={styles.tabsContainer}>
-          <div className={styles.tabs}>
-            <button
-              className={activeTab === "comparison" ? styles.activeTab : ""}
-              onClick={() => setActiveTab("comparison")}
-            >
-              📊 Сравнение периодов
-            </button>
-            <button
-              className={activeTab === "seasonality" ? styles.activeTab : ""}
-              onClick={() => setActiveTab("seasonality")}
-            >
-              🌡️ Сезонность
-            </button>
-            <button
-              className={activeTab === "trends" ? styles.activeTab : ""}
-              onClick={() => setActiveTab("trends")}
-            >
-              📈 Тренды
-            </button>
-            <button
-              className={activeTab === "health" ? styles.activeTab : ""}
-              onClick={() => setActiveTab("health")}
-            >
-              💊 Финансовое здоровье
-            </button>
-            <button
-              className={activeTab === "overview" ? styles.activeTab : ""}
-              onClick={() => setActiveTab("overview")}
-            >
-              📋 Обзор
-            </button>
+        <div className="space-y-2">
+          <div className="flex flex-wrap gap-2">
+            <Button variant={activeTab === "comparison" ? "default" : "outline"} size="sm" onClick={() => setActiveTab("comparison")}><BarChart3 className="h-4 w-4 mr-1" />Сравнение</Button>
+            <Button variant={activeTab === "seasonality" ? "default" : "outline"} size="sm" onClick={() => setActiveTab("seasonality")}><Thermometer className="h-4 w-4 mr-1" />Сезонность</Button>
+            <Button variant={activeTab === "trends" ? "default" : "outline"} size="sm" onClick={() => setActiveTab("trends")}><TrendingUp className="h-4 w-4 mr-1" />Тренды</Button>
+            <Button variant={activeTab === "health" ? "default" : "outline"} size="sm" onClick={() => setActiveTab("health")}><Heart className="h-4 w-4 mr-1" />Здоровье</Button>
+            <Button variant={activeTab === "overview" ? "default" : "outline"} size="sm" onClick={() => setActiveTab("overview")}><ClipboardList className="h-4 w-4 mr-1" />Обзор</Button>
           </div>
           {activeTab === "overview" && (
-            <div className={styles.periodSelector}>
-              <button
-                className={period === "month" ? styles.active : ""}
-                onClick={() => setPeriod("month")}
-              >
-                Месяц
-              </button>
-              <button
-                className={period === "quarter" ? styles.active : ""}
-                onClick={() => setPeriod("quarter")}
-              >
-                Квартал
-              </button>
-              <button
-                className={period === "year" ? styles.active : ""}
-                onClick={() => setPeriod("year")}
-              >
-                Год
-              </button>
+            <div className="flex gap-1">
+              <Button variant={period === "month" ? "secondary" : "ghost"} size="sm" onClick={() => setPeriod("month")}>Месяц</Button>
+              <Button variant={period === "quarter" ? "secondary" : "ghost"} size="sm" onClick={() => setPeriod("quarter")}>Квартал</Button>
+              <Button variant={period === "year" ? "secondary" : "ghost"} size="sm" onClick={() => setPeriod("year")}>Год</Button>
             </div>
           )}
         </div>
       </div>
 
       {activeTab === "comparison" && <PeriodComparisonView />}
-
       {activeTab === "seasonality" && <SeasonalityView />}
-
       {activeTab === "trends" && <TrendsView />}
-
       {activeTab === "health" && <FinancialHealthView />}
 
       {activeTab === "overview" && (
-        <>
-
-      {/* Period Comparison */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>
-          📊 Сравнение с прошлым {getPeriodLabel()}
-        </h2>
-        <div className={styles.comparisonGrid}>
-          <div className={styles.comparisonCard}>
-            <div className={styles.comparisonLabel}>Доходы</div>
-            <div className={styles.comparisonValue}>
-              {formatMoney(data.comparison.current.income)}
-            </div>
-            <div className={styles.comparisonPrevious}>
-              Было: {formatMoney(data.comparison.previous.income)}
-            </div>
-            <div className={getChangeClass(data.comparison.changes.income)}>
-              {formatChange(data.comparison.changes.income)}
-            </div>
-          </div>
-
-          <div className={styles.comparisonCard}>
-            <div className={styles.comparisonLabel}>Расходы</div>
-            <div className={styles.comparisonValue}>
-              {formatMoney(data.comparison.current.expense)}
-            </div>
-            <div className={styles.comparisonPrevious}>
-              Было: {formatMoney(data.comparison.previous.expense)}
-            </div>
-            <div className={getChangeClass(data.comparison.changes.expense, true)}>
-              {formatChange(data.comparison.changes.expense)}
-            </div>
-          </div>
-
-          <div className={styles.comparisonCard}>
-            <div className={styles.comparisonLabel}>Баланс</div>
-            <div className={styles.comparisonValue}>
-              {formatMoney(data.comparison.current.balance)}
-            </div>
-            <div className={styles.comparisonPrevious}>
-              Было: {formatMoney(data.comparison.previous.balance)}
-            </div>
-            <div className={getChangeClass(data.comparison.changes.balance)}>
-              {formatChange(data.comparison.changes.balance)}
-            </div>
-          </div>
-
-          <div className={styles.comparisonCard}>
-            <div className={styles.comparisonLabel}>Транзакций</div>
-            <div className={styles.comparisonValue}>
-              {data.comparison.current.transactionCount}
-            </div>
-            <div className={styles.comparisonPrevious}>
-              Было: {data.comparison.previous.transactionCount}
-            </div>
-            <div className={getChangeClass(data.comparison.changes.transactionCount)}>
-              {formatChange(data.comparison.changes.transactionCount)}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Top 5 Transactions */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>💰 Топ-5 самых крупных операций</h2>
-        <div className={styles.topList}>
-          {data.top5.map((t, index) => (
-            <div key={t.id} className={styles.topItem}>
-              <div className={styles.topRank}>{index + 1}</div>
-              <div className={styles.topInfo}>
-                <div className={styles.topDescription}>
-                  {t.description || t.category}
+        <div className="space-y-6">
+          {/* Period Comparison */}
+          <Card>
+            <CardHeader><CardTitle>Сравнение с прошлым {getPeriodLabel()}</CardTitle></CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="p-4 rounded-lg bg-muted/50">
+                  <div className="text-sm text-muted-foreground">Доходы</div>
+                  <div className="text-xl font-bold">{formatMoney(data.comparison.current.income)}</div>
+                  <div className="text-xs text-muted-foreground">Было: {formatMoney(data.comparison.previous.income)}</div>
+                  <div className={cn("text-sm font-medium", getChangeClass(data.comparison.changes.income))}>{formatChange(data.comparison.changes.income)}</div>
                 </div>
-                <div className={styles.topMeta}>
-                  {new Date(t.date).toLocaleDateString("ru-RU")} · {t.category}
+                <div className="p-4 rounded-lg bg-muted/50">
+                  <div className="text-sm text-muted-foreground">Расходы</div>
+                  <div className="text-xl font-bold">{formatMoney(data.comparison.current.expense)}</div>
+                  <div className="text-xs text-muted-foreground">Было: {formatMoney(data.comparison.previous.expense)}</div>
+                  <div className={cn("text-sm font-medium", getChangeClass(data.comparison.changes.expense, true))}>{formatChange(data.comparison.changes.expense)}</div>
+                </div>
+                <div className="p-4 rounded-lg bg-muted/50">
+                  <div className="text-sm text-muted-foreground">Баланс</div>
+                  <div className="text-xl font-bold">{formatMoney(data.comparison.current.balance)}</div>
+                  <div className="text-xs text-muted-foreground">Было: {formatMoney(data.comparison.previous.balance)}</div>
+                  <div className={cn("text-sm font-medium", getChangeClass(data.comparison.changes.balance))}>{formatChange(data.comparison.changes.balance)}</div>
+                </div>
+                <div className="p-4 rounded-lg bg-muted/50">
+                  <div className="text-sm text-muted-foreground">Транзакций</div>
+                  <div className="text-xl font-bold">{data.comparison.current.transactionCount}</div>
+                  <div className="text-xs text-muted-foreground">Было: {data.comparison.previous.transactionCount}</div>
+                  <div className={cn("text-sm font-medium", getChangeClass(data.comparison.changes.transactionCount))}>{formatChange(data.comparison.changes.transactionCount)}</div>
                 </div>
               </div>
-              <div
-                className={`${styles.topAmount} ${
-                  t.direction === "income" ? styles.income : styles.expense
-                }`}
-              >
-                {t.direction === "income" ? "+" : "-"}
-                {formatMoney(t.amount)}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+            </CardContent>
+          </Card>
 
-      {/* Category Averages */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>📈 Средний чек по категориям</h2>
-        <div className={styles.chartContainer}>
-          <Bar
-            data={categoryChartData}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: {
-                  display: false,
-                },
-              },
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  ticks: {
-                    callback: (value) => `${value} ₽`,
-                  },
-                },
-              },
-            }}
-          />
-        </div>
-        <div className={styles.categoryList}>
-          {data.categoryAverages.map((c) => (
-            <div key={c.category_id} className={styles.categoryItem}>
-              <div className={styles.categoryName}>{c.category}</div>
-              <div className={styles.categoryStats}>
-                <div>Средний чек: {formatMoney(c.averageAmount)}</div>
-                <div>Транзакций: {c.transactionCount}</div>
-                <div>Всего: {formatMoney(c.totalAmount)}</div>
+          {/* Top 5 Transactions */}
+          <Card>
+            <CardHeader><CardTitle>Топ-5 самых крупных операций</CardTitle></CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {data.top5.map((t, index) => (
+                  <div key={t.id} className="flex items-center gap-3 p-3 rounded-lg border">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">{index + 1}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{t.description || t.category}</div>
+                      <div className="text-xs text-muted-foreground">{new Date(t.date).toLocaleDateString("ru-RU")} · {t.category}</div>
+                    </div>
+                    <div className={cn("font-bold", t.direction === "income" ? "text-green-600" : "text-red-600")}>
+                      {t.direction === "income" ? "+" : "-"}{formatMoney(t.amount)}
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
+            </CardContent>
+          </Card>
 
-      {/* Monthly Trends */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>📉 Тренды за 12 месяцев</h2>
-        <div className={styles.chartContainer}>
-          <Line
-            data={trendsChartData}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: {
-                  position: "top",
-                },
-              },
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  ticks: {
-                    callback: (value) => `${value} ₽`,
-                  },
-                },
-              },
-            }}
-          />
+          {/* Category Averages */}
+          <Card>
+            <CardHeader><CardTitle>Средний чек по категориям</CardTitle></CardHeader>
+            <CardContent>
+              <div className="h-64 mb-4"><Bar data={categoryChartData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: (value) => `${value} ₽` } } } }} /></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                {data.categoryAverages.map((c) => (
+                  <div key={c.category_id} className="p-3 rounded-lg border">
+                    <div className="font-medium">{c.category}</div>
+                    <div className="text-sm text-muted-foreground">Средний: {formatMoney(c.averageAmount)} · {c.transactionCount} тр. · Всего: {formatMoney(c.totalAmount)}</div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Monthly Trends */}
+          <Card>
+            <CardHeader><CardTitle>Тренды за 12 месяцев</CardTitle></CardHeader>
+            <CardContent><div className="h-64"><Line data={trendsChartData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "top" } }, scales: { y: { beginAtZero: true, ticks: { callback: (value) => `${value} ₽` } } } }} /></div></CardContent>
+          </Card>
         </div>
-      </section>
-        </>
       )}
     </div>
   );

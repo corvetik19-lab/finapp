@@ -5,7 +5,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loanFormSchema, type LoanFormData } from "@/lib/loans/schema";
 import type { Loan } from "@/lib/loans/types";
-import styles from "./LoanModal.module.css";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertCircle, Info, Loader2 } from "lucide-react";
 
 type LoanFormModalProps = {
   open: boolean;
@@ -159,260 +164,120 @@ export default function LoanFormModal({ open, onClose, onSuccess, loan }: LoanFo
     }
   };
 
-  if (!open) return null;
-
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h3>{isEdit ? "Редактировать кредит" : "Добавить кредит"}</h3>
-          <button className={styles.closeBtn} onClick={onClose} disabled={isSaving}>
-            <span className="material-icons">close</span>
-          </button>
-        </div>
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{isEdit ? "Редактировать кредит" : "Добавить кредит"}</DialogTitle>
+        </DialogHeader>
 
-        <form onSubmit={form.handleSubmit(handleSubmit)} className={styles.modalBody}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
           {error && (
-            <div className={styles.errorMessage}>
-              <span className="material-icons">error</span>
-              {error}
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+              <AlertCircle className="h-4 w-4" />{error}
             </div>
           )}
 
-          <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-              <label>
-                <span className="material-icons">assignment</span>
-                Название кредита
-              </label>
-              <input
-                type="text"
-                placeholder="Напр., Ипотека"
-                {...form.register("name")}
-                disabled={isSaving}
-              />
-              {form.formState.errors.name && (
-                <span className={styles.fieldError}>{form.formState.errors.name.message}</span>
-              )}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Название кредита</Label>
+              <Input type="text" placeholder="Напр., Ипотека" {...form.register("name")} disabled={isSaving} />
+              {form.formState.errors.name && <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>}
             </div>
-
-            <div className={styles.formGroup}>
-              <label>
-                <span className="material-icons">account_balance</span>
-                Банк
-              </label>
-              <input
-                type="text"
-                placeholder="Напр., Сбербанк"
-                {...form.register("bank")}
-                disabled={isSaving}
-              />
-              {form.formState.errors.bank && (
-                <span className={styles.fieldError}>{form.formState.errors.bank.message}</span>
-              )}
+            <div className="space-y-2">
+              <Label>Банк</Label>
+              <Input type="text" placeholder="Напр., Сбербанк" {...form.register("bank")} disabled={isSaving} />
+              {form.formState.errors.bank && <p className="text-xs text-destructive">{form.formState.errors.bank.message}</p>}
             </div>
           </div>
 
-          <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-              <label>
-                <span className="material-icons">paid</span>
-                Сумма кредита (₽)
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                placeholder="Напр., 1500000"
-                {...form.register("principalAmount", { valueAsNumber: true })}
-                disabled={isSaving}
-              />
-              {form.formState.errors.principalAmount && (
-                <span className={styles.fieldError}>{form.formState.errors.principalAmount.message}</span>
-              )}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Сумма кредита (₽)</Label>
+              <Input type="number" step="0.01" placeholder="Напр., 1500000" {...form.register("principalAmount", { valueAsNumber: true })} disabled={isSaving} />
+              {form.formState.errors.principalAmount && <p className="text-xs text-destructive">{form.formState.errors.principalAmount.message}</p>}
             </div>
-
-            <div className={styles.formGroup}>
-              <label>
-                <span className="material-icons">percent</span>
-                Процентная ставка (%)
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                placeholder="Напр., 8.5"
-                {...form.register("interestRate", { valueAsNumber: true })}
-                disabled={isSaving}
-              />
-              {form.formState.errors.interestRate && (
-                <span className={styles.fieldError}>{form.formState.errors.interestRate.message}</span>
-              )}
+            <div className="space-y-2">
+              <Label>Процентная ставка (%)</Label>
+              <Input type="number" step="0.01" placeholder="Напр., 8.5" {...form.register("interestRate", { valueAsNumber: true })} disabled={isSaving} />
+              {form.formState.errors.interestRate && <p className="text-xs text-destructive">{form.formState.errors.interestRate.message}</p>}
             </div>
           </div>
 
-          <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-              <label>
-                <span className="material-icons">payments</span>
-                Ежемесячный платёж (₽)
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                placeholder="Напр., 28500"
-                {...form.register("monthlyPayment", { valueAsNumber: true })}
-                disabled={isSaving}
-              />
-              {form.formState.errors.monthlyPayment && (
-                <span className={styles.fieldError}>{form.formState.errors.monthlyPayment.message}</span>
-              )}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Ежемесячный платёж (₽)</Label>
+              <Input type="number" step="0.01" placeholder="Напр., 28500" {...form.register("monthlyPayment", { valueAsNumber: true })} disabled={isSaving} />
+              {form.formState.errors.monthlyPayment && <p className="text-xs text-destructive">{form.formState.errors.monthlyPayment.message}</p>}
             </div>
-
-            <div className={styles.formGroup}>
-              <label>
-                <span className="material-icons">event</span>
-                Дата выдачи
-              </label>
-              <input
-                type="date"
-                {...form.register("issueDate")}
-                disabled={isSaving}
-              />
-              {form.formState.errors.issueDate && (
-                <span className={styles.fieldError}>{form.formState.errors.issueDate.message}</span>
-              )}
+            <div className="space-y-2">
+              <Label>Дата выдачи</Label>
+              <Input type="date" {...form.register("issueDate")} disabled={isSaving} />
+              {form.formState.errors.issueDate && <p className="text-xs text-destructive">{form.formState.errors.issueDate.message}</p>}
             </div>
           </div>
 
-          <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-              <label>
-                <span className="material-icons">schedule</span>
-                Срок кредита (месяцы)
-              </label>
-              <input
-                type="number"
-                placeholder="Рассчитается автоматически"
-                value={calculatedTermMonths || ""}
-                disabled
-                style={{ backgroundColor: "var(--bg-secondary)", cursor: "not-allowed" }}
-              />
-              <span style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>
-                Рассчитывается автоматически из дат выдачи и окончания
-              </span>
-              {form.formState.errors.termMonths && (
-                <span className={styles.fieldError}>{form.formState.errors.termMonths.message}</span>
-              )}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Срок кредита (месяцы)</Label>
+              <Input type="number" placeholder="Автоматически" value={calculatedTermMonths || ""} disabled className="bg-muted/50" />
+              <p className="text-xs text-muted-foreground">Рассчитывается из дат выдачи и окончания</p>
             </div>
-
-            <div className={styles.formGroup}>
-              <label>
-                <span className="material-icons">event</span>
-                Дата окончания
-              </label>
-              <input
-                type="date"
-                {...form.register("endDate")}
-                disabled={isSaving}
-              />
+            <div className="space-y-2">
+              <Label>Дата окончания</Label>
+              <Input type="date" {...form.register("endDate")} disabled={isSaving} />
             </div>
           </div>
 
-          <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-              <label>
-                <span className="material-icons">calculate</span>
-                Общая сумма к оплате (₽)
-              </label>
-              <input
-                type="text"
-                placeholder="Рассчитается автоматически"
-                value={calculatedTotalAmount ? calculatedTotalAmount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ""}
-                disabled
-                style={{ backgroundColor: "var(--bg-secondary)", cursor: "not-allowed" }}
-              />
-              <span style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>
-                Рассчитывается как: Ежемесячный платёж × Срок кредита
-              </span>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Общая сумма к оплате (₽)</Label>
+              <Input type="text" placeholder="Автоматически" value={calculatedTotalAmount ? calculatedTotalAmount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ""} disabled className="bg-muted/50" />
+              <p className="text-xs text-muted-foreground">Ежемесячный платёж × Срок кредита</p>
             </div>
-
-            <div className={styles.formGroup}>
+            <div className="space-y-2">
               {calculatedTotalAmount && form.watch("principalAmount") > 0 && (
-                <div className={styles.infoMessage}>
-                  <span className="material-icons">info</span>
-                  <span>
-                    Переплата: {(calculatedTotalAmount - form.watch("principalAmount")).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽
-                  </span>
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 text-amber-700 text-sm mt-6">
+                  <Info className="h-4 w-4" />
+                  <span>Переплата: {(calculatedTotalAmount - form.watch("principalAmount")).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽</span>
                 </div>
               )}
             </div>
           </div>
 
-          <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-              <label>
-                <span className="material-icons">event_available</span>
-                День следующего платежа
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="31"
-                placeholder="Например, 25"
-                value={paymentDay}
-                onChange={(e) => setPaymentDay(e.target.value)}
-                disabled={isSaving}
-              />
-              <span style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>
-                День месяца для платежа (1-31). Дата будет установлена на следующий месяц.
-              </span>
-              {form.formState.errors.nextPaymentDate && (
-                <span className={styles.fieldError}>{form.formState.errors.nextPaymentDate.message}</span>
-              )}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>День следующего платежа</Label>
+              <Input type="number" min="1" max="31" placeholder="Например, 25" value={paymentDay} onChange={(e) => setPaymentDay(e.target.value)} disabled={isSaving} />
+              <p className="text-xs text-muted-foreground">День месяца (1-31). Дата будет на следующий месяц.</p>
             </div>
-            <div className={styles.formGroup}>
-              <div className={styles.infoMessage}>
-                <span className="material-icons">info</span>
-                <span>Создаст напоминание за 10 дней до срока</span>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-50 text-blue-700 text-sm mt-6">
+                <Info className="h-4 w-4" /><span>Создаст напоминание за 10 дней до срока</span>
               </div>
             </div>
           </div>
 
-          <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-              <label>
-                <span className="material-icons">description</span>
-                Тип платежа
-              </label>
-              <select {...form.register("paymentType")} disabled={isSaving}>
-                <option value="annuity">Аннуитетный</option>
-                <option value="differentiated">Дифференцированный</option>
-              </select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Тип платежа</Label>
+              <Select value={form.watch("paymentType")} onValueChange={(v) => form.setValue("paymentType", v as "annuity" | "differentiated")} disabled={isSaving}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="annuity">Аннуитетный</SelectItem><SelectItem value="differentiated">Дифференцированный</SelectItem></SelectContent>
+              </Select>
             </div>
-
-            <div className={styles.formGroup}>
-              <label>
-                <span className="material-icons">badge</span>
-                Номер договора
-              </label>
-              <input
-                type="text"
-                placeholder="Напр., ИП-2023-045678"
-                {...form.register("contractNumber")}
-                disabled={isSaving}
-              />
+            <div className="space-y-2">
+              <Label>Номер договора</Label>
+              <Input type="text" placeholder="Напр., ИП-2023-045678" {...form.register("contractNumber")} disabled={isSaving} />
             </div>
           </div>
 
-          <div className={styles.formActions}>
-            <button type="button" className={styles.btnSecondary} onClick={onClose} disabled={isSaving}>
-              Отмена
-            </button>
-            <button type="submit" className={styles.btnPrimary} disabled={isSaving}>
-              {isSaving ? "Сохранение..." : isEdit ? "Сохранить" : "Добавить"}
-            </button>
-          </div>
+          <DialogFooter className="gap-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSaving}>Отмена</Button>
+            <Button type="submit" disabled={isSaving}>{isSaving ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Сохранение...</> : isEdit ? "Сохранить" : "Добавить"}</Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

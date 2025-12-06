@@ -1,4 +1,3 @@
-import styles from "@/components/budgets/Budgets.module.css";
 import { createRSCClient } from "@/lib/supabase/helpers";
 import { listBudgetsWithUsage } from "@/lib/budgets/service";
 import { formatMoney } from "@/lib/utils/format";
@@ -7,6 +6,8 @@ import BudgetsList from "@/components/budgets/BudgetsList";
 import BudgetForm from "@/components/budgets/BudgetForm";
 import SavingsDistribution from "@/components/budgets/SavingsDistribution";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
+import { Card, CardContent } from "@/components/ui/card";
+import { TrendingUp, TrendingDown, Wallet, PieChart, ListChecks, Clock } from "lucide-react";
 
 // Делаем страницу динамической
 export const dynamic = 'force-dynamic';
@@ -147,74 +148,113 @@ export default async function BudgetsPage() {
     : 0;
 
   return (
-    <div className={styles.container}>
-      <div className={styles.topBar}>
-        <div className={styles.pageTitle}>Бюджеты</div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Бюджеты</h1>
+          <p className="text-sm text-muted-foreground">Планирование доходов и расходов</p>
+        </div>
       </div>
 
-      <section className={styles.summaryGrid}>
-        <div className={`${styles.summaryCard} ${styles.incomeCard}`}>
-          <div className={styles.summaryIcon}>
-            <span className="material-icons">trending_up</span>
-          </div>
-          <div className={styles.summaryLabel}>💰 Плановые доходы</div>
-          <div className={styles.summaryValue}>{formatMoney(totalIncomeLimitMinor, "RUB")}</div>
-          <div className={styles.summaryMeta}>Получено: {formatMoney(totalIncomeActualMinor, "RUB")}</div>
-        </div>
+      {/* Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 text-green-600">
+                <TrendingUp className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Плановые доходы</p>
+                <p className="text-lg font-bold">{formatMoney(totalIncomeLimitMinor, "RUB")}</p>
+                <p className="text-xs text-muted-foreground">Получено: {formatMoney(totalIncomeActualMinor, "RUB")}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         
-        <div className={`${styles.summaryCard} ${styles.expenseCard}`}>
-          <div className={styles.summaryIcon}>
-            <span className="material-icons">trending_down</span>
-          </div>
-          <div className={styles.summaryLabel}>💸 Плановые расходы</div>
-          <div className={styles.summaryValue}>{formatMoney(totalExpenseLimitMinor, "RUB")}</div>
-          <div className={styles.summaryMeta}>Потрачено: {formatMoney(totalExpenseSpentMinor, "RUB")}</div>
-        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 text-red-600">
+                <TrendingDown className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Плановые расходы</p>
+                <p className="text-lg font-bold">{formatMoney(totalExpenseLimitMinor, "RUB")}</p>
+                <p className="text-xs text-muted-foreground">Потрачено: {formatMoney(totalExpenseSpentMinor, "RUB")}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         
-        <div className={`${styles.summaryCard} ${styles.balanceCard}`}>
-          <div className={styles.summaryIcon}>
-            <span className="material-icons">account_balance_wallet</span>
-          </div>
-          <div className={styles.summaryLabel}>💵 Планируемая экономия</div>
-          <div className={styles.summaryValue} style={{ color: budgetBalanceMinor >= 0 ? 'var(--success)' : 'var(--danger)' }}>
-            {formatMoney(budgetBalanceMinor, "RUB")}
-          </div>
-          <div className={styles.summaryMeta}>Фактическая: {formatMoney(actualBalanceMinor, "RUB")}</div>
-        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                <Wallet className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Планируемая экономия</p>
+                <p className={`text-lg font-bold ${budgetBalanceMinor >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatMoney(budgetBalanceMinor, "RUB")}
+                </p>
+                <p className="text-xs text-muted-foreground">Фактическая: {formatMoney(actualBalanceMinor, "RUB")}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         
-        <div className={`${styles.summaryCard} ${styles.coverageCard}`}>
-          <div className={styles.summaryIcon}>
-            <span className="material-icons">pie_chart</span>
-          </div>
-          <div className={styles.summaryLabel}>📊 Покрытие расходов</div>
-          <div className={styles.summaryValue} style={{ color: coveragePercent <= 100 ? 'var(--success)' : 'var(--danger)' }}>
-            {coveragePercent}%
-          </div>
-          <div className={styles.summaryMeta}>
-            {coveragePercent <= 100 
-              ? `✓ Доходы покрывают расходы` 
-              : `⚠️ Расходы превышают доходы на ${coveragePercent - 100}%`}
-          </div>
-        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 text-purple-600">
+                <PieChart className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Покрытие расходов</p>
+                <p className={`text-lg font-bold ${coveragePercent <= 100 ? 'text-green-600' : 'text-red-600'}`}>
+                  {coveragePercent}%
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {coveragePercent <= 100 ? `✓ Доходы покрывают` : `⚠️ Превышение ${coveragePercent - 100}%`}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         
-        <div className={styles.summaryCard}>
-          <div className={styles.summaryIcon}>
-            <span className="material-icons">list_alt</span>
-          </div>
-          <div className={styles.summaryLabel}>📋 Всего бюджетов</div>
-          <div className={styles.summaryValue}>{budgets.length}</div>
-          <div className={styles.summaryMeta}>Доходы: {incomeBudgets.length} | Расходы: {expenseBudgets.length}</div>
-        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
+                <ListChecks className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Всего бюджетов</p>
+                <p className="text-lg font-bold">{budgets.length}</p>
+                <p className="text-xs text-muted-foreground">Доходы: {incomeBudgets.length} | Расходы: {expenseBudgets.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         
-        <div className={styles.summaryCard}>
-          <div className={styles.summaryIcon}>
-            <span className="material-icons">update</span>
-          </div>
-          <div className={styles.summaryLabel}>⏳ Остаток бюджета</div>
-          <div className={styles.summaryValue}>{formatMoney(actualBalanceMinor, "RUB")}</div>
-          <div className={styles.summaryMeta}>Фактический остаток (получено - потрачено)</div>
-        </div>
-      </section>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
+                <Clock className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Остаток бюджета</p>
+                <p className="text-lg font-bold">{formatMoney(actualBalanceMinor, "RUB")}</p>
+                <p className="text-xs text-muted-foreground">Фактический остаток</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <BudgetForm 
         categories={availableCategories} 
@@ -229,9 +269,7 @@ export default async function BudgetsPage() {
         initialDistributions={initialDistributions}
       />
 
-      <section className={styles.list}>
-        <BudgetsList budgets={budgets} categories={categories} />
-      </section>
+      <BudgetsList budgets={budgets} categories={categories} />
     </div>
   );
 }

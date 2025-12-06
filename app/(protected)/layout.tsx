@@ -6,6 +6,7 @@ import ProtectedShell from "@/components/layout/ProtectedShell";
 import PlatformHeader from "@/components/platform/PlatformHeader";
 import OfflineIndicator from "@/components/offline/OfflineIndicator";
 import { getCurrentOrganization, getActiveOrganizationInfo } from "@/lib/platform/organization";
+import { getEnabledModes } from "@/lib/platform/platform-settings";
 
 export default async function ProtectedLayout({ children }: { children: ReactNode }) {
   const {
@@ -18,6 +19,7 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
 
   const organization = await getCurrentOrganization();
   const activeOrgInfo = await getActiveOrganizationInfo();
+  const globalEnabledModes = await getEnabledModes();
 
   // Получаем роль пользователя (используем admin client для обхода RLS)
   let isSuperAdmin = false;
@@ -63,6 +65,7 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
           full_name: user.user_metadata?.full_name,
         }}
         organization={organization ? { name: organization.name, allowed_modes: organization.allowed_modes } : undefined}
+        globalEnabledModes={globalEnabledModes}
         notificationCount={0}
         impersonating={null}
         isSuperAdmin={isSuperAdmin}

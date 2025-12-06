@@ -1,7 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import styles from './DepartmentsManager.module.css';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Plus, X, Pencil, Trash2, Users, Building2, Loader2 } from "lucide-react";
 
 interface Department {
   id: string;
@@ -131,112 +136,18 @@ export function DepartmentsManager({ companyId }: DepartmentsManagerProps) {
   };
 
   if (loading) {
-    return (
-      <div className={styles.loading}>
-        <span>⏳</span> Загрузка отделов...
-      </div>
-    );
+    return <div className="flex items-center justify-center py-8 text-muted-foreground"><Loader2 className="h-5 w-5 mr-2 animate-spin" />Загрузка отделов...</div>;
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h4 className={styles.title}>🏢 Отделы</h4>
-        <button
-          onClick={() => {
-            setShowForm(!showForm);
-            setEditingId(null);
-            setFormData({ name: '', description: '', color: COLORS[0] });
-          }}
-          className={styles.addButton}
-        >
-          {showForm ? '✕ Отмена' : '➕ Добавить'}
-        </button>
-      </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between"><h4 className="font-semibold flex items-center gap-2"><Building2 className="h-5 w-5" />Отделы</h4><Button onClick={() => { setShowForm(!showForm); setEditingId(null); setFormData({ name: '', description: '', color: COLORS[0] }); }} variant={showForm ? "outline" : "default"} size="sm">{showForm ? <><X className="h-4 w-4 mr-1" />Отмена</> : <><Plus className="h-4 w-4 mr-1" />Добавить</>}</Button></div>
 
-      {error && (
-        <div className={styles.error}>{error}</div>
-      )}
+      {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
 
-      {showForm && (
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <input
-            type="text"
-            placeholder="Название отдела"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className={styles.input}
-            required
-          />
-          <textarea
-            placeholder="Описание (необязательно)"
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className={styles.textarea}
-            rows={2}
-          />
-          <div className={styles.colors}>
-            {COLORS.map(color => (
-              <button
-                key={color}
-                type="button"
-                className={`${styles.colorButton} ${formData.color === color ? styles.colorSelected : ''}`}
-                style={{ background: color }}
-                onClick={() => setFormData({ ...formData, color })}
-              />
-            ))}
-          </div>
-          <button type="submit" className={styles.submitButton}>
-            {editingId ? '💾 Сохранить' : '➕ Создать'}
-          </button>
-        </form>
-      )}
+      {showForm && <Card><CardContent className="pt-4"><form onSubmit={handleSubmit} className="space-y-3"><Input placeholder="Название отдела" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required /><Textarea placeholder="Описание (необязательно)" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} rows={2} /><div className="flex gap-2 flex-wrap">{COLORS.map(c => <button key={c} type="button" className={`w-6 h-6 rounded-full border-2 ${formData.color === c ? 'border-foreground' : 'border-transparent'}`} style={{ background: c }} onClick={() => setFormData({ ...formData, color: c })} />)}</div><Button type="submit">{editingId ? 'Сохранить' : 'Создать'}</Button></form></CardContent></Card>}
 
-      {departments.length === 0 ? (
-        <div className={styles.empty}>
-          <span className={styles.emptyIcon}>🏢</span>
-          <p>Отделы не созданы</p>
-        </div>
-      ) : (
-        <div className={styles.list}>
-          {departments.map((dept) => (
-            <div key={dept.id} className={styles.department}>
-              <div 
-                className={styles.colorBar}
-                style={{ background: dept.color }}
-              />
-              <div className={styles.deptInfo}>
-                <div className={styles.deptName}>{dept.name}</div>
-                {dept.description && (
-                  <div className={styles.deptDesc}>{dept.description}</div>
-                )}
-                <div className={styles.deptMeta}>
-                  <span>👥 {dept.employees_count} сотрудников</span>
-                  {dept.head && (
-                    <span>👤 {dept.head.full_name}</span>
-                  )}
-                </div>
-              </div>
-              <div className={styles.deptActions}>
-                <button
-                  onClick={() => handleEdit(dept)}
-                  className={styles.actionButton}
-                  title="Редактировать"
-                >
-                  ✏️
-                </button>
-                <button
-                  onClick={() => handleDelete(dept.id)}
-                  className={styles.actionButton}
-                  title="Удалить"
-                >
-                  🗑️
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {departments.length === 0 ? <div className="text-center py-8"><Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-2" /><p className="text-muted-foreground">Отделы не созданы</p></div> : <div className="space-y-2">{departments.map(dept => <Card key={dept.id}><CardContent className="pt-3 flex items-center gap-3"><div className="w-1 h-12 rounded" style={{ background: dept.color }} /><div className="flex-1"><div className="font-medium">{dept.name}</div>{dept.description && <div className="text-sm text-muted-foreground">{dept.description}</div>}<div className="flex gap-3 text-xs text-muted-foreground mt-1"><span className="flex items-center gap-1"><Users className="h-3 w-3" />{dept.employees_count}</span>{dept.head && <span>👤 {dept.head.full_name}</span>}</div></div><div className="flex gap-1"><Button variant="ghost" size="icon" onClick={() => handleEdit(dept)} title="Редактировать"><Pencil className="h-4 w-4" /></Button><Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(dept.id)} title="Удалить"><Trash2 className="h-4 w-4" /></Button></div></CardContent></Card>)}</div>}
     </div>
   );
 }

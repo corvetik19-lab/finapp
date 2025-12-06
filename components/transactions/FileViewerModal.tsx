@@ -1,7 +1,8 @@
 'use client';
 
-import { createPortal } from 'react-dom';
-import styles from './AttachmentsList.module.css';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Download, FileText } from "lucide-react";
 
 interface FileViewerModalProps {
   fileName: string;
@@ -11,53 +12,32 @@ interface FileViewerModalProps {
 }
 
 export function FileViewerModal({ fileName, fileUrl, mimeType, onClose }: FileViewerModalProps) {
-  if (typeof document === 'undefined') return null;
-
-  return createPortal(
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h3>{fileName}</h3>
-          <button 
-            className={styles.modalClose}
-            onClick={onClose}
-            title="Закрыть"
-          >
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <div className={styles.modalBody}>
+  return (
+    <Dialog open onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-4xl max-h-[90vh]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 truncate">
+            <FileText className="h-4 w-4 flex-shrink-0" />
+            {fileName}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="flex-1 min-h-[400px] max-h-[60vh] overflow-auto rounded-lg border bg-muted/30">
           {mimeType?.startsWith('image/') ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img 
-              src={fileUrl} 
-              alt={fileName}
-              className={styles.modalImage}
-            />
+            <img src={fileUrl} alt={fileName} className="max-w-full h-auto mx-auto" />
           ) : (
-            <iframe
-              src={fileUrl}
-              className={styles.modalIframe}
-              title="Просмотр файла"
-            />
+            <iframe src={fileUrl} className="w-full h-full min-h-[400px]" title="Просмотр файла" />
           )}
         </div>
-        <div className={styles.modalFooter}>
-          <a
-            href={fileUrl}
-            download
-            className={styles.modalDownloadBtn}
-          >
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            Скачать файл
-          </a>
-        </div>
-      </div>
-    </div>,
-    document.body
+        <DialogFooter>
+          <Button variant="outline" asChild>
+            <a href={fileUrl} download>
+              <Download className="h-4 w-4 mr-1" />
+              Скачать
+            </a>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

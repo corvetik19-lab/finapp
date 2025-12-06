@@ -1,26 +1,45 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import { getAvailableModes, getModeConfig } from "@/lib/platform/mode-registry";
-import styles from "./Platform.module.css";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Wallet, TrendingUp, User, FileText, Settings, ChevronUp, ChevronDown, CheckCircle, type LucideIcon } from "lucide-react";
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  account_balance_wallet: Wallet,
+  trending_up: TrendingUp,
+  person: User,
+  description: FileText,
+  settings: Settings,
+};
 
 interface ModeSwitcherProps {
   allowedModes?: string[];
+  globalEnabledModes?: string[];
 }
 
-export default function ModeSwitcher({ allowedModes }: ModeSwitcherProps) {
+export default function ModeSwitcher({ allowedModes, globalEnabledModes }: ModeSwitcherProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [currentMode, setCurrentMode] = useState<string>("finance");
 
-  // Filter modes based on allowedModes prop
+  // Filter modes based on both organization allowedModes AND global platform settings
   const allModes = getAvailableModes();
-  const availableModes = allowedModes && allowedModes.length > 0
-    ? allModes.filter(mode => allowedModes.includes(mode.key))
+  
+  // Сначала фильтруем по глобально включённым режимам платформы
+  const globallyEnabled = globalEnabledModes && globalEnabledModes.length > 0
+    ? allModes.filter(mode => globalEnabledModes.includes(mode.key))
     : allModes;
+  
+  // Затем фильтруем по разрешённым для организации
+  // Если allowedModes передан (даже пустой массив) - используем его
+  // Если не передан (undefined) - используем глобальные
+  const availableModes = allowedModes !== undefined
+    ? globallyEnabled.filter(mode => allowedModes.includes(mode.key))
+    : globallyEnabled;
   
   // Если доступен только один режим - не показываем переключатель
   const singleModeOnly = availableModes.length === 1;
@@ -54,102 +73,58 @@ export default function ModeSwitcher({ allowedModes }: ModeSwitcherProps) {
 
   if (!current) return null;
 
-  // Если доступен только один режим - показываем только название без возможности переключения
+  const renderIcon = (iconName: string, color: string, className?: string) => {
+    const IconComponent = ICON_MAP[iconName] || Settings;
+    return <IconComponent className={className || "h-5 w-5"} style={{ color }} />;
+  };
+
   if (singleModeOnly && !pathname.startsWith('/admin') && !pathname.startsWith('/settings')) {
     const singleMode = availableModes[0];
     return (
-      <div className={styles.modeSwitcher}>
-        <div className={styles.modeSwitcherStatic}>
-          <span
-            className="material-icons"
-            style={{ color: singleMode.color }}
-          >
-            {singleMode.icon}
-          </span>
-          <span className={styles.modeNameDesktop}>{singleMode.name}</span>
+      <div className="relative">
+        <div className="flex items-center gap-2 px-3 py-2">
+          {renderIcon(singleMode.icon, singleMode.color)}
+          <span className="hidden sm:inline font-medium">{singleMode.name}</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={styles.modeSwitcher}>
-      <button
-        className={styles.modeSwitcherButton}
-        onClick={() => setIsOpen(!isOpen)}
-        aria-label="Переключить режим"
-      >
-        <span
-          className="material-icons"
-          style={{ color: current.color }}
-        >
-          {current.icon}
-        </span>
-        <span className={styles.modeNameDesktop}>{current.name}</span>
-        <span className="material-icons">
-          {isOpen ? "expand_less" : "expand_more"}
-        </span>
-      </button>
+    <div className="relative">
+      <Button variant="ghost" onClick={() => setIsOpen(!isOpen)} aria-label="Переключить режим" className="gap-2">
+        {renderIcon(current.icon, current.color)}
+        <span className="hidden sm:inline">{current.name}</span>
+        {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+      </Button>
 
-      {isOpen && typeof document !== 'undefined' && createPortal(
+      {isOpen && (
         <>
-          <div
-            className={styles.modeSwitcherOverlay}
-            onClick={() => setIsOpen(false)}
-          />
-          <div className={styles.modeSwitcherDropdown}>
-            <div className={styles.modeSwitcherHeader}>
-              <h3>Режимы работы</h3>
-              <p>Выберите режим для переключения</p>
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+          <div className="absolute top-full left-0 mt-2 z-50 w-80 rounded-xl border shadow-2xl bg-white dark:bg-zinc-900">
+            <div className="p-4 border-b">
+              <h3 className="font-semibold">Режимы работы</h3>
+              <p className="text-sm text-muted-foreground">Выберите режим для переключения</p>
             </div>
-
-            <div className={styles.modeList}>
+            <div className="p-2 max-h-80 overflow-y-auto">
               {availableModes.map((mode) => (
-                <button
-                  key={mode.key}
-                  className={`${styles.modeItem} ${
-                    mode.key === currentMode ? styles.modeItemActive : ""
-                  }`}
-                  onClick={() => handleModeSwitch(mode.key)}
-                  disabled={mode.key === currentMode}
-                >
-                  <div className={styles.modeItemIcon}>
-                    <span
-                      className="material-icons"
-                      style={{ color: mode.color }}
-                    >
-                      {mode.icon}
-                    </span>
-                  </div>
-                  <div className={styles.modeItemContent}>
-                    <div className={styles.modeItemHeader}>
-                      <span className={styles.modeItemName}>{mode.name}</span>
-                      {mode.isPremium && (
-                        <span className={styles.modeBadgePremium}>PRO</span>
-                      )}
-                      {mode.key === currentMode && (
-                        <span className={styles.modeBadgeActive}>Активен</span>
-                      )}
+                <button key={mode.key} className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors ${mode.key === currentMode ? 'bg-primary/10' : 'hover:bg-muted'}`} onClick={() => handleModeSwitch(mode.key)} disabled={mode.key === currentMode}>
+                  <div className="p-2 rounded-lg bg-muted">{renderIcon(mode.icon, mode.color)}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{mode.name}</span>
+                      {mode.isPremium && <Badge variant="secondary" className="text-xs">PRO</Badge>}
+                      {mode.key === currentMode && <Badge className="text-xs">Активен</Badge>}
                     </div>
-                    <p className={styles.modeItemDescription}>
-                      {mode.description}
-                    </p>
+                    <p className="text-xs text-muted-foreground truncate">{mode.description}</p>
                   </div>
-                  {mode.key === currentMode && (
-                    <span className="material-icons" style={{ color: mode.color }}>
-                      check_circle
-                    </span>
-                  )}
+                  {mode.key === currentMode && <CheckCircle className="h-5 w-5" style={{ color: mode.color }} />}
                 </button>
               ))}
             </div>
-
-            <div className={styles.modeSwitcherFooter}>
-              <p>Скоро появятся новые режимы! 🚀</p>
-            </div>
+            <div className="p-3 border-t text-center text-sm text-muted-foreground">Скоро появятся новые режимы!</div>
           </div>
-        </>,
-        document.body
+        </>
       )}
     </div>
   );

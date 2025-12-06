@@ -1,6 +1,8 @@
-import styles from "./BudgetStatusWidget.module.css";
 import type { BudgetWithUsage } from "@/lib/budgets/service";
 import { formatMoney } from "@/lib/utils/format";
+import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { X, Loader2, BookmarkPlus } from "lucide-react";
 
 const STATUS_LABEL: Record<BudgetWithUsage["status"], string> = {
   ok: "В пределах",
@@ -8,10 +10,10 @@ const STATUS_LABEL: Record<BudgetWithUsage["status"], string> = {
   over: "Перерасход",
 };
 
-const STATUS_PROGRESS_CLASS: Record<BudgetWithUsage["status"], string> = {
-  ok: styles.progressOk,
-  warning: styles.progressWarning,
-  over: styles.progressOver,
+const STATUS_COLORS: Record<BudgetWithUsage["status"], string> = {
+  ok: "text-green-600 bg-green-100",
+  warning: "text-yellow-600 bg-yellow-100",
+  over: "text-red-600 bg-red-100",
 };
 
 type BudgetStatusWidgetProps = {
@@ -24,11 +26,9 @@ type BudgetStatusWidgetProps = {
 export default function BudgetStatusWidget({ budgets, currency, onDelete, deletingId }: BudgetStatusWidgetProps) {
   if (!budgets || budgets.length === 0) {
     return (
-      <div className={styles.emptyState}>
-        <div className="material-icons" aria-hidden>
-          bookmark_add
-        </div>
-        <div>Создайте первый бюджет, чтобы отслеживать лимиты по категориям.</div>
+      <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+        <BookmarkPlus className="h-8 w-8 mb-2" />
+        <p className="text-sm">Создайте первый бюджет для отслеживания лимитов</p>
       </div>
     );
   }
@@ -36,66 +36,41 @@ export default function BudgetStatusWidget({ budgets, currency, onDelete, deleti
   const sorted = [...budgets].sort((a, b) => b.progress - a.progress);
 
   return (
-    <div className={styles.budgetGrid}>
+    <div className="grid gap-3 sm:grid-cols-2">
       {sorted.map((budget) => {
         const categoryName = budget.category?.name || "Без категории";
         const statusLabel = STATUS_LABEL[budget.status];
-        const progressPct = Math.min(Math.max(budget.progress * 100, 0), 120);
+        const progressPct = Math.min(Math.max(budget.progress * 100, 0), 100);
 
-        const periodStart = new Date(budget.period_start).toLocaleDateString("ru-RU", {
-          day: "2-digit",
-          month: "short",
-        });
-        const periodEnd = new Date(budget.period_end).toLocaleDateString("ru-RU", {
-          day: "2-digit",
-          month: "short",
-        });
+        const periodStart = new Date(budget.period_start).toLocaleDateString("ru-RU", { day: "2-digit", month: "short" });
+        const periodEnd = new Date(budget.period_end).toLocaleDateString("ru-RU", { day: "2-digit", month: "short" });
 
         return (
-          <article key={budget.id} className={styles.budgetCard}>
-            <header className={styles.budgetHeader}>
-              <div className={styles.budgetCategory}>
-                <span className={styles.categoryName}>{categoryName}</span>
+          <div key={budget.id} className="border rounded-lg p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="font-medium text-sm">{categoryName}</span>
+                <span className="text-xs text-muted-foreground ml-2">{periodStart} — {periodEnd}</span>
               </div>
-              <div className={styles.budgetActions}>
-                <div className={styles.budgetAmount}>{formatMoney(budget.limit_minor, budget.currency || currency)}</div>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-sm">{formatMoney(budget.limit_minor, budget.currency || currency)}</span>
                 {onDelete && (
-                  <button
-                    type="button"
-                    className={styles.deleteButton}
-                    onClick={() => onDelete(budget.id)}
-                    disabled={deletingId === budget.id}
-                    aria-label="Удалить бюджет"
-                  >
-                    <span className="material-icons" aria-hidden>
-                      {deletingId === budget.id ? "hourglass_top" : "close"}
-                    </span>
-                  </button>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onDelete(budget.id)} disabled={deletingId === budget.id}>
+                    {deletingId === budget.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
+                  </Button>
                 )}
               </div>
-            </header>
-
-            <div className={styles.budgetPeriod}>
-              {periodStart} — {periodEnd}
             </div>
-
-            <div className={styles.progressBar}>
-              <div
-                className={`${styles.progressFill} ${STATUS_PROGRESS_CLASS[budget.status]}`}
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-
-            <div className={styles.budgetDetails}>
-              <span className={styles.budgetSpent}>
+            <Progress value={progressPct} className={`h-1.5 ${budget.status === "over" ? "[&>div]:bg-red-500" : budget.status === "warning" ? "[&>div]:bg-yellow-500" : ""}`} />
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">
                 Потрачено: {formatMoney(budget.spent_minor, budget.currency || currency)}
               </span>
-              <span className={styles.budgetRemaining}>
-                Осталось: {formatMoney(budget.remaining_minor, budget.currency || currency)}
+              <span className={`px-1.5 py-0.5 rounded text-xs ${STATUS_COLORS[budget.status]}`}>
+                {statusLabel}
               </span>
-              <span className={styles.budgetStatus}>{statusLabel}</span>
             </div>
-          </article>
+          </div>
         );
       })}
     </div>

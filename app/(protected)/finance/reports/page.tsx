@@ -5,7 +5,11 @@ import MonthlyTrendChart from "@/components/reports/MonthlyTrendChart";
 import ExpenseBreakdownDonut from "@/components/reports/ExpenseBreakdownDonut";
 import ProductBreakdownTable from "@/components/reports/ProductBreakdownTable";
 import ExportButtons from "@/components/reports/ExportButtons";
-import styles from "@/components/reports/Reports.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { PlusCircle, AlertTriangle, AlertCircle } from "lucide-react";
+import Link from "next/link";
 import { formatMoney } from "@/lib/utils/format";
 
 // Делаем страницу динамической
@@ -91,19 +95,9 @@ export default async function ReportsPage() {
 
   if (transactions.length === 0) {
     return (
-      <div className={styles.page}>
-        <section className={styles.header}>
-          <h1 className={styles.title}>Отчёты</h1>
-          <p className={styles.subtitle}>
-            Здесь появятся визуализации доходов и расходов. Добавьте транзакции, чтобы построить аналитику по периодам и категориям.
-          </p>
-          <ExportButtons />
-        </section>
-
-        <div className={styles.emptyState}>
-          <strong>Недостаточно данных</strong>
-          <span>Пока что в системе нет транзакций за последние 12 месяцев. Добавьте хотя бы одну запись, чтобы увидеть отчёты.</span>
-        </div>
+      <div className="p-6 space-y-6">
+        <div><h1 className="text-2xl font-bold">Отчёты</h1><p className="text-muted-foreground">Здесь появятся визуализации. Добавьте транзакции.</p><ExportButtons /></div>
+        <Card className="text-center py-8"><CardContent><p className="font-semibold">Недостаточно данных</p><p className="text-muted-foreground">Пока что в системе нет транзакций за последние 12 месяцев.</p></CardContent></Card>
       </div>
     );
   }
@@ -135,147 +129,48 @@ export default async function ReportsPage() {
   const breakdownTotal = expenseBreakdown.values.reduce((sum, value) => sum + value, 0);
   const hasBreakdown = expenseBreakdown.labels.length > 0 && breakdownTotal > 0;
 
-  const expenseCardClasses = [styles.summaryCard, styles.expense];
-  if (hasOverBudget) expenseCardClasses.push(styles.dangerAccent);
-  else if (hasWarningBudget) expenseCardClasses.push(styles.warningAccent);
-
   return (
-    <div className={styles.page}>
-      <section className={styles.header}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-          <h1 className={styles.title}>Отчёты</h1>
-          <a
-            href="/reports/custom"
-            className={styles.createReportBtn}
-          >
-            <span className="material-icons" style={{ fontSize: '20px' }}>add_chart</span>
-            Создать отчёт
-          </a>
-        </div>
-        <p className={styles.subtitle}>
-          Аналитика по доходам и расходам, структура затрат и динамика по периодам. Данные обновляются автоматически на основе ваших транзакций.
-        </p>
-        <ExportButtons />
-      </section>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div><h1 className="text-2xl font-bold">Отчёты</h1><p className="text-muted-foreground">Аналитика по доходам и расходам</p></div>
+        <Link href="/finance/reports/custom"><Button><PlusCircle className="h-4 w-4 mr-1" />Создать отчёт</Button></Link>
+      </div>
+      <ExportButtons />
 
-      <section className={styles.summary}>
-        <div className={`${styles.summaryCard} ${styles.income}`}>
-          <span className={styles.summaryLabel}>Доходы за {periodLabel}</span>
-          <span className={styles.summaryValue}>{formatMajor(currentIncome)}</span>
-          <span className={styles.summaryHint}>Изменение к прошлому месяцу: {incomeDeltaLabel}</span>
-        </div>
-        <div className={expenseCardClasses.join(" ")}>
-          <span className={styles.summaryLabel}>Расходы за {periodLabel}</span>
-          <span className={styles.summaryValue}>{formatMajor(currentExpense)}</span>
-          <span className={styles.summaryHint}>Изменение к прошлому месяцу: {expenseDeltaLabel}</span>
-          {(hasOverBudget || hasWarningBudget) && (
-            <span
-              className={`${styles.summaryHint} ${hasOverBudget ? styles.summaryHintAlert : styles.summaryHintNotice}`}
-            >
-              {hasOverBudget ? "Есть категории с превышенным бюджетом" : "Часть категорий близка к лимиту"}
-            </span>
-          )}
-        </div>
-        <div className={`${styles.summaryCard} ${styles.net}`}>
-          <span className={styles.summaryLabel}>Чистый поток за {periodLabel}</span>
-          <span className={styles.summaryValue}>{formatMajor(currentNet)}</span>
-          <span className={styles.summaryHint}>Дельта к прошлому месяцу: {netDeltaLabel}</span>
-        </div>
-      </section>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="border-l-4 border-l-green-500"><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Доходы за {periodLabel}</p><p className="text-2xl font-bold text-green-600">{formatMajor(currentIncome)}</p><p className="text-xs text-muted-foreground">{incomeDeltaLabel}</p></CardContent></Card>
+        <Card className={`border-l-4 ${hasOverBudget ? 'border-l-red-500' : hasWarningBudget ? 'border-l-yellow-500' : 'border-l-red-400'}`}><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Расходы за {periodLabel}</p><p className="text-2xl font-bold text-red-600">{formatMajor(currentExpense)}</p><p className="text-xs text-muted-foreground">{expenseDeltaLabel}</p>
+          {(hasOverBudget || hasWarningBudget) && <p className={`text-xs ${hasOverBudget ? 'text-red-600' : 'text-yellow-600'}`}>{hasOverBudget ? <><AlertTriangle className="h-3 w-3 inline mr-1" />Перерасход</> : <><AlertCircle className="h-3 w-3 inline mr-1" />Близко к лимиту</>}</p>}
+        </CardContent></Card>
+        <Card className="border-l-4 border-l-blue-500"><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Чистый поток за {periodLabel}</p><p className="text-2xl font-bold">{formatMajor(currentNet)}</p><p className="text-xs text-muted-foreground">{netDeltaLabel}</p></CardContent></Card>
+      </div>
 
-      <section className={styles.chartsGrid}>
-        <div className={styles.chartCard}>
-          <div>
-            <div className={styles.cardTitle}>Динамика доходов и расходов</div>
-            <div className={styles.cardSubtitle}>Последние 12 месяцев</div>
-          </div>
-          <div className={styles.chartBody}>
-            <MonthlyTrendChart
-              labels={monthlyTrend.labels}
-              income={monthlyTrend.income}
-              expense={monthlyTrend.expense}
-              currency={currency}
-            />
-          </div>
-        </div>
+      <div className="grid md:grid-cols-2 gap-4">
+        <Card><CardHeader><CardTitle>Динамика доходов и расходов</CardTitle><p className="text-sm text-muted-foreground">Последние 12 месяцев</p></CardHeader><CardContent><MonthlyTrendChart labels={monthlyTrend.labels} income={monthlyTrend.income} expense={monthlyTrend.expense} currency={currency} /></CardContent></Card>
+        <Card><CardHeader><CardTitle>Структура расходов</CardTitle><p className="text-sm text-muted-foreground">Период: {periodLabel}</p></CardHeader><CardContent>
+          {hasBreakdown ? <ExpenseBreakdownDonut labels={expenseBreakdown.labels} values={expenseBreakdown.values} currency={currency} /> : <p className="text-center text-muted-foreground py-8">Нет данных о расходах</p>}
+        </CardContent></Card>
+      </div>
 
-        <div className={styles.chartCard}>
-          <div>
-            <div className={styles.cardTitle}>Структура расходов</div>
-            <div className={styles.cardSubtitle}>Период: {periodLabel}</div>
-          </div>
-          <div className={styles.chartBody}>
-            {hasBreakdown ? (
-              <ExpenseBreakdownDonut
-                labels={expenseBreakdown.labels}
-                values={expenseBreakdown.values}
-                currency={currency}
-              />
-            ) : (
-              <div className={styles.emptyState}>
-                <strong>Расходов недостаточно</strong>
-                <span>В текущем месяце ещё нет расходов. Добавьте транзакции, чтобы увидеть разбивку по категориям.</span>
+      {hasBreakdown && <Card><CardHeader><CardTitle>Топ категорий расходов — {periodLabel}</CardTitle></CardHeader><CardContent className="space-y-2">
+        {expenseBreakdown.labels.map((label, index) => {
+          const valueMajor = expenseBreakdown.values[index];
+          const pct = breakdownTotal > 0 ? (valueMajor / breakdownTotal) * 100 : 0;
+          const budgetStatus = budgetStatusByCategory.get(label);
+          return (
+            <div key={label} className={`flex items-center justify-between p-3 rounded-lg ${budgetStatus === 'over' ? 'bg-red-50' : budgetStatus === 'warning' ? 'bg-yellow-50' : 'bg-muted/30'}`}>
+              <div><p className="font-medium">{label}</p><p className="text-xs text-muted-foreground">{pct.toFixed(1)}% от расходов</p></div>
+              <div className="text-right"><p className="font-bold">{formatMajor(valueMajor)}</p>
+                {budgetStatus && <Badge variant={budgetStatus === 'over' ? 'destructive' : 'secondary'}>{budgetStatus === 'over' ? 'перерасход' : 'близко к лимиту'}</Badge>}
               </div>
-            )}
-          </div>
-        </div>
-      </section>
+            </div>
+          );
+        })}
+      </CardContent></Card>}
 
-      {hasBreakdown && (
-        <section className={styles.breakdownList}>
-          <div className={styles.breakdownListTitle}>Топ категорий расходов — {periodLabel}</div>
-          <div className={styles.breakdownItems}>
-            {expenseBreakdown.labels.map((label, index) => {
-              const valueMajor = expenseBreakdown.values[index];
-              const pct = breakdownTotal > 0 ? (valueMajor / breakdownTotal) * 100 : 0;
-              const budgetStatus = budgetStatusByCategory.get(label);
-              const breakdownItemClasses = [styles.breakdownItem];
-              if (budgetStatus === "over") breakdownItemClasses.push(styles.breakdownItemOver);
-              else if (budgetStatus === "warning") breakdownItemClasses.push(styles.breakdownItemWarning);
-              return (
-                <div key={label} className={breakdownItemClasses.join(" ")}> 
-                  <div className={styles.breakdownName}>
-                    <span className={styles.breakdownLabel}>{label}</span>
-                    <span className={styles.breakdownMeta}>{pct.toFixed(1)}% от расходов месяца</span>
-                  </div>
-                  <div className={styles.breakdownValueWrap}>
-                    <span className={styles.breakdownValue}>{formatMajor(valueMajor)}</span>
-                    {budgetStatus && (
-                      <span
-                        className={`${styles.breakdownStatusBadge} ${
-                          budgetStatus === "over"
-                            ? styles.breakdownStatusBadgeOver
-                            : styles.breakdownStatusBadgeWarning
-                        }`}
-                      >
-                        {budgetStatus === "over" ? "перерасход" : "почти лимит"}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {productBreakdown.labels.length > 0 && (
-        <section className={styles.chartCard}>
-          <div>
-            <div className={styles.cardTitle}>Топ товаров — {periodLabel}</div>
-            <div className={styles.cardSubtitle}>Наиболее часто покупаемые товары за период</div>
-          </div>
-          <div className={styles.chartBody}>
-            <ProductBreakdownTable
-              labels={productBreakdown.labels}
-              values={productBreakdown.values}
-              quantities={productBreakdown.quantities}
-              units={productBreakdown.units}
-              currency={currency}
-            />
-          </div>
-        </section>
-      )}
+      {productBreakdown.labels.length > 0 && <Card><CardHeader><CardTitle>Топ товаров — {periodLabel}</CardTitle><p className="text-sm text-muted-foreground">Наиболее часто покупаемые товары</p></CardHeader><CardContent>
+        <ProductBreakdownTable labels={productBreakdown.labels} values={productBreakdown.values} quantities={productBreakdown.quantities} units={productBreakdown.units} currency={currency} />
+      </CardContent></Card>}
     </div>
   );
 }

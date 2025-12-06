@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import styles from "./Bookmarks.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Star, Link as LinkIcon, ExternalLink, Edit, Trash2 } from "lucide-react";
 
 type Bookmark = {
   id: string;
@@ -56,95 +59,33 @@ export default function BookmarkCard({
   };
 
   return (
-    <div className={styles.card}>
-      <div className={styles.cardHeader}>
-        <div className={styles.cardTitle}>
-          <div className={styles.titleRow}>
-            {getFaviconUrl() && (
-              <Image
-                src={getFaviconUrl()!}
-                alt=""
-                width={24}
-                height={24}
-                className={styles.favicon}
-                onError={() => setImageError(true)}
-                unoptimized
-              />
-            )}
-            <h3>{bookmark.title}</h3>
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-2">
+            {getFaviconUrl() && <Image src={getFaviconUrl()!} alt="" width={20} height={20} className="rounded" onError={() => setImageError(true)} unoptimized />}
+            <CardTitle className="text-base">{bookmark.title}</CardTitle>
           </div>
-          <button
-            onClick={() => onToggleFavorite(bookmark.id, bookmark.is_favorite)}
-            className={styles.favoriteBtn}
-            title={bookmark.is_favorite ? "Убрать из избранного" : "Добавить в избранное"}
-          >
-            <span className="material-icons">
-              {bookmark.is_favorite ? "star" : "star_border"}
-            </span>
-          </button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onToggleFavorite(bookmark.id, bookmark.is_favorite)}>
+            <Star className={`h-4 w-4 ${bookmark.is_favorite ? "fill-yellow-400 text-yellow-400" : ""}`} />
+          </Button>
         </div>
-
-        {bookmark.description && (
-          <p className={styles.cardDescription}>{bookmark.description}</p>
-        )}
-      </div>
-
-      <div className={styles.cardBody}>
-        <a
-          href={bookmark.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.urlLink}
-          onClick={(e) => {
-            e.preventDefault();
-            onVisit(bookmark.url, bookmark.id);
-          }}
-        >
-          <span className="material-icons">link</span>
-          {getDomain(bookmark.url)}
-        </a>
-      </div>
-
-      <div className={styles.cardMeta}>
-        {bookmark.category && (
-          <span className={styles.badge}>{bookmark.category}</span>
-        )}
-
-        {bookmark.tags.length > 0 && (
-          <div className={styles.tags}>
-            {bookmark.tags.map((tag, i) => (
-              <span key={i} className={styles.tag}>
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className={styles.cardActions}>
-        <button
-          onClick={() => onVisit(bookmark.url, bookmark.id)}
-          className={`${styles.actionBtn} ${styles.visitBtn}`}
-          title="Открыть ссылку"
-        >
-          <span className="material-icons">open_in_new</span>
-          Открыть
+        {bookmark.description && <p className="text-sm text-muted-foreground mt-1">{bookmark.description}</p>}
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <button onClick={() => onVisit(bookmark.url, bookmark.id)} className="flex items-center gap-1 text-sm text-primary hover:underline">
+          <LinkIcon className="h-3 w-3" />{getDomain(bookmark.url)}
         </button>
-        <button
-          onClick={() => onEdit(bookmark)}
-          className={styles.actionBtn}
-          title="Редактировать"
-        >
-          <span className="material-icons">edit</span>
-        </button>
-        <button
-          onClick={() => onDelete(bookmark.id)}
-          className={`${styles.actionBtn} ${styles.deleteBtn}`}
-          title="Удалить"
-        >
-          <span className="material-icons">delete</span>
-        </button>
-      </div>
-    </div>
+        <div className="flex flex-wrap gap-1">
+          {bookmark.category && <Badge variant="secondary">{bookmark.category}</Badge>}
+          {bookmark.tags.map((tag, i) => <Badge key={i} variant="outline" className="text-xs">#{tag}</Badge>)}
+        </div>
+        <div className="flex gap-2 pt-2">
+          <Button size="sm" onClick={() => onVisit(bookmark.url, bookmark.id)}><ExternalLink className="h-4 w-4 mr-1" />Открыть</Button>
+          <Button size="sm" variant="ghost" onClick={() => onEdit(bookmark)}><Edit className="h-4 w-4" /></Button>
+          <Button size="sm" variant="ghost" className="text-destructive" onClick={() => onDelete(bookmark.id)}><Trash2 className="h-4 w-4" /></Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

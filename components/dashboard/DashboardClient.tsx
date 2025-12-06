@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import styles from "./Dashboard.module.css";
+import { Button } from "@/components/ui/button";
+import { Settings2 } from "lucide-react";
 import { DashboardCustomizer } from "./DashboardCustomizer";
 import type { WidgetVisibilityState } from "@/lib/dashboard/preferences/shared";
 import TourGuide from "@/components/onboarding/TourGuide";
@@ -20,25 +21,25 @@ export default function DashboardClient({
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   return (
-    <div className={styles.page}>
+    <div className="space-y-6">
       {/* Интерактивный тур по дашборду */}
       <TourGuide page="dashboard" />
 
-      <div className={styles.topBar}>
-        <div className={styles.pageTitle}>Дашборд</div>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Дашборд</h1>
+          <p className="text-sm text-muted-foreground">Обзор ваших финансов</p>
+        </div>
         {showCustomizeButton && (
-          <div className={styles.topBarActions}>
-            <button
-              type="button"
-              className={styles.settingsBtn}
-              onClick={() => setIsSettingsOpen(true)}
-            >
-              <span className="material-icons" aria-hidden>
-                tune
-              </span>
-              Настроить дашборд
-            </button>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsSettingsOpen(true)}
+          >
+            <Settings2 className="mr-2 h-4 w-4" />
+            Настроить
+          </Button>
         )}
       </div>
 

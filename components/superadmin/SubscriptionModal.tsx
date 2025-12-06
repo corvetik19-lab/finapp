@@ -4,7 +4,20 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { SubscriptionPlan, OrganizationSubscription, BillingPeriod } from '@/types/billing';
 import { createOrganizationSubscription, updateOrganizationSubscription, calculateSubscriptionPrice } from '@/app/(protected)/superadmin/actions';
-import styles from './SuperadminModals.module.css';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Building2 } from 'lucide-react';
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -98,52 +111,63 @@ export function SubscriptionModal({
     onClose();
   };
 
-  if (!isOpen) return null;
-
   const selectedPlan = plans.find(p => p.id === planId);
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={e => e.stopPropagation()}>
-        <div className={styles.header}>
-          <h2>{subscription ? 'Редактировать подписку' : 'Создать подписку'}</h2>
-          <button className={styles.closeBtn} onClick={onClose}>
-            <span className="material-icons">close</span>
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>{subscription ? 'Редактировать подписку' : 'Создать подписку'}</DialogTitle>
+        </DialogHeader>
 
         <form onSubmit={handleSubmit}>
-          <div className={styles.body}>
-            <div className={styles.orgInfo}>
-              <span className="material-icons">business</span>
-              <span>{organizationName}</span>
+          <div className="space-y-4 py-4">
+            <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+              <Building2 className="h-5 w-5 text-gray-500" />
+              <span className="font-medium">{organizationName}</span>
             </div>
 
-            {error && <div className={styles.error}>{error}</div>}
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-            <div className={styles.field}>
-              <label>Тарифный план</label>
-              <select value={planId} onChange={e => setPlanId(e.target.value)}>
-                {plans.map(plan => (
-                  <option key={plan.id} value={plan.id}>
-                    {plan.name} — {formatMoney(plan.base_price_monthly)}/мес
-                  </option>
-                ))}
-              </select>
+            <div className="space-y-2">
+              <Label>Тарифный план</Label>
+              <Select value={planId} onValueChange={setPlanId}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {plans.map(plan => (
+                    <SelectItem key={plan.id} value={plan.id}>
+                      {plan.name} — {formatMoney(plan.base_price_monthly)}/мес
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className={styles.row}>
-              <div className={styles.field}>
-                <label>Период оплаты</label>
-                <select value={billingPeriod} onChange={e => setBillingPeriod(e.target.value as BillingPeriod)}>
-                  <option value="monthly">Месячная</option>
-                  <option value="yearly">Годовая</option>
-                </select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Период оплаты</Label>
+                <Select value={billingPeriod} onValueChange={(v) => setBillingPeriod(v as BillingPeriod)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">Месячная</SelectItem>
+                    <SelectItem value="yearly">Годовая</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className={styles.field}>
-                <label>Пользователей</label>
-                <input
+              <div className="space-y-2">
+                <Label htmlFor="usersCount">Пользователей</Label>
+                <Input
+                  id="usersCount"
                   type="number"
                   min="1"
                   max={selectedPlan?.max_users || 1000}
@@ -151,15 +175,16 @@ export function SubscriptionModal({
                   onChange={e => setUsersCount(parseInt(e.target.value) || 1)}
                 />
                 {selectedPlan && (
-                  <small>Включено: {selectedPlan.users_included}, макс: {selectedPlan.max_users || '∞'}</small>
+                  <p className="text-xs text-gray-500">Включено: {selectedPlan.users_included}, макс: {selectedPlan.max_users || '∞'}</p>
                 )}
               </div>
             </div>
 
-            <div className={styles.row}>
-              <div className={styles.field}>
-                <label>Скидка (%)</label>
-                <input
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="discountPercent">Скидка (%)</Label>
+                <Input
+                  id="discountPercent"
                   type="number"
                   min="0"
                   max="100"
@@ -169,9 +194,10 @@ export function SubscriptionModal({
               </div>
 
               {!subscription && (
-                <div className={styles.field}>
-                  <label>Пробный период (дней)</label>
-                  <input
+                <div className="space-y-2">
+                  <Label htmlFor="trialDays">Пробный период (дней)</Label>
+                  <Input
+                    id="trialDays"
                     type="number"
                     min="0"
                     max="90"
@@ -182,9 +208,10 @@ export function SubscriptionModal({
               )}
             </div>
 
-            <div className={styles.field}>
-              <label>Заметки</label>
-              <textarea
+            <div className="space-y-2">
+              <Label htmlFor="notes">Заметки</Label>
+              <Textarea
+                id="notes"
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
                 placeholder="Комментарий к подписке..."
@@ -193,42 +220,42 @@ export function SubscriptionModal({
             </div>
 
             {calculatedPrice && (
-              <div className={styles.priceBreakdown}>
-                <h4>Расчёт стоимости</h4>
-                <div className={styles.priceRow}>
-                  <span>Базовая стоимость</span>
+              <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                <h4 className="font-medium text-gray-700">Расчёт стоимости</h4>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Базовая стоимость</span>
                   <span>{formatMoney(calculatedPrice.base_amount)}</span>
                 </div>
                 {calculatedPrice.extra_users > 0 && (
-                  <div className={styles.priceRow}>
-                    <span>+{calculatedPrice.extra_users} доп. пользователей</span>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">+{calculatedPrice.extra_users} доп. пользователей</span>
                     <span>{formatMoney(calculatedPrice.users_amount)}</span>
                   </div>
                 )}
                 {calculatedPrice.discount_amount > 0 && (
-                  <div className={styles.priceRow + ' ' + styles.discount}>
+                  <div className="flex justify-between text-sm text-green-600">
                     <span>Скидка {discountPercent}%</span>
                     <span>−{formatMoney(calculatedPrice.discount_amount)}</span>
                   </div>
                 )}
-                <div className={styles.priceRow + ' ' + styles.total}>
+                <div className="flex justify-between text-sm font-semibold pt-2 border-t">
                   <span>Итого за {billingPeriod === 'yearly' ? 'год' : 'месяц'}</span>
-                  <span>{formatMoney(calculatedPrice.total)}</span>
+                  <span className="text-purple-600">{formatMoney(calculatedPrice.total)}</span>
                 </div>
               </div>
             )}
           </div>
 
-          <div className={styles.footer}>
-            <button type="button" className={styles.cancelBtn} onClick={onClose} disabled={loading}>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
               Отмена
-            </button>
-            <button type="submit" className={styles.submitBtn} disabled={loading}>
+            </Button>
+            <Button type="submit" disabled={loading}>
               {loading ? 'Сохранение...' : subscription ? 'Сохранить' : 'Создать подписку'}
-            </button>
-          </div>
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

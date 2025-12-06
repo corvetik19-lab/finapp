@@ -2,8 +2,6 @@ import { createRSCClient } from "@/lib/supabase/helpers";
 import { listBudgetsWithUsage } from "@/lib/budgets/service";
 import { listExpenseCategories } from "@/lib/categories/service";
 import BudgetSection from "@/components/dashboard/BudgetSection";
-import styles from "@/components/dashboard/Dashboard.module.css";
-
 export const dynamic = 'force-dynamic';
 
 export default async function MobileBudgetsPage() {
@@ -23,7 +21,7 @@ export default async function MobileBudgetsPage() {
   const currency = profile?.default_currency || "RUB";
 
   return (
-    <div className={styles.mobilePage}>
+    <div className="p-4">
       <BudgetSection budgets={budgets} currency={currency} categories={categories} />
     </div>
   );

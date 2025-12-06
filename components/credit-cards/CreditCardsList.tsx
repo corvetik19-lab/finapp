@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import styles from "./CreditCardsList.module.css";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+import { CreditCard as CreditCardIcon, Pencil, Trash2 } from "lucide-react";
 import { formatMoney } from "@/lib/utils/format";
 
 export type CreditCard = {
@@ -30,100 +34,32 @@ export default function CreditCardsList({ cards, onEdit, onDelete, onCardClick }
   const [selectedCardId, setSelectedCardId] = useState<string>(cards[0]?.id ?? "");
 
   if (cards.length === 0) {
-    return (
-      <div className={styles.emptyState}>
-        <span className="material-icons" aria-hidden>
-          credit_card_off
-        </span>
-        <p>У вас нет добавленных кредитных карт</p>
-      </div>
-    );
+    return <div className="flex flex-col items-center justify-center py-12 text-muted-foreground"><CreditCardIcon className="h-12 w-12 mb-2" /><p>У вас нет добавленных кредитных карт</p></div>;
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.cardsGrid}>
-        {cards.map((card) => {
-          const debt = card.debt ?? (card.limit - card.available);
-          const utilizationPercent = Math.round((debt / card.limit) * 100);
-          const isSelected = card.id === selectedCardId;
-
-          return (
-            <div
-              key={card.id}
-              className={`${styles.card} ${isSelected ? styles.cardActive : ""}`}
-            >
-              <div
-                className={styles.cardContent}
-                onClick={() => {
-                  setSelectedCardId(card.id);
-                  if (onCardClick) {
-                    onCardClick(card);
-                  }
-                }}
-              >
-                <div className={styles.cardBank}>{card.bank}</div>
-                <div className={styles.cardBalance}>{formatMoney(debt, card.currency)}</div>
-                <div className={styles.cardBalanceLabel}>Задолженность</div>
-
-                <div className={styles.cardFooter}>
-                  <div className={styles.cardInfo}>
-                    <span>Лимит: {formatMoney(card.limit, card.currency)}</span>
-                    <span>Доступно: {formatMoney(card.available, card.currency)}</span>
-                  </div>
-                </div>
-
-                <div className={styles.utilizationBar}>
-                  <div
-                    className={styles.utilizationFill}
-                    style={{ width: `${Math.min(utilizationPercent, 100)}%` }}
-                  />
-                </div>
-                <div className={styles.utilizationText}>Использование: {utilizationPercent}%</div>
-              </div>
-
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {cards.map((card) => {
+        const debt = card.debt ?? (card.limit - card.available);
+        const utilizationPercent = Math.round((debt / card.limit) * 100);
+        const isSelected = card.id === selectedCardId;
+        return (
+          <Card key={card.id} className={cn("cursor-pointer transition-all hover:shadow-md", isSelected && "ring-2 ring-primary")} onClick={() => { setSelectedCardId(card.id); onCardClick?.(card); }}>
+            <CardContent className="pt-4 space-y-3">
+              <div className="flex items-center justify-between"><span className="font-medium">{card.bank}</span>{card.cardNumberLast4 && <span className="text-xs text-muted-foreground">**** {card.cardNumberLast4}</span>}</div>
+              <div><div className="text-2xl font-bold">{formatMoney(debt, card.currency)}</div><div className="text-xs text-muted-foreground">Задолженность</div></div>
+              <div className="text-xs text-muted-foreground space-y-1"><div>Лимит: {formatMoney(card.limit, card.currency)}</div><div>Доступно: {formatMoney(card.available, card.currency)}</div></div>
+              <div><Progress value={Math.min(utilizationPercent, 100)} className="h-2" /><div className="text-xs text-muted-foreground mt-1">Использование: {utilizationPercent}%</div></div>
               {(onEdit || onDelete) && (
-                <div className={styles.cardActions}>
-                  {onEdit && (
-                    <button
-                      type="button"
-                      className={styles.cardActionBtn}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        onEdit(card);
-                      }}
-                      aria-label="Редактировать"
-                    >
-                      <span className="material-icons" aria-hidden>
-                        edit
-                      </span>
-                    </button>
-                  )}
-                  {onDelete && (
-                    <button
-                      type="button"
-                      className={`${styles.cardActionBtn} ${styles.cardActionBtnDelete}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        if (confirm(`Удалить карту "${card.bank}"?`)) {
-                          onDelete(card.id);
-                        }
-                      }}
-                      aria-label="Удалить"
-                    >
-                      <span className="material-icons" aria-hidden>
-                        delete
-                      </span>
-                    </button>
-                  )}
+                <div className="flex gap-2 pt-2 border-t">
+                  {onEdit && <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onEdit(card); }}><Pencil className="h-4 w-4" /></Button>}
+                  {onDelete && <Button variant="ghost" size="sm" className="text-destructive" onClick={(e) => { e.stopPropagation(); if (confirm(`Удалить карту "${card.bank}"?`)) onDelete(card.id); }}><Trash2 className="h-4 w-4" /></Button>}
                 </div>
               )}
-            </div>
-          );
-        })}
-      </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }

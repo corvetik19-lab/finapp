@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import styles from './EmployeeComparison.module.css';
+import Image from 'next/image';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Users, Loader2 } from "lucide-react";
 
 interface EmployeeStats {
   id: string;
@@ -58,102 +61,15 @@ export function EmployeeComparison({ employeeId, companyId }: EmployeeComparison
     return name.split(' ').map(n => n.charAt(0).toUpperCase()).slice(0, 2).join('');
   };
 
-  if (loading) {
-    return (
-      <div className={styles.loading}>
-        <span>⏳</span> Загрузка сравнения...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className={styles.error}>
-        <span>❌</span> {error}
-      </div>
-    );
-  }
-
-  if (employees.length === 0) {
-    return (
-      <div className={styles.empty}>
-        <span className={styles.emptyIcon}>👥</span>
-        <p>Нет данных для сравнения</p>
-      </div>
-    );
-  }
+  if (loading) return <div className="flex items-center justify-center py-8 text-muted-foreground"><Loader2 className="h-5 w-5 mr-2 animate-spin" />Загрузка сравнения...</div>;
+  if (error) return <div className="text-center py-8 text-destructive"><span>❌</span> {error}</div>;
+  if (employees.length === 0) return <div className="text-center py-8"><Users className="h-12 w-12 mx-auto text-muted-foreground mb-2" /><p className="text-muted-foreground">Нет данных</p></div>;
 
   const maxTenders = Math.max(...employees.map(e => e.total_tenders), 1);
-  const maxNmck = Math.max(...employees.map(e => e.total_nmck), 1);
 
   return (
-    <div className={styles.container}>
-      <div className={styles.table}>
-        <div className={styles.headerRow}>
-          <div className={styles.headerCell}>Сотрудник</div>
-          <div className={styles.headerCell}>Тендеров</div>
-          <div className={styles.headerCell}>Выиграно</div>
-          <div className={styles.headerCell}>Успешность</div>
-          <div className={styles.headerCell}>Сумма НМЦК</div>
-        </div>
-
-        {employees.map((emp, index) => (
-          <div 
-            key={emp.id} 
-            className={`${styles.row} ${emp.id === employeeId ? styles.currentEmployee : ''}`}
-          >
-            <div className={styles.cell}>
-              <div className={styles.rank}>#{index + 1}</div>
-              <div className={styles.avatar}>
-                {emp.avatar_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={emp.avatar_url} alt={emp.full_name} />
-                ) : (
-                  <span>{getInitials(emp.full_name)}</span>
-                )}
-              </div>
-              <span className={styles.name}>{emp.full_name}</span>
-              {emp.id === employeeId && <span className={styles.youBadge}>Вы</span>}
-            </div>
-            <div className={styles.cell}>
-              <div className={styles.barContainer}>
-                <div 
-                  className={styles.bar}
-                  style={{ width: `${(emp.total_tenders / maxTenders) * 100}%` }}
-                />
-                <span className={styles.value}>{emp.total_tenders}</span>
-              </div>
-            </div>
-            <div className={styles.cell}>
-              <span className={styles.wonValue}>{emp.won_tenders}</span>
-            </div>
-            <div className={styles.cell}>
-              <div className={styles.successRate}>
-                <div 
-                  className={styles.successBar}
-                  style={{ 
-                    width: `${emp.success_rate}%`,
-                    background: emp.success_rate >= 50 ? '#22c55e' : emp.success_rate >= 30 ? '#f59e0b' : '#ef4444'
-                  }}
-                />
-                <span>{emp.success_rate.toFixed(0)}%</span>
-              </div>
-            </div>
-            <div className={styles.cell}>
-              <div className={styles.barContainer}>
-                <div 
-                  className={styles.bar}
-                  style={{ 
-                    width: `${(emp.total_nmck / maxNmck) * 100}%`,
-                    background: '#8b5cf6'
-                  }}
-                />
-                <span className={styles.value}>{formatMoney(emp.total_nmck)}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+    <div className="border rounded-lg overflow-hidden"><Table><TableHeader><TableRow><TableHead>Сотрудник</TableHead><TableHead>Тендеров</TableHead><TableHead>Выиграно</TableHead><TableHead>Успешность</TableHead><TableHead>НМЦК</TableHead></TableRow></TableHeader>
+      <TableBody>{employees.map((emp, idx) => <TableRow key={emp.id} className={emp.id === employeeId ? 'bg-blue-50' : ''}><TableCell><div className="flex items-center gap-2"><span className="text-muted-foreground">#{idx + 1}</span><div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm">{emp.avatar_url ? <Image src={emp.avatar_url} alt="" fill className="rounded-full object-cover" /> : getInitials(emp.full_name)}</div><span className="font-medium">{emp.full_name}</span>{emp.id === employeeId && <Badge variant="secondary">Вы</Badge>}</div></TableCell><TableCell><div className="flex items-center gap-2"><div className="w-16 h-2 bg-muted rounded-full overflow-hidden"><div className="h-full bg-blue-500" style={{ width: `${(emp.total_tenders / maxTenders) * 100}%` }} /></div><span className="text-sm">{emp.total_tenders}</span></div></TableCell><TableCell className="text-green-600 font-medium">{emp.won_tenders}</TableCell><TableCell><div className="flex items-center gap-2"><div className="w-16 h-2 bg-muted rounded-full overflow-hidden"><div className="h-full" style={{ width: `${emp.success_rate}%`, background: emp.success_rate >= 50 ? '#22c55e' : emp.success_rate >= 30 ? '#f59e0b' : '#ef4444' }} /></div><span className="text-sm">{emp.success_rate.toFixed(0)}%</span></div></TableCell><TableCell className="text-sm">{formatMoney(emp.total_nmck)}</TableCell></TableRow>)}</TableBody>
+    </Table></div>
   );
 }

@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
-import styles from './AttachmentPreviewModal.module.css';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Download, Paperclip, Loader2 } from 'lucide-react';
 
 interface AttachmentPreviewModalProps {
   fileUrl: string;
@@ -11,41 +13,25 @@ interface AttachmentPreviewModalProps {
   onClose: () => void;
 }
 
-export function AttachmentPreviewModal({
-  fileUrl,
-  fileName,
-  mimeType,
-  onClose,
-}: AttachmentPreviewModalProps) {
+export function AttachmentPreviewModal({ fileUrl, fileName, mimeType, onClose }: AttachmentPreviewModalProps) {
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [onClose]);
 
   const isImage = mimeType.startsWith('image/');
   const isPDF = mimeType === 'application/pdf';
   const isDoc = mimeType.includes('word') || mimeType.includes('document');
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.header}>
-          <h3 className={styles.title}>{fileName}</h3>
-          <button className={styles.closeButton} onClick={onClose}>
-            ✕
-          </button>
-        </div>
+    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="truncate">{fileName}</DialogTitle>
+        </DialogHeader>
 
-        <div className={styles.content}>
+        <div className="flex-1 min-h-0 relative">
           {loading && (
-            <div className={styles.loading}>
-              <div className={styles.spinner}></div>
-              <p>Загрузка...</p>
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-2" />
+              <p className="text-gray-500">Загрузка...</p>
             </div>
           )}
 
@@ -53,10 +39,9 @@ export function AttachmentPreviewModal({
             <Image
               src={fileUrl}
               alt={fileName}
-              className={styles.image}
               width={800}
               height={600}
-              style={{ objectFit: 'contain', width: '100%', height: 'auto' }}
+              className="w-full h-auto object-contain"
               onLoad={() => setLoading(false)}
               onError={() => setLoading(false)}
             />
@@ -65,7 +50,7 @@ export function AttachmentPreviewModal({
           {isPDF && (
             <iframe
               src={fileUrl}
-              className={styles.iframe}
+              className="w-full h-[70vh] border-0"
               onLoad={() => setLoading(false)}
               title={fileName}
             />
@@ -74,39 +59,29 @@ export function AttachmentPreviewModal({
           {isDoc && (
             <iframe
               src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`}
-              className={styles.iframe}
+              className="w-full h-[70vh] border-0"
               onLoad={() => setLoading(false)}
               title={fileName}
             />
           )}
 
           {!isImage && !isPDF && !isDoc && (
-            <div className={styles.unsupported}>
-              <div className={styles.unsupportedIcon}>📎</div>
-              <p>Предпросмотр недоступен для этого типа файла</p>
-              <a
-                href={fileUrl}
-                download={fileName}
-                className={styles.downloadButton}
-                onClick={(e) => e.stopPropagation()}
-              >
-                Скачать файл
-              </a>
+            <div className="flex flex-col items-center justify-center py-12">
+              <Paperclip className="h-16 w-16 text-gray-300 mb-4" />
+              <p className="text-gray-500 mb-4">Предпросмотр недоступен для этого типа файла</p>
+              <Button asChild>
+                <a href={fileUrl} download={fileName}><Download className="h-4 w-4 mr-2" />Скачать файл</a>
+              </Button>
             </div>
           )}
         </div>
 
-        <div className={styles.footer}>
-          <a
-            href={fileUrl}
-            download={fileName}
-            className={styles.downloadLink}
-            onClick={(e) => e.stopPropagation()}
-          >
-            Скачать
-          </a>
-        </div>
-      </div>
-    </div>
+        <DialogFooter>
+          <Button variant="outline" asChild>
+            <a href={fileUrl} download={fileName}><Download className="h-4 w-4 mr-2" />Скачать</a>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

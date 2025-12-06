@@ -1,7 +1,7 @@
 "use client";
 
 import { formatMoney } from "@/lib/utils/format";
-import styles from "./Reports.module.css";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type ProductBreakdownTableProps = {
   labels: string[];
@@ -20,11 +20,9 @@ export default function ProductBreakdownTable({
 }: ProductBreakdownTableProps) {
   if (labels.length === 0) {
     return (
-      <div className={styles.emptyState}>
-        <strong>Нет данных по товарам</strong>
-        <span>
-          Добавьте позиции товаров в транзакции, чтобы увидеть аналитику.
-        </span>
+      <div className="text-center py-8">
+        <p className="font-semibold">Нет данных по товарам</p>
+        <p className="text-sm text-muted-foreground">Добавьте позиции товаров в транзакции.</p>
       </div>
     );
   }
@@ -32,53 +30,25 @@ export default function ProductBreakdownTable({
   const total = values.reduce((sum, val) => sum + val, 0);
 
   return (
-    <div className={styles.productTable}>
-      <table>
-        <thead>
-          <tr>
-            <th>Товар</th>
-            <th>Количество</th>
-            <th>Сумма</th>
-            <th>% от общего</th>
-          </tr>
-        </thead>
-        <tbody>
-          {labels.map((label, index) => {
-            const value = values[index];
-            const quantity = quantities[index];
-            const unit = units[index];
-            const percentage = total > 0 ? (value / total) * 100 : 0;
-
-            return (
-              <tr key={label}>
-                <td className={styles.productName}>{label}</td>
-                <td className={styles.productQuantity}>
-                  {quantity.toFixed(2)} {unit}
-                </td>
-                <td className={styles.productAmount}>
-                  {formatMoney(Math.round(value * 100), currency)}
-                </td>
-                <td className={styles.productPercentage}>
-                  {percentage.toFixed(1)}%
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-        <tfoot>
-          <tr>
-            <td colSpan={2}>
-              <strong>Итого</strong>
-            </td>
-            <td className={styles.productAmount}>
-              <strong>{formatMoney(Math.round(total * 100), currency)}</strong>
-            </td>
-            <td className={styles.productPercentage}>
-              <strong>100%</strong>
-            </td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
+    <Table>
+      <TableHeader><TableRow><TableHead>Товар</TableHead><TableHead>Количество</TableHead><TableHead className="text-right">Сумма</TableHead><TableHead className="text-right">%</TableHead></TableRow></TableHeader>
+      <TableBody>
+        {labels.map((label, index) => {
+          const value = values[index];
+          const quantity = quantities[index];
+          const unit = units[index];
+          const percentage = total > 0 ? (value / total) * 100 : 0;
+          return (
+            <TableRow key={label}>
+              <TableCell className="font-medium">{label}</TableCell>
+              <TableCell>{quantity.toFixed(2)} {unit}</TableCell>
+              <TableCell className="text-right">{formatMoney(Math.round(value * 100), currency)}</TableCell>
+              <TableCell className="text-right">{percentage.toFixed(1)}%</TableCell>
+            </TableRow>
+          );
+        })}
+      </TableBody>
+      <TableFooter><TableRow><TableCell colSpan={2}>Итого</TableCell><TableCell className="text-right font-bold">{formatMoney(Math.round(total * 100), currency)}</TableCell><TableCell className="text-right font-bold">100%</TableCell></TableRow></TableFooter>
+    </Table>
   );
 }

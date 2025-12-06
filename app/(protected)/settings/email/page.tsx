@@ -1,7 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import styles from "./styles.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Mail, Loader2, Save, AlertCircle, DollarSign, BarChart3 } from "lucide-react";
 
 interface EmailPreferences {
   budget_alerts_enabled: boolean;
@@ -87,173 +94,42 @@ export default function EmailSettingsPage() {
   };
 
   if (loading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.loading}>Загрузка настроек...</div>
-      </div>
-    );
+    return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>📧 Настройки Email Уведомлений</h1>
-        <p className={styles.subtitle}>
-          Управляйте типами уведомлений, которые вы хотите получать на email
-        </p>
-      </div>
+    <div className="space-y-6">
+      <div><h1 className="text-2xl font-bold flex items-center gap-2"><Mail className="h-6 w-6" />Email уведомления</h1><p className="text-muted-foreground">Управление типами уведомлений</p></div>
 
-      {message && (
-        <div className={`${styles.message} ${styles[message.type]}`}>
-          {message.text}
-        </div>
-      )}
+      {message && <Alert variant={message.type === "error" ? "destructive" : "default"}><AlertDescription>{message.text}</AlertDescription></Alert>}
 
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Типы уведомлений</h2>
-
-        {/* Бюджетные алерты */}
-        <div className={styles.setting}>
-          <div className={styles.settingInfo}>
-            <div className={styles.settingIcon}>💰</div>
-            <div>
-              <h3 className={styles.settingLabel}>Превышение бюджета</h3>
-              <p className={styles.settingDescription}>
-                Получать уведомления когда расходы достигают 80% от бюджета
-              </p>
+      <Card>
+        <CardHeader><CardTitle>Типы уведомлений</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between"><div className="flex items-center gap-3"><DollarSign className="h-5 w-5 text-muted-foreground" /><div><Label>Превышение бюджета</Label><p className="text-sm text-muted-foreground">Уведомления при 80% бюджета</p></div></div><Switch checked={preferences.budget_alerts_enabled} onCheckedChange={(v) => updatePreference("budget_alerts_enabled", v)} /></div>
+          <div className="flex items-center justify-between"><div className="flex items-center gap-3"><AlertCircle className="h-5 w-5 text-muted-foreground" /><div><Label>Крупные транзакции</Label><p className="text-sm text-muted-foreground">Необычно крупные траты</p></div></div><Switch checked={preferences.transaction_alerts_enabled} onCheckedChange={(v) => updatePreference("transaction_alerts_enabled", v)} /></div>
+          <div className="flex items-center justify-between"><div className="flex items-center gap-3"><BarChart3 className="h-5 w-5 text-muted-foreground" /><div><Label>Еженедельная сводка</Label><p className="text-sm text-muted-foreground">Финансовый отчёт за неделю</p></div></div><Switch checked={preferences.weekly_summary_enabled} onCheckedChange={(v) => updatePreference("weekly_summary_enabled", v)} /></div>
+          {preferences.weekly_summary_enabled && (
+            <div className="grid grid-cols-2 gap-4 pl-8">
+              <div className="space-y-2"><Label>День недели</Label><Select value={String(preferences.weekly_summary_day)} onValueChange={(v) => updatePreference("weekly_summary_day", parseInt(v))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{DAYS_OF_WEEK.map((day) => <SelectItem key={day.value} value={String(day.value)}>{day.label}</SelectItem>)}</SelectContent></Select></div>
+              <div className="space-y-2"><Label>Время</Label><Input type="time" value={preferences.weekly_summary_time} onChange={(e) => updatePreference("weekly_summary_time", e.target.value)} /></div>
             </div>
-          </div>
-          <label className={styles.switch}>
-            <input
-              type="checkbox"
-              checked={preferences.budget_alerts_enabled}
-              onChange={(e) => updatePreference("budget_alerts_enabled", e.target.checked)}
-            />
-            <span className={styles.slider}></span>
-          </label>
-        </div>
+          )}
+        </CardContent>
+      </Card>
 
-        {/* Алерты крупных транзакций */}
-        <div className={styles.setting}>
-          <div className={styles.settingInfo}>
-            <div className={styles.settingIcon}>💸</div>
-            <div>
-              <h3 className={styles.settingLabel}>Крупные транзакции</h3>
-              <p className={styles.settingDescription}>
-                Получать уведомления о необычно крупных тратах
-              </p>
-            </div>
-          </div>
-          <label className={styles.switch}>
-            <input
-              type="checkbox"
-              checked={preferences.transaction_alerts_enabled}
-              onChange={(e) => updatePreference("transaction_alerts_enabled", e.target.checked)}
-            />
-            <span className={styles.slider}></span>
-          </label>
-        </div>
+      <Card>
+        <CardHeader><CardTitle>Дополнительно</CardTitle></CardHeader>
+        <CardContent className="space-y-2">
+          <Label>Альтернативный email (необязательно)</Label>
+          <p className="text-sm text-muted-foreground">По умолчанию уведомления на основной email</p>
+          <Input type="email" placeholder="your.email@example.com" value={preferences.custom_email || ""} onChange={(e) => updatePreference("custom_email", e.target.value || null)} />
+        </CardContent>
+      </Card>
 
-        {/* Еженедельная сводка */}
-        <div className={styles.setting}>
-          <div className={styles.settingInfo}>
-            <div className={styles.settingIcon}>📊</div>
-            <div>
-              <h3 className={styles.settingLabel}>Еженедельная сводка</h3>
-              <p className={styles.settingDescription}>
-                Получать финансовый отчёт за неделю
-              </p>
-            </div>
-          </div>
-          <label className={styles.switch}>
-            <input
-              type="checkbox"
-              checked={preferences.weekly_summary_enabled}
-              onChange={(e) => updatePreference("weekly_summary_enabled", e.target.checked)}
-            />
-            <span className={styles.slider}></span>
-          </label>
-        </div>
+      <div className="flex justify-end"><Button onClick={savePreferences} disabled={saving}>{saving ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Сохранение...</> : <><Save className="h-4 w-4 mr-1" />Сохранить</>}</Button></div>
 
-        {/* Настройки еженедельной сводки */}
-        {preferences.weekly_summary_enabled && (
-          <div className={styles.subsection}>
-            <div className={styles.subsectionTitle}>Расписание еженедельной сводки</div>
-            
-            <div className={styles.row}>
-              <div className={styles.field}>
-                <label className={styles.fieldLabel}>День недели</label>
-                <select
-                  className={styles.select}
-                  value={preferences.weekly_summary_day}
-                  onChange={(e) => updatePreference("weekly_summary_day", parseInt(e.target.value))}
-                >
-                  {DAYS_OF_WEEK.map((day) => (
-                    <option key={day.value} value={day.value}>
-                      {day.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.fieldLabel}>Время</label>
-                <input
-                  type="time"
-                  className={styles.input}
-                  value={preferences.weekly_summary_time}
-                  onChange={(e) => updatePreference("weekly_summary_time", e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Кастомный email (опционально) */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Дополнительно</h2>
-        
-        <div className={styles.field}>
-          <label className={styles.fieldLabel}>
-            Альтернативный email адрес (необязательно)
-          </label>
-          <p className={styles.fieldHint}>
-            По умолчанию уведомления отправляются на ваш основной email
-          </p>
-          <input
-            type="email"
-            className={styles.input}
-            placeholder="your.email@example.com"
-            value={preferences.custom_email || ""}
-            onChange={(e) => updatePreference("custom_email", e.target.value || null)}
-          />
-        </div>
-      </div>
-
-      {/* Кнопка сохранения */}
-      <div className={styles.actions}>
-        <button
-          className={styles.saveButton}
-          onClick={savePreferences}
-          disabled={saving}
-        >
-          {saving ? "Сохранение..." : "Сохранить настройки"}
-        </button>
-      </div>
-
-      {/* Информация */}
-      <div className={styles.info}>
-        <div className={styles.infoIcon}>ℹ️</div>
-        <div>
-          <p className={styles.infoText}>
-            <strong>Важно:</strong> Для отправки email уведомлений убедитесь, что в настройках проекта указан ключ Resend API.
-          </p>
-          <p className={styles.infoText}>
-            Подробнее: <code>docs/EMAIL_SETUP.md</code>
-          </p>
-        </div>
-      </div>
+      <Alert><AlertDescription>Для отправки email уведомлений убедитесь, что указан ключ Resend API.</AlertDescription></Alert>
     </div>
   );
 }

@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
-import modal from "@/components/transactions/AddModal.module.css";
-import stylesTxn from "@/components/transactions/Transactions.module.css";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/components/toast/ToastContext";
@@ -14,6 +15,7 @@ import {
 import { createTransferFromValues } from "../actions";
 import AmountInputWithCalculator from "@/components/calculator/AmountInputWithCalculator";
 import { formatMoney } from "@/lib/utils/format";
+import { ArrowLeftRight, X } from "lucide-react";
 
 type Account = { id: string; name: string; currency: string; type: string; credit_limit: number | null; balance: number };
 
@@ -185,32 +187,28 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
 
   return (
     <>
-      <button type="button" className={stylesTxn.topBtn} onClick={() => setOpen(true)}>
-        <span className="material-icons" aria-hidden>
-          swap_horiz
-        </span>
+      <Button variant="outline" onClick={() => setOpen(true)} className="gap-2">
+        <ArrowLeftRight className="h-5 w-5" aria-hidden />
         Перевод
-      </button>
+      </Button>
 
       {open && (
-        <div className={modal.overlay} onClick={() => setOpen(false)}>
-          <div className={modal.modal} role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-            <div className={modal.header}>
-              <div className={modal.title}>Перевод между счетами</div>
-              <button type="button" className={modal.close} onClick={() => setOpen(false)} aria-label="Закрыть">
-                <span className="material-icons" aria-hidden>
-                  close
-                </span>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setOpen(false)}>
+          <div className="bg-card rounded-xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b">
+              <div className="text-lg font-semibold">Перевод между счетами</div>
+              <button type="button" className="p-2 rounded-lg hover:bg-muted transition-colors" onClick={() => setOpen(false)} aria-label="Закрыть">
+                <X className="h-5 w-5" aria-hidden />
               </button>
             </div>
 
-            <form onSubmit={onSubmit} className={modal.body}>
-              <div className={modal.row2}>
-                <div className={modal.groupRow}>
-                  <label className={modal.label}>Со счета</label>
+            <form onSubmit={onSubmit} className="p-4 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>Со счета</Label>
                   <select
                     {...register("from_account_id")}
-                    className={stylesTxn.select}
+                    className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     defaultValue={defaultValues.from_account_id}
                     required
                   >
@@ -246,13 +244,13 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
                       </optgroup>
                     )}
                   </select>
-                  {errors.from_account_id && <div className={modal.error}>{errors.from_account_id.message}</div>}
+                  {errors.from_account_id && <div className="text-sm text-destructive">{errors.from_account_id.message}</div>}
                 </div>
-                <div className={modal.groupRow}>
-                  <label className={modal.label}>На счет</label>
+                <div className="space-y-1.5">
+                  <Label>На счет</Label>
                   <select
                     {...register("to_account_id")}
-                    className={stylesTxn.select}
+                    className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     defaultValue={defaultValues.to_account_id}
                     required
                   >
@@ -288,61 +286,53 @@ export default function TransferButton({ accounts }: TransferButtonProps) {
                       </optgroup>
                     )}
                   </select>
-                  {errors.to_account_id && <div className={modal.error}>{errors.to_account_id.message}</div>}
+                  {errors.to_account_id && <div className="text-sm text-destructive">{errors.to_account_id.message}</div>}
                 </div>
               </div>
 
-              <div className={modal.row2}>
-                <div className={modal.groupRow}>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
                   <AmountInputWithCalculator
                     label="Сумма"
                     value={amountValue}
                     onChange={(val) => setValue("amount_major", val)}
                     placeholder="0"
                     error={errors.amount_major?.message}
-                    inputClassName={stylesTxn.input}
                   />
                 </div>
-                <div className={modal.groupRow}>
-                  <label className={modal.label}>Дата</label>
-                  <input
+                <div className="space-y-1.5">
+                  <Label>Дата</Label>
+                  <Input
                     {...register("occurred_at")}
                     type="datetime-local"
-                    className={stylesTxn.input}
                     defaultValue={defaultValues.occurred_at}
                     required
                   />
-                  {errors.occurred_at && <div className={modal.error}>{errors.occurred_at.message}</div>}
+                  {errors.occurred_at && <div className="text-sm text-destructive">{errors.occurred_at.message}</div>}
                 </div>
               </div>
 
-              <div className={modal.groupRow}>
-                <label className={modal.label}>Примечание</label>
-                <input
+              <div className="space-y-1.5">
+                <Label>Примечание</Label>
+                <Input
                   {...register("note")}
                   type="text"
                   placeholder="Комментарий"
-                  className={stylesTxn.input}
                 />
               </div>
 
               <input type="hidden" {...register("currency")} value={primaryCurrency} />
 
-              <div className={modal.footer}>
-                <button
-                  type="button"
-                  className={stylesTxn.primaryBtn}
-                  style={{ background: "#9e9e9e" }}
-                  onClick={() => setOpen(false)}
-                >
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
                   Отмена
-                </button>
-                <button type="submit" className={stylesTxn.primaryBtn} disabled={isPending}>
+                </Button>
+                <Button type="submit" disabled={isPending}>
                   {isPending ? "Выполняем…" : "Перевести"}
-                </button>
+                </Button>
               </div>
 
-              {serverError && <div className={modal.error}>{serverError}</div>}
+              {serverError && <div className="text-sm text-destructive mt-2">{serverError}</div>}
             </form>
           </div>
         </div>

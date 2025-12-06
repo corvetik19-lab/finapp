@@ -1,7 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import styles from './InvitationsList.module.css';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Plus, Mail, Copy, X, Loader2, Inbox } from "lucide-react";
 
 interface Invitation {
   id: string;
@@ -82,91 +86,16 @@ export function InvitationsList({ companyId, onInvite }: InvitationsListProps) {
   };
 
   if (loading) {
-    return (
-      <div className={styles.loading}>
-        <span>⏳</span> Загрузка приглашений...
-      </div>
-    );
+    return <div className="flex items-center justify-center py-8 text-muted-foreground"><Loader2 className="h-5 w-5 mr-2 animate-spin" />Загрузка приглашений...</div>;
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h4 className={styles.title}>📧 Приглашения</h4>
-        {onInvite && (
-          <button onClick={onInvite} className={styles.inviteButton}>
-            ➕ Пригласить
-          </button>
-        )}
-      </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between"><h4 className="font-semibold flex items-center gap-2"><Mail className="h-5 w-5" />Приглашения</h4>{onInvite && <Button onClick={onInvite} size="sm"><Plus className="h-4 w-4 mr-1" />Пригласить</Button>}</div>
 
-      {error && (
-        <div className={styles.error}>{error}</div>
-      )}
+      {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
 
-      {invitations.length === 0 ? (
-        <div className={styles.empty}>
-          <span className={styles.emptyIcon}>📭</span>
-          <p>Нет приглашений</p>
-        </div>
-      ) : (
-        <div className={styles.list}>
-          {invitations.map((inv) => (
-            <div key={inv.id} className={styles.invitation}>
-              <div className={styles.invInfo}>
-                <div className={styles.email}>{inv.email}</div>
-                <div className={styles.meta}>
-                  {inv.position && <span>{inv.position}</span>}
-                  {inv.department && <span>{inv.department}</span>}
-                  {inv.role && (
-                    <span 
-                      className={styles.role}
-                      style={{ background: inv.role.color }}
-                    >
-                      {inv.role.name}
-                    </span>
-                  )}
-                </div>
-                <div className={styles.dates}>
-                  <span>Создано: {new Date(inv.created_at).toLocaleDateString('ru-RU')}</span>
-                  {inv.status === 'pending' && (
-                    <span>Истекает: {new Date(inv.expires_at).toLocaleDateString('ru-RU')}</span>
-                  )}
-                </div>
-              </div>
-              <div className={styles.invActions}>
-                <span 
-                  className={styles.status}
-                  style={{ 
-                    background: STATUS_LABELS[inv.status].color,
-                    color: 'white'
-                  }}
-                >
-                  {STATUS_LABELS[inv.status].label}
-                </span>
-                {inv.status === 'pending' && (
-                  <>
-                    <button
-                      onClick={() => copyInviteLink((inv as Invitation & { token?: string }).token || inv.id)}
-                      className={styles.actionButton}
-                      title="Копировать ссылку"
-                    >
-                      📋
-                    </button>
-                    <button
-                      onClick={() => handleCancel(inv.id)}
-                      className={styles.actionButton}
-                      title="Отменить"
-                    >
-                      ✕
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {invitations.length === 0 ? <div className="text-center py-8"><Inbox className="h-12 w-12 mx-auto text-muted-foreground mb-2" /><p className="text-muted-foreground">Нет приглашений</p></div> : <div className="space-y-2">{invitations.map(inv => <Card key={inv.id}><CardContent className="pt-3 flex items-center gap-3"><div className="flex-1"><div className="font-medium">{inv.email}</div><div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-1">{inv.position && <span>{inv.position}</span>}{inv.department && <span>{inv.department}</span>}{inv.role && <Badge style={{ background: inv.role.color }}>{inv.role.name}</Badge>}</div><div className="text-xs text-muted-foreground mt-1">Создано: {new Date(inv.created_at).toLocaleDateString('ru-RU')}{inv.status === 'pending' && <> • Истекает: {new Date(inv.expires_at).toLocaleDateString('ru-RU')}</>}</div></div><div className="flex items-center gap-1"><Badge style={{ background: STATUS_LABELS[inv.status].color }}>{STATUS_LABELS[inv.status].label}</Badge>{inv.status === 'pending' && <><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyInviteLink((inv as Invitation & { token?: string }).token || inv.id)} title="Копировать"><Copy className="h-4 w-4" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleCancel(inv.id)} title="Отменить"><X className="h-4 w-4" /></Button></>}</div></CardContent></Card>)}</div>}
     </div>
   );
 }

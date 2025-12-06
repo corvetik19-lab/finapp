@@ -8,7 +8,13 @@ import { createTenderSchema } from '@/lib/tenders/validation';
 import type { TenderType, Tender, TenderStageTemplate } from '@/lib/tenders/types';
 import type { EISTenderData } from '@/lib/tenders/eis-mock-data';
 import { useToast } from '@/components/toast/ToastContext';
-import styles from './tender-form-modal.module.css';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Plus, X, AlertTriangle } from 'lucide-react';
 
 interface Platform {
   id: string;
@@ -308,531 +314,180 @@ export function TenderFormModal({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className={styles.modalOverlay}>
-      {/* Overlay */}
-      <div
-        className={styles.modalBackdrop}
-        onClick={onClose}
-      />
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{mode === 'edit' ? '✏️ Редактировать тендер' : '➕ Добавить тендер'}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {error && <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
+          {existingTenderWarning && <Alert><AlertTriangle className="h-4 w-4" /><AlertDescription>{existingTenderWarning}</AlertDescription></Alert>}
 
-      {/* Modal */}
-      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div className={styles.modalHeader}>
-          <h2 className={styles.modalTitle}>
-            {mode === 'edit' ? '✏️ Редактировать тендер' : '➕ Добавить тендер'}
-          </h2>
-          <button
-            onClick={onClose}
-            className={styles.closeButton}
-            type="button"
-          >
-            <svg
-              style={{ width: '1.5rem', height: '1.5rem' }}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
+          {/* Основная информация */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-gray-900 border-b pb-2">📋 Основная информация</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Номер закупки <span className="text-red-500">*</span></Label>
+                <Input {...register('purchase_number')} placeholder="0123456789012345678" onBlur={(e) => checkTenderNumber(e.target.value)} />
+                {errors.purchase_number && <p className="text-sm text-red-500">{errors.purchase_number.message}</p>}
+                {checkingNumber && <p className="text-sm text-blue-500">Проверка номера...</p>}
+              </div>
+            </div>
+          </div>
 
-          {/* Body */}
-          <div className={styles.modalBody}>
-            <form onSubmit={handleSubmit(onSubmit)}>
-              {error && (
-                <div className={styles.errorMessage}>
-                  ⚠️ {error}
+          {/* Детали закупки */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-gray-900 border-b pb-2">📝 Детали закупки</h3>
+            <div className="space-y-2">
+              <Label>Предмет закупки <span className="text-red-500">*</span></Label>
+              <Textarea {...register('subject')} rows={3} placeholder="Поставка медицинского оборудования..." />
+              {errors.subject && <p className="text-sm text-red-500">{errors.subject.message}</p>}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Название проекта</Label>
+                <Input {...register('project_name')} placeholder="Проект Альфа" />
+              </div>
+              <div className="space-y-2">
+                <Label>Тип закупки</Label>
+                <select {...register('type_id')} onChange={(e) => setValue('type_id', e.target.value)} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm">
+                  <option value="">Выберите тип</option>
+                  {types.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}
+                </select>
+              </div>
+              {mode === 'create' && templates.length > 0 && (
+                <div className="space-y-2">
+                  <Label>📚 Шаблон этапов</Label>
+                  <select value={selectedTemplateId} onChange={(e) => setSelectedTemplateId(e.target.value)} disabled={isTemplateLockedByType} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm disabled:opacity-50">
+                    <option value="system">🔧 Системный шаблон</option>
+                    {templates.filter(t => t.is_active).map((template) => <option key={template.id} value={template.id}>{template.icon} {template.name}</option>)}
+                  </select>
+                  <p className="text-xs text-gray-500">{isTemplateLockedByType ? '🔒 Выбран автоматически' : selectedTemplateId === 'system' ? '✓ Все системные этапы' : '✓ Этапы из шаблона'}</p>
                 </div>
               )}
-              
-              {existingTenderWarning && (
-                <div className={styles.warningMessage}>
-                  ⚠️ {existingTenderWarning}
-                </div>
-              )}
-
-              {/* Основная информация */}
-              <div className={styles.formSection}>
-                <h3 className={styles.sectionTitle}>
-                  Основная информация
-                </h3>
-                <div className={styles.formRow}>
-                  {/* Номер закупки */}
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>
-                      Номер закупки <span className={styles.required}>*</span>
-                    </label>
-                    <input
-                      type="text"
-                      className={styles.input}
-                      {...register('purchase_number')}
-                      placeholder="0123456789012345678"
-                      onBlur={(e) => checkTenderNumber(e.target.value)}
-                    />
-                    {errors.purchase_number && (
-                      <p className={styles.fieldError}>
-                        {errors.purchase_number.message}
-                      </p>
-                    )}
-                    {checkingNumber && (
-                      <p className={styles.fieldInfo}>
-                        Проверка номера...
-                      </p>
-                    )}
-                  </div>
-
-                </div>
+              <div className="space-y-2">
+                <Label>Способ определения</Label>
+                <select {...register('method')} disabled={availableMethods.length === 0} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm disabled:opacity-50">
+                  <option value="">{availableMethods.length === 0 ? 'Сначала выберите тип' : 'Выберите способ'}</option>
+                  {availableMethods.map((method) => <option key={method} value={method}>{method}</option>)}
+                </select>
               </div>
-
-              {/* Детали закупки */}
-              <div className={styles.formSection}>
-                <h3 className={styles.sectionTitle}>
-                  Детали закупки
-                </h3>
-                <div className={styles.formRow}>
-                  {/* Предмет закупки */}
-                  <div className={styles.formGroupFull}>
-                    <label className={styles.label}>
-                      Предмет закупки <span className={styles.required}>*</span>
-                    </label>
-                    <textarea
-                      {...register('subject')}
-                      rows={3}
-                      className={styles.textarea}
-                      placeholder="Поставка медицинского оборудования..."
-                    />
-                    {errors.subject && (
-                      <p className={styles.fieldError}>
-                        {errors.subject.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Название проекта */}
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>
-                      Название проекта
-                    </label>
-                    <input
-                      type="text"
-                      {...register('project_name')}
-                      className={styles.input}
-                      placeholder="Проект Альфа"
-                    />
-                  </div>
-
-                  {/* Тип закупки */}
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>
-                      Тип закупки
-                    </label>
-                    <select
-                      {...register('type_id')}
-                      className={styles.select}
-                      onChange={(e) => {
-                        setValue('type_id', e.target.value);
-                      }}
-                    >
-                      <option value="">Выберите тип</option>
-                      {types.map((type) => (
-                        <option key={type.id} value={type.id}>
-                          {type.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Шаблон этапов */}
-                  {mode === 'create' && templates.length > 0 && (
-                    <div className={styles.formGroup}>
-                      <label className={styles.label}>
-                        📚 Шаблон этапов
-                      </label>
-                      <select
-                        value={selectedTemplateId}
-                        onChange={(e) => setSelectedTemplateId(e.target.value)}
-                        className={styles.select}
-                        disabled={isTemplateLockedByType}
-                      >
-                        <option value="system">🔧 Системный шаблон (все системные этапы)</option>
-                        {templates
-                          .filter(t => t.is_active)
-                          .map((template) => (
-                            <option key={template.id} value={template.id}>
-                              {template.icon} {template.name}
-                              {template.description && ` — ${template.description}`}
-                            </option>
-                          ))}
-                      </select>
-                      {isTemplateLockedByType ? (
-                        <p className={styles.hint}>
-                          🔒 Шаблон выбран автоматически на основе типа закупки
-                        </p>
-                      ) : selectedTemplateId === 'system' ? (
-                        <p className={styles.hint}>
-                          ✓ Будут доступны все системные этапы. Тендер будет помещён на первый этап.
-                        </p>
-                      ) : (
-                        <p className={styles.hint}>
-                          ✓ Этапы из шаблона будут добавлены к системным этапам. Тендер будет помещён на первый этап шаблона.
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Способ определения */}
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>
-                      Способ определения
-                    </label>
-                    <select
-                      {...register('method')}
-                      className={styles.select}
-                      disabled={availableMethods.length === 0}
-                    >
-                      <option value="">
-                        {availableMethods.length === 0 
-                          ? 'Сначала выберите тип закупки' 
-                          : 'Выберите способ'}
-                      </option>
-                      {availableMethods.map((method) => (
-                        <option key={method} value={method}>
-                          {method}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Площадка */}
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>
-                      Электронная площадка
-                    </label>
-                    {platforms.length > 0 ? (
-                      <select
-                        {...register('platform_id')}
-                        className={styles.select}
-                      >
-                        <option value="">Выберите площадку</option>
-                        {platforms.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <input
-                        type="text"
-                        {...register('platform')}
-                        className={styles.input}
-                        placeholder="РТС-тендер, ЭТП ГПБ и т.д."
-                      />
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Заказчик */}
-              <div className={styles.formSection}>
-                <h3 className={styles.sectionTitle}>
-                  Заказчик
-                </h3>
-                <div className={styles.formRow}>
-                  {/* Название заказчика */}
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>
-                      Наименование заказчика <span className={styles.required}>*</span>
-                    </label>
-                    <input
-                      type="text"
-                      {...register('customer')}
-                      className={styles.input}
-                      placeholder="ГБУЗ Городская больница №1"
-                    />
-                    {errors.customer && (
-                      <p className={styles.fieldError}>
-                        {errors.customer.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Город */}
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>
-                      Город
-                    </label>
-                    <input
-                      type="text"
-                      {...register('city')}
-                      className={styles.input}
-                      placeholder="Москва"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Финансы */}
-              <div className={styles.formSection}>
-                <h3 className={styles.sectionTitle}>
-                  Финансовая информация
-                </h3>
-                <div className={styles.formRow}>
-                  {/* НМЦК */}
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>
-                      НМЦК (₽) <span className={styles.required}>*</span>
-                    </label>
-                    <input
-                      type="number"
-                      {...register('nmck', { valueAsNumber: true })}
-                      className={styles.input}
-                      placeholder="5645255.27"
-                    />
-                    {errors.nmck && (
-                      <p className={styles.fieldError}>
-                        {errors.nmck.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Обеспечение заявки */}
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>
-                      Обеспечение заявки (руб.)
-                    </label>
-                    <input
-                      type="number"
-                      {...register('application_security', {
-                        setValueAs: (v) => v === '' || v === null || v === undefined ? undefined : Number(v)
-                      })}
-                      className={styles.input}
-                      placeholder="500.00"
-                    />
-                  </div>
-
-                  {/* Обеспечение контракта */}
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>
-                      Обеспечение контракта (руб.)
-                    </label>
-                    <input
-                      type="number"
-                      {...register('contract_security', {
-                        setValueAs: (v) => v === '' || v === null || v === undefined ? undefined : Number(v)
-                      })}
-                      className={styles.input}
-                      placeholder="1000.00"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Даты */}
-              <div className={styles.formSection}>
-                <h3 className={styles.sectionTitle}>
-                  Сроки
-                </h3>
-                <div className={styles.formRow}>
-                  {/* Дедлайн подачи заявки */}
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>
-                      Дедлайн подачи <span style={{ color: '#ef4444' }}>*</span>
-                    </label>
-                    <input
-                      type="datetime-local"
-                      {...register('submission_deadline')}
-                      className={styles.input}
-                    />
-                    {errors.submission_deadline && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {errors.submission_deadline.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Дата аукциона */}
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>
-                      Дата аукциона
-                    </label>
-                    <input
-                      type="datetime-local"
-                      {...register('auction_date')}
-                      className={styles.input}
-                    />
-                  </div>
-
-                  {/* Дата подведения итогов */}
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>
-                      Дата подведения итогов
-                    </label>
-                    <input
-                      type="datetime-local"
-                      {...register('results_date')}
-                      className={styles.input}
-                    />
-                  </div>
-
-                  {/* Дата рассмотрения заявок */}
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>
-                      Дата рассмотрения заявок
-                    </label>
-                    <input
-                      type="datetime-local"
-                      {...register('review_date')}
-                      className={styles.input}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Ответственные */}
-              <div className={styles.formSection}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#1e293b', margin: 0 }}>
-                    Ответственные
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (responsibleIds.length === 0 || responsibleIds[responsibleIds.length - 1] !== '') {
-                        setResponsibleIds([...responsibleIds, '']);
-                      }
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.5rem 1rem',
-                      background: '#2563eb',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '0.375rem',
-                      fontSize: '0.875rem',
-                      fontWeight: 500,
-                      cursor: 'pointer',
-                      transition: 'background 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = '#1d4ed8'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = '#2563eb'}
-                  >
-                    <span>+</span>
-                    <span>Добавить ответственного</span>
-                  </button>
-                </div>
-                
-                {responsibleIds.length === 0 ? (
-                  <p style={{ color: '#6b7280', fontSize: '0.875rem', fontStyle: 'italic' }}>
-                    Нажмите &quot;Добавить ответственного&quot; для назначения сотрудников
-                  </p>
+              <div className="space-y-2">
+                <Label>Электронная площадка</Label>
+                {platforms.length > 0 ? (
+                  <select {...register('platform_id')} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm">
+                    <option value="">Выберите площадку</option>
+                    {platforms.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {responsibleIds.map((id, index) => (
-                      <div key={index} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                        <select
-                          value={id}
-                          onChange={(e) => {
-                            const newIds = [...responsibleIds];
-                            newIds[index] = e.target.value;
-                            setResponsibleIds(newIds);
-                          }}
-                          style={{
-                            flex: 1,
-                            padding: '0.5rem 0.75rem',
-                            border: '1px solid #d1d5db',
-                            borderRadius: '0.375rem',
-                            fontSize: '0.875rem'
-                          }}
-                        >
-                          <option value="">Выберите сотрудника</option>
-                          {managers
-                            .filter(m => !responsibleIds.includes(m.id) || m.id === id)
-                            .map((manager) => (
-                              <option key={manager.id} value={manager.id}>
-                                {manager.full_name}{manager.role ? ` (${manager.role})` : ''}
-                              </option>
-                            ))}
-                        </select>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setResponsibleIds(responsibleIds.filter((_, i) => i !== index));
-                          }}
-                          style={{
-                            padding: '0.5rem',
-                            background: '#dc2626',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '0.375rem',
-                            cursor: 'pointer',
-                            fontSize: '1.25rem',
-                            lineHeight: 1,
-                            width: '36px',
-                            height: '36px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                          title="Удалить"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+                  <Input {...register('platform')} placeholder="РТС-тендер, ЭТП ГПБ и т.д." />
                 )}
               </div>
-
-              {/* Комментарий */}
-              <div className={styles.formGroup}>
-                <label className={styles.label}>
-                  Комментарий
-                </label>
-                <textarea
-                  {...register('comment')}
-                  rows={3}
-                  className={styles.input}
-                  placeholder="Дополнительная информация..."
-                />
-              </div>
-
-              {/* Footer */}
-              <div className={styles.modalFooter}>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className={`${styles.button} ${styles.cancelButton}`}
-                  disabled={isSubmitting}
-                >
-                  Отмена
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className={`${styles.button} ${styles.submitButton}`}
-                >
-                  {isSubmitting 
-                    ? (mode === 'edit' ? 'Сохранение...' : 'Создание...') 
-                    : (mode === 'edit' ? '✓ Сохранить' : '✓ Создать тендер')
-                  }
-                </button>
-              </div>
-            </form>
+            </div>
           </div>
-        </div>
-      </div>
+
+          {/* Заказчик */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-gray-900 border-b pb-2">🏢 Заказчик</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Наименование заказчика <span className="text-red-500">*</span></Label>
+                <Input {...register('customer')} placeholder="ГБУЗ Городская больница №1" />
+                {errors.customer && <p className="text-sm text-red-500">{errors.customer.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label>Город</Label>
+                <Input {...register('city')} placeholder="Москва" />
+              </div>
+            </div>
+          </div>
+
+          {/* Финансы */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-gray-900 border-b pb-2">💰 Финансовая информация</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>НМЦК (₽) <span className="text-red-500">*</span></Label>
+                <Input type="number" {...register('nmck', { valueAsNumber: true })} placeholder="5645255.27" />
+                {errors.nmck && <p className="text-sm text-red-500">{errors.nmck.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label>Обеспечение заявки (руб.)</Label>
+                <Input type="number" {...register('application_security', { setValueAs: (v) => v === '' || v === null || v === undefined ? undefined : Number(v) })} placeholder="500.00" />
+              </div>
+              <div className="space-y-2">
+                <Label>Обеспечение контракта (руб.)</Label>
+                <Input type="number" {...register('contract_security', { setValueAs: (v) => v === '' || v === null || v === undefined ? undefined : Number(v) })} placeholder="1000.00" />
+              </div>
+            </div>
+          </div>
+
+          {/* Даты */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-gray-900 border-b pb-2">📅 Сроки</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Дедлайн подачи <span className="text-red-500">*</span></Label>
+                <Input type="datetime-local" {...register('submission_deadline')} />
+                {errors.submission_deadline && <p className="text-sm text-red-500">{errors.submission_deadline.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label>Дата аукциона</Label>
+                <Input type="datetime-local" {...register('auction_date')} />
+              </div>
+              <div className="space-y-2">
+                <Label>Дата подведения итогов</Label>
+                <Input type="datetime-local" {...register('results_date')} />
+              </div>
+              <div className="space-y-2">
+                <Label>Дата рассмотрения заявок</Label>
+                <Input type="datetime-local" {...register('review_date')} />
+              </div>
+            </div>
+          </div>
+
+          {/* Ответственные */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b pb-2">
+              <h3 className="font-semibold text-gray-900">👥 Ответственные</h3>
+              <Button type="button" size="sm" onClick={() => { if (responsibleIds.length === 0 || responsibleIds[responsibleIds.length - 1] !== '') setResponsibleIds([...responsibleIds, '']); }}>
+                <Plus className="h-4 w-4 mr-1" />Добавить
+              </Button>
+            </div>
+            {responsibleIds.length === 0 ? (
+              <p className="text-sm text-gray-500 italic">Нажмите &quot;Добавить&quot; для назначения сотрудников</p>
+            ) : (
+              <div className="space-y-2">
+                {responsibleIds.map((id, index) => (
+                  <div key={index} className="flex gap-2 items-center">
+                    <select value={id} onChange={(e) => { const newIds = [...responsibleIds]; newIds[index] = e.target.value; setResponsibleIds(newIds); }} className="flex-1 h-10 px-3 rounded-md border border-input bg-background text-sm">
+                      <option value="">Выберите сотрудника</option>
+                      {managers.filter(m => !responsibleIds.includes(m.id) || m.id === id).map((manager) => <option key={manager.id} value={manager.id}>{manager.full_name}{manager.role ? ` (${manager.role})` : ''}</option>)}
+                    </select>
+                    <Button type="button" variant="destructive" size="icon" onClick={() => setResponsibleIds(responsibleIds.filter((_, i) => i !== index))}><X className="h-4 w-4" /></Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Комментарий */}
+          <div className="space-y-2">
+            <Label>Комментарий</Label>
+            <Textarea {...register('comment')} rows={3} placeholder="Дополнительная информация..." />
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>Отмена</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />{mode === 'edit' ? 'Сохранение...' : 'Создание...'}</> : (mode === 'edit' ? '✓ Сохранить' : '✓ Создать тендер')}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 

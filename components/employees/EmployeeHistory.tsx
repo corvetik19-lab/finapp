@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import styles from './EmployeeHistory.module.css';
+import { History, Loader2 } from "lucide-react";
 
 interface HistoryItem {
   id: string;
@@ -76,82 +76,20 @@ export function EmployeeHistory({ employeeId }: EmployeeHistoryProps) {
     loadHistory();
   }, [employeeId]);
 
-  if (loading) {
-    return (
-      <div className={styles.loading}>
-        <span>⏳</span> Загрузка истории...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className={styles.error}>
-        <span>❌</span> {error}
-      </div>
-    );
-  }
-
-  if (history.length === 0) {
-    return (
-      <div className={styles.empty}>
-        <span className={styles.emptyIcon}>📋</span>
-        <p>История изменений пуста</p>
-        <p className={styles.emptyHint}>Здесь будут отображаться все изменения данных сотрудника</p>
-      </div>
-    );
-  }
+  if (loading) return <div className="flex items-center justify-center py-8 text-muted-foreground"><Loader2 className="h-5 w-5 mr-2 animate-spin" />Загрузка истории...</div>;
+  if (error) return <div className="text-center py-8 text-destructive"><span>❌</span> {error}</div>;
+  if (history.length === 0) return <div className="text-center py-8"><History className="h-12 w-12 mx-auto text-muted-foreground mb-2" /><p className="text-muted-foreground">История пуста</p><p className="text-xs text-muted-foreground">Здесь будут изменения</p></div>;
 
   return (
-    <div className={styles.container}>
-      <div className={styles.timeline}>
-        {history.map((item) => (
-          <div key={item.id} className={styles.item}>
-            <div className={styles.icon}>
-              {ACTION_ICONS[item.action] || '📝'}
-            </div>
-            <div className={styles.content}>
-              <div className={styles.header}>
-                <span className={styles.action}>
-                  {ACTION_LABELS[item.action] || item.action}
-                </span>
-                <span className={styles.date}>
-                  {new Date(item.changed_at).toLocaleString('ru-RU', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </span>
-              </div>
-              
-              {item.field_name && (
-                <div className={styles.field}>
-                  <span className={styles.fieldName}>
-                    {FIELD_LABELS[item.field_name] || item.field_name}:
-                  </span>
-                  {item.old_value && (
-                    <span className={styles.oldValue}>{item.old_value}</span>
-                  )}
-                  {item.old_value && item.new_value && (
-                    <span className={styles.arrow}>→</span>
-                  )}
-                  {item.new_value && (
-                    <span className={styles.newValue}>{item.new_value}</span>
-                  )}
-                </div>
-              )}
-
-              {item.comment && (
-                <div className={styles.comment}>
-                  💬 {item.comment}
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+    <div className="space-y-3">
+      {history.map(item => <div key={item.id} className="flex gap-3 p-3 border rounded">
+        <div className="text-lg">{ACTION_ICONS[item.action] || '📝'}</div>
+        <div className="flex-1">
+          <div className="flex items-center justify-between"><span className="font-medium text-sm">{ACTION_LABELS[item.action] || item.action}</span><span className="text-xs text-muted-foreground">{new Date(item.changed_at).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span></div>
+          {item.field_name && <div className="text-sm mt-1"><span className="text-muted-foreground">{FIELD_LABELS[item.field_name] || item.field_name}:</span>{item.old_value && <span className="line-through text-red-500 mx-1">{item.old_value}</span>}{item.old_value && item.new_value && <span>→</span>}{item.new_value && <span className="text-green-600 mx-1">{item.new_value}</span>}</div>}
+          {item.comment && <div className="text-xs text-muted-foreground mt-1">💬 {item.comment}</div>}
+        </div>
+      </div>)}
     </div>
   );
 }

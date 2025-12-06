@@ -2,8 +2,21 @@
 
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
-import styles from "./cards.module.css";
 import { addFundsAction } from "./actions";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PlusCircle } from "lucide-react";
 
 type FundsOption = {
   accountId: string;
@@ -20,38 +33,26 @@ type AddFundsModalProps = {
 
 function formatCurrency(value: number, currency: string) {
   const major = value / 100;
-  
-  // Для рублей не показываем код валюты
   if (currency === "RUB") {
-    return `${major.toLocaleString("ru-RU", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })} ₽`;
+    return `${major.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽`;
   }
-  
-  return new Intl.NumberFormat("ru-RU", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(major);
+  return new Intl.NumberFormat("ru-RU", { style: "currency", currency, minimumFractionDigits: 2 }).format(major);
 }
 
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <button className={styles.primaryBtn} type="submit" disabled={pending}>
+    <Button type="submit" disabled={pending}>
       {pending ? "Сохраняем..." : "Пополнить карту"}
-    </button>
+    </Button>
   );
 }
 
-export default function AddFundsModal({ icon, label, options }: AddFundsModalProps) {
+export default function AddFundsModal({ label, options }: AddFundsModalProps) {
   const [open, setOpen] = useState(false);
   const [selection, setSelection] = useState(0);
   const [amount, setAmount] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const titleId = useId();
 
   const hasOptions = options.length > 0;
@@ -68,152 +69,96 @@ export default function AddFundsModal({ icon, label, options }: AddFundsModalPro
   }, []);
 
   useEffect(() => {
-    if (!success) return;
-    const timer = window.setTimeout(() => setSuccess(null), 3500);
-    return () => window.clearTimeout(timer);
-  }, [success]);
-
-  const handleOpen = useCallback(() => {
-    if (!hasOptions) return;
-    setSelection(0);
-    resetFormState();
-    setOpen(true);
-  }, [hasOptions, resetFormState]);
-
-  const handleClose = useCallback(() => {
-    setOpen(false);
-    resetFormState();
-  }, [resetFormState]);
+    if (open) {
+      setSelection(0);
+      resetFormState();
+    }
+  }, [open, resetFormState]);
 
   return (
-    <div className={styles.actionWrapper}>
-      <button
-        type="button"
-        className={styles.actionCard}
-        onClick={handleOpen}
-        disabled={!hasOptions}
-      >
-        <div className={styles.actionIcon}>
-          <i className="material-icons">{icon}</i>
-        </div>
-        <div className={styles.actionTitle}>{label}</div>
-        {!hasOptions && <div className={styles.actionHint}>Нет карт для пополнения</div>}
-      </button>
-
-      {success && <div className={`${styles.toast} ${styles.toastSuccess}`}>{success}</div>}
-
-      {open && current && (
-        <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-labelledby={titleId}>
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <div className={styles.modalTitle} id={titleId}>
-                Пополнение карты
-              </div>
-              <button className={styles.modalClose} type="button" onClick={handleClose} aria-label="Закрыть">
-                ×
-              </button>
-            </div>
-
-            <form
-              action={async (formData) => {
-                const rawAmount = formData.get("amount_major");
-                const normalized = typeof rawAmount === "string" ? rawAmount.trim().replace(/\s+/g, "").replace(",", ".") : "";
-                const parsed = Number(normalized);
-
-                if (!normalized || Number.isNaN(parsed) || parsed <= 0) {
-                  setError("Введите сумму больше 0");
-                  return;
-                }
-
-                setError(null);
-                formData.set("amount_major", normalized);
-
-                await addFundsAction(formData);
-                setSuccess("Карта успешно пополнена");
-                handleClose();
-              }}
-            >
-              <div className={styles.modalBody}>
-                {options.length > 1 && (
-                  <div className={styles.formField}>
-                    <label htmlFor={`${titleId}-card`}>Карта</label>
-                    <select
-                      id={`${titleId}-card`}
-                      name="__card_select"
-                      value={current.accountId}
-                      onChange={(event) => {
-                        const nextIndex = options.findIndex((opt) => opt.accountId === event.target.value);
-                        setSelection(nextIndex >= 0 ? nextIndex : 0);
-                      }}
-                    >
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" disabled={!hasOptions}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          {label}
+        </Button>
+      </DialogTrigger>
+      {current && (
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Пополнение карты</DialogTitle>
+            <DialogDescription>Добавьте средства на выбранную карту</DialogDescription>
+          </DialogHeader>
+          <form
+            action={async (formData) => {
+              const rawAmount = formData.get("amount_major");
+              const normalized = typeof rawAmount === "string" ? rawAmount.trim().replace(/\s+/g, "").replace(",", ".") : "";
+              const parsed = Number(normalized);
+              if (!normalized || Number.isNaN(parsed) || parsed <= 0) {
+                setError("Введите сумму больше 0");
+                return;
+              }
+              setError(null);
+              formData.set("amount_major", normalized);
+              await addFundsAction(formData);
+              setOpen(false);
+            }}
+          >
+            <div className="grid gap-4 py-4">
+              {options.length > 1 && (
+                <div className="grid gap-2">
+                  <Label htmlFor={`${titleId}-card`}>Карта</Label>
+                  <Select value={current.accountId} onValueChange={(val) => {
+                    const idx = options.findIndex((o) => o.accountId === val);
+                    setSelection(idx >= 0 ? idx : 0);
+                  }}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
                       {options.map((opt) => (
-                        <option key={opt.accountId} value={opt.accountId}>
-                          {opt.accountName}
-                        </option>
+                        <SelectItem key={opt.accountId} value={opt.accountId}>{opt.accountName}</SelectItem>
                       ))}
-                    </select>
-                  </div>
-                )}
-
-                <input type="hidden" name="account_id" value={current.accountId} />
-                <input type="hidden" name="currency" value={current.cardCurrency} />
-
-                <div className={styles.formField}>
-                  <label htmlFor={`${titleId}-amount`}>Сумма пополнения (₽)</label>
-                  <input
-                    id={`${titleId}-amount`}
-                    name="amount_major"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    required
-                    value={amount}
-                    onChange={(event) => {
-                      setAmount(event.target.value);
-                      if (error) setError(null);
-                    }}
-                  />
-                  {error && <div className={styles.fieldError}>{error}</div>}
+                    </SelectContent>
+                  </Select>
                 </div>
-
-                <div className={styles.formField}>
-                  <label htmlFor={`${titleId}-note`}>Комментарий (опционально)</label>
-                  <input
-                    id={`${titleId}-note`}
-                    name="note"
-                    type="text"
-                    placeholder="Например, перевод зарплаты"
-                    maxLength={200}
-                  />
-                </div>
-
-                {balances && (
-                  <div className={styles.balanceSummary}>
-                    <div>
-                      <div className={styles.balanceLabel}>Текущий баланс карты</div>
-                      <div className={styles.balanceValue}>{balances}</div>
-                    </div>
-                  </div>
-                )}
-
-                <div className={styles.modalHint}>
-                  Пополнение будет сохранено как доход и отобразится в истории транзакций выбранной карты.
-                </div>
+              )}
+              <input type="hidden" name="account_id" value={current.accountId} />
+              <input type="hidden" name="currency" value={current.cardCurrency} />
+              <div className="grid gap-2">
+                <Label htmlFor={`${titleId}-amount`}>Сумма пополнения (₽)</Label>
+                <Input
+                  id={`${titleId}-amount`}
+                  name="amount_major"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  required
+                  value={amount}
+                  onChange={(e) => { setAmount(e.target.value); if (error) setError(null); }}
+                />
+                {error && <p className="text-sm text-red-500">{error}</p>}
               </div>
-
-              <div className={styles.modalFooter}>
-                <div className={styles.modalActions}>
-                  <button className={styles.secondaryBtn} type="button" onClick={handleClose}>
-                    Отмена
-                  </button>
-                  <SubmitButton />
-                </div>
+              <div className="grid gap-2">
+                <Label htmlFor={`${titleId}-note`}>Комментарий (опционально)</Label>
+                <Input id={`${titleId}-note`} name="note" placeholder="Например, перевод зарплаты" maxLength={200} />
               </div>
-            </form>
-          </div>
-        </div>
+              {balances && (
+                <div className="bg-muted rounded-lg p-3">
+                  <p className="text-sm text-muted-foreground">Текущий баланс карты</p>
+                  <p className="text-lg font-bold">{balances}</p>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Пополнение будет сохранено как доход и отобразится в истории транзакций.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Отмена</Button>
+              <SubmitButton />
+            </DialogFooter>
+          </form>
+        </DialogContent>
       )}
-    </div>
+    </Dialog>
   );
 }

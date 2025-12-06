@@ -3,14 +3,21 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import styles from "@/components/dashboard/Dashboard.module.css";
 import { formatMoney } from "@/lib/utils/format";
 import type { PlanWithActivity } from "@/lib/plans/service";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Target, Plus, ArrowRight, Loader2 } from "lucide-react";
 
-const STATUS_CLASS: Record<PlanWithActivity["status"], string> = {
-  ahead: styles.statusAhead,
-  active: styles.statusActive,
-  behind: styles.statusBehind,
+const STATUS_COLORS: Record<PlanWithActivity["status"], string> = {
+  ahead: "bg-green-500",
+  active: "bg-blue-500",
+  behind: "bg-red-500",
 };
 
 type PlansWidgetProps = {
@@ -111,180 +118,117 @@ export default function PlansWidget({ plans, currency }: PlansWidgetProps) {
   const completion = totals.goalMinor > 0 ? Math.min(100, Math.round((totals.currentMinor / totals.goalMinor) * 100)) : 0;
 
   return (
-    <section className={styles.plansWidget}>
-      <div className={styles.plansHeader}>
-        <div className={styles.plansHeaderTitle}>
-          <div className={styles.plansTitle}>Планы</div>
-          <div className={styles.plansSubtitle}>
-            {plans.length > 0 ? `Выполнено ${completion}% от общей цели` : "Следите за прогрессом ваших финансовых целей"}
-          </div>
-        </div>
-        <div className={styles.plansActions}>
-          <button type="button" onClick={openModal} className={styles.plansQuickAdd}>
-            <span className="material-icons" aria-hidden>
-              add_circle
-            </span>
-            Новый план
-          </button>
-        </div>
-      </div>
-
-      <div className={styles.plansStats}>
-        <div className={styles.plansStatCard}>
-          <div className={styles.plansStatLabel}>Всего планов</div>
-          <div className={styles.plansStatValue}>{plans.length}</div>
-        </div>
-        <div className={styles.plansStatCard}>
-          <div className={styles.plansStatLabel}>Накоплено</div>
-          <div className={styles.plansStatValue}>{formatMoney(totals.currentMinor, currency)}</div>
-        </div>
-        <div className={styles.plansStatCard}>
-          <div className={styles.plansStatLabel}>До цели</div>
-          <div className={styles.plansStatValue}>
-            {formatMoney(Math.max(totals.goalMinor - totals.currentMinor, 0), currency)}
-          </div>
-        </div>
-      </div>
-
-      {plans.length === 0 ? (
-        <div className={styles.plansEmpty}>
-          Планы ещё не созданы. Создайте первый, чтобы видеть прогресс накоплений.
-        </div>
-      ) : (
-        <div className={styles.plansList}>
-          {highlightedPlans.map((plan) => {
-            const progress = plan.goalAmount > 0 ? Math.min(100, Math.round((plan.currentAmount / plan.goalAmount) * 100)) : 0;
-            const statusClass = STATUS_CLASS[plan.status] ?? styles.statusActive;
-
-            return (
-              <Link key={plan.id} href={`/plans?id=${plan.id}`} className={styles.plansItem}>
-                <span className={`${styles.plansItemStatus} ${statusClass}`} aria-hidden />
-                <div className={styles.plansItemBody}>
-                  <div className={styles.plansItemTitle}>{plan.name}</div>
-                  <div className={styles.plansItemMeta}>
-                    <span>{formatMinor(plan.currentAmount, currency)} из {formatMinor(plan.goalAmount, currency)}</span>
-                    {plan.targetDate && <span>до {new Date(plan.targetDate).toLocaleDateString("ru-RU")}</span>}
-                    <span>{plan.category}</span>
-                  </div>
-                  <div className={styles.progressBar}>
-                    <div className={styles.progressFill} style={{ width: `${progress}%` }} />
-                  </div>
-                </div>
-                <div className={styles.plansItemProgress}>
-                  <div className={styles.plansStatLabel}>Ежемесячный взнос</div>
-                  <div className={styles.plansStatValue}>{formatMinor(plan.monthlyContribution, currency)}</div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      )}
-
-      <Link href="/plans" className={styles.plansFooterLink}>
-        Посмотреть все планы
-        <span className="material-icons" aria-hidden>
-          arrow_forward
-        </span>
-      </Link>
-
-      {isModalOpen && (
-        <div className={styles.modalRoot} role="presentation" onClick={closeModal}>
-          <div className={styles.modal} role="dialog" aria-modal onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <div className={styles.modalTitle}>Создать новый план</div>
-              <button type="button" className={styles.modalClose} onClick={closeModal} aria-label="Закрыть">
-                <span className="material-icons" aria-hidden>
-                  close
-                </span>
-              </button>
+    <>
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Target className="h-4 w-4" />
+                Планы
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                {plans.length > 0 ? `Выполнено ${completion}% от общей цели` : "Следите за прогрессом ваших финансовых целей"}
+              </p>
             </div>
-
-            <form className={styles.modalContent} onSubmit={handleSubmit}>
-              <div className={styles.modalForm}>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel} htmlFor="plan-name-quick">
-                    Название плана <span style={{ color: "#f44336" }}>*</span>
-                  </label>
-                  <input
-                    id="plan-name-quick"
-                    className={styles.formInput}
-                    placeholder="Например, Отпуск в Италии"
-                    value={formData.name}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                    required
-                  />
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel} htmlFor="plan-goal-quick">
-                    Цель (₽) <span style={{ color: "#f44336" }}>*</span>
-                  </label>
-                  <input
-                    id="plan-goal-quick"
-                    className={styles.formInput}
-                    type="number"
-                    step="0.01"
-                    placeholder="Например, 100 000"
-                    value={formData.goal}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, goal: e.target.value }))}
-                    required
-                  />
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel} htmlFor="plan-end-quick">
-                    Планируемая дата
-                  </label>
-                  <input
-                    id="plan-end-quick"
-                    className={styles.formInput}
-                    type="date"
-                    value={formData.endDate}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, endDate: e.target.value }))}
-                  />
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel} htmlFor="plan-monthly-quick">
-                    Ежемесячный взнос (₽)
-                  </label>
-                  <input
-                    id="plan-monthly-quick"
-                    className={styles.formInput}
-                    type="number"
-                    step="0.01"
-                    placeholder="Например, 12 500"
-                    value={formData.monthly}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, monthly: e.target.value }))}
-                  />
-                </div>
-
-                <div className={styles.formGroupFull}>
-                  <label className={styles.formLabel} htmlFor="plan-note-quick">
-                    Примечание
-                  </label>
-                  <textarea
-                    id="plan-note-quick"
-                    className={styles.formTextarea}
-                    placeholder="(необязательно)"
-                    value={formData.note}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, note: e.target.value }))}
-                  />
-                </div>
-              </div>
-
-              <div className={styles.modalFooter}>
-                <button type="button" className={styles.btnSecondary} onClick={closeModal}>
-                  Отмена
-                </button>
-                <button type="submit" className={styles.btnPrimary} disabled={isSaving}>
-                  {isSaving ? "Создание..." : "Создать"}
-                </button>
-              </div>
-            </form>
+            <Button variant="outline" size="sm" onClick={openModal}>
+              <Plus className="h-4 w-4 mr-1" />
+              Новый план
+            </Button>
           </div>
-        </div>
-      )}
-    </section>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-3 gap-2">
+            <div className="text-center p-2 bg-muted rounded-lg">
+              <div className="text-xs text-muted-foreground">Всего планов</div>
+              <div className="text-lg font-bold">{plans.length}</div>
+            </div>
+            <div className="text-center p-2 bg-muted rounded-lg">
+              <div className="text-xs text-muted-foreground">Накоплено</div>
+              <div className="text-lg font-bold">{formatMoney(totals.currentMinor, currency)}</div>
+            </div>
+            <div className="text-center p-2 bg-muted rounded-lg">
+              <div className="text-xs text-muted-foreground">До цели</div>
+              <div className="text-lg font-bold">{formatMoney(Math.max(totals.goalMinor - totals.currentMinor, 0), currency)}</div>
+            </div>
+          </div>
+
+          {plans.length === 0 ? (
+            <div className="text-center text-muted-foreground py-6">
+              Планы ещё не созданы. Создайте первый, чтобы видеть прогресс накоплений.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {highlightedPlans.map((plan) => {
+                const progress = plan.goalAmount > 0 ? Math.min(100, Math.round((plan.currentAmount / plan.goalAmount) * 100)) : 0;
+                const statusColor = STATUS_COLORS[plan.status] ?? "bg-blue-500";
+                return (
+                  <Link key={plan.id} href={`/finance/plans?id=${plan.id}`} className="block p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+                    <div className="flex items-start gap-3">
+                      <div className={`w-1 h-full min-h-[40px] rounded-full ${statusColor}`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{plan.name}</div>
+                        <div className="text-xs text-muted-foreground space-x-2">
+                          <span>{formatMinor(plan.currentAmount, currency)} из {formatMinor(plan.goalAmount, currency)}</span>
+                          {plan.targetDate && <span>до {new Date(plan.targetDate).toLocaleDateString("ru-RU")}</span>}
+                        </div>
+                        <Progress value={progress} className="h-1.5 mt-2" />
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-muted-foreground">Взнос/мес</div>
+                        <div className="text-sm font-medium">{formatMinor(plan.monthlyContribution, currency)}</div>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+
+          <Button variant="ghost" size="sm" className="w-full" asChild>
+            <Link href="/finance/plans">
+              Посмотреть все планы
+              <ArrowRight className="h-4 w-4 ml-1" />
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Dialog open={isModalOpen} onOpenChange={(open) => !open && closeModal()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Создать новый план</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="plan-name-quick">Название плана *</Label>
+              <Input id="plan-name-quick" placeholder="Например, Отпуск в Италии" value={formData.name} onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="plan-goal-quick">Цель (₽) *</Label>
+              <Input id="plan-goal-quick" type="number" step="0.01" placeholder="Например, 100 000" value={formData.goal} onChange={(e) => setFormData((prev) => ({ ...prev, goal: e.target.value }))} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="plan-end-quick">Планируемая дата</Label>
+              <Input id="plan-end-quick" type="date" value={formData.endDate} onChange={(e) => setFormData((prev) => ({ ...prev, endDate: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="plan-monthly-quick">Ежемесячный взнос (₽)</Label>
+              <Input id="plan-monthly-quick" type="number" step="0.01" placeholder="Например, 12 500" value={formData.monthly} onChange={(e) => setFormData((prev) => ({ ...prev, monthly: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="plan-note-quick">Примечание</Label>
+              <Textarea id="plan-note-quick" placeholder="(необязательно)" value={formData.note} onChange={(e) => setFormData((prev) => ({ ...prev, note: e.target.value }))} />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={closeModal}>Отмена</Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Создание...</> : "Создать"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

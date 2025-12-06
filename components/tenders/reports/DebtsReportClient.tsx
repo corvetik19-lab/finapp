@@ -2,7 +2,11 @@
 
 import { useState } from 'react';
 import type { DebtsReportData } from '@/lib/tenders/debts-report-service';
-import styles from './DebtsReport.module.css';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Download, Loader2 } from 'lucide-react';
 
 interface Props {
   initialData: DebtsReportData;
@@ -21,59 +25,36 @@ export default function DebtsReportClient({ initialData, companyId }: Props) {
   const [sortBy, setSortBy] = useState<SortBy>('debt');
 
   const formatCurrency = (amount: number) => {
-    if (amount >= 1000000000) {
-      return `${(amount / 1000000000).toFixed(1)} млрд ₽`;
-    }
-    if (amount >= 1000000) {
-      return `${(amount / 1000000).toFixed(1)} млн ₽`;
-    }
-    if (amount >= 1000) {
-      return `${(amount / 1000).toFixed(0)} тыс ₽`;
-    }
-    return new Intl.NumberFormat('ru-RU', {
-      style: 'currency',
-      currency: 'RUB',
-      minimumFractionDigits: 0,
-    }).format(amount);
+    if (amount >= 1000000000) return `${(amount / 1000000000).toFixed(1)} млрд ₽`;
+    if (amount >= 1000000) return `${(amount / 1000000).toFixed(1)} млн ₽`;
+    if (amount >= 1000) return `${(amount / 1000).toFixed(0)} тыс ₽`;
+    return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', minimumFractionDigits: 0 }).format(amount);
   };
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '—';
-    return new Date(dateStr).toLocaleDateString('ru-RU', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
+    return new Date(dateStr).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
   const handlePeriodChange = async (newPeriod: Period) => {
     setPeriod(newPeriod);
     setLoading(true);
-
     try {
       const now = new Date();
       let dateFrom: string | undefined;
-
       if (newPeriod === 'month') {
-        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-        dateFrom = firstDay.toISOString().split('T')[0];
+        dateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
       } else if (newPeriod === 'quarter') {
-        const quarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
-        dateFrom = quarterStart.toISOString().split('T')[0];
+        dateFrom = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1).toISOString().split('T')[0];
       } else if (newPeriod === 'year') {
-        const yearStart = new Date(now.getFullYear(), 0, 1);
-        dateFrom = yearStart.toISOString().split('T')[0];
+        dateFrom = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
       }
-
       const params = new URLSearchParams({ company_id: companyId });
       if (dateFrom) params.append('date_from', dateFrom);
-
       const response = await fetch(`/api/tenders/debts-report?${params}`);
       if (response.ok) {
         const result = await response.json();
-        if (result.data) {
-          setData(result.data);
-        }
+        if (result.data) setData(result.data);
       }
     } catch (error) {
       console.error('Error loading report:', error);
@@ -84,8 +65,7 @@ export default function DebtsReportClient({ initialData, companyId }: Props) {
 
   const handleExport = () => {
     const rows = [
-      ['Отчёт по дебиторской задолженности'],
-      [],
+      ['Отчёт по дебиторской задолженности'], [],
       ['Показатель', 'Значение'],
       ['Общая задолженность', data.overview.totalDebt.toString()],
       ['Текущая', data.overview.currentDebt.toString()],
@@ -93,13 +73,11 @@ export default function DebtsReportClient({ initialData, companyId }: Props) {
       ['Просрочено', data.overview.overdueDebt.toString()],
       ['Критично', data.overview.criticalDebt.toString()],
       ['Должников', data.overview.debtorsCount.toString()],
-      ['Контрактов', data.overview.contractsCount.toString()],
-      [],
+      ['Контрактов', data.overview.contractsCount.toString()], [],
       ['Должники'],
       ['Заказчик', 'Номер закупки', 'Сумма контракта', 'Оплачено', 'Долг', 'Срок оплаты', 'Просрочка (дн)', 'Статус'],
       ...data.debtors.map(d => [d.customer, d.purchaseNumber, d.contractPrice.toString(), d.paidAmount.toString(), d.debtAmount.toString(), d.dueDate || '', d.daysOverdue.toString(), d.status]),
     ];
-
     const csvContent = rows.map(row => row.join(';')).join('\n');
     const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -111,26 +89,23 @@ export default function DebtsReportClient({ initialData, companyId }: Props) {
   };
 
   const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
-      current: 'В срок',
-      warning: 'Внимание',
-      overdue: 'Просрочено',
-      critical: 'Критично',
-    };
+    const labels: Record<string, string> = { current: 'В срок', warning: 'Внимание', overdue: 'Просрочено', critical: 'Критично' };
     return labels[status] || status;
   };
 
-  const getStatusClass = (status: string) => {
-    const classes: Record<string, string> = {
-      current: styles.statusCurrent,
-      warning: styles.statusWarning,
-      overdue: styles.statusOverdue,
-      critical: styles.statusCritical,
-    };
-    return classes[status] || '';
+  const getStatusVariant = (status: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
+    if (status === 'current') return 'default';
+    if (status === 'warning') return 'secondary';
+    return 'destructive';
   };
 
-  // Сортировка должников
+  const getRowClass = (status: string) => {
+    if (status === 'critical') return 'bg-red-50';
+    if (status === 'overdue') return 'bg-orange-50';
+    if (status === 'warning') return 'bg-amber-50';
+    return '';
+  };
+
   const sortedDebtors = [...data.debtors].sort((a, b) => {
     if (sortBy === 'debt') return b.debtAmount - a.debtAmount;
     if (sortBy === 'overdue') return b.daysOverdue - a.daysOverdue;
@@ -140,419 +115,265 @@ export default function DebtsReportClient({ initialData, companyId }: Props) {
   const { overview } = data;
 
   return (
-    <div className={styles.container}>
-      {/* Заголовок */}
-      <div className={styles.header}>
-        <div className={styles.headerInfo}>
-          <h1 className={styles.title}>
-            <span className={styles.titleIcon}>📋</span>
-            Дебиторская задолженность
-          </h1>
-          <p className={styles.subtitle}>Контроль долгов заказчиков</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">📋 Дебиторская задолженность</h1>
+          <p className="text-gray-500 mt-1">Контроль долгов заказчиков</p>
         </div>
-        <div className={styles.headerActions}>
-          <div className={styles.periodButtons}>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex bg-gray-100 rounded-lg p-1">
             {(['month', 'quarter', 'year', 'all'] as Period[]).map(p => (
-              <button
-                key={p}
-                onClick={() => handlePeriodChange(p)}
-                className={`${styles.periodBtn} ${period === p ? styles.periodBtnActive : ''}`}
-                disabled={loading}
-              >
+              <Button key={p} variant={period === p ? 'default' : 'ghost'} size="sm" onClick={() => handlePeriodChange(p)} disabled={loading}>
                 {p === 'month' ? 'Месяц' : p === 'quarter' ? 'Квартал' : p === 'year' ? 'Год' : 'Всё время'}
-              </button>
+              </Button>
             ))}
           </div>
-          <button onClick={handleExport} className={styles.exportBtn}>
-            <span className={styles.btnIcon}>📥</span>
-            Экспорт
-          </button>
+          <Button variant="outline" onClick={handleExport}><Download className="h-4 w-4 mr-1" />Экспорт</Button>
         </div>
       </div>
 
       {loading && (
-        <div className={styles.loadingOverlay}>
-          <div className={styles.spinner}></div>
+        <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       )}
 
-      {/* Ключевые метрики */}
-      <div className={styles.metricsGrid}>
-        <div className={`${styles.metricCard} ${styles.metricDanger}`}>
-          <div className={styles.metricIcon}>💰</div>
-          <div className={styles.metricContent}>
-            <div className={styles.metricValue}>{formatCurrency(overview.totalDebt)}</div>
-            <div className={styles.metricLabel}>Общая задолженность</div>
-            <div className={styles.metricSub}>{overview.contractsCount} контрактов</div>
-          </div>
-        </div>
-
-        <div className={`${styles.metricCard} ${styles.metricSuccess}`}>
-          <div className={styles.metricIcon}>✅</div>
-          <div className={styles.metricContent}>
-            <div className={styles.metricValue}>{formatCurrency(overview.currentDebt)}</div>
-            <div className={styles.metricLabel}>В срок</div>
-            <div className={styles.metricSub}>Без просрочки</div>
-          </div>
-        </div>
-
-        <div className={`${styles.metricCard} ${styles.metricWarning}`}>
-          <div className={styles.metricIcon}>⚠️</div>
-          <div className={styles.metricContent}>
-            <div className={styles.metricValue}>{formatCurrency(overview.warningDebt + overview.overdueDebt)}</div>
-            <div className={styles.metricLabel}>Просрочено</div>
-            <div className={styles.metricSub}>Требует внимания</div>
-          </div>
-        </div>
-
-        <div className={`${styles.metricCard} ${overview.criticalDebt > 0 ? styles.metricCritical : styles.metricSuccess}`}>
-          <div className={styles.metricIcon}>{overview.criticalDebt > 0 ? '🚨' : '👍'}</div>
-          <div className={styles.metricContent}>
-            <div className={styles.metricValue}>{formatCurrency(overview.criticalDebt)}</div>
-            <div className={styles.metricLabel}>Критично</div>
-            <div className={styles.metricSub}>{overview.criticalDebt > 0 ? 'Срочно взыскать!' : 'Нет критичных'}</div>
-          </div>
-        </div>
+      {/* Key Metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="border-l-4 border-l-red-500">
+          <CardContent className="p-4 flex items-center gap-3">
+            <span className="text-3xl">💰</span>
+            <div>
+              <div className="text-xl font-bold text-red-600">{formatCurrency(overview.totalDebt)}</div>
+              <div className="text-sm text-gray-500">Общая задолженность</div>
+              <div className="text-xs text-gray-400">{overview.contractsCount} контрактов</div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-green-500">
+          <CardContent className="p-4 flex items-center gap-3">
+            <span className="text-3xl">✅</span>
+            <div>
+              <div className="text-xl font-bold text-green-600">{formatCurrency(overview.currentDebt)}</div>
+              <div className="text-sm text-gray-500">В срок</div>
+              <div className="text-xs text-gray-400">Без просрочки</div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-amber-500">
+          <CardContent className="p-4 flex items-center gap-3">
+            <span className="text-3xl">⚠️</span>
+            <div>
+              <div className="text-xl font-bold text-amber-600">{formatCurrency(overview.warningDebt + overview.overdueDebt)}</div>
+              <div className="text-sm text-gray-500">Просрочено</div>
+              <div className="text-xs text-gray-400">Требует внимания</div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className={`border-l-4 ${overview.criticalDebt > 0 ? 'border-l-red-600' : 'border-l-green-500'}`}>
+          <CardContent className="p-4 flex items-center gap-3">
+            <span className="text-3xl">{overview.criticalDebt > 0 ? '🚨' : '👍'}</span>
+            <div>
+              <div className={`text-xl font-bold ${overview.criticalDebt > 0 ? 'text-red-700' : 'text-green-600'}`}>{formatCurrency(overview.criticalDebt)}</div>
+              <div className="text-sm text-gray-500">Критично</div>
+              <div className="text-xs text-gray-400">{overview.criticalDebt > 0 ? 'Срочно взыскать!' : 'Нет критичных'}</div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Дополнительные метрики */}
-      <div className={styles.secondaryMetrics}>
-        <div className={styles.secondaryCard}>
-          <div className={styles.secondaryIcon} style={{ background: '#dbeafe', color: '#2563eb' }}>🏢</div>
-          <div>
-            <div className={styles.secondaryValue}>{overview.debtorsCount}</div>
-            <div className={styles.secondaryLabel}>Должников</div>
-          </div>
-        </div>
-        <div className={styles.secondaryCard}>
-          <div className={styles.secondaryIcon} style={{ background: '#fef3c7', color: '#d97706' }}>⏱️</div>
-          <div>
-            <div className={styles.secondaryValue}>{overview.avgDaysOverdue} дн</div>
-            <div className={styles.secondaryLabel}>Ср. просрочка</div>
-          </div>
-        </div>
-        <div className={styles.secondaryCard}>
-          <div className={styles.secondaryIcon} style={{ background: '#d1fae5', color: '#059669' }}>📊</div>
-          <div>
-            <div className={styles.secondaryValue}>{overview.collectionRate.toFixed(1)}%</div>
-            <div className={styles.secondaryLabel}>Собираемость</div>
-          </div>
-        </div>
-        <div className={styles.secondaryCard}>
-          <div className={styles.secondaryIcon} style={{ background: '#fee2e2', color: '#dc2626' }}>📅</div>
-          <div>
-            <div className={styles.secondaryValue}>{data.upcomingPayments.length}</div>
-            <div className={styles.secondaryLabel}>Ожидаемых платежей</div>
-          </div>
-        </div>
+      {/* Secondary Metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card><CardContent className="p-3 flex items-center gap-3"><span className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-lg">🏢</span><div><div className="font-bold">{overview.debtorsCount}</div><div className="text-xs text-gray-500">Должников</div></div></CardContent></Card>
+        <Card><CardContent className="p-3 flex items-center gap-3"><span className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center text-lg">⏱️</span><div><div className="font-bold">{overview.avgDaysOverdue} дн</div><div className="text-xs text-gray-500">Ср. просрочка</div></div></CardContent></Card>
+        <Card><CardContent className="p-3 flex items-center gap-3"><span className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center text-lg">📊</span><div><div className="font-bold">{overview.collectionRate.toFixed(1)}%</div><div className="text-xs text-gray-500">Собираемость</div></div></CardContent></Card>
+        <Card><CardContent className="p-3 flex items-center gap-3"><span className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center text-lg">📅</span><div><div className="font-bold">{data.upcomingPayments.length}</div><div className="text-xs text-gray-500">Ожидаемых платежей</div></div></CardContent></Card>
       </div>
 
-      {/* Предупреждения о критических должниках */}
+      {/* Critical Alert */}
       {data.criticalDebtors.length > 0 && (
-        <div className={styles.alertCard}>
-          <h3 className={styles.alertTitle}>🚨 Критические должники — требуют немедленных действий!</h3>
-          <div className={styles.alertList}>
-            {data.criticalDebtors.slice(0, 5).map(debtor => (
-              <div key={debtor.id} className={styles.alertItem}>
-                <div className={styles.alertItemHeader}>
-                  <span className={styles.alertPurchase}>{debtor.purchaseNumber}</span>
-                  <span className={`${styles.alertBadge} ${styles.badgeCritical}`}>
-                    +{debtor.daysOverdue} дн
-                  </span>
+        <Alert variant="destructive">
+          <AlertDescription>
+            <h3 className="font-semibold mb-2">🚨 Критические должники — требуют немедленных действий!</h3>
+            <div className="space-y-2">
+              {data.criticalDebtors.slice(0, 5).map(debtor => (
+                <div key={debtor.id} className="flex items-center justify-between bg-red-50 p-2 rounded">
+                  <div className="min-w-0">
+                    <span className="font-medium">{debtor.purchaseNumber}</span>
+                    <span className="ml-2 text-sm text-gray-600 truncate">{debtor.customer.substring(0, 50)}...</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Badge variant="destructive">+{debtor.daysOverdue} дн</Badge>
+                    <span className="font-bold">{formatCurrency(debtor.debtAmount)}</span>
+                  </div>
                 </div>
-                <div className={styles.alertItemInfo}>
-                  <span>{debtor.customer.substring(0, 50)}...</span>
-                  <span className={styles.alertAmount}>{formatCurrency(debtor.debtAmount)}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+              ))}
+            </div>
+          </AlertDescription>
+        </Alert>
       )}
 
-      {/* Вкладки */}
-      <div className={styles.tabs}>
-        <button
-          className={`${styles.tab} ${activeTab === 'all' ? styles.tabActive : ''}`}
-          onClick={() => setActiveTab('all')}
-        >
-          📋 Все должники
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === 'critical' ? styles.tabActive : ''}`}
-          onClick={() => setActiveTab('critical')}
-        >
-          🚨 Просроченные
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === 'customers' ? styles.tabActive : ''}`}
-          onClick={() => setActiveTab('customers')}
-        >
-          🏢 По заказчикам
-        </button>
+      {/* Tabs */}
+      <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-fit">
+        <Button variant={activeTab === 'all' ? 'default' : 'ghost'} size="sm" onClick={() => setActiveTab('all')}>📋 Все должники</Button>
+        <Button variant={activeTab === 'critical' ? 'default' : 'ghost'} size="sm" onClick={() => setActiveTab('critical')}>🚨 Просроченные</Button>
+        <Button variant={activeTab === 'customers' ? 'default' : 'ghost'} size="sm" onClick={() => setActiveTab('customers')}>🏢 По заказчикам</Button>
       </div>
 
-      {/* Контент вкладок */}
-      <div className={styles.tabContent}>
-        {activeTab === 'all' && (
-          <div className={styles.tableSection}>
-            <div className={styles.tableHeader}>
-              <h3 className={styles.tableTitle}>Все должники ({data.debtors.length})</h3>
-              <div className={styles.sortButtons}>
-                <span className={styles.sortLabel}>Сортировка:</span>
-                <button
-                  className={`${styles.sortBtn} ${sortBy === 'debt' ? styles.sortBtnActive : ''}`}
-                  onClick={() => setSortBy('debt')}
-                >
-                  По сумме
-                </button>
-                <button
-                  className={`${styles.sortBtn} ${sortBy === 'overdue' ? styles.sortBtnActive : ''}`}
-                  onClick={() => setSortBy('overdue')}
-                >
-                  По просрочке
-                </button>
-                <button
-                  className={`${styles.sortBtn} ${sortBy === 'customer' ? styles.sortBtnActive : ''}`}
-                  onClick={() => setSortBy('customer')}
-                >
-                  По заказчику
-                </button>
+      {/* Tab Content */}
+      <Card>
+        <CardContent className="p-0">
+          {activeTab === 'all' && (
+            <div>
+              <div className="flex items-center justify-between p-4 border-b">
+                <h3 className="font-semibold">Все должники ({data.debtors.length})</h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">Сортировка:</span>
+                  <Button variant={sortBy === 'debt' ? 'default' : 'outline'} size="sm" onClick={() => setSortBy('debt')}>По сумме</Button>
+                  <Button variant={sortBy === 'overdue' ? 'default' : 'outline'} size="sm" onClick={() => setSortBy('overdue')}>По просрочке</Button>
+                  <Button variant={sortBy === 'customer' ? 'default' : 'outline'} size="sm" onClick={() => setSortBy('customer')}>По заказчику</Button>
+                </div>
               </div>
-            </div>
-
-            {sortedDebtors.length > 0 ? (
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>Заказчик</th>
-                    <th>Номер закупки</th>
-                    <th style={{ textAlign: 'right' }}>Контракт</th>
-                    <th style={{ textAlign: 'right' }}>Оплачено</th>
-                    <th style={{ textAlign: 'right' }}>Долг</th>
-                    <th style={{ textAlign: 'center' }}>Срок</th>
-                    <th style={{ textAlign: 'center' }}>Просрочка</th>
-                    <th style={{ textAlign: 'center' }}>Статус</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedDebtors.map(debtor => (
-                    <tr 
-                      key={debtor.id}
-                      className={
-                        debtor.status === 'critical' ? styles.rowCritical :
-                        debtor.status === 'overdue' ? styles.rowOverdue :
-                        debtor.status === 'warning' ? styles.rowWarning : ''
-                      }
-                    >
-                      <td>
-                        <span className={styles.customerName}>{debtor.customer.substring(0, 40)}...</span>
-                      </td>
-                      <td>
-                        <span className={styles.purchaseNumber}>{debtor.purchaseNumber}</span>
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        {formatCurrency(debtor.contractPrice)}
-                      </td>
-                      <td style={{ textAlign: 'right', color: '#10b981' }}>
-                        {formatCurrency(debtor.paidAmount)}
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <span className={styles.debtBadge}>{formatCurrency(debtor.debtAmount)}</span>
-                      </td>
-                      <td style={{ textAlign: 'center' }}>
-                        {formatDate(debtor.dueDate)}
-                      </td>
-                      <td style={{ textAlign: 'center' }}>
-                        {debtor.daysOverdue > 0 ? (
-                          <span className={styles.overdueBadge}>+{debtor.daysOverdue} дн</span>
-                        ) : (
-                          <span style={{ color: '#10b981' }}>—</span>
-                        )}
-                      </td>
-                      <td style={{ textAlign: 'center' }}>
-                        <span className={`${styles.statusBadge} ${getStatusClass(debtor.status)}`}>
-                          {getStatusLabel(debtor.status)}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <div className={styles.emptyState}>
-                <span className={styles.emptyIcon}>🎉</span>
-                <p>Нет должников — отличная работа!</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'critical' && (
-          <div className={styles.tableSection}>
-            <h3 className={styles.tableTitle}>🚨 Просроченные платежи</h3>
-            {data.criticalDebtors.length > 0 ? (
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>Заказчик</th>
-                    <th>Номер закупки</th>
-                    <th style={{ textAlign: 'right' }}>Долг</th>
-                    <th style={{ textAlign: 'center' }}>Просрочка</th>
-                    <th style={{ textAlign: 'center' }}>Статус</th>
-                    <th>Исполнитель</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.criticalDebtors.map(debtor => (
-                    <tr 
-                      key={debtor.id}
-                      className={debtor.status === 'critical' ? styles.rowCritical : styles.rowOverdue}
-                    >
-                      <td>
-                        <span className={styles.customerName}>{debtor.customer.substring(0, 40)}...</span>
-                      </td>
-                      <td>
-                        <span className={styles.purchaseNumber}>{debtor.purchaseNumber}</span>
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <span className={styles.debtBadge}>{formatCurrency(debtor.debtAmount)}</span>
-                      </td>
-                      <td style={{ textAlign: 'center' }}>
-                        <span className={styles.overdueBadge}>+{debtor.daysOverdue} дн</span>
-                      </td>
-                      <td style={{ textAlign: 'center' }}>
-                        <span className={`${styles.statusBadge} ${getStatusClass(debtor.status)}`}>
-                          {getStatusLabel(debtor.status)}
-                        </span>
-                      </td>
-                      <td>
-                        {debtor.executor || <span style={{ color: '#94a3b8' }}>—</span>}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <div className={styles.emptyState}>
-                <span className={styles.emptyIcon}>✅</span>
-                <p>Нет просроченных платежей!</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'customers' && (
-          <div className={styles.tableSection}>
-            <h3 className={styles.tableTitle}>🏢 Задолженность по заказчикам</h3>
-            {data.byCustomer.length > 0 ? (
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Заказчик</th>
-                    <th style={{ textAlign: 'right' }}>Контрактов</th>
-                    <th style={{ textAlign: 'right' }}>Общий долг</th>
-                    <th style={{ textAlign: 'right' }}>Просрочено</th>
-                    <th style={{ textAlign: 'center' }}>Ср. просрочка</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.byCustomer.map((customer, idx) => (
-                    <tr 
-                      key={customer.customer}
-                      className={customer.overdueDebt > 0 ? styles.rowWarning : ''}
-                    >
-                      <td>
-                        <span className={styles.rankBadge}>{idx + 1}</span>
-                      </td>
-                      <td>
-                        <span className={styles.customerName}>{customer.customer.substring(0, 50)}...</span>
-                      </td>
-                      <td style={{ textAlign: 'right' }}>{customer.contractsCount}</td>
-                      <td style={{ textAlign: 'right' }}>
-                        <span className={styles.debtBadge}>{formatCurrency(customer.totalDebt)}</span>
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        {customer.overdueDebt > 0 ? (
-                          <span className={styles.overdueBadge}>{formatCurrency(customer.overdueDebt)}</span>
-                        ) : (
-                          <span style={{ color: '#10b981' }}>—</span>
-                        )}
-                      </td>
-                      <td style={{ textAlign: 'center' }}>
-                        {customer.avgDaysOverdue > 0 ? (
-                          <span>{customer.avgDaysOverdue} дн</span>
-                        ) : (
-                          <span style={{ color: '#10b981' }}>—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <div className={styles.emptyState}>
-                <span className={styles.emptyIcon}>📭</span>
-                <p>Нет данных по заказчикам</p>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Рекомендации */}
-      <div className={styles.insightsCard}>
-        <h3 className={styles.insightsTitle}>💡 Рекомендации по взысканию</h3>
-        <div className={styles.insightsList}>
-          {overview.totalDebt > 0 && (
-            <>
-              <div className={styles.insightItem}>
-                <span className={styles.insightIcon}>📊</span>
-                <span>
-                  Общая дебиторская задолженность: <strong>{formatCurrency(overview.totalDebt)}</strong>
-                </span>
-              </div>
-              {overview.criticalDebt > 0 && (
-                <div className={styles.insightItem}>
-                  <span className={styles.insightIcon}>🚨</span>
-                  <span style={{ color: '#dc2626' }}>
-                    <strong>{formatCurrency(overview.criticalDebt)}</strong> критической задолженности — немедленно направить претензии!
-                  </span>
+              {sortedDebtors.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 border-b">
+                      <tr>
+                        <th className="text-left p-3 font-medium">Заказчик</th>
+                        <th className="text-left p-3 font-medium">Номер закупки</th>
+                        <th className="text-right p-3 font-medium">Контракт</th>
+                        <th className="text-right p-3 font-medium">Оплачено</th>
+                        <th className="text-right p-3 font-medium">Долг</th>
+                        <th className="text-center p-3 font-medium">Срок</th>
+                        <th className="text-center p-3 font-medium">Просрочка</th>
+                        <th className="text-center p-3 font-medium">Статус</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedDebtors.map(debtor => (
+                        <tr key={debtor.id} className={`border-b hover:bg-gray-50 ${getRowClass(debtor.status)}`}>
+                          <td className="p-3"><span className="font-medium">{debtor.customer.substring(0, 40)}...</span></td>
+                          <td className="p-3"><span className="text-blue-600">{debtor.purchaseNumber}</span></td>
+                          <td className="p-3 text-right">{formatCurrency(debtor.contractPrice)}</td>
+                          <td className="p-3 text-right text-green-600">{formatCurrency(debtor.paidAmount)}</td>
+                          <td className="p-3 text-right"><Badge variant="destructive">{formatCurrency(debtor.debtAmount)}</Badge></td>
+                          <td className="p-3 text-center">{formatDate(debtor.dueDate)}</td>
+                          <td className="p-3 text-center">{debtor.daysOverdue > 0 ? <Badge variant="destructive">+{debtor.daysOverdue} дн</Badge> : <span className="text-green-600">—</span>}</td>
+                          <td className="p-3 text-center"><Badge variant={getStatusVariant(debtor.status)}>{getStatusLabel(debtor.status)}</Badge></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-12 text-center">
+                  <span className="text-5xl">🎉</span>
+                  <p className="mt-4 text-gray-500">Нет должников — отличная работа!</p>
                 </div>
               )}
-              {overview.overdueDebt > 0 && (
-                <div className={styles.insightItem}>
-                  <span className={styles.insightIcon}>⚠️</span>
-                  <span style={{ color: '#d97706' }}>
-                    <strong>{formatCurrency(overview.overdueDebt)}</strong> просроченной задолженности — позвонить должникам
-                  </span>
-                </div>
-              )}
-              <div className={styles.insightItem}>
-                <span className={styles.insightIcon}>📈</span>
-                <span>
-                  Собираемость платежей: <strong>{overview.collectionRate.toFixed(1)}%</strong>
-                </span>
-              </div>
-              {overview.avgDaysOverdue > 0 && (
-                <div className={styles.insightItem}>
-                  <span className={styles.insightIcon}>⏱️</span>
-                  <span>
-                    Средняя просрочка: <strong>{overview.avgDaysOverdue} дней</strong>
-                  </span>
-                </div>
-              )}
-            </>
-          )}
-          {overview.totalDebt === 0 && (
-            <div className={styles.insightItem}>
-              <span className={styles.insightIcon}>🎉</span>
-              <span>Нет дебиторской задолженности — отличная работа!</span>
             </div>
           )}
-        </div>
-      </div>
+
+          {activeTab === 'critical' && (
+            <div>
+              <div className="p-4 border-b"><h3 className="font-semibold">🚨 Просроченные платежи</h3></div>
+              {data.criticalDebtors.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 border-b">
+                      <tr>
+                        <th className="text-left p-3 font-medium">Заказчик</th>
+                        <th className="text-left p-3 font-medium">Номер закупки</th>
+                        <th className="text-right p-3 font-medium">Долг</th>
+                        <th className="text-center p-3 font-medium">Просрочка</th>
+                        <th className="text-center p-3 font-medium">Статус</th>
+                        <th className="text-left p-3 font-medium">Исполнитель</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.criticalDebtors.map(debtor => (
+                        <tr key={debtor.id} className={`border-b hover:bg-gray-50 ${getRowClass(debtor.status)}`}>
+                          <td className="p-3"><span className="font-medium">{debtor.customer.substring(0, 40)}...</span></td>
+                          <td className="p-3"><span className="text-blue-600">{debtor.purchaseNumber}</span></td>
+                          <td className="p-3 text-right"><Badge variant="destructive">{formatCurrency(debtor.debtAmount)}</Badge></td>
+                          <td className="p-3 text-center"><Badge variant="destructive">+{debtor.daysOverdue} дн</Badge></td>
+                          <td className="p-3 text-center"><Badge variant={getStatusVariant(debtor.status)}>{getStatusLabel(debtor.status)}</Badge></td>
+                          <td className="p-3">{debtor.executor || <span className="text-gray-400">—</span>}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-12 text-center">
+                  <span className="text-5xl">✅</span>
+                  <p className="mt-4 text-gray-500">Нет просроченных платежей!</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'customers' && (
+            <div>
+              <div className="p-4 border-b"><h3 className="font-semibold">🏢 Задолженность по заказчикам</h3></div>
+              {data.byCustomer.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 border-b">
+                      <tr>
+                        <th className="text-center p-3 font-medium w-12">#</th>
+                        <th className="text-left p-3 font-medium">Заказчик</th>
+                        <th className="text-right p-3 font-medium">Контрактов</th>
+                        <th className="text-right p-3 font-medium">Общий долг</th>
+                        <th className="text-right p-3 font-medium">Просрочено</th>
+                        <th className="text-center p-3 font-medium">Ср. просрочка</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.byCustomer.map((customer, idx) => (
+                        <tr key={customer.customer} className={`border-b hover:bg-gray-50 ${customer.overdueDebt > 0 ? 'bg-amber-50' : ''}`}>
+                          <td className="p-3 text-center"><Badge variant="outline">{idx + 1}</Badge></td>
+                          <td className="p-3"><span className="font-medium">{customer.customer.substring(0, 50)}...</span></td>
+                          <td className="p-3 text-right">{customer.contractsCount}</td>
+                          <td className="p-3 text-right"><Badge variant="destructive">{formatCurrency(customer.totalDebt)}</Badge></td>
+                          <td className="p-3 text-right">{customer.overdueDebt > 0 ? <Badge variant="destructive">{formatCurrency(customer.overdueDebt)}</Badge> : <span className="text-green-600">—</span>}</td>
+                          <td className="p-3 text-center">{customer.avgDaysOverdue > 0 ? `${customer.avgDaysOverdue} дн` : <span className="text-green-600">—</span>}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-12 text-center">
+                  <span className="text-5xl">📭</span>
+                  <p className="mt-4 text-gray-500">Нет данных по заказчикам</p>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Insights */}
+      <Card>
+        <CardContent className="p-4">
+          <h3 className="font-semibold mb-3">💡 Рекомендации по взысканию</h3>
+          <div className="space-y-2">
+            {overview.totalDebt > 0 && (
+              <>
+                <div className="flex items-center gap-2 text-sm"><span>📊</span><span>Общая дебиторская задолженность: <strong>{formatCurrency(overview.totalDebt)}</strong></span></div>
+                {overview.criticalDebt > 0 && <div className="flex items-center gap-2 text-sm text-red-600"><span>🚨</span><span><strong>{formatCurrency(overview.criticalDebt)}</strong> критической задолженности — немедленно направить претензии!</span></div>}
+                {overview.overdueDebt > 0 && <div className="flex items-center gap-2 text-sm text-amber-600"><span>⚠️</span><span><strong>{formatCurrency(overview.overdueDebt)}</strong> просроченной задолженности — позвонить должникам</span></div>}
+                <div className="flex items-center gap-2 text-sm"><span>📈</span><span>Собираемость платежей: <strong>{overview.collectionRate.toFixed(1)}%</strong></span></div>
+                {overview.avgDaysOverdue > 0 && <div className="flex items-center gap-2 text-sm"><span>⏱️</span><span>Средняя просрочка: <strong>{overview.avgDaysOverdue} дней</strong></span></div>}
+              </>
+            )}
+            {overview.totalDebt === 0 && <div className="flex items-center gap-2 text-sm"><span>🎉</span><span>Нет дебиторской задолженности — отличная работа!</span></div>}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

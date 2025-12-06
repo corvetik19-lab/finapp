@@ -5,9 +5,10 @@ import { UsersTable } from '@/components/admin/users-table';
 export default async function AdminUsersPage({
     searchParams,
 }: {
-    searchParams: { q?: string };
+    searchParams: Promise<{ q?: string }>;
 }) {
-    const query = searchParams.q || '';
+    const params = await searchParams;
+    const query = params.q || '';
     const users = await getUsers(query);
 
     const supabase = await createRSCClient();

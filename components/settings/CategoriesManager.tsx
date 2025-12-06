@@ -1,8 +1,11 @@
 "use client";
 import { useMemo, useState, useTransition } from "react";
-import styles from "./Settings.module.css";
 import { addCategory, renameCategory, deleteCategory } from "@/app/(protected)/settings/actions";
 import { useToast, type ToastContextValue } from "@/components/toast/ToastContext";
+import { Folder, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 export type CategoryRecord = {
   id: string;
@@ -105,29 +108,37 @@ export default function CategoriesManager({ categories }: { categories: Category
   };
 
   return (
-    <div className={styles.card}>
-      <div className={styles.sectionTitle}>Управление категориями</div>
-
-      <div className={styles.toolbar}>
-        {KIND_ORDER.map((kind) => (
-          <button
-            key={kind}
-            type="button"
-            className={`${styles.tab} ${tab === kind ? styles.tabActive : ""}`}
-            onClick={() => setTab(kind)}
-          >
-            {KIND_LABEL[kind]}
-          </button>
-        ))}
-        <div style={{ marginLeft: "auto" }} />
-        <form action={handleAddCategory} className={styles.itemForm}>
-          <input className={styles.input} name="name" placeholder="Новая категория" required />
-          <select className={styles.select} name="kind" defaultValue={tab}>
+    <div className="space-y-6">
+      {/* Переключатель типа и форма добавления */}
+      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+        <div className="flex gap-2">
+          {KIND_ORDER.map((kind) => (
+            <button
+              key={kind}
+              type="button"
+              className={cn(
+                "px-5 py-2.5 rounded-lg text-sm font-medium transition-all",
+                tab === kind 
+                  ? kind === "expense" 
+                    ? "bg-red-500 text-white shadow-md" 
+                    : "bg-green-500 text-white shadow-md"
+                  : "bg-muted hover:bg-muted/80"
+              )}
+              onClick={() => setTab(kind)}
+            >
+              {kind === "expense" ? "💸 " : "💰 "}{KIND_LABEL[kind]}
+            </button>
+          ))}
+        </div>
+        
+        <form action={handleAddCategory} className="flex items-center gap-2 flex-wrap lg:ml-auto">
+          <Input className="w-44" name="name" placeholder="Название категории" required />
+          <select className="h-10 px-3 border border-input bg-background rounded-md text-sm" name="kind" defaultValue={tab}>
             <option value="expense">Только расходы</option>
             <option value="income">Только доходы</option>
             <option value="both">Доходы и расходы</option>
           </select>
-          <select className={styles.select} name="parent_id" defaultValue="">
+          <select className="h-10 px-3 border border-input bg-background rounded-md text-sm" name="parent_id" defaultValue="">
             <option value="">Без родителя</option>
             {(selectableByKind.get(tab) ?? []).map((opt) => (
               <option key={opt.id} value={opt.id}>
@@ -135,22 +146,38 @@ export default function CategoriesManager({ categories }: { categories: Category
               </option>
             ))}
           </select>
-          <button className={styles.btn} type="submit" disabled={isPending}>
-            {isPending ? "Добавление..." : "Добавить"}
-          </button>
+          <Button type="submit" disabled={isPending}>
+            {isPending ? "..." : "Добавить"}
+          </Button>
         </form>
       </div>
 
-      <div className={styles.tree}>
-        {tree.length === 0 && <div style={{ color: "#888" }}>Пока нет категорий.</div>}
-        {tree.map((node) => (
-          <TreeRow
-            key={node.id}
-            node={node}
-            allOptions={selectableByKind.get(tab) ?? []}
-            toast={toast}
-          />
-        ))}
+      {/* Список категорий */}
+      <div className="rounded-lg border overflow-hidden">
+        <div className="bg-muted/50 px-4 py-3 border-b">
+          <div className="grid grid-cols-12 gap-2 text-sm font-medium text-muted-foreground">
+            <div className="col-span-3">Название</div>
+            <div className="col-span-3">Переименовать</div>
+            <div className="col-span-2">Тип</div>
+            <div className="col-span-3">Родитель</div>
+            <div className="col-span-1"></div>
+          </div>
+        </div>
+        <div className="divide-y">
+          {tree.length === 0 && (
+            <div className="px-4 py-8 text-center text-muted-foreground">
+              Пока нет категорий. Добавьте первую!
+            </div>
+          )}
+          {tree.map((node) => (
+            <TreeRow
+              key={node.id}
+              node={node}
+              allOptions={selectableByKind.get(tab) ?? []}
+              toast={toast}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -184,46 +211,63 @@ function TreeRow({ node, allOptions, toast }: { node: TreeNode; allOptions: { id
   };
 
   return (
-    <div className={styles.treeGroup}>
-      <div className={styles.treeRow} style={{ marginLeft: node.depth * 20 }}>
-        <div className={styles.treeInfo}>
-          <span className="material-icons" aria-hidden style={{ fontSize: 18, opacity: 0.6 }}>
-            folder
-          </span>
-          <span>{node.name}</span>
+    <>
+      <div className="px-4 py-3 hover:bg-muted/30 transition-colors grid grid-cols-12 gap-2 items-center" style={{ paddingLeft: `${16 + node.depth * 24}px` }}>
+        {/* Название */}
+        <div className="col-span-3 flex items-center gap-2">
+          <Folder className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden />
+          <span className="font-medium truncate">{node.name}</span>
         </div>
-        <div className={styles.treeActions}>
-          <form action={handleRename} className={styles.itemForm}>
-            <input type="hidden" name="id" value={node.id} />
-            <input className={styles.input} name="name" defaultValue={node.name} />
-            <select className={styles.select} name="kind" defaultValue={node.kind}>
-              <option value="expense">Только расходы</option>
-              <option value="income">Только доходы</option>
-              <option value="both">Доходы и расходы</option>
+        
+        {/* Форма переименования */}
+        <form action={handleRename} className="col-span-8 grid grid-cols-8 gap-2 items-center">
+          <input type="hidden" name="id" value={node.id} />
+          
+          {/* Переименовать */}
+          <div className="col-span-3">
+            <Input className="h-9" name="name" defaultValue={node.name} />
+          </div>
+          
+          {/* Тип */}
+          <div className="col-span-2">
+            <select className="w-full h-9 px-2 border border-input bg-background rounded-md text-sm" name="kind" defaultValue={node.kind}>
+              <option value="expense">Расходы</option>
+              <option value="income">Доходы</option>
+              <option value="both">Оба</option>
             </select>
-            <select className={styles.select} name="parent_id" defaultValue={node.parent_id ?? ""}>
-              <option value="">Без родителя</option>
+          </div>
+          
+          {/* Родитель */}
+          <div className="col-span-2">
+            <select className="w-full h-9 px-2 border border-input bg-background rounded-md text-sm" name="parent_id" defaultValue={node.parent_id ?? ""}>
+              <option value="">—</option>
               {options.map((opt) => (
-                <option key={opt.id} value={opt.id}>
-                  {opt.label}
-                </option>
+                <option key={opt.id} value={opt.id}>{opt.label}</option>
               ))}
             </select>
-            <button className={`${styles.btn} ${styles.btnSecondary}`} type="submit" disabled={isPending}>
-              {isPending ? "Сохранение..." : "Сохранить"}
-            </button>
-          </form>
+          </div>
+          
+          {/* Кнопка сохранения */}
+          <div className="col-span-1 flex justify-end">
+            <Button variant="ghost" size="sm" type="submit" disabled={isPending} className="h-8 px-2">
+              {isPending ? "..." : "✓"}
+            </Button>
+          </div>
+        </form>
+        
+        {/* Отдельная форма удаления */}
+        <div className="col-span-1 flex justify-end">
           <form action={handleDelete}>
             <input type="hidden" name="id" value={node.id} />
-            <button type="submit" className={styles.del} title="Удалить" disabled={isPending}>
-              <span className="material-icons" aria-hidden>delete</span>
-            </button>
+            <Button variant="ghost" size="sm" type="submit" disabled={isPending} className="h-8 px-2 text-destructive hover:text-destructive hover:bg-destructive/10">
+              <Trash2 className="h-4 w-4" aria-hidden />
+            </Button>
           </form>
         </div>
       </div>
       {node.children.map((child) => (
         <TreeRow key={child.id} node={child} allOptions={allOptions} toast={toast} />
       ))}
-    </div>
+    </>
   );
 }

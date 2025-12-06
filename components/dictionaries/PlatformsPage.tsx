@@ -4,7 +4,19 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Platform, PlatformInput, PlatformFilters } from "@/types/platform";
 import { createPlatform, updatePlatform, deletePlatform, togglePlatformActive, getPlatformTenders } from "@/lib/dictionaries/platforms-service";
-import styles from "./PlatformsPage.module.css";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Store, Plus, Search, Eye, Pencil, ToggleLeft, ToggleRight, Trash2, Loader2, Building2, ExternalLink } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/components/toast/ToastContext";
 
 interface PlatformsPageProps {
   initialPlatforms: Platform[];
@@ -26,6 +38,7 @@ interface PlatformTender {
 
 export default function PlatformsPage({ initialPlatforms, stats, tendersStats }: PlatformsPageProps) {
   const router = useRouter();
+  const toast = useToast();
   const [platforms, setPlatforms] = useState<Platform[]>(initialPlatforms);
   const [filters, setFilters] = useState<PlatformFilters>({
     search: "",
@@ -81,6 +94,7 @@ export default function PlatformsPage({ initialPlatforms, stats, tendersStats }:
         }
       }
       setIsModalOpen(false);
+      toast.show(editingPlatform ? "Площадка обновлена" : "Площадка добавлена", { type: "success" });
       router.refresh();
     } finally {
       setIsLoading(false);
@@ -96,6 +110,7 @@ export default function PlatformsPage({ initialPlatforms, stats, tendersStats }:
       const result = await deletePlatform(id);
       if (result.success) {
         setPlatforms((prev) => prev.filter((p) => p.id !== id));
+        toast.show("Площадка удалена", { type: "success" });
         router.refresh();
       }
     } finally {
@@ -112,6 +127,7 @@ export default function PlatformsPage({ initialPlatforms, stats, tendersStats }:
         setPlatforms((prev) =>
           prev.map((p) => (p.id === id ? { ...p, is_active: !p.is_active } : p))
         );
+        toast.show("Статус изменён", { type: "success" });
         router.refresh();
       }
     } finally {
@@ -148,168 +164,54 @@ export default function PlatformsPage({ initialPlatforms, stats, tendersStats }:
   };
 
   return (
-    <div className={styles.container}>
+    <div className="space-y-6">
       {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.headerInfo}>
-          <h1 className={styles.title}>
-            <span className="material-icons">storefront</span>
-            Площадки
-          </h1>
-          <p className={styles.subtitle}>Справочник торговых площадок</p>
-        </div>
-        <button className={styles.addButton} onClick={handleCreate}>
-          <span className="material-icons">add</span>
-          Добавить площадку
-        </button>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div><h1 className="text-2xl font-bold flex items-center gap-2"><Store className="h-6 w-6" />Площадки</h1><p className="text-sm text-muted-foreground">Справочник торговых площадок</p></div>
+        <Button onClick={handleCreate}><Plus className="h-4 w-4 mr-1" />Добавить площадку</Button>
       </div>
 
       {/* Stats */}
-      <div className={styles.stats}>
-        <div className={styles.statCard}>
-          <span className={styles.statValue}>{stats.total}</span>
-          <span className={styles.statLabel}>Всего площадок</span>
-        </div>
-        <div className={styles.statCard}>
-          <span className={styles.statValue}>{stats.active}</span>
-          <span className={styles.statLabel}>Активных</span>
-        </div>
-        <div className={styles.statCard}>
-          <span className={styles.statValue}>{stats.total - stats.active}</span>
-          <span className={styles.statLabel}>Неактивных</span>
-        </div>
+      <div className="grid grid-cols-3 gap-4">
+        <Card><CardContent className="pt-4"><div className="text-2xl font-bold">{stats.total}</div><div className="text-sm text-muted-foreground">Всего площадок</div></CardContent></Card>
+        <Card><CardContent className="pt-4"><div className="text-2xl font-bold text-green-600">{stats.active}</div><div className="text-sm text-muted-foreground">Активных</div></CardContent></Card>
+        <Card><CardContent className="pt-4"><div className="text-2xl font-bold text-muted-foreground">{stats.total - stats.active}</div><div className="text-sm text-muted-foreground">Неактивных</div></CardContent></Card>
       </div>
 
       {/* Filters */}
-      <div className={styles.filters}>
-        <div className={styles.searchWrapper}>
-          <span className="material-icons">search</span>
-          <input
-            type="text"
-            placeholder="Поиск по названию или URL..."
-            value={filters.search}
-            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-            className={styles.searchInput}
-          />
-        </div>
-        <select
-          value={filters.is_active === "all" ? "all" : filters.is_active ? "active" : "inactive"}
-          onChange={(e) =>
-            setFilters({
-              ...filters,
-              is_active: e.target.value === "all" ? "all" : e.target.value === "active",
-            })
-          }
-          className={styles.filterSelect}
-        >
-          <option value="all">Все</option>
-          <option value="active">Активные</option>
-          <option value="inactive">Неактивные</option>
-        </select>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="text" placeholder="Поиск по названию или URL..." value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} className="pl-9" /></div>
+        <Select value={filters.is_active === "all" ? "all" : filters.is_active ? "active" : "inactive"} onValueChange={(v) => setFilters({ ...filters, is_active: v === "all" ? "all" : v === "active" })}><SelectTrigger className="w-40"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Все</SelectItem><SelectItem value="active">Активные</SelectItem><SelectItem value="inactive">Неактивные</SelectItem></SelectContent></Select>
       </div>
 
       {/* Table */}
-      <div className={styles.tableWrapper}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Название</th>
-              <th>Сокращение</th>
-              <th>URL</th>
-              <th>Тендеры</th>
-              <th>Статус</th>
-              <th>Действия</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div className="border rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader><TableRow><TableHead>Название</TableHead><TableHead>Сокращение</TableHead><TableHead>URL</TableHead><TableHead>Тендеры</TableHead><TableHead>Статус</TableHead><TableHead className="w-32">Действия</TableHead></TableRow></TableHeader>
+          <TableBody>
             {filteredPlatforms.length === 0 ? (
-              <tr>
-                <td colSpan={6} className={styles.emptyRow}>
-                  {platforms.length === 0
-                    ? "Площадки не найдены. Добавьте первую площадку."
-                    : "Нет площадок, соответствующих фильтрам"}
-                </td>
-              </tr>
+              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{platforms.length === 0 ? "Площадки не найдены. Добавьте первую площадку." : "Нет площадок, соответствующих фильтрам"}</TableCell></TableRow>
             ) : (
               filteredPlatforms.map((platform) => (
-                <tr key={platform.id} className={!platform.is_active ? styles.inactiveRow : ""}>
-                  <td>
-                    <div className={styles.nameCell}>
-                      <span className={styles.platformName}>{platform.name}</span>
+                <TableRow key={platform.id} className={cn(!platform.is_active && "opacity-50")}>
+                  <TableCell className="font-medium">{platform.name}</TableCell>
+                  <TableCell>{platform.short_name || "—"}</TableCell>
+                  <TableCell>{platform.url ? <a href={platform.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">{platform.url}<ExternalLink className="h-3 w-3" /></a> : "—"}</TableCell>
+                  <TableCell><Button variant="link" className="p-0 h-auto" onClick={() => handleViewDetails(platform)}>{tendersStats[platform.id] || 0}</Button></TableCell>
+                  <TableCell><Badge variant={platform.is_active ? "default" : "secondary"}>{platform.is_active ? "Активна" : "Неактивна"}</Badge></TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => handleViewDetails(platform)} title="Тендеры"><Eye className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(platform)} title="Редактировать"><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleToggleActive(platform.id)} title={platform.is_active ? "Деактивировать" : "Активировать"}>{platform.is_active ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}</Button>
+                      <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(platform.id)} title="Удалить"><Trash2 className="h-4 w-4" /></Button>
                     </div>
-                  </td>
-                  <td>{platform.short_name || "—"}</td>
-                  <td>
-                    {platform.url ? (
-                      <a
-                        href={platform.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={styles.link}
-                      >
-                        {platform.url}
-                      </a>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                  <td>
-                    <span 
-                      className={styles.tendersCount}
-                      onClick={() => handleViewDetails(platform)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      {tendersStats[platform.id] || 0}
-                    </span>
-                  </td>
-                  <td>
-                    <span
-                      className={`${styles.status} ${
-                        platform.is_active ? styles.statusActive : styles.statusInactive
-                      }`}
-                    >
-                      {platform.is_active ? "Активна" : "Неактивна"}
-                    </span>
-                  </td>
-                  <td>
-                    <div className={styles.actions}>
-                      <button
-                        className={styles.actionButton}
-                        onClick={() => handleViewDetails(platform)}
-                        title="Тендеры"
-                      >
-                        <span className="material-icons">visibility</span>
-                      </button>
-                      <button
-                        className={styles.actionButton}
-                        onClick={() => handleEdit(platform)}
-                        title="Редактировать"
-                      >
-                        <span className="material-icons">edit</span>
-                      </button>
-                      <button
-                        className={styles.actionButton}
-                        onClick={() => handleToggleActive(platform.id)}
-                        title={platform.is_active ? "Деактивировать" : "Активировать"}
-                      >
-                        <span className="material-icons">
-                          {platform.is_active ? "toggle_on" : "toggle_off"}
-                        </span>
-                      </button>
-                      <button
-                        className={`${styles.actionButton} ${styles.deleteButton}`}
-                        onClick={() => handleDelete(platform.id)}
-                        title="Удалить"
-                      >
-                        <span className="material-icons">delete</span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Modal for create/edit */}
@@ -323,96 +225,24 @@ export default function PlatformsPage({ initialPlatforms, stats, tendersStats }:
       )}
 
       {/* Details panel */}
-      {viewingPlatform && (
-        <div className={styles.detailsOverlay} onClick={handleCloseDetails}>
-          <div className={styles.detailsPanel} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.detailsHeader}>
-              <h2>
-                <span className="material-icons">storefront</span>
-                {viewingPlatform.name}
-              </h2>
-              <button className={styles.closeButton} onClick={handleCloseDetails}>
-                <span className="material-icons">close</span>
-              </button>
+      <Dialog open={!!viewingPlatform} onOpenChange={(o) => !o && handleCloseDetails()}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Store className="h-5 w-5" />{viewingPlatform?.name}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div><span className="text-muted-foreground">Сокращённое</span><div className="font-medium">{viewingPlatform?.short_name || "—"}</div></div>
+              <div><span className="text-muted-foreground">URL</span><div className="font-medium">{viewingPlatform?.url ? <a href={viewingPlatform.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{viewingPlatform.url}</a> : "—"}</div></div>
+              <div><span className="text-muted-foreground">Описание</span><div className="font-medium">{viewingPlatform?.description || "—"}</div></div>
+              <div><span className="text-muted-foreground">Статус</span><div><Badge variant={viewingPlatform?.is_active ? "default" : "secondary"}>{viewingPlatform?.is_active ? "Активна" : "Неактивна"}</Badge></div></div>
             </div>
-
-            <div className={styles.detailsContent}>
-              {/* Platform info */}
-              <div className={styles.detailsSection}>
-                <h3>Информация о площадке</h3>
-                <div className={styles.infoGrid}>
-                  <div className={styles.infoItem}>
-                    <span className={styles.infoLabel}>Сокращённое название</span>
-                    <span className={styles.infoValue}>
-                      {viewingPlatform.short_name || "—"}
-                    </span>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <span className={styles.infoLabel}>URL</span>
-                    <span className={styles.infoValue}>
-                      {viewingPlatform.url ? (
-                        <a href={viewingPlatform.url} target="_blank" rel="noopener noreferrer">
-                          {viewingPlatform.url}
-                        </a>
-                      ) : (
-                        "—"
-                      )}
-                    </span>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <span className={styles.infoLabel}>Описание</span>
-                    <span className={styles.infoValue}>
-                      {viewingPlatform.description || "—"}
-                    </span>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <span className={styles.infoLabel}>Статус</span>
-                    <span className={styles.infoValue}>
-                      {viewingPlatform.is_active ? "Активна" : "Неактивна"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tenders */}
-              <div className={styles.detailsSection}>
-                <h3>
-                  <span className="material-icons">description</span>
-                  Тендеры на площадке ({platformTenders.length})
-                </h3>
-                {isDetailsLoading ? (
-                  <div className={styles.loading}>Загрузка...</div>
-                ) : platformTenders.length === 0 ? (
-                  <div className={styles.emptyState}>Нет тендеров на этой площадке</div>
-                ) : (
-                  <div className={styles.tendersList}>
-                    {platformTenders.map((tender) => (
-                      <div key={tender.id} className={styles.tenderCard}>
-                        <div className={styles.tenderHeader}>
-                          <span className={styles.tenderNumber}>
-                            № {tender.purchase_number}
-                          </span>
-                          <span className={styles.tenderStatus}>{tender.status}</span>
-                        </div>
-                        <div className={styles.tenderSubject}>{tender.subject}</div>
-                        <div className={styles.tenderFooter}>
-                          <span className={styles.tenderCustomer}>
-                            <span className="material-icons">business</span>
-                            {tender.customer || "—"}
-                          </span>
-                          <span className={styles.tenderNmck}>
-                            {formatMoney(tender.nmck)}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+            <div><h4 className="font-medium mb-2">Тендеры ({platformTenders.length})</h4>
+              {isDetailsLoading ? <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Загрузка...</div> : platformTenders.length === 0 ? <div className="text-muted-foreground text-sm">Нет тендеров</div> : (
+                <div className="space-y-2 max-h-60 overflow-y-auto">{platformTenders.map((tender) => <Card key={tender.id}><CardContent className="p-3"><div className="flex justify-between items-start"><span className="text-xs text-muted-foreground">№ {tender.purchase_number}</span><Badge variant="outline">{tender.status}</Badge></div><div className="text-sm mt-1">{tender.subject}</div><div className="flex justify-between items-center mt-2 text-xs text-muted-foreground"><span className="flex items-center gap-1"><Building2 className="h-3 w-3" />{tender.customer || "—"}</span><span className="font-medium text-foreground">{formatMoney(tender.nmck)}</span></div></CardContent></Card>)}</div>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -441,78 +271,18 @@ function PlatformModal({ platform, onSave, onClose, isLoading }: PlatformModalPr
   };
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h2>{platform ? "Редактировать площадку" : "Добавить площадку"}</h2>
-          <button className={styles.closeButton} onClick={onClose}>
-            <span className="material-icons">close</span>
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.formGroup}>
-            <label>Название *</label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Например: ЕИС, Сбербанк-АСТ"
-              required
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>Сокращённое название</label>
-            <input
-              type="text"
-              value={formData.short_name || ""}
-              onChange={(e) => setFormData({ ...formData, short_name: e.target.value })}
-              placeholder="Например: ЕИС"
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>URL</label>
-            <input
-              type="url"
-              value={formData.url || ""}
-              onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-              placeholder="https://zakupki.gov.ru"
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>Описание</label>
-            <textarea
-              value={formData.description || ""}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Описание площадки..."
-              rows={3}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={formData.is_active}
-                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-              />
-              Активна
-            </label>
-          </div>
-
-          <div className={styles.formActions}>
-            <button type="button" onClick={onClose} className={styles.cancelButton}>
-              Отмена
-            </button>
-            <button type="submit" className={styles.saveButton} disabled={isLoading}>
-              {isLoading ? "Сохранение..." : "Сохранить"}
-            </button>
-          </div>
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader><DialogTitle>{platform ? "Редактировать площадку" : "Добавить площадку"}</DialogTitle></DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2"><Label>Название *</Label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Например: ЕИС, Сбербанк-АСТ" required /></div>
+          <div className="space-y-2"><Label>Сокращённое название</Label><Input value={formData.short_name || ""} onChange={(e) => setFormData({ ...formData, short_name: e.target.value })} placeholder="Например: ЕИС" /></div>
+          <div className="space-y-2"><Label>URL</Label><Input type="url" value={formData.url || ""} onChange={(e) => setFormData({ ...formData, url: e.target.value })} placeholder="https://zakupki.gov.ru" /></div>
+          <div className="space-y-2"><Label>Описание</Label><Textarea value={formData.description || ""} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Описание площадки..." rows={3} /></div>
+          <label className="flex items-center gap-2 cursor-pointer"><Checkbox checked={formData.is_active} onCheckedChange={(c) => setFormData({ ...formData, is_active: !!c })} /><span className="text-sm">Активна</span></label>
+          <DialogFooter><Button type="button" variant="outline" onClick={onClose}>Отмена</Button><Button type="submit" disabled={isLoading}>{isLoading ? "Сохранение..." : "Сохранить"}</Button></DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

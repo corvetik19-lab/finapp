@@ -4,8 +4,10 @@ import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-
-import styles from "@/components/dashboard/Dashboard.module.css";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { BudgetWithUsage } from "@/lib/budgets/service";
 import type { CategoryRecord } from "@/lib/categories/service";
 import { createBudgetAction } from "@/app/(protected)/finance/dashboard/actions";
@@ -88,96 +90,32 @@ export default function BudgetQuickAddForm({
   };
 
   if (categories.length === 0) {
-    return (
-      <div className={styles.budgetFormError}>
-        Добавьте категории расходов, чтобы создавать бюджеты.
-      </div>
-    );
+    return <div className="text-sm text-destructive p-3 bg-destructive/10 rounded-lg">Добавьте категории расходов, чтобы создавать бюджеты.</div>;
   }
 
   return (
-    <form className={styles.budgetForm} onSubmit={handleSubmit(onSubmit)}>
-      <div className={styles.field}>
-        <label htmlFor="budgetCategory">Категория</label>
-        <select
-          id="budgetCategory"
-          {...register("categoryId")}
-          disabled={isPending}
-        >
-          <option value="">Выберите категорию</option>
-          {categories.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
-        {errors.categoryId && (
-          <span className={styles.budgetFormError}>{errors.categoryId.message}</span>
-        )}
+    <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+      <div className="space-y-2">
+        <Label htmlFor="budgetCategory">Категория</Label>
+        <Select onValueChange={(v) => register("categoryId").onChange({ target: { value: v } })} defaultValue={categories[0]?.id} disabled={isPending}>
+          <SelectTrigger><SelectValue placeholder="Выберите категорию" /></SelectTrigger>
+          <SelectContent>{categories.map((cat) => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}</SelectContent>
+        </Select>
+        {errors.categoryId && <span className="text-sm text-destructive">{errors.categoryId.message}</span>}
       </div>
-
-      <div className={styles.field}>
-        <label htmlFor="budgetLimit">Лимит ({currency})</label>
-        <input
-          type="number"
-          id="budgetLimit"
-          placeholder="Например, 25000"
-          step="0.01"
-          min="0"
-          {...register("limitMajor", { valueAsNumber: true })}
-          disabled={isPending}
-        />
-        {errors.limitMajor && (
-          <span className={styles.budgetFormError}>{errors.limitMajor.message}</span>
-        )}
+      <div className="space-y-2">
+        <Label htmlFor="budgetLimit">Лимит ({currency})</Label>
+        <Input type="number" id="budgetLimit" placeholder="Например, 25000" step="0.01" min="0" {...register("limitMajor", { valueAsNumber: true })} disabled={isPending} />
+        {errors.limitMajor && <span className="text-sm text-destructive">{errors.limitMajor.message}</span>}
       </div>
-
-      <div className={styles.field}>
-        <label htmlFor="budgetStart">Дата начала</label>
-        <input
-          type="date"
-          id="budgetStart"
-          {...register("periodStart")}
-          disabled={isPending}
-        />
-        {errors.periodStart && (
-          <span className={styles.budgetFormError}>{errors.periodStart.message}</span>
-        )}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2"><Label htmlFor="budgetStart">Дата начала</Label><Input type="date" id="budgetStart" {...register("periodStart")} disabled={isPending} />{errors.periodStart && <span className="text-sm text-destructive">{errors.periodStart.message}</span>}</div>
+        <div className="space-y-2"><Label htmlFor="budgetEnd">Дата окончания</Label><Input type="date" id="budgetEnd" {...register("periodEnd")} disabled={isPending} />{errors.periodEnd && <span className="text-sm text-destructive">{errors.periodEnd.message}</span>}</div>
       </div>
-
-      <div className={styles.field}>
-        <label htmlFor="budgetEnd">Дата окончания</label>
-        <input
-          type="date"
-          id="budgetEnd"
-          {...register("periodEnd")}
-          disabled={isPending}
-        />
-        {errors.periodEnd && (
-          <span className={styles.budgetFormError}>{errors.periodEnd.message}</span>
-        )}
-      </div>
-
-      {errorMessage && (
-        <div className={styles.budgetFormError}>{errorMessage}</div>
-      )}
-
-      <div className={styles.budgetFormActions}>
-        <button
-          type="button"
-          className={`${styles.budgetFormButton} ${styles.secondaryButton}`}
-          onClick={onCancel}
-          disabled={isPending}
-        >
-          Отмена
-        </button>
-        <button
-          type="submit"
-          className={`${styles.budgetFormButton} ${styles.primaryButton}`}
-          disabled={isPending}
-        >
-          {isPending ? "Сохранение..." : "Сохранить"}
-        </button>
+      {errorMessage && <div className="text-sm text-destructive">{errorMessage}</div>}
+      <div className="flex justify-end gap-2 pt-2">
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>Отмена</Button>
+        <Button type="submit" disabled={isPending}>{isPending ? "Сохранение..." : "Сохранить"}</Button>
       </div>
     </form>
   );

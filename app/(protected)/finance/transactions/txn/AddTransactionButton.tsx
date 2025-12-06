@@ -1,8 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import stylesTxn from "@/components/transactions/Transactions.module.css";
-import modal from "@/components/transactions/AddModal.module.css";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -13,6 +11,11 @@ import { createTransactionFromValues } from "../actions";
 import { TransactionItems } from "@/components/transactions/TransactionItems";
 import type { TransactionItemInput } from "@/types/transaction";
 import { calculateTotalFromItems } from "@/lib/transactions/transaction-items-utils";
+import { Plus, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/toast/ToastContext";
 
 type Account = { id: string; name: string; currency: string; type: string; credit_limit: number | null; balance: number };
 
@@ -29,6 +32,7 @@ export default function AddTransactionButton({
     return false;
   });
   const router = useRouter();
+  const toast = useToast();
   const nowLocal = new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
     .toISOString()
     .slice(0, 16);
@@ -204,66 +208,61 @@ export default function AddTransactionButton({
       localStorage.removeItem('addTransactionModalOpen');
       localStorage.removeItem('addTransactionForm');
       localStorage.removeItem('addTransactionItems');
+      toast.show("Транзакция создана", { type: "success" });
       router.refresh();
     });
   });
 
   return (
     <>
-      <button type="button" className={stylesTxn.topBtn} onClick={() => setOpen(true)}>
-        <span className="material-icons" aria-hidden>
-          add
-        </span>
+      <Button onClick={() => setOpen(true)} className="gap-2">
+        <Plus className="h-5 w-5" aria-hidden />
         Добавить
-      </button>
+      </Button>
 
       {open && (
-        <div className={modal.overlay} onClick={() => setOpen(false)}>
-          <div className={modal.modal} role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-            <div className={modal.header}>
-              <div className={modal.title}>Добавить транзакцию</div>
-              <button type="button" className={modal.close} onClick={() => {
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setOpen(false)}>
+          <div className="bg-card rounded-xl shadow-xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b">
+              <div className="text-lg font-semibold">Добавить транзакцию</div>
+              <button type="button" className="p-2 rounded-lg hover:bg-muted transition-colors" onClick={() => {
                 setOpen(false);
-                // Очищаем localStorage при закрытии
                 localStorage.removeItem('addTransactionModalOpen');
                 localStorage.removeItem('addTransactionForm');
                 localStorage.removeItem('addTransactionItems');
               }} aria-label="Закрыть">
-                <span className="material-icons" aria-hidden>
-                  close
-                </span>
+                <X className="h-5 w-5" aria-hidden />
               </button>
             </div>
 
-            <form onSubmit={onSubmit} className={modal.body}>
+            <form onSubmit={onSubmit} className="p-4 space-y-4">
               {/* Название (сохраняем в counterparty) */}
-              <div className={modal.groupRow}>
-                <label className={modal.label}>Название</label>
-                <input
+              <div className="space-y-1.5">
+                <Label>Название</Label>
+                <Input
                   {...register("counterparty")}
                   type="text"
                   placeholder="Например: Магнит"
-                  className={stylesTxn.input}
                 />
               </div>
 
               {/* Ряд 1: Тип */}
-              <div className={modal.groupRow}>
-                <label className={modal.label}>Тип</label>
-                <select {...register("direction")} className={stylesTxn.select} defaultValue="expense">
+              <div className="space-y-1.5">
+                <Label>Тип</Label>
+                <select {...register("direction")} className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring" defaultValue="expense">
                   <option value="expense">Расход</option>
                   <option value="income">Доход</option>
                 </select>
               </div>
 
               {/* Ряд 2: Счет/Карта + Сумма (₽) */}
-              <div className={modal.row2}>
-                <div className={modal.groupRow}>
-                  <label className={modal.label}>Счет/Карта</label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>Счет/Карта</Label>
                   <select
                     {...register("account_id")}
                     required
-                    className={stylesTxn.select}
+                    className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     defaultValue={accounts[0]?.id || ""}
                   >
                     <option value="">— выберите —</option>
@@ -299,43 +298,40 @@ export default function AddTransactionButton({
                     )}
                   </select>
                 </div>
-                <div className={modal.groupRow}>
-                  <label className={modal.label}>Сумма (₽)</label>
-                  <input
+                <div className="space-y-1.5">
+                  <Label>Сумма (₽)</Label>
+                  <Input
                     type="text"
                     inputMode="decimal"
                     value={amountValue}
                     onChange={(e) => setValue("amount_major", e.target.value)}
                     placeholder="0"
-                    className={stylesTxn.input}
                     readOnly
-                    style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
+                    className="bg-muted cursor-not-allowed"
                   />
                   {errors.amount_major?.message && (
-                    <span className={modal.error}>{errors.amount_major.message}</span>
+                    <span className="text-sm text-destructive">{errors.amount_major.message}</span>
                   )}
                 </div>
               </div>
 
               {/* Ряд 3: Дата + Примечание */}
-              <div className={modal.row2}>
-                <div className={modal.groupRow}>
-                  <label className={modal.label}>Дата</label>
-                  <input
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>Дата</Label>
+                  <Input
                     {...register("occurred_at")}
                     type="datetime-local"
-                    className={stylesTxn.input}
                     defaultValue={nowLocal}
                   />
-                  {errors.occurred_at && <div className={modal.error}>{errors.occurred_at.message}</div>}
+                  {errors.occurred_at && <div className="text-sm text-destructive">{errors.occurred_at.message}</div>}
                 </div>
-                <div className={modal.groupRow}>
-                  <label className={modal.label}>Примечание</label>
-                  <input
+                <div className="space-y-1.5">
+                  <Label>Примечание</Label>
+                  <Input
                     {...register("note")}
                     type="text"
                     placeholder="Комментарий"
-                    className={stylesTxn.input}
                   />
                 </div>
               </div>
@@ -351,27 +347,22 @@ export default function AddTransactionButton({
               <input type="hidden" value={primaryCurrency} {...register("currency")} />
 
               {/* Footer */}
-              <div className={modal.footer}>
-                <button type="button" className={stylesTxn.primaryBtn} onClick={() => {
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button type="button" variant="secondary" onClick={() => {
                   setOpen(false);
-                  // Очищаем localStorage при отмене
                   localStorage.removeItem('addTransactionModalOpen');
                   localStorage.removeItem('addTransactionForm');
                   localStorage.removeItem('addTransactionItems');
-                }} style={{ background: "#9e9e9e" }}>
+                }}>
                   Отмена
-                </button>
-                <button
-                  type="submit"
-                  className={stylesTxn.primaryBtn}
-                  disabled={isPending || !amountValue}
-                >
+                </Button>
+                <Button type="submit" disabled={isPending || !amountValue}>
                   {isPending ? "Сохраняем…" : "Добавить"}
-                </button>
+                </Button>
               </div>
 
-              {serverError && <div className={modal.error}>{serverError}</div>}
-              {errors.account_id && <div className={modal.error}>{errors.account_id.message}</div>}
+              {serverError && <div className="text-sm text-destructive mt-2">{serverError}</div>}
+              {errors.account_id && <div className="text-sm text-destructive">{errors.account_id.message}</div>}
             </form>
           </div>
         </div>

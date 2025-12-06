@@ -5,13 +5,16 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
 
 const credentialsSchema = z.object({
   email: z.string().email("Введите корректный email"),
-  password: z
-    .string()
-    .min(8, "Минимум 8 символов")
-    .max(64, "Максимум 64 символа"),
+  password: z.string().min(8, "Минимум 8 символов").max(64, "Максимум 64 символа"),
 });
 
 type CredentialsFormValues = z.infer<typeof credentialsSchema>;
@@ -30,17 +33,12 @@ export default function LoginPage() {
     setSuccess(null);
     try {
       const supabase = getSupabaseClient();
-      const {
-        data: { session },
-        error: signInError,
-      } = await supabase.auth.signInWithPassword({
+      const { data: { session }, error: signInError } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
       });
       if (signInError) throw signInError;
-      if (!session) {
-        throw new Error("Не удалось создать сессию. Попробуйте ещё раз.");
-      }
+      if (!session) throw new Error("Не удалось создать сессию. Попробуйте ещё раз.");
       window.location.href = "/dashboard";
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Ошибка авторизации";
@@ -49,108 +47,36 @@ export default function LoginPage() {
   });
 
   return (
-    <main className="login-layout">
-      <div className="login-card">
-        <div className="login-header">
-          <h1>Вход</h1>
-          <p>Используйте email и пароль для доступа к приложению.</p>
-        </div>
+    <main className="min-h-screen grid place-items-center p-6 bg-gray-100">
+      <Card className="w-full max-w-[420px] shadow-xl">
+        <CardHeader>
+          <CardTitle className="text-2xl">Вход</CardTitle>
+          <CardDescription>Используйте email и пароль для доступа к приложению.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={onSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" placeholder="user@example.com" {...register("email")} autoFocus />
+              {errors.email && <p className="text-sm text-red-600">{errors.email.message}</p>}
+            </div>
 
-        <form onSubmit={onSubmit} className="login-form">
-          <label>
-            Email
-            <input type="email" placeholder="user@example.com" {...register("email")} autoFocus />
-          </label>
-          {errors.email && <div className="login-error">{errors.email.message}</div>}
+            <div className="space-y-2">
+              <Label htmlFor="password">Пароль</Label>
+              <Input id="password" type="password" placeholder="Введите пароль" {...register("password")} />
+              {errors.password && <p className="text-sm text-red-600">{errors.password.message}</p>}
+            </div>
 
-          <label>
-            Пароль
-            <input type="password" placeholder="Введите пароль" {...register("password")} />
-          </label>
-          {errors.password && <div className="login-error">{errors.password.message}</div>}
+            <Button type="submit" disabled={isSubmitting} className="w-full">
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting ? "Обрабатываем…" : "Войти"}
+            </Button>
+          </form>
 
-          <button type="submit" disabled={isSubmitting} className="login-submit">
-            {isSubmitting ? "Обрабатываем…" : "Войти"}
-          </button>
-        </form>
-
-        {success && <div className="login-success">{success}</div>}
-        {error && <div className="login-error">{error}</div>}
-      </div>
-      <style jsx>{`
-        .login-layout {
-          display: grid;
-          place-items: center;
-          min-height: 100dvh;
-          padding: 24px;
-          background: #f3f4f6;
-        }
-        .login-card {
-          width: min(420px, 100%);
-          background: #fff;
-          padding: 32px;
-          border-radius: 16px;
-          box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
-          display: flex;
-          flex-direction: column;
-          gap: 18px;
-        }
-        .login-header h1 {
-          margin: 0 0 8px;
-          font-size: 26px;
-          font-weight: 600;
-          color: #0f172a;
-        }
-        .login-header p {
-          margin: 0;
-          color: #475569;
-          font-size: 14px;
-        }
-        .login-form {
-          display: flex;
-          flex-direction: column;
-          gap: 14px;
-        }
-        .login-form label {
-          display: grid;
-          gap: 6px;
-          font-size: 14px;
-          color: #0f172a;
-        }
-        .login-form input {
-          border-radius: 10px;
-          border: 1px solid #d0d8e3;
-          padding: 10px 12px;
-          font-size: 14px;
-        }
-        .login-form input:focus {
-          outline: none;
-          border-color: #2563eb;
-          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
-        }
-        .login-submit {
-          margin-top: 4px;
-          background: linear-gradient(135deg, #2563eb, #1d4ed8);
-          border: 0;
-          color: #fff;
-          padding: 12px 16px;
-          border-radius: 12px;
-          cursor: pointer;
-          font-weight: 600;
-        }
-        .login-submit:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-        .login-error {
-          color: #c62828;
-          font-size: 13px;
-        }
-        .login-success {
-          color: #2e7d32;
-          font-size: 13px;
-        }
-      `}</style>
+          {success && <Alert className="mt-4 border-green-200 bg-green-50"><AlertDescription className="text-green-700">{success}</AlertDescription></Alert>}
+          {error && <Alert variant="destructive" className="mt-4"><AlertDescription>{error}</AlertDescription></Alert>}
+        </CardContent>
+      </Card>
     </main>
   );
 }

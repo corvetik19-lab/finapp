@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import styles from "@/components/dashboard/Dashboard.module.css";
 import { formatMoney } from "@/lib/utils/format";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Package, ShoppingBasket, Eye, EyeOff, Loader2 } from "lucide-react";
 
 export type ProductSummaryPeriod = "week" | "month" | "year" | "custom";
 
@@ -151,135 +155,93 @@ export default function ProductManagementCard({
   );
 
   return (
-    <div className={styles.widgetCard}>
-      <div className={styles.widgetHeader}>
-        <div className={styles.widgetTitleRow}>
-          <span className="material-icons" style={{ fontSize: "24px", color: "#3b82f6" }}>
-            inventory_2
-          </span>
-          <h3 className={styles.widgetTitle}>Управление товарами</h3>
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Управление товарами
+          </CardTitle>
+          <Select value={period} onValueChange={(v) => setPeriod(v as ProductSummaryPeriod)} disabled={isPending}>
+            <SelectTrigger className="w-32 h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PERIODS.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <div className={styles.widgetControls}>
-          <select
-            value={period}
-            onChange={(e) => setPeriod(e.target.value as ProductSummaryPeriod)}
-            className={styles.periodSelect}
-            disabled={isPending}
-          >
-            {PERIODS.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {period === "custom" && (
-        <div className={styles.customRangePanel}>
-          <div className={styles.customRangeInputs}>
-            <input
-              type="date"
-              value={customRange.from}
-              onChange={(e) =>
-                setCustomRange((prev) => ({ ...prev, from: e.target.value }))
-              }
-              className={styles.dateInput}
-            />
-            <span>—</span>
-            <input
-              type="date"
-              value={customRange.to}
-              onChange={(e) =>
-                setCustomRange((prev) => ({ ...prev, to: e.target.value }))
-              }
-              className={styles.dateInput}
-            />
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {period === "custom" && (
+          <div className="flex items-center gap-2">
+            <Input type="date" value={customRange.from} onChange={(e) => setCustomRange((prev) => ({ ...prev, from: e.target.value }))} className="h-8" />
+            <span className="text-muted-foreground">—</span>
+            <Input type="date" value={customRange.to} onChange={(e) => setCustomRange((prev) => ({ ...prev, to: e.target.value }))} className="h-8" />
+            <Button size="sm" onClick={handleApplyCustomRange} disabled={isPending}>
+              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Применить"}
+            </Button>
           </div>
-          <button
-            onClick={handleApplyCustomRange}
-            disabled={isPending}
-            className={styles.applyButton}
-          >
-            Применить
-          </button>
-        </div>
-      )}
+        )}
 
-      {error && <div className={styles.errorMessage}>{error}</div>}
+        {error && <div className="text-sm text-destructive">{error}</div>}
 
-      {products.length === 0 ? (
-        <div className={styles.emptyState}>
-          <span className="material-icons" style={{ fontSize: "48px", color: "#cbd5e1" }}>
-            inventory_2
-          </span>
-          <p>Нет данных по товарам</p>
-          <span className={styles.emptyHint}>
-            Добавьте позиции товаров в транзакции, чтобы увидеть статистику
-          </span>
-        </div>
-      ) : (
-        <>
-          <div className={styles.categoryList}>
-            {visibleProducts.map((product) => (
-              <div key={product.name} className={styles.categoryCard}>
-                <div className={styles.categoryCardHeader}>
-                  <div className={styles.categoryCardIcon}>
-                    <span className="material-icons">shopping_basket</span>
+        {products.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Package className="h-12 w-12 mx-auto mb-2 opacity-30" />
+            <p>Нет данных по товарам</p>
+            <p className="text-xs">Добавьте позиции товаров в транзакции, чтобы увидеть статистику</p>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-2">
+              {visibleProducts.map((product) => (
+                <div key={product.name} className="flex items-center gap-3 p-2 rounded-lg border hover:bg-muted/50 transition-colors">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                    <ShoppingBasket className="h-4 w-4" />
                   </div>
-                  <div className={styles.categoryCardInfo}>
-                    <div className={styles.categoryCardName}>{product.name}</div>
-                    <div className={styles.categoryCardMeta}>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm truncate">{product.name}</div>
+                    <div className="text-xs text-muted-foreground">
                       {product.quantity} {product.unit} • {product.transactionCount} покупок
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleToggleVisibility(product.name)}
-                    className={styles.visibilityButton}
-                    title="Скрыть товар"
-                  >
-                    <span className="material-icons">visibility</span>
-                  </button>
+                  <div className="text-sm font-medium">{formatMoney(Math.round(product.totalAmount * 100), currency)}</div>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleToggleVisibility(product.name)} title="Скрыть товар">
+                    <EyeOff className="h-4 w-4" />
+                  </Button>
                 </div>
-                <div className={styles.categoryCardAmount}>
-                  {formatMoney(Math.round(product.totalAmount * 100), currency)}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {hiddenProducts.length > 0 && (
-            <div className={styles.hiddenSection}>
-              <div className={styles.hiddenSectionHeader}>
-                <span className={styles.hiddenSectionTitle}>
-                  Скрытые товары ({hiddenProducts.length})
-                </span>
-              </div>
-              <div className={styles.hiddenSectionContent}>
-                <select
-                  value={selectedHiddenId || ""}
-                  onChange={(e) => setSelectedHiddenId(e.target.value)}
-                  className={styles.hiddenSelect}
-                >
-                  {hiddenProducts.map((product) => (
-                    <option key={product.name} value={product.name}>
-                      {product.name} — {formatMoney(Math.round(product.totalAmount * 100), currency)}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={handleAddHidden}
-                  disabled={!selectedHiddenId || saving}
-                  className={styles.addButton}
-                >
-                  <span className="material-icons">visibility</span>
-                  Показать
-                </button>
-              </div>
+              ))}
             </div>
-          )}
-        </>
-      )}
-    </div>
+
+            {hiddenProducts.length > 0 && (
+              <div className="pt-2 border-t">
+                <div className="text-xs text-muted-foreground mb-2">Скрытые товары ({hiddenProducts.length})</div>
+                <div className="flex gap-2">
+                  <Select value={selectedHiddenId || ""} onValueChange={setSelectedHiddenId}>
+                    <SelectTrigger className="flex-1 h-8">
+                      <SelectValue placeholder="Выберите товар" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {hiddenProducts.map((product) => (
+                        <SelectItem key={product.name} value={product.name}>
+                          {product.name} — {formatMoney(Math.round(product.totalAmount * 100), currency)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button size="sm" variant="outline" onClick={handleAddHidden} disabled={!selectedHiddenId || saving}>
+                    <Eye className="h-4 w-4 mr-1" />
+                    Показать
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }

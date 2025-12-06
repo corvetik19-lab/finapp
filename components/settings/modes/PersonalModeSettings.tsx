@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import styles from "./FinanceModeSettings.module.css";
 import PlanSettingsManager from "../PlanSettingsManager";
 import type { FinanceSettings } from "@/types/settings";
 import type { PlanPresetRecord, PlanTypeRecord } from "../PlanSettingsManager";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Clock, Settings, Flag } from "lucide-react";
 
 interface PersonalModeSettingsProps {
   settings?: FinanceSettings | null;
@@ -13,80 +14,27 @@ interface PersonalModeSettingsProps {
 }
 
 export default function PersonalModeSettings({ settings, planTypes, planPresets }: PersonalModeSettingsProps) {
-  const [activeTab, setActiveTab] = useState<"general" | "plans">("general");
-  
-  const plannedFeatures = [
-    "Личные цели",
-    "Заметки",
-    "Файлы",
-  ];
+  const plannedFeatures = ["Личные цели", "Заметки", "Файлы"];
   
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>Настройки режима &quot;Личные&quot;</h1>
-          <p className={styles.subtitle}>Параметры для личных целей и планов</p>
-        </div>
-      </div>
+    <div className="p-6 space-y-6">
+      <div><h1 className="text-2xl font-bold">Настройки режима «Личные»</h1><p className="text-muted-foreground">Параметры для личных целей и планов</p></div>
 
-      {/* Табы */}
-      <div className={styles.tabs}>
-        <button
-          className={`${styles.tab} ${activeTab === "general" ? styles.tabActive : ""}`}
-          onClick={() => setActiveTab("general")}
-        >
-          <span className="material-icons">tune</span>
-          Основные
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === "plans" ? styles.tabActive : ""}`}
-          onClick={() => setActiveTab("plans")}
-        >
-          <span className="material-icons">flag</span>
-          Планы
-        </button>
-      </div>
-
-      <div className={styles.content}>
-        {activeTab === "general" && (
-          <>
-            <section className={styles.section}>
-              <h2 className={styles.sectionTitle}>Режим в разработке</h2>
-              <p className={styles.sectionDesc}>
-                Настройки режима &quot;Личные&quot; будут доступны после завершения разработки функционала.
-              </p>
-              
-              <div className={styles.featureGrid}>
-                {plannedFeatures.map((feature) => (
-                  <div key={feature} className={styles.featureCard}>
-                    <span className="material-icons" style={{ color: "#f59e0b" }}>schedule</span>
-                    <span>{feature}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {settings ? (
-              <section className={styles.section}>
-                <h3 className={styles.sectionTitle}>Текущее состояние</h3>
-                <p className={styles.sectionDesc}>
-                  Базовые настройки сохранены, но функционал будет доступен после завершения разработки.
-                </p>
-              </section>
-            ) : null}
-          </>
-        )}
-
-        {activeTab === "plans" && (
-          <div className={styles.managerWrapper}>
-            <PlanSettingsManager
-              planTypes={planTypes}
-              planPresets={planPresets}
-            />
-          </div>
-        )}
-      </div>
+      <Tabs defaultValue="general">
+        <TabsList><TabsTrigger value="general"><Settings className="h-4 w-4 mr-1" />Основные</TabsTrigger><TabsTrigger value="plans"><Flag className="h-4 w-4 mr-1" />Планы</TabsTrigger></TabsList>
+        
+        <TabsContent value="general" className="space-y-4 mt-4">
+          <Card><CardHeader><CardTitle>Режим в разработке</CardTitle></CardHeader><CardContent>
+            <p className="text-muted-foreground mb-4">Настройки режима «Личные» будут доступны после завершения разработки.</p>
+            <div className="grid grid-cols-3 gap-3">
+              {plannedFeatures.map((feature) => <div key={feature} className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30"><Clock className="h-4 w-4 text-yellow-500" /><span>{feature}</span></div>)}
+            </div>
+          </CardContent></Card>
+          {settings && <Card><CardHeader><CardTitle>Текущее состояние</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">Базовые настройки сохранены.</p></CardContent></Card>}
+        </TabsContent>
+        
+        <TabsContent value="plans" className="mt-4"><PlanSettingsManager planTypes={planTypes} planPresets={planPresets} /></TabsContent>
+      </Tabs>
     </div>
   );
 }

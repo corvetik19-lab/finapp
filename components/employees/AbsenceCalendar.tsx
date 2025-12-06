@@ -1,7 +1,13 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import styles from './AbsenceCalendar.module.css';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ChevronLeft, ChevronRight, Plus, X, Check, Trash2, Loader2 } from "lucide-react";
 
 interface Absence {
   id: string;
@@ -209,207 +215,48 @@ export function AbsenceCalendar({ companyId, employeeId, employees }: AbsenceCal
   };
 
   if (loading && absences.length === 0) {
-    return (
-      <div className={styles.loading}>
-        <span>⏳</span> Загрузка календаря...
-      </div>
-    );
+    return <div className="flex items-center justify-center py-12 text-muted-foreground"><Loader2 className="h-5 w-5 mr-2 animate-spin" />Загрузка календаря...</div>;
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.navigation}>
-          <button onClick={prevMonth} className={styles.navButton}>◀</button>
-          <h3 className={styles.title}>{MONTHS[month]} {year}</h3>
-          <button onClick={nextMonth} className={styles.navButton}>▶</button>
-          <button onClick={today} className={styles.todayButton}>Сегодня</button>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={prevMonth}><ChevronLeft className="h-4 w-4" /></Button>
+          <h3 className="text-lg font-semibold min-w-[160px] text-center">{MONTHS[month]} {year}</h3>
+          <Button variant="outline" size="icon" onClick={nextMonth}><ChevronRight className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="sm" onClick={today}>Сегодня</Button>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className={styles.addButton}
-        >
-          {showForm ? '✕ Отмена' : '➕ Добавить'}
-        </button>
+        <Button onClick={() => setShowForm(!showForm)} variant={showForm ? "outline" : "default"}>{showForm ? <><X className="h-4 w-4 mr-1" />Отмена</> : <><Plus className="h-4 w-4 mr-1" />Добавить</>}</Button>
       </div>
 
-      {error && (
-        <div className={styles.error}>{error}</div>
-      )}
+      {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
 
       {showForm && (
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.formRow}>
-            {!employeeId && employees && (
-              <select
-                value={formData.employee_id}
-                onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
-                className={styles.select}
-                required
-              >
-                <option value="">Выберите сотрудника</option>
-                {employees.map(emp => (
-                  <option key={emp.id} value={emp.id}>{emp.full_name}</option>
-                ))}
-              </select>
-            )}
-            <select
-              value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-              className={styles.select}
-            >
-              {ABSENCE_TYPES.map(t => (
-                <option key={t.value} value={t.value}>{t.icon} {t.label}</option>
-              ))}
-            </select>
+        <Card><CardContent className="pt-4"><form onSubmit={handleSubmit} className="space-y-3">
+          <div className="flex gap-2 flex-wrap">
+            {!employeeId && employees && <Select value={formData.employee_id} onValueChange={v => setFormData({ ...formData, employee_id: v })}><SelectTrigger className="w-48"><SelectValue placeholder="Сотрудник" /></SelectTrigger><SelectContent>{employees.map(emp => <SelectItem key={emp.id} value={emp.id}>{emp.full_name}</SelectItem>)}</SelectContent></Select>}
+            <Select value={formData.type} onValueChange={v => setFormData({ ...formData, type: v })}><SelectTrigger className="w-48"><SelectValue /></SelectTrigger><SelectContent>{ABSENCE_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.icon} {t.label}</SelectItem>)}</SelectContent></Select>
           </div>
-          <div className={styles.formRow}>
-            <input
-              type="date"
-              value={formData.start_date}
-              onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-              className={styles.input}
-              required
-            />
-            <span className={styles.dateSeparator}>—</span>
-            <input
-              type="date"
-              value={formData.end_date}
-              onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-              className={styles.input}
-              required
-            />
-          </div>
-          <input
-            type="text"
-            placeholder="Причина (необязательно)"
-            value={formData.reason}
-            onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-            className={styles.input}
-          />
-          <button type="submit" className={styles.submitButton}>
-            ✅ Создать
-          </button>
-        </form>
+          <div className="flex gap-2 items-center"><Input type="date" value={formData.start_date} onChange={e => setFormData({ ...formData, start_date: e.target.value })} className="w-40" required /><span className="text-muted-foreground">—</span><Input type="date" value={formData.end_date} onChange={e => setFormData({ ...formData, end_date: e.target.value })} className="w-40" required /></div>
+          <Input placeholder="Причина (необязательно)" value={formData.reason} onChange={e => setFormData({ ...formData, reason: e.target.value })} />
+          <Button type="submit"><Check className="h-4 w-4 mr-1" />Создать</Button>
+        </form></CardContent></Card>
       )}
 
       {/* Легенда */}
-      <div className={styles.legend}>
-        {ABSENCE_TYPES.map(t => (
-          <div key={t.value} className={styles.legendItem}>
-            <span className={styles.legendColor} style={{ background: t.color }} />
-            <span>{t.icon} {t.label}</span>
-          </div>
-        ))}
-      </div>
+      <div className="flex flex-wrap gap-3">{ABSENCE_TYPES.map(t => <div key={t.value} className="flex items-center gap-1 text-sm"><span className="w-3 h-3 rounded-full" style={{ background: t.color }} /><span>{t.icon} {t.label}</span></div>)}</div>
 
       {/* Календарь */}
-      <div className={styles.calendar}>
-        <div className={styles.weekdays}>
-          {WEEKDAYS.map(day => (
-            <div key={day} className={styles.weekday}>{day}</div>
-          ))}
-        </div>
-        <div className={styles.days}>
-          {calendarDays.map((day, idx) => (
-            <div
-              key={idx}
-              className={`${styles.day} ${!day.date ? styles.emptyDay : ''} ${
-                day.date?.toDateString() === new Date().toDateString() ? styles.today : ''
-              }`}
-            >
-              {day.date && (
-                <>
-                  <span className={styles.dayNumber}>{day.date.getDate()}</span>
-                  {day.absences.length > 0 && (
-                    <div className={styles.dayAbsences}>
-                      {day.absences.slice(0, 3).map(a => (
-                        <div
-                          key={a.id}
-                          className={styles.absenceIndicator}
-                          style={{ background: getTypeColor(a.type) }}
-                          title={`${a.employee?.full_name || ''}: ${a.type_label}`}
-                        />
-                      ))}
-                      {day.absences.length > 3 && (
-                        <span className={styles.moreIndicator}>+{day.absences.length - 3}</span>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          ))}
-        </div>
+      <div className="border rounded-lg overflow-hidden">
+        <div className="grid grid-cols-7 bg-muted">{WEEKDAYS.map(day => <div key={day} className="p-2 text-center text-sm font-medium">{day}</div>)}</div>
+        <div className="grid grid-cols-7">{calendarDays.map((day, idx) => <div key={idx} className={`min-h-[60px] p-1 border-t border-l ${!day.date ? 'bg-muted/50' : ''} ${day.date?.toDateString() === new Date().toDateString() ? 'bg-blue-50' : ''}`}>{day.date && <><span className="text-sm font-medium">{day.date.getDate()}</span>{day.absences.length > 0 && <div className="flex flex-wrap gap-0.5 mt-1">{day.absences.slice(0, 3).map(a => <div key={a.id} className="w-2 h-2 rounded-full" style={{ background: getTypeColor(a.type) }} title={`${a.employee?.full_name || ''}: ${a.type_label}`} />)}{day.absences.length > 3 && <span className="text-xs text-muted-foreground">+{day.absences.length - 3}</span>}</div>}</>}</div>)}</div>
       </div>
 
-      {/* Список отсутствий */}
-      <div className={styles.list}>
-        <h4 className={styles.listTitle}>📋 Отсутствия в этом месяце</h4>
-        {absences.length === 0 ? (
-          <div className={styles.empty}>Нет записей</div>
-        ) : (
-          absences.map(absence => (
-            <div key={absence.id} className={styles.absenceItem}>
-              <div 
-                className={styles.absenceColor}
-                style={{ background: getTypeColor(absence.type) }}
-              />
-              <div className={styles.absenceInfo}>
-                <div className={styles.absenceHeader}>
-                  <span className={styles.absenceIcon}>{getTypeIcon(absence.type)}</span>
-                  <span className={styles.absenceType}>{absence.type_label}</span>
-                  {absence.employee && !employeeId && (
-                    <span className={styles.absenceEmployee}>{absence.employee.full_name}</span>
-                  )}
-                </div>
-                <div className={styles.absenceDates}>
-                  {new Date(absence.start_date).toLocaleDateString('ru-RU')} — {new Date(absence.end_date).toLocaleDateString('ru-RU')}
-                </div>
-                {absence.reason && (
-                  <div className={styles.absenceReason}>{absence.reason}</div>
-                )}
-              </div>
-              <div className={styles.absenceActions}>
-                <span 
-                  className={styles.absenceStatus}
-                  style={{ 
-                    background: absence.status === 'approved' ? '#22c55e' : 
-                               absence.status === 'rejected' ? '#ef4444' : '#f59e0b'
-                  }}
-                >
-                  {absence.status_label}
-                </span>
-                {absence.status === 'pending' && (
-                  <>
-                    <button
-                      onClick={() => handleStatusChange(absence.id, 'approved')}
-                      className={styles.approveButton}
-                      title="Одобрить"
-                    >
-                      ✅
-                    </button>
-                    <button
-                      onClick={() => handleStatusChange(absence.id, 'rejected')}
-                      className={styles.rejectButton}
-                      title="Отклонить"
-                    >
-                      ❌
-                    </button>
-                  </>
-                )}
-                <button
-                  onClick={() => handleDelete(absence.id)}
-                  className={styles.deleteButton}
-                  title="Удалить"
-                >
-                  🗑️
-                </button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+      {/* Список */}
+      <Card><CardHeader><CardTitle className="text-base">📋 Отсутствия в этом месяце</CardTitle></CardHeader><CardContent>
+        {absences.length === 0 ? <p className="text-muted-foreground text-sm">Нет записей</p> : <div className="space-y-2">{absences.map(absence => <div key={absence.id} className="flex items-center gap-3 p-2 border rounded"><div className="w-1 h-10 rounded" style={{ background: getTypeColor(absence.type) }} /><div className="flex-1"><div className="flex items-center gap-2"><span>{getTypeIcon(absence.type)}</span><span className="font-medium text-sm">{absence.type_label}</span>{absence.employee && !employeeId && <Badge variant="outline" className="text-xs">{absence.employee.full_name}</Badge>}</div><div className="text-xs text-muted-foreground">{new Date(absence.start_date).toLocaleDateString('ru-RU')} — {new Date(absence.end_date).toLocaleDateString('ru-RU')}</div>{absence.reason && <div className="text-xs text-muted-foreground">{absence.reason}</div>}</div><div className="flex items-center gap-1"><Badge style={{ background: absence.status === 'approved' ? '#22c55e' : absence.status === 'rejected' ? '#ef4444' : '#f59e0b' }}>{absence.status_label}</Badge>{absence.status === 'pending' && <><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleStatusChange(absence.id, 'approved')} title="Одобрить"><Check className="h-4 w-4 text-green-600" /></Button><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleStatusChange(absence.id, 'rejected')} title="Отклонить"><X className="h-4 w-4 text-red-600" /></Button></>}<Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(absence.id)} title="Удалить"><Trash2 className="h-4 w-4" /></Button></div></div>)}</div>}
+      </CardContent></Card>
     </div>
   );
 }

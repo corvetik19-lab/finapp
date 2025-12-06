@@ -7,11 +7,10 @@ import { createDebt } from "@/lib/debts/service";
 import { DebtFormSchema } from "@/lib/validation/debt";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import styles from "./ClaimsManager.module.css";
+import { Button } from "@/components/ui/button";
+import { Scale, Plus } from "lucide-react";
 
-interface ClaimsManagerProps {
-  initialDebts: Debt[];
-}
+interface ClaimsManagerProps { initialDebts: Debt[]; }
 
 export function ClaimsManager({ initialDebts }: ClaimsManagerProps) {
   const router = useRouter();
@@ -30,35 +29,13 @@ export function ClaimsManager({ initialDebts }: ClaimsManagerProps) {
   };
 
   return (
-    <div className={styles.container}>
-      {/* Заголовок и кнопка */}
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>⚖️ Взыскание долгов</h1>
-          <p className={styles.subtitle}>Реестр задолженностей и претензионная работа</p>
-        </div>
-        <button 
-          className={styles.addBtn}
-          onClick={() => {
-            setEditingDebt(null);
-            setIsModalOpen(true);
-          }}
-        >
-          <span className="material-icons">add</span>
-          ДОБАВИТЬ ПРЕТЕНЗИЮ
-        </button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div><h1 className="text-2xl font-bold flex items-center gap-2"><Scale className="h-6 w-6" />Взыскание долгов</h1><p className="text-muted-foreground">Реестр задолженностей и претензионная работа</p></div>
+        <Button onClick={() => { setEditingDebt(null); setIsModalOpen(true); }}><Plus className="h-4 w-4 mr-2" />Добавить претензию</Button>
       </div>
-
-      {/* Таблица */}
       <ClaimsTable initialDebts={initialDebts} />
-
-      {/* Модалка */}
-      <ClaimFormModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleCreate}
-        initialData={editingDebt}
-      />
+      <ClaimFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={handleCreate} initialData={editingDebt} />
     </div>
   );
 }

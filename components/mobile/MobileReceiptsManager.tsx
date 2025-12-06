@@ -3,7 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { createBrowserClient } from "@supabase/ssr";
-import styles from "./MobileReceiptsManager.module.css";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { AlertCircle, Receipt, Eye, Download, Trash2, X, Loader2 } from "lucide-react";
 
 interface Attachment {
   id: string;
@@ -225,115 +227,29 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h1>📄 Мои чеки</h1>
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileSelect}
-          accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf"
-          multiple
-          capture="environment"
-          style={{ display: 'none' }}
-        />
-        <button
-          className={styles.uploadButton}
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isUploading}
-        >
-          {isUploading ? '⏳ Загрузка...' : '📎 Загрузить'}
-        </button>
-      </div>
-
-      {error && (
-        <div className={styles.error}>
-          <span className="material-icons">error</span>
-          {error}
-        </div>
-      )}
-
+    <div className="p-4 space-y-4">
+      <div className="flex items-center justify-between"><h1 className="text-xl font-bold">📄 Мои чеки</h1><input type="file" ref={fileInputRef} onChange={handleFileSelect} accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf" multiple capture="environment" className="hidden" /><Button onClick={() => fileInputRef.current?.click()} disabled={isUploading}>{isUploading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Загрузка...</> : "📎 Загрузить"}</Button></div>
+      {error && <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive"><AlertCircle className="h-4 w-4" />{error}</div>}
       {receipts.length === 0 ? (
-        <div className={styles.empty}>
-          <span className="material-icons">receipt_long</span>
-          <h3>Нет загруженных чеков</h3>
-          <p>Нажмите кнопку &quot;Загрузить&quot; чтобы добавить чеки</p>
-        </div>
+        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground"><Receipt className="h-16 w-16 mb-4" /><h3 className="font-semibold">Нет загруженных чеков</h3><p className="text-sm">Нажмите кнопку &quot;Загрузить&quot; чтобы добавить чеки</p></div>
       ) : (
-        <div className={styles.list}>
-          {receipts.map((receipt) => (
-            <div key={receipt.id} className={styles.item}>
-              <div className={styles.itemIcon}>
-                {receipt.mime_type.startsWith('image/') ? '🖼️' : '📄'}
-              </div>
-              <div className={styles.itemInfo}>
-                <div className={styles.itemName}>{receipt.file_name}</div>
-                <div className={styles.itemMeta}>
-                  {formatFileSize(receipt.file_size)} • {formatDate(receipt.created_at)}
-                </div>
-              </div>
-              <div className={styles.itemActions}>
-                <button
-                  onClick={() => {
-                    if (receipt.mime_type.startsWith('image/')) {
-                      setPreviewImage({
-                        url: `/api/attachments/view?path=${encodeURIComponent(receipt.file_path)}`,
-                        name: receipt.file_name,
-                      });
-                    } else {
-                      // Для PDF открываем в новой вкладке
-                      window.open(`/api/attachments/view?path=${encodeURIComponent(receipt.file_path)}`, '_blank');
-                    }
-                  }}
-                  className={styles.actionButton}
-                  title="Просмотр"
-                >
-                  <span className="material-icons">visibility</span>
-                </button>
-                <a
-                  href={`/api/attachments/download?path=${encodeURIComponent(receipt.file_path)}&name=${encodeURIComponent(receipt.file_name)}`}
-                  className={styles.actionButton}
-                  title="Скачать"
-                >
-                  <span className="material-icons">download</span>
-                </a>
-                <button
-                  onClick={() => handleDelete(receipt.id, receipt.file_path)}
-                  className={styles.actionButton}
-                  title="Удалить"
-                >
-                  <span className="material-icons">delete</span>
-                </button>
-              </div>
+        <div className="space-y-2">{receipts.map((receipt) => (
+          <Card key={receipt.id}><CardContent className="flex items-center gap-3 py-3">
+            <span className="text-2xl">{receipt.mime_type.startsWith('image/') ? '🖼️' : '📄'}</span>
+            <div className="flex-1 min-w-0"><div className="font-medium text-sm truncate">{receipt.file_name}</div><div className="text-xs text-muted-foreground">{formatFileSize(receipt.file_size)} • {formatDate(receipt.created_at)}</div></div>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { if (receipt.mime_type.startsWith('image/')) { setPreviewImage({ url: `/api/attachments/view?path=${encodeURIComponent(receipt.file_path)}`, name: receipt.file_name }); } else { window.open(`/api/attachments/view?path=${encodeURIComponent(receipt.file_path)}`, '_blank'); } }}><Eye className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8" asChild><a href={`/api/attachments/download?path=${encodeURIComponent(receipt.file_path)}&name=${encodeURIComponent(receipt.file_name)}`}><Download className="h-4 w-4" /></a></Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(receipt.id, receipt.file_path)}><Trash2 className="h-4 w-4" /></Button>
             </div>
-          ))}
-        </div>
+          </CardContent></Card>
+        ))}</div>
       )}
-
-      {/* Модалка просмотра изображения */}
       {previewImage && (
-        <div className={styles.previewOverlay} onClick={() => setPreviewImage(null)}>
-          <div className={styles.previewModal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.previewHeader}>
-              <h3>{previewImage.name}</h3>
-              <button
-                onClick={() => setPreviewImage(null)}
-                className={styles.closeButton}
-                aria-label="Закрыть"
-              >
-                ×
-              </button>
-            </div>
-            <div className={styles.previewBody}>
-              <Image
-                src={previewImage.url}
-                alt={previewImage.name}
-                width={800}
-                height={600}
-                className={styles.previewImage}
-                unoptimized
-              />
-            </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80" onClick={() => setPreviewImage(null)}>
+          <div className="relative max-w-4xl w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 bg-background rounded-t-lg"><h3 className="font-semibold truncate">{previewImage.name}</h3><Button variant="ghost" size="icon" onClick={() => setPreviewImage(null)}><X className="h-5 w-5" /></Button></div>
+            <div className="bg-background p-4 rounded-b-lg"><Image src={previewImage.url} alt={previewImage.name} width={800} height={600} className="max-w-full h-auto rounded" unoptimized /></div>
           </div>
         </div>
       )}

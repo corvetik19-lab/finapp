@@ -2,8 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-
-import styles from "./NotesPage.module.css";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Pencil, Trash2, X, Plus, Loader2 } from "lucide-react";
 import type { NoteLabel, NoteListItem } from "@/lib/notes/service";
 import {
   createNoteAction,
@@ -17,6 +25,7 @@ import { fetchTransactionsForSelectAction } from "@/app/(protected)/finance/tran
 import { fetchPlansForSelectAction } from "@/app/(protected)/finance/plans/actions";
 import type { TransactionSelectItem } from "@/lib/transactions/service";
 import type { PlanSelectItem } from "@/lib/plans/service";
+import { useToast } from "@/components/toast/ToastContext";
 
 const PAGE_SIZE_FALLBACK = 10;
 
@@ -64,6 +73,7 @@ export default function NotesPageClient({
   initialLabelIds,
 }: NotesPageClientProps) {
   const router = useRouter();
+  const toast = useToast();
   const [isPending, startTransition] = useTransition();
 
   const [searchValue, setSearchValue] = useState(initialQuery);
@@ -436,6 +446,7 @@ export default function NotesPageClient({
       }
 
       handleEditorClose();
+      toast.show(editorMode === "edit" ? "Заметка обновлена" : "Заметка создана", { type: "success" });
       router.refresh();
     });
   };
@@ -450,8 +461,10 @@ export default function NotesPageClient({
       const result = await deleteNoteAction(note.id);
       if (!result.success) {
         setCardError(result.error);
+        toast.show("Ошибка при удалении заметки", { type: "error" });
         return;
       }
+      toast.show("Заметка удалена", { type: "success" });
       router.refresh();
     });
   };
@@ -477,6 +490,7 @@ export default function NotesPageClient({
       }
 
       setLabelName("");
+      toast.show("Метка создана", { type: "success" });
       router.refresh();
     });
   };
@@ -498,44 +512,18 @@ export default function NotesPageClient({
         setSelectedLabelIds((prev) => prev.filter((item) => item !== id));
       }
 
+      toast.show("Метка удалена", { type: "success" });
       router.refresh();
     });
   };
 
   const renderLabelCheckbox = (label: NoteLabel) => {
     const checked = selectedLabelIds.includes(label.id);
-    const labelStyle = label.color
-      ? {
-          backgroundColor: `${label.color}1A`,
-          borderColor: label.color,
-        }
-      : undefined;
     return (
-      <label key={label.id} className={styles.labelItem} style={labelStyle}>
-        <input
-          type="checkbox"
-          className={styles.labelCheckbox}
-          checked={checked}
-          onChange={() => toggleSelectedLabel(label.id)}
-        />
-        <span className={styles.labelName}>
-          {label.name}
-        </span>
-        <button
-          type="button"
-          className={`${styles.iconButton} ${styles.iconButtonDelete}`}
-          onClick={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            handleDeleteLabel(label.id);
-          }}
-          aria-label={`Удалить метку ${label.name}`}
-          disabled={isPending}
-        >
-          <span className="material-icons" aria-hidden>
-            close
-          </span>
-        </button>
+      <label key={label.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer transition-colors hover:bg-muted" style={label.color ? { backgroundColor: `${label.color}1A`, borderColor: label.color } : undefined}>
+        <Checkbox checked={checked} onCheckedChange={() => toggleSelectedLabel(label.id)} />
+        <span className="text-sm flex-1">{label.name}</span>
+        <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={(event) => { event.preventDefault(); event.stopPropagation(); handleDeleteLabel(label.id); }} disabled={isPending}><X className="h-3 w-3" /></Button>
       </label>
     );
   };
@@ -623,363 +611,107 @@ export default function NotesPageClient({
 
   const renderRelationRow = (relation: NoteEditorRelation, index: number) => {
     const options = relation.entityType === "transaction" ? transactionOptions : planOptions;
-    const searchValue = relationSearchQueries[index] ?? "";
-
+    const searchVal = relationSearchQueries[index] ?? "";
     return (
-      <div key={`relation-${index}`} className={styles.relationRow}>
-        <select
-          className={styles.relationTypeSelect}
-          value={relation.entityType}
-          onChange={(event) => handleRelationTypeChange(index, event.target.value as EntityKind)}
-          disabled={isPending || relationsLoading}
-        >
-          <option value="transaction">Транзакция</option>
-          <option value="plan">План</option>
-        </select>
-
-        <input
-          className={styles.relationSearchInput}
-          type="search"
-          placeholder={relation.entityType === "transaction" ? "Поиск транзакции" : "Поиск плана"}
-          value={searchValue}
-          onChange={(event) => handleRelationSearchChange(index, relation.entityType, event.target.value)}
-          disabled={isPending}
-        />
-
-        <select
-          className={styles.relationEntitySelect}
-          value={relation.entityId}
-          onChange={(event) => {
-            const nextId = event.target.value;
-            const option = options.find((item) => item.id === nextId);
-            handleRelationEntityChange(index, nextId, option?.label ?? nextId);
-          }}
-          disabled={isPending || relationsLoading}
-        >
-          <option value="">Не выбрано</option>
-          {options.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-
-        <button
-          type="button"
-          className={styles.relationRemoveButton}
-          onClick={() => handleRemoveRelation(index)}
-          disabled={isPending || relationsLoading}
-          aria-label="Удалить связь"
-        >
-          <span className="material-icons" aria-hidden>
-            close
-          </span>
-        </button>
+      <div key={`relation-${index}`} className="flex items-center gap-2">
+        <Select value={relation.entityType} onValueChange={(v) => handleRelationTypeChange(index, v as EntityKind)} disabled={isPending || relationsLoading}><SelectTrigger className="w-32"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="transaction">Транзакция</SelectItem><SelectItem value="plan">План</SelectItem></SelectContent></Select>
+        <Input type="search" placeholder={relation.entityType === "transaction" ? "Поиск транзакции" : "Поиск плана"} value={searchVal} onChange={(e) => handleRelationSearchChange(index, relation.entityType, e.target.value)} disabled={isPending} className="flex-1" />
+        <Select value={relation.entityId} onValueChange={(v) => { const opt = options.find((item) => item.id === v); handleRelationEntityChange(index, v, opt?.label ?? v); }} disabled={isPending || relationsLoading}><SelectTrigger className="w-48"><SelectValue placeholder="Не выбрано" /></SelectTrigger><SelectContent>{options.map((opt) => <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>)}</SelectContent></Select>
+        <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveRelation(index)} disabled={isPending || relationsLoading}><X className="h-4 w-4" /></Button>
       </div>
     );
   };
 
   const renderRelationsSection = () => {
     return (
-      <div className={styles.modalRelations}>
-        <div className={styles.modalRelationsHeader}>
-          <span className={styles.modalLabel}>Связи</span>
-          <button
-            type="button"
-            className={styles.secondaryButton}
-            onClick={handleAddRelation}
-            disabled={isPending || relationsLoading || editorState.relations.length >= relationLimit}
-          >
-            Добавить связь
-          </button>
-        </div>
-        {relationsLoading && <div className={styles.relationsHint}>Загружаем доступные элементы…</div>}
-        {!relationsLoading && editorState.relations.length === 0 && (
-          <div className={styles.relationsHint}>Пока нет связей. Добавьте транзакцию или план.</div>
-        )}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between"><Label>Связи</Label><Button type="button" variant="outline" size="sm" onClick={handleAddRelation} disabled={isPending || relationsLoading || editorState.relations.length >= relationLimit}><Plus className="h-4 w-4 mr-1" />Добавить связь</Button></div>
+        {relationsLoading && <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />Загружаем...</div>}
+        {!relationsLoading && editorState.relations.length === 0 && <div className="text-sm text-muted-foreground">Пока нет связей. Добавьте транзакцию или план.</div>}
         {editorState.relations.map((relation, index) => renderRelationRow(relation, index))}
-        {relationsError && <div className={styles.errorMessage}>{relationsError}</div>}
+        {relationsError && <div className="text-sm text-destructive">{relationsError}</div>}
       </div>
     );
   };
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <div className={styles.headerTop}>
-          <div>
-            <h1 className={styles.pageTitle}>Все заметки</h1>
-            <p className={styles.pageSubtitle}>Управляйте заметками, метками и связями с транзакциями и планами</p>
-          </div>
-          <div className={styles.headerActions}>
-            <button type="button" className={styles.secondaryButton} onClick={handleResetFilters} disabled={isPending}>
-              Сбросить фильтры
-            </button>
-            <button type="button" className={styles.primaryButton} onClick={openCreateEditor} disabled={isPending}>
-              Новая заметка
-            </button>
-          </div>
-        </div>
-        {cardError && <div className={styles.cardError}>{cardError}</div>}
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div><h1 className="text-2xl font-bold">Все заметки</h1><p className="text-sm text-muted-foreground">Управляйте заметками, метками и связями с транзакциями и планами</p></div>
+        <div className="flex gap-2"><Button variant="outline" onClick={handleResetFilters} disabled={isPending}>Сбросить</Button><Button onClick={openCreateEditor} disabled={isPending}><Plus className="h-4 w-4 mr-1" />Новая заметка</Button></div>
       </div>
+      {cardError && <div className="text-sm text-destructive p-3 bg-destructive/10 rounded">{cardError}</div>}
 
-      <div className={styles.filters}>
-        <form className={styles.searchRow} onSubmit={handleApplyFilters}>
-          <input
-            className={styles.searchInput}
-            type="search"
-            placeholder="Поиск по заголовку и тексту"
-            value={searchValue}
-            onChange={(event) => setSearchValue(event.target.value)}
-            disabled={isPending}
-          />
-          <div className={styles.filterActions}>
-            <button type="submit" className={styles.primaryButton} disabled={isPending}>
-              Применить
-            </button>
-            <button type="button" className={styles.secondaryButton} onClick={handleResetFilters} disabled={isPending}>
-              Очистить
-            </button>
-          </div>
+      <div className="space-y-4 p-4 border rounded-lg bg-card">
+        <form className="flex flex-col sm:flex-row gap-2" onSubmit={handleApplyFilters}>
+          <Input type="search" placeholder="Поиск по заголовку и тексту" value={searchValue} onChange={(e) => setSearchValue(e.target.value)} disabled={isPending} className="flex-1" />
+          <div className="flex gap-2"><Button type="submit" disabled={isPending}>Применить</Button><Button type="button" variant="outline" onClick={handleResetFilters} disabled={isPending}>Очистить</Button></div>
         </form>
-
-        <div className={styles.labelsSection}>
-          <div className={styles.labelsTitle}>Фильтр по меткам</div>
-          <div className={styles.labelsList}>
-            {labels.length === 0 && <span className={styles.labelName}>Метки пока не созданы</span>}
-            {labels.map((label) => renderLabelCheckbox(label))}
-          </div>
-          <form className={styles.searchRow} onSubmit={handleCreateLabel}>
-            <input
-              type="text"
-              className={styles.searchInput}
-              placeholder="Название новой метки"
-              value={labelName}
-              onChange={(event) => setLabelName(event.target.value)}
-              disabled={isPending}
-            />
-            <input
-              type="color"
-              value={labelColor}
-              onChange={(event) => setLabelColor(event.target.value)}
-              disabled={isPending}
-              style={{ width: 48, height: 36, borderRadius: 10, border: "1px solid rgba(148, 163, 184, 0.45)", padding: 0 }}
-              aria-label="Цвет метки"
-            />
-            <button type="submit" className={styles.secondaryButton} disabled={isPending}>
-              Добавить метку
-            </button>
+        <div className="space-y-2">
+          <Label>Фильтр по меткам</Label>
+          <div className="flex flex-wrap gap-2">{labels.length === 0 && <span className="text-sm text-muted-foreground">Метки пока не созданы</span>}{labels.map((label) => renderLabelCheckbox(label))}</div>
+          <form className="flex flex-col sm:flex-row gap-2 mt-2" onSubmit={handleCreateLabel}>
+            <Input type="text" placeholder="Название новой метки" value={labelName} onChange={(e) => setLabelName(e.target.value)} disabled={isPending} className="flex-1" />
+            <input type="color" value={labelColor} onChange={(e) => setLabelColor(e.target.value)} disabled={isPending} className="w-12 h-9 rounded border cursor-pointer" aria-label="Цвет метки" />
+            <Button type="submit" variant="outline" disabled={isPending}>Добавить метку</Button>
           </form>
-          {labelError && <div className={styles.errorMessage}>{labelError}</div>}
+          {labelError && <div className="text-sm text-destructive">{labelError}</div>}
         </div>
       </div>
 
-      <div className={styles.tableWrapper}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Заметка</th>
-              <th>Метки</th>
-              <th>Связи</th>
-              <th>Обновлена</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
+      <div className="border rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader><TableRow><TableHead>Заметка</TableHead><TableHead>Метки</TableHead><TableHead>Связи</TableHead><TableHead>Обновлена</TableHead><TableHead className="w-24"></TableHead></TableRow></TableHeader>
+          <TableBody>
             {notes.map((note) => {
               const snippet = note.content ? note.content.slice(0, 120) + (note.content.length > 120 ? "…" : "") : "";
               return (
-                <tr key={note.id}>
-                  <td>
-                    <div className={styles.titleCell}>{note.title || "Без названия"}</div>
-                    {snippet && <div className={styles.snippet}>{snippet}</div>}
-                  </td>
-                  <td>
-                    <div className={styles.noteLabels}>
-                      {note.labels.length === 0 && <span className={styles.labelName}>—</span>}
-                      {note.labels.map((label) => (
-                        <span
-                          key={label.id}
-                          className={styles.labelBadge}
-                          style={label.color ? { backgroundColor: label.color, color: "#ffffff" } : undefined}
-                        >
-                          {label.name}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td>
-                    {note.relations.length > 0 ? (
-                      <div className={styles.noteLabels}>
-                        {note.relations.map((relation) => {
-                          const label = resolveRelationLabel(relation.entity_type as EntityKind, relation.entity_id) ||
-                            (relation.entity_type === "transaction" ? "Транзакция" : "План");
-                          return (
-                            <span key={`${relation.entity_type}-${relation.entity_id}`} className={styles.labelBadge}>
-                              {label}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <span className={styles.labelName}>—</span>
-                    )}
-                  </td>
-                  <td>{new Date(note.updated_at ?? note.created_at).toLocaleString("ru-RU")}</td>
-                  <td>
-                    <div className={styles.noteActions}>
-                      <button
-                        type="button"
-                        className={styles.iconButton}
-                        onClick={() => openEditEditor(note)}
-                        disabled={isPending}
-                        aria-label="Редактировать"
-                      >
-                        <span className="material-icons" aria-hidden>
-                          edit
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        className={`${styles.iconButton} ${styles.iconButtonDelete}`}
-                        onClick={() => handleDeleteNote(note)}
-                        disabled={isPending}
-                        aria-label="Удалить"
-                      >
-                        <span className="material-icons" aria-hidden>
-                          delete
-                        </span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                <TableRow key={note.id}>
+                  <TableCell><div className="font-medium">{note.title || "Без названия"}</div>{snippet && <div className="text-sm text-muted-foreground mt-1">{snippet}</div>}</TableCell>
+                  <TableCell><div className="flex flex-wrap gap-1">{note.labels.length === 0 && <span className="text-muted-foreground">—</span>}{note.labels.map((lbl) => <Badge key={lbl.id} style={lbl.color ? { backgroundColor: lbl.color } : undefined}>{lbl.name}</Badge>)}</div></TableCell>
+                  <TableCell>{note.relations.length > 0 ? <div className="flex flex-wrap gap-1">{note.relations.map((rel) => <Badge key={`${rel.entity_type}-${rel.entity_id}`} variant="outline">{resolveRelationLabel(rel.entity_type as EntityKind, rel.entity_id) || (rel.entity_type === "transaction" ? "Транзакция" : "План")}</Badge>)}</div> : <span className="text-muted-foreground">—</span>}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{new Date(note.updated_at ?? note.created_at).toLocaleString("ru-RU")}</TableCell>
+                  <TableCell><div className="flex gap-1"><Button variant="ghost" size="icon" onClick={() => openEditEditor(note)} disabled={isPending}><Pencil className="h-4 w-4" /></Button><Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDeleteNote(note)} disabled={isPending}><Trash2 className="h-4 w-4" /></Button></div></TableCell>
+                </TableRow>
               );
             })}
-            {notes.length === 0 && (
-              <tr>
-                <td colSpan={5} className={styles.emptyState}>
-                  Заметок не найдено. Измените фильтры или создайте новую запись.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            {notes.length === 0 && <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Заметок не найдено. Измените фильтры или создайте новую запись.</TableCell></TableRow>}
+          </TableBody>
+        </Table>
       </div>
 
-      <div className={styles.pagination}>
-        <div className={styles.paginationInfo}>
-          Страница {currentPage} из {totalPages} — всего {totalCount}
-        </div>
-        <div className={styles.paginationButtons}>
-          <button
-            type="button"
-            className={styles.paginationButton}
-            onClick={() => navigateWithFilters(Math.max(1, currentPage - 1))}
-            disabled={isPending || currentPage <= 1}
-          >
-            Назад
-          </button>
-          <button
-            type="button"
-            className={styles.paginationButton}
-            onClick={() => navigateWithFilters(Math.min(totalPages, currentPage + 1))}
-            disabled={isPending || currentPage >= totalPages}
-          >
-            Вперёд
-          </button>
-        </div>
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-muted-foreground">Страница {currentPage} из {totalPages} — всего {totalCount}</div>
+        <div className="flex gap-2"><Button variant="outline" onClick={() => navigateWithFilters(Math.max(1, currentPage - 1))} disabled={isPending || currentPage <= 1}>Назад</Button><Button variant="outline" onClick={() => navigateWithFilters(Math.min(totalPages, currentPage + 1))} disabled={isPending || currentPage >= totalPages}>Вперёд</Button></div>
       </div>
 
-      {isEditorOpen && (
-        <div className={styles.modalOverlay} role="dialog" aria-modal="true">
-          <div className={styles.modal}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>
-                {editorMode === "edit" ? "Редактирование заметки" : "Новая заметка"}
-              </h2>
+      <Dialog open={isEditorOpen} onOpenChange={(o) => !o && handleEditorClose()}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{editorMode === "edit" ? "Редактирование заметки" : "Новая заметка"}</DialogTitle></DialogHeader>
+          <form className="space-y-4" onSubmit={handleEditorSubmit}>
+            <div className="space-y-2"><Label htmlFor="note-title">Заголовок</Label><Input id="note-title" value={editorState.title} onChange={(e) => setEditorState((prev) => ({ ...prev, title: e.target.value }))} disabled={isPending} /></div>
+            <div className="space-y-2"><Label htmlFor="note-content">Текст заметки</Label><Textarea id="note-content" value={editorState.content} onChange={(e) => setEditorState((prev) => ({ ...prev, content: e.target.value }))} disabled={isPending} rows={5} /></div>
+            <div className="space-y-2">
+              <Label>Метки</Label>
+              <div className="flex flex-wrap gap-2">
+                {labels.length === 0 && <span className="text-sm text-muted-foreground">Метки отсутствуют</span>}
+                {labels.map((label) => {
+                  const selected = editorState.labelIds.includes(label.id);
+                  return (
+                    <label key={label.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer transition-colors hover:bg-muted" style={label.color ? { backgroundColor: `${label.color}1A`, borderColor: label.color } : undefined}>
+                      <Checkbox checked={selected} onCheckedChange={() => setEditorState((prev) => ({ ...prev, labelIds: selected ? prev.labelIds.filter((id) => id !== label.id) : [...prev.labelIds, label.id] }))} disabled={isPending} />
+                      <span className="text-sm">{label.name}</span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
-            <form className={styles.modalBody} onSubmit={handleEditorSubmit}>
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel} htmlFor="note-title">
-                  Заголовок
-                </label>
-                <input
-                  id="note-title"
-                  className={styles.modalInput}
-                  type="text"
-                  value={editorState.title}
-                  onChange={(event) => setEditorState((prev) => ({ ...prev, title: event.target.value }))}
-                  disabled={isPending}
-                />
-              </div>
-
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel} htmlFor="note-content">
-                  Текст заметки
-                </label>
-                <textarea
-                  id="note-content"
-                  className={styles.modalTextarea}
-                  value={editorState.content}
-                  onChange={(event) => setEditorState((prev) => ({ ...prev, content: event.target.value }))}
-                  disabled={isPending}
-                />
-              </div>
-
-              <div className={styles.modalField}>
-                <span className={styles.modalLabel}>Метки</span>
-                <div className={styles.modalLabels}>
-                  {labels.length === 0 && <span className={styles.labelName}>Метки отсутствуют</span>}
-                  {labels.map((label) => {
-                    const selected = editorState.labelIds.includes(label.id);
-                    const labelStyle = label.color
-                      ? {
-                          backgroundColor: `${label.color}1A`,
-                          borderColor: label.color,
-                        }
-                      : undefined;
-                    return (
-                      <label key={label.id} className={styles.modalLabelItem} style={labelStyle}>
-                        <input
-                          type="checkbox"
-                          checked={selected}
-                          onChange={() => {
-                            setEditorState((prev) => ({
-                              ...prev,
-                              labelIds: selected
-                                ? prev.labelIds.filter((id) => id !== label.id)
-                                : [...prev.labelIds, label.id],
-                            }));
-                          }}
-                          disabled={isPending}
-                        />
-                        <span>{label.name}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {editorError && <div className={styles.errorMessage}>{editorError}</div>}
-
-              {renderRelationsSection()}
-
-              <div className={styles.modalFooter}>
-                <button type="button" className={styles.secondaryButton} onClick={handleEditorClose} disabled={isPending}>
-                  Отмена
-                </button>
-                <button type="submit" className={styles.primaryButton} disabled={isPending}>
-                  {isPending
-                    ? "Сохраняем…"
-                    : editorMode === "edit"
-                    ? "Сохранить изменения"
-                    : "Сохранить"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            {editorError && <div className="text-sm text-destructive">{editorError}</div>}
+            {renderRelationsSection()}
+            <DialogFooter><Button type="button" variant="outline" onClick={handleEditorClose} disabled={isPending}>Отмена</Button><Button type="submit" disabled={isPending}>{isPending ? "Сохраняем…" : editorMode === "edit" ? "Сохранить изменения" : "Сохранить"}</Button></DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import styles from "./ChatSidebar.module.css";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
+import { Plus, ChevronLeft, ChevronRight, Search, X, MessageCircle, Edit, Trash2, Check, RefreshCw, List } from "lucide-react";
 import { getChatsAction, deleteChatAction, updateChatTitleAction } from "./actions";
 import type { AiChat } from "@/lib/ai/chat-types";
 
@@ -206,211 +210,78 @@ export default function ChatSidebar({
   };
 
   return (
-    <div className={`${styles.sidebar} ${isCollapsed ? styles.collapsed : ''}`}>
-      {/* Кнопка сворачивания/разворачивания */}
+    <div className={cn("border-r bg-muted/30 flex flex-col transition-all", isCollapsed ? "w-12" : "w-72")}>
       {onToggleCollapse && (
-        <button
-          className={styles.toggleBtn}
-          onClick={onToggleCollapse}
-          title={isCollapsed ? "Развернуть" : "Свернуть"}
-        >
-          <span className="material-icons">
-            {isCollapsed ? "chevron_right" : "chevron_left"}
-          </span>
-        </button>
+        <Button variant="ghost" size="icon" className="absolute top-2 right-2 z-10" onClick={onToggleCollapse}>
+          {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        </Button>
       )}
 
       {!isCollapsed && (
         <>
-          {/* Заголовок и кнопки */}
-          <div className={styles.header}>
-            <h2 className={styles.title}>Чаты</h2>
-            <div className={styles.headerButtons}>
-          {!isSelectionMode && (
-            <button
-              onClick={onNewChat}
-              className={styles.newChatBtn}
-              title="Новый чат"
-            >
-              <span className="material-icons">add</span>
-            </button>
-          )}
-          <button
-            onClick={toggleSelectionMode}
-            className={`${styles.newChatBtn} ${isSelectionMode ? styles.activeMode : ''}`}
-            title={isSelectionMode ? "Отменить" : "Выбрать"}
-          >
-            <span className="material-icons">
-              {isSelectionMode ? "close" : "checklist"}
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {/* Панель массовых действий */}
-      {isSelectionMode && (
-        <div className={styles.selectionBar}>
-          <div className={styles.selectionInfo}>
-            <span>Выбрано: {selectedChats.size}</span>
-          </div>
-          <div className={styles.selectionActions}>
-            {selectedChats.size === filteredChats.length ? (
-              <button onClick={deselectAll} className={styles.selectBtn}>
-                Снять все
-              </button>
-            ) : (
-              <button onClick={selectAll} className={styles.selectBtn}>
-                Выбрать все
-              </button>
-            )}
-            <button
-              onClick={handleBulkDelete}
-              className={styles.deleteBulkBtn}
-              disabled={selectedChats.size === 0}
-            >
-              <span className="material-icons">delete</span>
-              Удалить ({selectedChats.size})
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Поиск */}
-      <div className={styles.searchBox}>
-        <span className="material-icons" style={{ fontSize: 20 }}>
-          search
-        </span>
-        <input
-          type="text"
-          placeholder="Поиск по чатам..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className={styles.searchInput}
-        />
-        {searchQuery && (
-          <button
-            onClick={() => setSearchQuery("")}
-            className={styles.clearBtn}
-            title="Очистить"
-          >
-            <span className="material-icons" style={{ fontSize: 18 }}>
-              close
-            </span>
-          </button>
-        )}
-      </div>
-
-      {/* Список чатов */}
-      <div className={styles.chatList}>
-        {isLoading ? (
-          <div className={styles.loading}>
-            <span className="material-icons spinning">refresh</span>
-            <p>Загрузка...</p>
-          </div>
-        ) : filteredChats.length === 0 ? (
-          <div className={styles.empty}>
-            <span className="material-icons">chat_bubble_outline</span>
-            <p>
-              {searchQuery ? "Ничего не найдено" : "Нет чатов"}
-            </p>
-          </div>
-        ) : (
-          filteredChats.map((chat) => (
-            <div
-              key={chat.id}
-              className={`${styles.chatItem} ${
-                chat.id === currentChatId && !isSelectionMode ? styles.active : ""
-              } ${selectedChats.has(chat.id) ? styles.selected : ""}`}
-              onClick={() => 
-                isSelectionMode 
-                  ? toggleChatSelection(chat.id) 
-                  : onSelectChat(chat.id)
-              }
-            >
-              {/* Чекбокс в режиме выбора */}
-              {isSelectionMode && (
-                <div className={styles.checkbox}>
-                  <input
-                    type="checkbox"
-                    checked={selectedChats.has(chat.id)}
-                    onChange={() => toggleChatSelection(chat.id)}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </div>
-              )}
-
-              <div className={styles.chatIcon}>
-                <span className="material-icons">chat</span>
-              </div>
-              
-              {/* Название чата - редактируемое или обычное */}
-              {editingChatId === chat.id ? (
-                <div className={styles.chatInfo}>
-                  <input
-                    type="text"
-                    value={editingTitle}
-                    onChange={(e) => setEditingTitle(e.target.value)}
-                    onKeyDown={(e) => handleEditKeyDown(e, chat.id)}
-                    onBlur={() => saveEdit(chat.id)}
-                    className={styles.editInput}
-                    autoFocus
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                  <div className={styles.editButtons}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        saveEdit(chat.id);
-                      }}
-                      className={styles.saveBtn}
-                      title="Сохранить"
-                    >
-                      <span className="material-icons">check</span>
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        cancelEdit();
-                      }}
-                      className={styles.cancelBtn}
-                      title="Отменить"
-                    >
-                      <span className="material-icons">close</span>
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className={styles.chatInfo}>
-                  <div className={styles.chatTitle}>{chat.title}</div>
-                  <div className={styles.chatDate}>
-                    {formatDate(chat.updated_at)}
-                  </div>
-                </div>
-              )}
-
-              {/* Кнопки действий (скрыты в режиме выбора и редактирования) */}
-              {!isSelectionMode && editingChatId !== chat.id && (
-                <div className={styles.chatActions}>
-                  <button
-                    onClick={(e) => startEdit(chat.id, chat.title, e)}
-                    className={styles.editBtn}
-                    title="Редактировать"
-                  >
-                    <span className="material-icons">edit</span>
-                  </button>
-                  <button
-                    onClick={(e) => handleDelete(chat.id, e)}
-                    className={styles.deleteBtn}
-                    title="Удалить чат"
-                  >
-                    <span className="material-icons">delete</span>
-                  </button>
-                </div>
-              )}
+          <div className="p-3 border-b flex items-center justify-between">
+            <h2 className="font-semibold">Чаты</h2>
+            <div className="flex gap-1">
+              {!isSelectionMode && <Button size="icon" variant="ghost" onClick={onNewChat} title="Новый чат"><Plus className="h-4 w-4" /></Button>}
+              <Button size="icon" variant={isSelectionMode ? "secondary" : "ghost"} onClick={toggleSelectionMode} title={isSelectionMode ? "Отменить" : "Выбрать"}>
+                {isSelectionMode ? <X className="h-4 w-4" /> : <List className="h-4 w-4" />}
+              </Button>
             </div>
-          ))
-        )}
-      </div>
+          </div>
+
+          {isSelectionMode && (
+            <div className="p-2 border-b bg-muted/50 flex items-center justify-between text-sm">
+              <span>Выбрано: {selectedChats.size}</span>
+              <div className="flex gap-1">
+                <Button size="sm" variant="ghost" onClick={selectedChats.size === filteredChats.length ? deselectAll : selectAll}>
+                  {selectedChats.size === filteredChats.length ? "Снять" : "Все"}
+                </Button>
+                <Button size="sm" variant="destructive" onClick={handleBulkDelete} disabled={selectedChats.size === 0}>
+                  <Trash2 className="h-4 w-4 mr-1" />{selectedChats.size}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          <div className="p-2 border-b">
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Поиск..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-8 h-8" />
+              {searchQuery && <Button size="icon" variant="ghost" className="absolute right-0 top-0 h-8 w-8" onClick={() => setSearchQuery("")}><X className="h-4 w-4" /></Button>}
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground"><RefreshCw className="h-5 w-5 animate-spin" /><p className="text-sm mt-2">Загрузка...</p></div>
+            ) : filteredChats.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground"><MessageCircle className="h-8 w-8" /><p className="text-sm mt-2">{searchQuery ? "Ничего не найдено" : "Нет чатов"}</p></div>
+            ) : (
+              filteredChats.map((chat) => (
+                <div key={chat.id} className={cn("flex items-center gap-2 p-2 mx-2 my-1 rounded-md cursor-pointer hover:bg-muted group", chat.id === currentChatId && !isSelectionMode && "bg-muted", selectedChats.has(chat.id) && "bg-primary/10")} onClick={() => isSelectionMode ? toggleChatSelection(chat.id) : onSelectChat(chat.id)}>
+                  {isSelectionMode && <Checkbox checked={selectedChats.has(chat.id)} onCheckedChange={() => toggleChatSelection(chat.id)} onClick={(e) => e.stopPropagation()} />}
+                  <MessageCircle className="h-4 w-4 text-muted-foreground shrink-0" />
+                  {editingChatId === chat.id ? (
+                    <div className="flex-1 flex items-center gap-1">
+                      <Input value={editingTitle} onChange={(e) => setEditingTitle(e.target.value)} onKeyDown={(e) => handleEditKeyDown(e, chat.id)} onBlur={() => saveEdit(chat.id)} autoFocus onClick={(e) => e.stopPropagation()} className="h-7 text-sm" />
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); saveEdit(chat.id); }}><Check className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); cancelEdit(); }}><X className="h-4 w-4" /></Button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex-1 min-w-0"><div className="text-sm font-medium truncate">{chat.title}</div><div className="text-xs text-muted-foreground">{formatDate(chat.updated_at)}</div></div>
+                      {!isSelectionMode && (
+                        <div className="opacity-0 group-hover:opacity-100 flex gap-1">
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={(e) => startEdit(chat.id, chat.title, e)}><Edit className="h-3 w-3" /></Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={(e) => handleDelete(chat.id, e)}><Trash2 className="h-3 w-3" /></Button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
         </>
       )}
     </div>

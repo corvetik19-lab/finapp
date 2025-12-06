@@ -4,7 +4,10 @@ import { useState } from 'react';
 import type { Tender, TenderStage, TenderType } from '@/lib/tenders/types';
 import { formatCurrency, daysUntilDeadline } from '@/lib/tenders/types';
 import { TenderViewModal } from './TenderViewModal';
-import styles from './TendersCards.module.css';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Eye, Trash2, User, Clock, FileText } from 'lucide-react';
 
 interface TendersCardsProps {
   tenders: Tender[];
@@ -56,112 +59,99 @@ export function TendersCards({ tenders, stages, types = [], onDelete }: TendersC
     return labels[status];
   };
 
+  const getStatusBadgeClass = (status: Tender['status']) => {
+    switch (status) {
+      case 'won': return 'bg-green-100 text-green-800 border-green-200';
+      case 'lost': return 'bg-red-100 text-red-800 border-red-200';
+      case 'archived': return 'bg-gray-100 text-gray-600 border-gray-200';
+      default: return 'bg-blue-100 text-blue-800 border-blue-200';
+    }
+  };
+
   if (tenders.length === 0) {
     return (
-      <div className={styles.emptyState}>
-        <div className={styles.emptyIcon}>📋</div>
-        <h3>Нет тендеров</h3>
-        <p>Добавьте первый тендер для начала работы</p>
+      <div className="text-center py-12">
+        <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Нет тендеров</h3>
+        <p className="text-gray-500">Добавьте первый тендер для начала работы</p>
       </div>
     );
   }
 
   return (
-    <div className={styles.cardsGrid}>
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {tenders.map((tender) => {
-        const daysLeft = tender.submission_deadline 
-          ? daysUntilDeadline(tender.submission_deadline)
-          : null;
+        const daysLeft = tender.submission_deadline ? daysUntilDeadline(tender.submission_deadline) : null;
         const isUrgent = daysLeft !== null && daysLeft >= 0 && daysLeft <= 3;
         const isWarning = daysLeft !== null && daysLeft > 3 && daysLeft <= 7;
 
         return (
-          <div key={tender.id} className={`${styles.card} ${tender.status === 'won' ? styles.cardWon : ''}`}>
-            <div className={styles.cardHeader}>
-              <div className={styles.cardNumber}>№ {tender.purchase_number || 'Без номера'}</div>
-              <div className={styles.cardStatus}>
-                <span className={`${styles.statusBadge} ${styles[`status${tender.status}`]}`}>
+          <Card key={tender.id} className={`hover:shadow-md transition-shadow ${tender.status === 'won' ? 'border-green-200 bg-green-50/30' : ''}`}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm text-gray-500">№ {tender.purchase_number || 'Без номера'}</span>
+                <Badge variant="outline" className={getStatusBadgeClass(tender.status)}>
                   {getStatusLabel(tender.status)}
-                </span>
+                </Badge>
               </div>
-            </div>
 
-            <div className={styles.cardLink} onClick={() => setViewTenderId(tender.id)} style={{ cursor: 'pointer' }}>
-              <h3 className={styles.cardTitle}>{tender.subject}</h3>
-            </div>
+              <h3 
+                className="font-medium text-gray-900 mb-2 line-clamp-2 cursor-pointer hover:text-blue-600"
+                onClick={() => setViewTenderId(tender.id)}
+              >
+                {tender.subject}
+              </h3>
 
-            <div className={styles.cardCustomer}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-              </svg>
-              <span>{tender.customer}</span>
-            </div>
-
-            <div className={styles.cardInfo}>
-              <div className={styles.cardInfoItem}>
-                <span className={styles.cardInfoLabel}>НМЦК:</span>
-                <span className={styles.cardInfoValue}>{formatCurrency(tender.nmck / 100)}</span>
+              <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
+                <User className="h-4 w-4" />
+                <span className="truncate">{tender.customer}</span>
               </div>
-              <div className={styles.cardInfoItem}>
-                <span className={styles.cardInfoLabel}>Тип закупки:</span>
-                <span className={styles.cardInfoValue}>{getTypeName(tender)}</span>
-              </div>
-              <div className={styles.cardInfoItem}>
-                <span className={styles.cardInfoLabel}>Этап:</span>
-                <span className={styles.cardInfoValue}>{getStageName(tender)}</span>
-              </div>
-            </div>
 
-            {tender.submission_deadline && (
-              <div className={styles.cardDeadline}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <polyline points="12 6 12 12 16 14"/>
-                </svg>
-                <span>Дедлайн: {formatDate(tender.submission_deadline)}</span>
-                {daysLeft !== null && daysLeft >= 0 && (
-                  <span className={`${styles.daysLeft} ${isUrgent ? styles.urgent : isWarning ? styles.warning : ''}`}>
-                    {daysLeft === 0 ? 'Сегодня' : `${daysLeft}д`}
-                  </span>
+              <div className="space-y-1 text-sm mb-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">НМЦК:</span>
+                  <span className="font-medium text-blue-600">{formatCurrency(tender.nmck / 100)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Тип:</span>
+                  <span>{getTypeName(tender)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Этап:</span>
+                  <span>{getStageName(tender)}</span>
+                </div>
+              </div>
+
+              {tender.submission_deadline && (
+                <div className="flex items-center gap-2 text-sm mb-3 p-2 bg-gray-50 rounded">
+                  <Clock className="h-4 w-4 text-gray-400" />
+                  <span>Дедлайн: {formatDate(tender.submission_deadline)}</span>
+                  {daysLeft !== null && daysLeft >= 0 && (
+                    <Badge variant="outline" className={isUrgent ? 'bg-red-100 text-red-800' : isWarning ? 'bg-yellow-100 text-yellow-800' : ''}>
+                      {daysLeft === 0 ? 'Сегодня' : `${daysLeft}д`}
+                    </Badge>
+                  )}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2 border-t">
+                <Button variant="ghost" size="sm" className="flex-1" onClick={() => setViewTenderId(tender.id)}>
+                  <Eye className="h-4 w-4 mr-1" />
+                  Просмотр
+                </Button>
+                {onDelete && (
+                  <Button variant="ghost" size="sm" onClick={() => onDelete(tender.id)}>
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                  </Button>
                 )}
               </div>
-            )}
-
-            <div className={styles.cardActions}>
-              <button
-                onClick={() => setViewTenderId(tender.id)}
-                className={styles.cardActionButton}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-                Просмотр
-              </button>
-              {onDelete && (
-                <button
-                  onClick={() => onDelete(tender.id)}
-                  className={styles.cardActionButtonDanger}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="3 6 5 6 21 6"/>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                  </svg>
-                  Удалить
-                </button>
-              )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         );
       })}
 
-      {/* Модалка просмотра тендера */}
       {viewTenderId && (
-        <TenderViewModal
-          tenderId={viewTenderId}
-          onClose={() => setViewTenderId(null)}
-        />
+        <TenderViewModal tenderId={viewTenderId} onClose={() => setViewTenderId(null)} />
       )}
     </div>
   );

@@ -5,7 +5,56 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { getModeConfig } from "@/lib/platform/mode-registry";
 import { usePermissions } from "@/lib/auth/use-permissions";
-import styles from "./ModeSidebar.module.css";
+import { cn } from "@/lib/utils";
+import { ChevronDown, ChevronUp, ShieldCheck, LayoutDashboard, Receipt, PieChart, CreditCard, Landmark, Banknote, BarChart3, TrendingUp, FileText, Trophy, Brain, MessageCircle, Lightbulb, LineChart, Bell, Settings, Briefcase, Package, Calendar, ListTodo, Flag, Bookmark, Dumbbell, StickyNote, Gavel, Truck, Users, Book, Building, MapPin, Tag, Wallet, type LucideIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  insights: LayoutDashboard,
+  receipt_long: Receipt,
+  receipt: Receipt,
+  pie_chart: PieChart,
+  credit_card: CreditCard,
+  payment: Banknote,
+  account_balance: Landmark,
+  assessment: BarChart3,
+  bar_chart: BarChart3,
+  analytics: LineChart,
+  trending_up: TrendingUp,
+  description: FileText,
+  emoji_events: Trophy,
+  psychology: Brain,
+  chat: MessageCircle,
+  lightbulb: Lightbulb,
+  auto_graph: LineChart,
+  notifications_active: Bell,
+  tune: Settings,
+  settings: Settings,
+  dashboard: LayoutDashboard,
+  work: Briefcase,
+  inventory_2: Package,
+  inventory: Package,
+  calendar_month: Calendar,
+  task: ListTodo,
+  flag: Flag,
+  bookmark: Bookmark,
+  fitness_center: Dumbbell,
+  sticky_note_2: StickyNote,
+  gavel: Gavel,
+  local_shipping: Truck,
+  people: Users,
+  menu_book: Book,
+  business_center: Building,
+  storefront: Building,
+  location_on: MapPin,
+  category: Tag,
+  card_membership: CreditCard,
+  account_balance_wallet: Wallet,
+  verified_user: ShieldCheck,
+  person: Users,
+  arrow_downward: TrendingUp,
+  arrow_upward: TrendingUp,
+};
 
 interface MenuItem {
   key: string;
@@ -122,8 +171,7 @@ const MODE_MENUS: ModeMenuConfig = {
         { key: 'dict-types', label: 'Типы тендеров', icon: 'category', href: '/tenders/dictionaries/types' },
       ]
     },
-    { key: 'subscription', label: 'Подписка', icon: 'card_membership', href: '/tenders/settings/subscription' },
-    { key: 'settings', label: 'Настройки', icon: 'settings', href: '/tenders/settings' },
+    { key: 'settings', label: 'Настройки тендеров', icon: 'settings', href: '/tenders/settings' },
   ],
 };
 
@@ -189,35 +237,14 @@ export default function ModeSidebar() {
     if (hasChildren) {
       return (
         <div key={item.key}>
-          <button
-            onClick={() => toggleExpand(item.key)}
-            className={`${styles.modeNavItem} ${isActive ? styles.modeNavItemActive : ''}`}
-          >
-            <span className="material-icons">{item.icon}</span>
-            <span>{item.label}</span>
-            <span className="material-icons" style={{ marginLeft: 'auto' }}>
-              {isExpanded ? 'expand_less' : 'expand_more'}
-            </span>
-          </button>
-          {isExpanded && (
-            <div className={styles.modeNavSubmenu}>
-              {item.children!.map(child => renderMenuItem(child, level + 1))}
-            </div>
-          )}
+          <Button variant="ghost" onClick={() => toggleExpand(item.key)} className={cn("w-full justify-start gap-3 px-3 py-2 h-auto text-sm", isActive ? "bg-primary text-primary-foreground hover:bg-primary/90" : "")}>
+            {(() => { const Icon = ICON_MAP[item.icon] || Settings; return <Icon className="h-5 w-5" />; })()}<span className="flex-1 text-left">{item.label}</span>{isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+          {isExpanded && <div className="ml-4 mt-1 space-y-1">{item.children!.map(child => renderMenuItem(child, level + 1))}</div>}
         </div>
       );
     }
-
-    return (
-      <Link
-        key={item.key}
-        href={item.href!}
-        className={`${styles.modeNavItem} ${isActive ? styles.modeNavItemActive : ''}`}
-      >
-        <span className="material-icons">{item.icon}</span>
-        <span>{item.label}</span>
-      </Link>
-    );
+    return <Link key={item.key} href={item.href!} className={cn("flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors", isActive ? "bg-primary text-primary-foreground" : "hover:bg-muted")}>{(() => { const Icon = ICON_MAP[item.icon] || Settings; return <Icon className="h-5 w-5" />; })()}<span>{item.label}</span></Link>;
   };
 
   if (loading || !modeConfig || menuItems.length === 0) {
@@ -238,37 +265,14 @@ export default function ModeSidebar() {
   */
 
   return (
-    <aside className={styles.modeSidebar}>
-      {/* Mode Header */}
-      <div className={styles.modeHeader}>
-        <span
-          className="material-icons"
-          style={{ color: modeConfig.color }}
-        >
-          {modeConfig.icon}
-        </span>
-        <div className={styles.modeInfo}>
-          <div className={styles.modeName}>{modeConfig.name}</div>
-          <div className={styles.modeDescription}>{modeConfig.description}</div>
-        </div>
+    <aside className="fixed left-0 top-16 z-30 hidden md:flex flex-col w-64 h-[calc(100vh-4rem)] bg-card border-r">
+      <div className="flex items-center gap-3 p-4 border-b">
+        {(() => { const Icon = ICON_MAP[modeConfig.icon] || Settings; return <Icon className="h-6 w-6" style={{ color: modeConfig.color }} />; })()}
+        <div><div className="font-semibold">{modeConfig.name}</div><div className="text-xs text-muted-foreground">{modeConfig.description}</div></div>
       </div>
-
-      {/* Mode Menu */}
-      <nav className={styles.modeNav}>
-        {menuItems.map(item => renderMenuItem(item))}
-      </nav>
-
-      {/* Admin Link (Bottom) */}
+      <nav className="flex-1 overflow-y-auto p-2 space-y-1">{menuItems.map(item => renderMenuItem(item))}</nav>
       {isAdmin && (
-        <div className="mt-auto p-4 border-t border-slate-100">
-          <Link
-            href="/admin/users"
-            className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
-          >
-            <span className="material-icons text-slate-400">admin_panel_settings</span>
-            <span>Администрирование</span>
-          </Link>
-        </div>
+        <div className="p-4 border-t"><Link href="/admin/users" className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted rounded-lg transition-colors"><ShieldCheck className="h-5 w-5" /><span>Администрирование</span></Link></div>
       )}
     </aside>
   );

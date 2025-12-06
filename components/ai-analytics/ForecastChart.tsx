@@ -2,23 +2,14 @@
 
 import { useEffect, useRef } from "react";
 import { Chart, ChartConfiguration } from "chart.js/auto";
-import styles from "./ForecastChart.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { TrendingUp } from "lucide-react";
 
-type ForecastMonth = {
-  month: string;
-  predictedIncome: number;
-  predictedExpenses: number;
-  confidence: number;
-};
-
-type ForecastData = {
-  nextMonths: ForecastMonth[];
-  summary: string;
-};
-
-type Props = {
-  forecast: ForecastData;
-};
+type ForecastMonth = { month: string; predictedIncome: number; predictedExpenses: number; confidence: number; };
+type ForecastData = { nextMonths: ForecastMonth[]; summary: string; };
+type Props = { forecast: ForecastData; };
 
 export default function ForecastChart({ forecast }: Props) {
   const chartRef = useRef<HTMLCanvasElement>(null);
@@ -143,61 +134,27 @@ export default function ForecastChart({ forecast }: Props) {
 
   if (!forecast.nextMonths.length) {
     return (
-      <div className={styles.card}>
-        <div className={styles.header}>
-          <h3 className={styles.title}>
-            <span className={styles.icon}>📈</span>
-            Прогноз на будущее
-          </h3>
-        </div>
-        <div className={styles.emptyState}>
-          <p>Недостаточно данных для построения прогноза</p>
-        </div>
-      </div>
+      <Card>
+        <CardHeader><CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5" />Прогноз на будущее</CardTitle></CardHeader>
+        <CardContent className="text-center py-8 text-muted-foreground">Недостаточно данных для построения прогноза</CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className={styles.card}>
-      <div className={styles.header}>
-        <h3 className={styles.title}>
-          <span className={styles.icon}>📈</span>
-          AI Прогноз на следующие месяцы
-        </h3>
-      </div>
-
-      {forecast.summary && (
-        <div className={styles.summary}>
-          <p>{forecast.summary}</p>
+    <Card>
+      <CardHeader><CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5" />AI Прогноз на следующие месяцы</CardTitle></CardHeader>
+      <CardContent className="space-y-4">
+        {forecast.summary && <p className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-lg">{forecast.summary}</p>}
+        <div className="h-64"><canvas ref={chartRef}></canvas></div>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm"><span className="w-8 border-t-2 border-dashed border-green-500" /><span className="text-muted-foreground">Пунктирная линия = Прогноз AI</span></div>
+          <div className="flex flex-wrap gap-2">{forecast.nextMonths.map((month, i) => (
+            <Badge key={i} variant="outline" className={cn(month.confidence >= 80 ? "border-green-500" : month.confidence >= 60 ? "border-yellow-500" : "border-red-500")}>{month.month}: {month.confidence}%</Badge>
+          ))}</div>
         </div>
-      )}
-
-      <div className={styles.chartContainer}>
-        <canvas ref={chartRef}></canvas>
-      </div>
-
-      <div className={styles.legend}>
-        <div className={styles.legendItem}>
-          <span className={styles.dashedLine} style={{ borderColor: "rgb(34, 197, 94)" }}></span>
-          <span>Пунктирная линия = Прогноз AI</span>
-        </div>
-        <div className={styles.confidenceBadges}>
-          {forecast.nextMonths.map((month, i) => (
-            <div key={i} className={styles.confidenceBadge}>
-              <span className={styles.monthName}>{month.month}</span>
-              <span className={`${styles.confidence} ${getConfidenceClass(month.confidence)}`}>
-                {month.confidence}% уверенности
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
-function getConfidenceClass(confidence: number): string {
-  if (confidence >= 80) return "high";
-  if (confidence >= 60) return "medium";
-  return "low";
-}

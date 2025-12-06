@@ -1,55 +1,28 @@
 "use client";
 
-import styles from "./FinanceModeSettings.module.css";
 import type { FinanceSettings } from "@/types/settings";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Clock } from "lucide-react";
 
 interface InvestmentsModeSettingsProps {
   settings?: FinanceSettings | null;
 }
 
 export default function InvestmentsModeSettings({ settings }: InvestmentsModeSettingsProps) {
-  const plannedFeatures = [
-    "Брокерские счета",
-    "Типы активов",
-    "Стратегии",
-    "Портфель",
-  ];
+  const plannedFeatures = ["Брокерские счета", "Типы активов", "Стратегии", "Портфель"];
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>Настройки режима &quot;Инвестиции&quot;</h1>
-          <p className={styles.subtitle}>Параметры для управления инвестиционным портфелем</p>
+    <div className="p-6 space-y-6">
+      <div><h1 className="text-2xl font-bold">Настройки режима «Инвестиции»</h1><p className="text-muted-foreground">Параметры для управления инвестиционным портфелем</p></div>
+
+      <Card><CardHeader><CardTitle>Режим в разработке</CardTitle></CardHeader><CardContent>
+        <p className="text-muted-foreground mb-4">Настройки режима «Инвестиции» будут доступны после завершения разработки.</p>
+        <div className="grid grid-cols-2 gap-3">
+          {plannedFeatures.map((feature) => <div key={feature} className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30"><Clock className="h-4 w-4 text-yellow-500" /><span>{feature}</span></div>)}
         </div>
-      </div>
+      </CardContent></Card>
 
-      <div className={styles.content}>
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Режим в разработке</h2>
-          <p className={styles.sectionDesc}>
-            Настройки режима &quot;Инвестиции&quot; будут доступны после завершения разработки функционала.
-          </p>
-
-          <div className={styles.featureGrid}>
-            {plannedFeatures.map((feature) => (
-              <div key={feature} className={styles.featureCard}>
-                <span className="material-icons" style={{ color: "#f59e0b" }}>schedule</span>
-                <span>{feature}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {settings ? (
-          <section className={styles.section}>
-            <h3 className={styles.sectionTitle}>Текущее состояние</h3>
-            <p className={styles.sectionDesc}>
-              Базовые настройки сохранены, но функционал будет доступен после завершения разработки.
-            </p>
-          </section>
-        ) : null}
-      </div>
+      {settings && <Card><CardHeader><CardTitle>Текущее состояние</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">Базовые настройки сохранены.</p></CardContent></Card>}
     </div>
   );
 }

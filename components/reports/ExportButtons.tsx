@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import styles from "./Reports.module.css";
+import { Button } from "@/components/ui/button";
+import { FileText, Table, Loader2 } from "lucide-react";
 
 interface ExportButtonsProps {
   startDate?: string;
@@ -72,44 +73,13 @@ export default function ExportButtons({ startDate, endDate }: ExportButtonsProps
   };
 
   return (
-    <div className={styles.exportButtons}>
-      <button
-        onClick={handleExportPdf}
-        disabled={loadingPdf}
-        className={styles.exportButton}
-        title="Экспорт в PDF"
-      >
-        {loadingPdf ? (
-          <>
-            <span className={styles.spinner}></span>
-            Генерация PDF...
-          </>
-        ) : (
-          <>
-            <span className="material-icons">picture_as_pdf</span>
-            PDF
-          </>
-        )}
-      </button>
-
-      <button
-        onClick={handleExportExcel}
-        disabled={loadingExcel}
-        className={`${styles.exportButton} ${styles.exportButtonExcel}`}
-        title="Экспорт в Excel"
-      >
-        {loadingExcel ? (
-          <>
-            <span className={styles.spinner}></span>
-            Генерация Excel...
-          </>
-        ) : (
-          <>
-            <span className="material-icons">table_chart</span>
-            Excel
-          </>
-        )}
-      </button>
+    <div className="flex gap-2">
+      <Button variant="outline" onClick={handleExportPdf} disabled={loadingPdf}>
+        {loadingPdf ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />PDF...</> : <><FileText className="h-4 w-4 mr-1" />PDF</>}
+      </Button>
+      <Button variant="outline" onClick={handleExportExcel} disabled={loadingExcel}>
+        {loadingExcel ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Excel...</> : <><Table className="h-4 w-4 mr-1" />Excel</>}
+      </Button>
     </div>
   );
 }

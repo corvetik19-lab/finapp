@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import styles from "./CreditCardsPageClient.module.css";
 import CreditCardsList, { type CreditCard } from "./CreditCardsList";
 import CreditCardDetails from "./CreditCardDetails";
 import CreateCreditCardModal from "./CreateCreditCardModal";
 import CreditCardTransactionsModal from "./CreditCardTransactionsModal";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus } from "lucide-react";
+import { useToast } from "@/components/toast/ToastContext";
 
 export type CreditCardsPageClientProps = {
   initialCards: CreditCard[];
@@ -14,6 +17,7 @@ export type CreditCardsPageClientProps = {
 
 export default function CreditCardsPageClient({ initialCards }: CreditCardsPageClientProps) {
   const router = useRouter();
+  const toast = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -24,6 +28,7 @@ export default function CreditCardsPageClient({ initialCards }: CreditCardsPageC
 
   const handleCreateCard = () => {
     setIsModalOpen(false);
+    toast.show(editingCard ? "Карта обновлена" : "Карта добавлена", { type: "success" });
     setEditingCard(null);
     router.refresh();
   };
@@ -44,10 +49,11 @@ export default function CreditCardsPageClient({ initialCards }: CreditCardsPageC
         throw new Error("Ошибка при удалении карты");
       }
 
+      toast.show("Карта удалена", { type: "success" });
       router.refresh();
     } catch (error) {
       console.error("Delete error:", error);
-      alert(error instanceof Error ? error.message : "Ошибка при удалении карты");
+      toast.show(error instanceof Error ? error.message : "Ошибка при удалении карты", { type: "error" });
     } finally {
       setIsDeleting(false);
     }
@@ -59,49 +65,29 @@ export default function CreditCardsPageClient({ initialCards }: CreditCardsPageC
   };
 
   return (
-    <div className={styles.wrapper}>
-      <header className={styles.header}>
-        <div className={styles.titleGroup}>
-          <h1 className={styles.title}>Кредитные карты</h1>
-          <p className={styles.subtitle}>Управление кредитными картами и задолженностью</p>
-        </div>
-        <button className={styles.addButton} onClick={() => setIsModalOpen(true)} disabled={isDeleting}>
-          <span className="material-icons" aria-hidden>
-            add
-          </span>
-          Добавить карту
-        </button>
-      </header>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div><h1 className="text-2xl font-bold">Кредитные карты</h1><p className="text-muted-foreground">Управление кредитными картами и задолженностью</p></div>
+        <Button onClick={() => setIsModalOpen(true)} disabled={isDeleting}><Plus className="h-4 w-4 mr-1" />Добавить карту</Button>
+      </div>
 
-      <CreditCardsList
-        cards={initialCards}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onCardClick={(card) => setTransactionsModalCard(card)}
-      />
+      <CreditCardsList cards={initialCards} onEdit={handleEdit} onDelete={handleDelete} onCardClick={(card) => setTransactionsModalCard(card)} />
 
       {initialCards.length > 0 && selectedCard && (
-        <>
-          <div className={styles.cardSelector}>
-            <label htmlFor="cardSelector" className={styles.cardSelectorLabel}>
-              Выберите карту:
-            </label>
-            <select
-              id="cardSelector"
-              className={styles.cardSelectorSelect}
-              value={selectedCardId}
-              onChange={(e) => setSelectedCardId(e.target.value)}
-            >
-              {initialCards.map((card) => (
-                <option key={card.id} value={card.id}>
-                  🏦 {card.bank} {card.cardNumberLast4 ? `•••• ${card.cardNumberLast4}` : ""}
-                </option>
-              ))}
-            </select>
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium">Выберите карту:</span>
+            <Select value={selectedCardId} onValueChange={setSelectedCardId}>
+              <SelectTrigger className="w-[280px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {initialCards.map((card) => (
+                  <SelectItem key={card.id} value={card.id}>🏦 {card.bank} {card.cardNumberLast4 ? `•••• ${card.cardNumberLast4}` : ""}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-
           <CreditCardDetails card={selectedCard} />
-        </>
+        </div>
       )}
 
       <CreateCreditCardModal

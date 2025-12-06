@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import styles from "./styles.module.css";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 
 interface EmailPreferences {
   budget_alerts_enabled: boolean;
@@ -88,103 +92,97 @@ export default function EmailSettingsPage() {
 
   if (loading) {
     return (
-      <div className={styles.container}>
-        <div className={styles.loading}>Загрузка настроек...</div>
+      <div className="max-w-2xl mx-auto p-6">
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <span className="ml-2 text-muted-foreground">Загрузка настроек...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>📧 Настройки Email Уведомлений</h1>
-        <p className={styles.subtitle}>
+    <div className="max-w-2xl mx-auto p-6 space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold">📧 Настройки Email Уведомлений</h1>
+        <p className="text-muted-foreground">
           Управляйте типами уведомлений, которые вы хотите получать на email
         </p>
       </div>
 
       {message && (
-        <div className={`${styles.message} ${styles[message.type]}`}>
+        <div className={cn(
+          "p-4 rounded-lg",
+          message.type === "success" ? "bg-green-50 text-green-800 border border-green-200" : "bg-red-50 text-red-800 border border-red-200"
+        )}>
           {message.text}
         </div>
       )}
 
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Типы уведомлений</h2>
+      <div className="bg-card rounded-lg border p-6 space-y-4">
+        <h2 className="text-lg font-semibold">Типы уведомлений</h2>
 
         {/* Бюджетные алерты */}
-        <div className={styles.setting}>
-          <div className={styles.settingInfo}>
-            <div className={styles.settingIcon}>💰</div>
+        <div className="flex items-center justify-between py-3 border-b">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">💰</span>
             <div>
-              <h3 className={styles.settingLabel}>Превышение бюджета</h3>
-              <p className={styles.settingDescription}>
+              <h3 className="font-medium">Превышение бюджета</h3>
+              <p className="text-sm text-muted-foreground">
                 Получать уведомления когда расходы достигают 80% от бюджета
               </p>
             </div>
           </div>
-          <label className={styles.switch}>
-            <input
-              type="checkbox"
-              checked={preferences.budget_alerts_enabled}
-              onChange={(e) => updatePreference("budget_alerts_enabled", e.target.checked)}
-            />
-            <span className={styles.slider}></span>
-          </label>
+          <Switch
+            checked={preferences.budget_alerts_enabled}
+            onCheckedChange={(checked) => updatePreference("budget_alerts_enabled", checked)}
+          />
         </div>
 
         {/* Алерты крупных транзакций */}
-        <div className={styles.setting}>
-          <div className={styles.settingInfo}>
-            <div className={styles.settingIcon}>💸</div>
+        <div className="flex items-center justify-between py-3 border-b">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">💸</span>
             <div>
-              <h3 className={styles.settingLabel}>Крупные транзакции</h3>
-              <p className={styles.settingDescription}>
+              <h3 className="font-medium">Крупные транзакции</h3>
+              <p className="text-sm text-muted-foreground">
                 Получать уведомления о необычно крупных тратах
               </p>
             </div>
           </div>
-          <label className={styles.switch}>
-            <input
-              type="checkbox"
-              checked={preferences.transaction_alerts_enabled}
-              onChange={(e) => updatePreference("transaction_alerts_enabled", e.target.checked)}
-            />
-            <span className={styles.slider}></span>
-          </label>
+          <Switch
+            checked={preferences.transaction_alerts_enabled}
+            onCheckedChange={(checked) => updatePreference("transaction_alerts_enabled", checked)}
+          />
         </div>
 
         {/* Еженедельная сводка */}
-        <div className={styles.setting}>
-          <div className={styles.settingInfo}>
-            <div className={styles.settingIcon}>📊</div>
+        <div className="flex items-center justify-between py-3">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📊</span>
             <div>
-              <h3 className={styles.settingLabel}>Еженедельная сводка</h3>
-              <p className={styles.settingDescription}>
+              <h3 className="font-medium">Еженедельная сводка</h3>
+              <p className="text-sm text-muted-foreground">
                 Получать финансовый отчёт за неделю
               </p>
             </div>
           </div>
-          <label className={styles.switch}>
-            <input
-              type="checkbox"
-              checked={preferences.weekly_summary_enabled}
-              onChange={(e) => updatePreference("weekly_summary_enabled", e.target.checked)}
-            />
-            <span className={styles.slider}></span>
-          </label>
+          <Switch
+            checked={preferences.weekly_summary_enabled}
+            onCheckedChange={(checked) => updatePreference("weekly_summary_enabled", checked)}
+          />
         </div>
 
         {/* Настройки еженедельной сводки */}
         {preferences.weekly_summary_enabled && (
-          <div className={styles.subsection}>
-            <div className={styles.subsectionTitle}>Расписание еженедельной сводки</div>
+          <div className="bg-muted/50 rounded-lg p-4 mt-4 space-y-4">
+            <div className="text-sm font-medium">Расписание еженедельной сводки</div>
             
-            <div className={styles.row}>
-              <div className={styles.field}>
-                <label className={styles.fieldLabel}>День недели</label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">День недели</label>
                 <select
-                  className={styles.select}
+                  className="w-full h-10 px-3 rounded-md border bg-background"
                   value={preferences.weekly_summary_day}
                   onChange={(e) => updatePreference("weekly_summary_day", parseInt(e.target.value))}
                 >
@@ -196,11 +194,10 @@ export default function EmailSettingsPage() {
                 </select>
               </div>
 
-              <div className={styles.field}>
-                <label className={styles.fieldLabel}>Время</label>
-                <input
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Время</label>
+                <Input
                   type="time"
-                  className={styles.input}
                   value={preferences.weekly_summary_time}
                   onChange={(e) => updatePreference("weekly_summary_time", e.target.value)}
                 />
@@ -211,19 +208,18 @@ export default function EmailSettingsPage() {
       </div>
 
       {/* Кастомный email (опционально) */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Дополнительно</h2>
+      <div className="bg-card rounded-lg border p-6 space-y-4">
+        <h2 className="text-lg font-semibold">Дополнительно</h2>
         
-        <div className={styles.field}>
-          <label className={styles.fieldLabel}>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">
             Альтернативный email адрес (необязательно)
           </label>
-          <p className={styles.fieldHint}>
+          <p className="text-sm text-muted-foreground">
             По умолчанию уведомления отправляются на ваш основной email
           </p>
-          <input
+          <Input
             type="email"
-            className={styles.input}
             placeholder="your.email@example.com"
             value={preferences.custom_email || ""}
             onChange={(e) => updatePreference("custom_email", e.target.value || null)}
@@ -232,25 +228,22 @@ export default function EmailSettingsPage() {
       </div>
 
       {/* Кнопка сохранения */}
-      <div className={styles.actions}>
-        <button
-          className={styles.saveButton}
-          onClick={savePreferences}
-          disabled={saving}
-        >
+      <div className="flex justify-end">
+        <Button onClick={savePreferences} disabled={saving}>
+          {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {saving ? "Сохранение..." : "Сохранить настройки"}
-        </button>
+        </Button>
       </div>
 
       {/* Информация */}
-      <div className={styles.info}>
-        <div className={styles.infoIcon}>ℹ️</div>
-        <div>
-          <p className={styles.infoText}>
+      <div className="flex gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <span className="text-xl">ℹ️</span>
+        <div className="text-sm">
+          <p>
             <strong>Важно:</strong> Для отправки email уведомлений убедитесь, что в настройках проекта указан ключ Resend API.
           </p>
-          <p className={styles.infoText}>
-            Подробнее: <code>docs/EMAIL_SETUP.md</code>
+          <p className="text-muted-foreground mt-1">
+            Подробнее: <code className="bg-muted px-1 rounded">docs/EMAIL_SETUP.md</code>
           </p>
         </div>
       </div>

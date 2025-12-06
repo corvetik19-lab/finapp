@@ -1,6 +1,7 @@
 import { createRSCClient } from "@/lib/supabase/helpers";
-import styles from "@/components/dashboard/Dashboard.module.css";
 import { formatMoney } from "@/lib/utils/format";
+import { Card, CardContent } from "@/components/ui/card";
+import { Wallet, TrendingUp, TrendingDown } from "lucide-react";
 import { loadDashboardOverview } from "@/lib/dashboard/service";
 import { listBudgetsWithUsage } from "@/lib/budgets/service";
 import { listExpenseCategories } from "@/lib/categories/service";
@@ -323,23 +324,48 @@ export default async function DashboardPage() {
 
   return (
     <DashboardClient widgetVisibility={widgetVisibility}>
-      <section className={styles.summaryGrid} data-tour="dashboard-summary">
-        <div className={styles.card}>
-          <div className={`${styles.cardIcon} balance`}><span className="material-icons">account_balance_wallet</span></div>
-          <div className={styles.cardTitle}>Итог месяца</div>
-          <div className={styles.cardValue}>{formatMoney(Math.round(overview.net * 100), overview.currency)}</div>
-        </div>
-        <div className={styles.card}>
-          <div className={`${styles.cardIcon} income`}><span className="material-icons">trending_up</span></div>
-          <div className={styles.cardTitle}>Доходы (месяц)</div>
-          <div className={styles.cardValue}>{formatMoney(Math.round(overview.topIncome * 100), overview.currency)}</div>
-        </div>
-        <div className={styles.card}>
-          <div className={`${styles.cardIcon} expense`}><span className="material-icons">trending_down</span></div>
-          <div className={styles.cardTitle}>Расходы (месяц)</div>
-          <div className={styles.cardValue}>{formatMoney(Math.round(overview.topExpense * 100), overview.currency)}</div>
-        </div>
-      </section>
+      {/* Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-3" data-tour="dashboard-summary">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                <Wallet className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Итог месяца</p>
+                <p className="text-2xl font-bold">{formatMoney(Math.round(overview.net * 100), overview.currency)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-100 text-green-600">
+                <TrendingUp className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Доходы (месяц)</p>
+                <p className="text-2xl font-bold text-green-600">{formatMoney(Math.round(overview.topIncome * 100), overview.currency)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-red-100 text-red-600">
+                <TrendingDown className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Расходы (месяц)</p>
+                <p className="text-2xl font-bold text-red-600">{formatMoney(Math.round(overview.topExpense * 100), overview.currency)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Рендерим виджеты в порядке из настроек */}
       {widgetOrder.map((widgetId: string) => widgetComponents[widgetId]).filter(Boolean)}

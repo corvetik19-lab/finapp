@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import styles from "./Fitness.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Dumbbell, ListChecks, History, TrendingUp, Flag, Calendar, Trash2, Edit, Loader2 } from "lucide-react";
 import {
   getWorkoutPrograms,
   getExercises,
@@ -129,202 +133,67 @@ export default function FitnessPage() {
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>Фитнес</h1>
-        <p className={styles.subtitle}>
-          Программы тренировок, упражнения и отслеживание прогресса
-        </p>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div><h1 className="text-2xl font-bold">Фитнес</h1><p className="text-muted-foreground">Программы тренировок и прогресс</p></div>
+        <Button onClick={() => activeTab === "programs" ? handleCreateProgram() : handleCreateExercise()}><Plus className="h-4 w-4 mr-1" />Добавить</Button>
       </div>
 
-      <div className={styles.tabs}>
-        <button
-          className={`${styles.tab} ${activeTab === "programs" ? styles.tabActive : ""}`}
-          onClick={() => setActiveTab("programs")}
-        >
-          Программы
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === "exercises" ? styles.tabActive : ""}`}
-          onClick={() => setActiveTab("exercises")}
-        >
-          Упражнения
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === "history" ? styles.tabActive : ""}`}
-          onClick={() => setActiveTab("history")}
-        >
-          История
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === "progress" ? styles.tabActive : ""}`}
-          onClick={() => setActiveTab("progress")}
-        >
-          Прогресс
-        </button>
-      </div>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)}>
+        <TabsList>
+          <TabsTrigger value="programs"><Dumbbell className="h-4 w-4 mr-1" />Программы</TabsTrigger>
+          <TabsTrigger value="exercises"><ListChecks className="h-4 w-4 mr-1" />Упражнения</TabsTrigger>
+          <TabsTrigger value="history"><History className="h-4 w-4 mr-1" />История</TabsTrigger>
+          <TabsTrigger value="progress"><TrendingUp className="h-4 w-4 mr-1" />Прогресс</TabsTrigger>
+        </TabsList>
 
-      {loading ? (
-        <div className={styles.emptyState}>
-          <p>Загрузка...</p>
-        </div>
-      ) : (
-        <>
-          {activeTab === "programs" && (
-            <>
-              {programs.length === 0 ? (
-                <div className={styles.emptyState}>
-                  <div className={styles.emptyIcon}>💪</div>
-                  <h2 className={styles.emptyTitle}>Нет программ тренировок</h2>
-                  <p className={styles.emptyText}>
-                    Создайте свою первую программу тренировок
-                  </p>
-                  <button className={styles.btnPrimary} onClick={handleCreateProgram}>
-                    <span className="material-icons">add</span>
-                    Создать программу
-                  </button>
-                </div>
-              ) : (
-                <div className={styles.grid}>
-                  {programs.map((program) => (
-                    <div key={program.id} className={styles.card}>
-                      <div className={styles.cardHeader}>
-                        <h3 className={styles.cardTitle}>{program.name}</h3>
-                        {program.is_active && (
-                          <span className={styles.cardBadge}>Активна</span>
-                        )}
-                      </div>
-                      {program.description && (
-                        <p className={styles.cardDescription}>{program.description}</p>
-                      )}
-                      <div className={styles.cardMeta}>
-                        {program.goal && (
-                          <div className={styles.metaItem}>
-                            <span className="material-icons">flag</span>
-                            {program.goal}
-                          </div>
-                        )}
-                        <div className={styles.metaItem}>
-                          <span className="material-icons">event</span>
-                          {program.duration_weeks} недель
-                        </div>
-                        <div className={styles.metaItem}>
-                          <span className="material-icons">fitness_center</span>
-                          {program.workouts_per_week}x в неделю
-                        </div>
-                      </div>
-                      <div className={styles.cardActions}>
-                        <button
-                          className={styles.btnPrimary}
-                          onClick={() => router.push(`/fitness/${program.id}`)}
-                        >
-                          <span className="material-icons">edit</span>
-                          Настроить упражнения
-                        </button>
-                        <button
-                          className={styles.btnDanger}
-                          onClick={() => handleDeleteProgram(program.id)}
-                        >
-                          <span className="material-icons">delete</span>
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-
-          {activeTab === "exercises" && (
-            <>
-              {exercises.length === 0 ? (
-                <div className={styles.emptyState}>
-                  <div className={styles.emptyIcon}>🏋️</div>
-                  <h2 className={styles.emptyTitle}>Нет упражнений</h2>
-                  <p className={styles.emptyText}>
-                    Создайте библиотеку своих упражнений
-                  </p>
-                  <button className={styles.btnPrimary} onClick={handleCreateExercise}>
-                    <span className="material-icons">add</span>
-                    Добавить упражнение
-                  </button>
-                </div>
-              ) : (
-                <div className={styles.grid}>
-                  {exercises.map((exercise) => (
-                    <div key={exercise.id} className={styles.card}>
-                      <div className={styles.cardHeader}>
-                        <h3 className={styles.cardTitle}>{exercise.name}</h3>
-                      </div>
-                      {exercise.description && (
-                        <p className={styles.cardDescription}>{exercise.description}</p>
-                      )}
-                      <div className={styles.cardMeta}>
-                        {exercise.category && (
-                          <div className={styles.metaItem}>
-                            <span className="material-icons">category</span>
-                            {exercise.category}
-                          </div>
-                        )}
-                        {exercise.equipment && (
-                          <div className={styles.metaItem}>
-                            <span className="material-icons">construction</span>
-                            {exercise.equipment}
-                          </div>
-                        )}
-                      </div>
-                      <div className={styles.cardActions}>
-                        <button
-                          className={styles.btnDanger}
-                          onClick={() => handleDeleteExercise(exercise.id)}
-                        >
-                          <span className="material-icons">delete</span>
-                          Удалить
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-
-          {activeTab === "history" && (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>📊</div>
-              <h2 className={styles.emptyTitle}>История тренировок</h2>
-              <p className={styles.emptyText}>
-                Здесь будут отображаться ваши тренировки
-              </p>
-              <p>Тренировок: {sessions.length}</p>
+        <TabsContent value="programs" className="mt-4">
+          {loading ? <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div> : programs.length === 0 ? (
+            <Card className="text-center py-12"><CardContent><Dumbbell className="h-16 w-16 mx-auto text-muted-foreground mb-4" /><h2 className="text-xl font-semibold">Нет программ</h2><p className="text-muted-foreground mb-4">Создайте первую программу</p><Button onClick={handleCreateProgram}><Plus className="h-4 w-4 mr-1" />Создать</Button></CardContent></Card>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {programs.map((program) => (
+                <Card key={program.id}><CardHeader className="flex flex-row items-center justify-between"><CardTitle>{program.name}</CardTitle>{program.is_active && <Badge>Активна</Badge>}</CardHeader><CardContent>
+                  {program.description && <p className="text-sm text-muted-foreground mb-3">{program.description}</p>}
+                  <div className="flex flex-wrap gap-2 text-sm text-muted-foreground mb-4">
+                    {program.goal && <span className="flex items-center gap-1"><Flag className="h-3 w-3" />{program.goal}</span>}
+                    <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{program.duration_weeks} нед.</span>
+                    <span className="flex items-center gap-1"><Dumbbell className="h-3 w-3" />{program.workouts_per_week}x/нед</span>
+                  </div>
+                  <div className="flex gap-2"><Button size="sm" onClick={() => router.push(`/personal/fitness/${program.id}`)}><Edit className="h-4 w-4 mr-1" />Настроить</Button><Button size="sm" variant="destructive" onClick={() => handleDeleteProgram(program.id)}><Trash2 className="h-4 w-4" /></Button></div>
+                </CardContent></Card>
+              ))}
             </div>
           )}
+        </TabsContent>
 
-          {activeTab === "progress" && (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>📈</div>
-              <h2 className={styles.emptyTitle}>Прогресс</h2>
-              <p className={styles.emptyText}>
-                Отслеживайте изменения веса и замеров тела
-              </p>
-              <p>Замеров: {measurements.length}</p>
+        <TabsContent value="exercises" className="mt-4">
+          {loading ? <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div> : exercises.length === 0 ? (
+            <Card className="text-center py-12"><CardContent><ListChecks className="h-16 w-16 mx-auto text-muted-foreground mb-4" /><h2 className="text-xl font-semibold">Нет упражнений</h2><p className="text-muted-foreground mb-4">Создайте библиотеку</p><Button onClick={handleCreateExercise}><Plus className="h-4 w-4 mr-1" />Добавить</Button></CardContent></Card>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {exercises.map((exercise) => (
+                <Card key={exercise.id}><CardHeader><CardTitle>{exercise.name}</CardTitle></CardHeader><CardContent>
+                  {exercise.description && <p className="text-sm text-muted-foreground mb-3">{exercise.description}</p>}
+                  <div className="flex flex-wrap gap-2 text-sm text-muted-foreground mb-4">
+                    {exercise.category && <Badge variant="secondary">{exercise.category}</Badge>}
+                    {exercise.equipment && <Badge variant="outline">{exercise.equipment}</Badge>}
+                  </div>
+                  <Button size="sm" variant="destructive" onClick={() => handleDeleteExercise(exercise.id)}><Trash2 className="h-4 w-4 mr-1" />Удалить</Button>
+                </CardContent></Card>
+              ))}
             </div>
           )}
-        </>
-      )}
+        </TabsContent>
 
-      <div className={styles.fabContainer}>
-        <button
-          className={styles.fab}
-          onClick={() => {
-            if (activeTab === "programs") handleCreateProgram();
-            else if (activeTab === "exercises") handleCreateExercise();
-          }}
-          title="Добавить"
-        >
-          <span className="material-icons">add</span>
-        </button>
-      </div>
+        <TabsContent value="history" className="mt-4">
+          <Card className="text-center py-12"><CardContent><History className="h-16 w-16 mx-auto text-muted-foreground mb-4" /><h2 className="text-xl font-semibold">История тренировок</h2><p className="text-muted-foreground">Тренировок: {sessions.length}</p></CardContent></Card>
+        </TabsContent>
+
+        <TabsContent value="progress" className="mt-4">
+          <Card className="text-center py-12"><CardContent><TrendingUp className="h-16 w-16 mx-auto text-muted-foreground mb-4" /><h2 className="text-xl font-semibold">Прогресс</h2><p className="text-muted-foreground">Замеров: {measurements.length}</p></CardContent></Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

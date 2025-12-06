@@ -4,7 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/toast/ToastContext';
 import { AttachmentPreviewModal } from './AttachmentPreviewModal';
-import styles from './TenderCommentsSidebar.module.css';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { X, Paperclip, Send, Reply, Pencil, Trash2, Loader2 } from 'lucide-react';
 
 interface CommentAttachment {
   id: string;
@@ -368,226 +371,116 @@ export function TenderCommentsSidebar({ tenderId, isOpen, onClose, onUpdate }: T
 
   return (
     <>
-      {/* Overlay */}
-      {isOpen && <div className={styles.overlay} onClick={onClose} />}
-
-      {/* Sidebar */}
-      <div className={`${styles.sidebar} ${isOpen ? styles.open : ''}`}>
-        <div className={styles.header}>
-          <h3 className={styles.title}>Комментарии</h3>
-          <button className={styles.closeButton} onClick={onClose}>
-            ✕
-          </button>
+      {isOpen && <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />}
+      <div className={`fixed top-0 right-0 h-full w-96 bg-white shadow-xl z-50 flex flex-col transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className="flex items-center justify-between p-4 border-b bg-gray-50">
+          <h3 className="font-semibold text-lg">💬 Комментарии</h3>
+          <Button variant="ghost" size="icon" onClick={onClose}><X className="h-5 w-5" /></Button>
         </div>
-
-        <div className={styles.content}>
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {loading && (
-            <div className={styles.loading}>
-              <div className={styles.spinner}></div>
+            <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+              <Loader2 className="h-8 w-8 animate-spin mb-2" />
               <p>Загрузка...</p>
             </div>
           )}
-
           {!loading && comments.length === 0 && (
-            <div className={styles.empty}>
+            <div className="text-center py-12 text-gray-500">
               <p>Комментариев пока нет</p>
             </div>
           )}
-
           {!loading && comments.length > 0 && (
-            <div className={styles.commentsList}>
+            <div className="space-y-4">
               {rootComments.map((comment) => (
                 <div key={comment.id}>
-                  <div className={styles.comment}>
-                    <div className={styles.commentHeader}>
+                  <div className="bg-white border rounded-lg p-3 shadow-sm">
+                    <div className="flex items-center justify-between mb-2">
                       {comment.author && (
-                        <span className={styles.authorName}>{comment.author.full_name}</span>
+                        <span className="font-medium text-sm text-gray-900">{comment.author.full_name}</span>
                       )}
-                      <span className={styles.commentDate}>{formatDate(comment.created_at)}</span>
+                      <span className="text-xs text-gray-500">{formatDate(comment.created_at)}</span>
                     </div>
-
                     {editingId === comment.id ? (
-                      <div className={styles.editForm}>
-                        <textarea
-                          value={editContent}
-                          onChange={(e) => {
-                            setEditContent(e.target.value);
-                            handleTyping();
-                          }}
-                          className={styles.editTextarea}
-                          rows={3}
-                          disabled={isSaving}
-                        />
-                        <div className={styles.editActions}>
-                          <button
-                            onClick={() => handleSaveEdit(comment.id)}
-                            className={styles.saveButton}
-                            disabled={isSaving || !editContent.trim()}
-                          >
+                      <div className="space-y-2">
+                        <Textarea value={editContent} onChange={(e) => { setEditContent(e.target.value); handleTyping(); }} rows={3} disabled={isSaving} />
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => handleSaveEdit(comment.id)} disabled={isSaving || !editContent.trim()}>
                             {isSaving ? 'Сохранение...' : 'Сохранить'}
-                          </button>
-                          <button
-                            onClick={handleCancelEdit}
-                            className={styles.cancelButton}
-                            disabled={isSaving}
-                          >
-                            Отмена
-                          </button>
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={handleCancelEdit} disabled={isSaving}>Отмена</Button>
                         </div>
                       </div>
                     ) : (
                       <>
-                        <p className={styles.commentContent}>{comment.content}</p>
-
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{comment.content}</p>
                         {comment.attachments && comment.attachments.length > 0 && (
-                          <div className={styles.attachments}>
+                          <div className="mt-2 space-y-1">
                             {comment.attachments.map((attachment) => (
-                              <div key={attachment.id} className={styles.attachmentRow}>
-                                <button
-                                  onClick={() => downloadAttachment(comment.id, attachment)}
-                                  className={styles.attachmentButton}
-                                >
-                                  <span className={styles.attachmentIcon}>📎</span>
-                                  <span className={styles.attachmentName}>{attachment.file_name}</span>
+                              <div key={attachment.id} className="flex items-center gap-2 text-sm">
+                                <button onClick={() => downloadAttachment(comment.id, attachment)} className="flex items-center gap-1 text-blue-600 hover:underline">
+                                  <Paperclip className="h-3 w-3" />
+                                  <span className="truncate max-w-[200px]">{attachment.file_name}</span>
                                 </button>
-                                <button
-                                  type="button"
-                                  className={styles.attachmentDeleteButton}
-                                  onClick={() => handleAttachmentDelete(comment.id, attachment.id)}
-                                  title="Удалить файл"
-                                >
-                                  ✕
-                                </button>
+                                <button onClick={() => handleAttachmentDelete(comment.id, attachment.id)} className="text-gray-400 hover:text-red-500"><X className="h-3 w-3" /></button>
                               </div>
                             ))}
                           </div>
                         )}
-
-                        <div className={styles.commentActions}>
-                          <button
-                            onClick={() => setReplyingTo(comment)}
-                            className={styles.replyButton}
-                          >
-                            Ответить
-                          </button>
+                        <div className="flex gap-2 mt-2 pt-2 border-t">
+                          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setReplyingTo(comment)}><Reply className="h-3 w-3 mr-1" />Ответить</Button>
                           {currentUserId === comment.author_id && (
-                            <button
-                              onClick={() => handleEdit(comment)}
-                              className={styles.editButton}
-                            >
-                              Редактировать
-                            </button>
+                            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => handleEdit(comment)}><Pencil className="h-3 w-3 mr-1" />Изменить</Button>
                           )}
                           {currentUserId === comment.author_id && (
-                            <button
-                              onClick={() => handleDelete(comment.id)}
-                              className={styles.deleteButton}
-                            >
-                              Удалить
-                            </button>
+                            <Button size="sm" variant="ghost" className="h-7 text-xs text-red-600 hover:text-red-700" onClick={() => handleDelete(comment.id)}><Trash2 className="h-3 w-3 mr-1" />Удалить</Button>
                           )}
                         </div>
                       </>
                     )}
                   </div>
 
-                  {/* Ответы на этот комментарий */}
                   {getReplies(comment.id).map((reply) => (
-                    <div key={reply.id} className={`${styles.comment} ${styles.replyComment}`}>
-                      <div className={styles.commentHeader}>
-                        {reply.author && (
-                          <span className={styles.authorName}>{reply.author.full_name}</span>
-                        )}
-                        <span className={styles.replyBadge}>Ответ</span>
-                        <span className={styles.commentDate}>{formatDate(reply.created_at)}</span>
+                    <div key={reply.id} className="ml-4 mt-2 bg-gray-50 border rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        {reply.author && <span className="font-medium text-sm text-gray-900">{reply.author.full_name}</span>}
+                        <Badge variant="secondary" className="text-xs">Ответ</Badge>
+                        <span className="text-xs text-gray-500">{formatDate(reply.created_at)}</span>
                       </div>
-
                       {editingId === reply.id ? (
-                        <div className={styles.editForm}>
-                          <textarea
-                            value={editContent}
-                            onChange={(e) => {
-                              setEditContent(e.target.value);
-                              handleTyping();
-                            }}
-                            className={styles.editTextarea}
-                            rows={3}
-                            disabled={isSaving}
-                          />
-                          <div className={styles.editActions}>
-                            <button
-                              onClick={() => handleSaveEdit(reply.id)}
-                              className={styles.saveButton}
-                              disabled={isSaving || !editContent.trim()}
-                            >
-                              {isSaving ? 'Сохранение...' : 'Сохранить'}
-                            </button>
-                            <button
-                              onClick={handleCancelEdit}
-                              className={styles.cancelButton}
-                              disabled={isSaving}
-                            >
-                              Отмена
-                            </button>
+                        <div className="space-y-2">
+                          <Textarea value={editContent} onChange={(e) => { setEditContent(e.target.value); handleTyping(); }} rows={3} disabled={isSaving} />
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => handleSaveEdit(reply.id)} disabled={isSaving || !editContent.trim()}>{isSaving ? 'Сохранение...' : 'Сохранить'}</Button>
+                            <Button size="sm" variant="outline" onClick={handleCancelEdit} disabled={isSaving}>Отмена</Button>
                           </div>
                         </div>
                       ) : (
                         <>
                           {reply.parent_comment && (
-                            <div className={styles.parentCommentQuote}>
-                              <div className={styles.quoteHeader}>
-                                {reply.parent_comment.author && (
-                                  <span className={styles.quoteAuthor}>
-                                    {reply.parent_comment.author.full_name}
-                                  </span>
-                                )}
-                              </div>
-                              <p className={styles.quoteContent}>{reply.parent_comment.content}</p>
+                            <div className="bg-white border-l-2 border-blue-300 pl-2 mb-2 text-xs text-gray-500">
+                              {reply.parent_comment.author && <span className="font-medium">{reply.parent_comment.author.full_name}: </span>}
+                              <span className="line-clamp-1">{reply.parent_comment.content}</span>
                             </div>
                           )}
-
-                          <p className={styles.commentContent}>{reply.content}</p>
-
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap">{reply.content}</p>
                           {reply.attachments && reply.attachments.length > 0 && (
-                            <div className={styles.attachments}>
+                            <div className="mt-2 space-y-1">
                               {reply.attachments.map((attachment) => (
-                                <div key={attachment.id} className={styles.attachmentRow}>
-                                  <button
-                                    onClick={() => downloadAttachment(reply.id, attachment)}
-                                    className={styles.attachmentButton}
-                                  >
-                                    <span className={styles.attachmentIcon}>📎</span>
-                                    <span className={styles.attachmentName}>{attachment.file_name}</span>
+                                <div key={attachment.id} className="flex items-center gap-2 text-sm">
+                                  <button onClick={() => downloadAttachment(reply.id, attachment)} className="flex items-center gap-1 text-blue-600 hover:underline">
+                                    <Paperclip className="h-3 w-3" /><span className="truncate max-w-[180px]">{attachment.file_name}</span>
                                   </button>
-                                  <button
-                                    type="button"
-                                    className={styles.attachmentDeleteButton}
-                                    onClick={() => handleAttachmentDelete(reply.id, attachment.id)}
-                                    title="Удалить файл"
-                                  >
-                                    ✕
-                                  </button>
+                                  <button onClick={() => handleAttachmentDelete(reply.id, attachment.id)} className="text-gray-400 hover:text-red-500"><X className="h-3 w-3" /></button>
                                 </div>
                               ))}
                             </div>
                           )}
-
-                          <div className={styles.commentActions}>
+                          <div className="flex gap-2 mt-2 pt-2 border-t">
                             {currentUserId === reply.author_id && (
-                              <button
-                                onClick={() => handleEdit(reply)}
-                                className={styles.editButton}
-                              >
-                                Редактировать
-                              </button>
+                              <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={() => handleEdit(reply)}><Pencil className="h-3 w-3 mr-1" />Изменить</Button>
                             )}
                             {currentUserId === reply.author_id && (
-                              <button
-                                onClick={() => handleDelete(reply.id)}
-                                className={styles.deleteButton}
-                              >
-                                Удалить
-                              </button>
+                              <Button size="sm" variant="ghost" className="h-6 text-xs text-red-600" onClick={() => handleDelete(reply.id)}><Trash2 className="h-3 w-3 mr-1" />Удалить</Button>
                             )}
                           </div>
                         </>
@@ -598,84 +491,51 @@ export function TenderCommentsSidebar({ tenderId, isOpen, onClose, onUpdate }: T
               ))}
             </div>
           )}
-          
           {typingUsers.length > 0 && (
-            <div className={styles.typingIndicator}>
+            <div className="text-sm text-gray-500 italic animate-pulse">
               {typingUsers.join(', ')} {typingUsers.length === 1 ? 'печатает' : 'печатают'}...
             </div>
           )}
         </div>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
+        <form onSubmit={handleSubmit} className="p-4 border-t bg-gray-50 space-y-3">
           {replyingTo && (
-            <div className={styles.replyingToBox}>
-              <div className={styles.replyingToHeader}>
-                <span className={styles.replyingToIcon}>↩️</span>
-                <span className={styles.replyingToText}>Ответ на комментарий</span>
-                <button
-                  type="button"
-                  className={styles.cancelReplyButton}
-                  onClick={() => setReplyingTo(null)}
-                >
-                  ✕
-                </button>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-1 text-xs text-blue-700">
+                  <Reply className="h-3 w-3" />
+                  <span>Ответ на комментарий</span>
+                </div>
+                <button type="button" onClick={() => setReplyingTo(null)} className="text-blue-500 hover:text-blue-700"><X className="h-4 w-4" /></button>
               </div>
-              <p className={styles.replyingToContent}>{replyingTo.content}</p>
+              <p className="text-xs text-gray-600 line-clamp-2">{replyingTo.content}</p>
             </div>
           )}
-          <textarea
+          <Textarea
             value={newComment}
-            onChange={(e) => {
-              setNewComment(e.target.value);
-              handleTyping();
-            }}
+            onChange={(e) => { setNewComment(e.target.value); handleTyping(); }}
             placeholder={replyingTo ? "Напишите ответ..." : "Добавить комментарий..."}
-            className={styles.textarea}
             rows={3}
             disabled={isSubmitting}
+            className="resize-none"
           />
-          
-          <div className={styles.fileInputWrapper}>
-            <label className={styles.fileInputLabel}>
-              <span className={styles.fileIcon}>📎</span>
-              <span>{attachmentFile ? attachmentFile.name : 'Прикрепить файл'}</span>
-              <input
-                type="file"
-                onChange={handleFileChange}
-                className={styles.fileInput}
-                disabled={isSubmitting}
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-              />
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 px-3 py-2 bg-white border rounded-md cursor-pointer hover:bg-gray-50 text-sm flex-1">
+              <Paperclip className="h-4 w-4 text-gray-500" />
+              <span className="truncate text-gray-600">{attachmentFile ? attachmentFile.name : 'Прикрепить файл'}</span>
+              <input type="file" onChange={handleFileChange} className="hidden" disabled={isSubmitting} accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" />
             </label>
             {attachmentFile && (
-              <button
-                type="button"
-                onClick={() => setAttachmentFile(null)}
-                className={styles.removeFileButton}
-                disabled={isSubmitting}
-              >
-                ✕
-              </button>
+              <Button type="button" variant="ghost" size="icon" onClick={() => setAttachmentFile(null)} disabled={isSubmitting}><X className="h-4 w-4" /></Button>
             )}
           </div>
-
-          <button
-            type="submit"
-            className={styles.submitButton}
-            disabled={isSubmitting || !newComment.trim()}
-          >
-            {isSubmitting ? 'Отправка...' : 'Отправить'}
-          </button>
+          <Button type="submit" className="w-full" disabled={isSubmitting || !newComment.trim()}>
+            {isSubmitting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Отправка...</> : <><Send className="h-4 w-4 mr-2" />Отправить</>}
+          </Button>
         </form>
       </div>
-
       {previewAttachment && (
-        <AttachmentPreviewModal
-          fileUrl={previewAttachment.url}
-          fileName={previewAttachment.fileName}
-          mimeType={previewAttachment.mimeType}
-          onClose={() => setPreviewAttachment(null)}
-        />
+        <AttachmentPreviewModal fileUrl={previewAttachment.url} fileName={previewAttachment.fileName} mimeType={previewAttachment.mimeType} onClose={() => setPreviewAttachment(null)} />
       )}
     </>
   );

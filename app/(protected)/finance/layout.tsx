@@ -1,6 +1,7 @@
 import FloatingReceiptButton from "@/components/receipts/FloatingReceiptButton";
 import { redirect } from "next/navigation";
 import { hasUserModeAccess } from "@/lib/platform/organization";
+import { FinanceLayout as FinanceLayoutComponent } from "@/components/finance/finance-layout";
 
 export default async function FinanceLayout({
   children,
@@ -14,9 +15,9 @@ export default async function FinanceLayout({
   }
 
   return (
-    <>
+    <FinanceLayoutComponent>
       {children}
       <FloatingReceiptButton />
-    </>
+    </FinanceLayoutComponent>
   );
 }

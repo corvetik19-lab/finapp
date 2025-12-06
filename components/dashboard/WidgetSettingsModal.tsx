@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import styles from "./Dashboard.module.css";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 import {
   DASHBOARD_WIDGETS,
   WIDGET_INFO,
@@ -10,6 +13,18 @@ import {
   type WidgetVisibilityState,
 } from "@/lib/dashboard/preferences/shared";
 import { saveWidgetVisibility } from "@/lib/dashboard/preferences/client";
+import { Wallet, LineChart, PieChart, Landmark, Flag, Calendar, Tag, Package, Settings, type LucideIcon } from "lucide-react";
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  account_balance_wallet: Wallet,
+  show_chart: LineChart,
+  pie_chart: PieChart,
+  account_balance: Landmark,
+  flag: Flag,
+  event: Calendar,
+  category: Tag,
+  inventory_2: Package,
+};
 
 type WidgetSettingsModalProps = {
   isOpen: boolean;
@@ -66,131 +81,25 @@ export default function WidgetSettingsModal({
   };
 
   return (
-    <div style={{ 
-      position: 'fixed', 
-      top: '50%', 
-      left: '50%', 
-      transform: 'translate(-50%, -50%)',
-      zIndex: 9999 
-    }}>
-      <div className={styles.modalDialog}>
-        <div className={styles.modalHeader}>
-          <h2 className={styles.modalTitle}>Настройка виджетов</h2>
-          <button
-            type="button"
-            className={styles.modalCloseBtn}
-            onClick={onClose}
-            disabled={isSaving}
-          >
-            <span className="material-icons">close</span>
-          </button>
+    <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader><DialogTitle>Настройка виджетов</DialogTitle></DialogHeader>
+        <div className="flex items-center justify-between mb-4"><p className="text-sm text-muted-foreground">Выберите виджеты для дашборда</p><div className="flex gap-2"><Button variant="outline" size="sm" onClick={handleSelectAll} disabled={isSaving}>Все</Button><Button variant="ghost" size="sm" onClick={handleDeselectAll} disabled={isSaving}>Снять</Button></div></div>
+        <div className="space-y-2 max-h-80 overflow-y-auto">
+          {Object.values(DASHBOARD_WIDGETS).map((widgetKey) => {
+            const info = WIDGET_INFO[widgetKey];
+            const isVisible = !hiddenWidgets.has(widgetKey);
+            return (
+              <label key={widgetKey} className={cn("flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors", isVisible ? "bg-primary/5 border-primary/30" : "hover:bg-muted")}>
+                <Checkbox checked={isVisible} onCheckedChange={() => toggleWidget(widgetKey)} />
+                {(() => { const Icon = ICON_MAP[info.icon] || Settings; return <Icon className="h-5 w-5 text-muted-foreground" />; })()}
+                <div className="flex-1"><div className="font-medium text-sm">{info.title}</div><div className="text-xs text-muted-foreground">{info.description}</div></div>
+              </label>
+            );
+          })}
         </div>
-
-        <div className={styles.modalBody}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <p className={styles.modalDescription} style={{ margin: 0 }}>
-              Выберите виджеты, которые хотите видеть на дашборде
-            </p>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                type="button"
-                onClick={handleSelectAll}
-                disabled={isSaving}
-                style={{
-                  padding: '6px 12px',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  border: '1px solid rgba(21,101,192,0.3)',
-                  borderRadius: '6px',
-                  background: 'rgba(21,101,192,0.1)',
-                  color: 'var(--primary-color)',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(21,101,192,0.2)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(21,101,192,0.1)';
-                }}
-              >
-                Выбрать все
-              </button>
-              <button
-                type="button"
-                onClick={handleDeselectAll}
-                disabled={isSaving}
-                style={{
-                  padding: '6px 12px',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  border: '1px solid rgba(148,163,184,0.3)',
-                  borderRadius: '6px',
-                  background: 'rgba(148,163,184,0.1)',
-                  color: 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(148,163,184,0.2)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(148,163,184,0.1)';
-                }}
-              >
-                Снять все
-              </button>
-            </div>
-          </div>
-
-          <div className={styles.widgetList}>
-            {Object.values(DASHBOARD_WIDGETS).map((widgetKey) => {
-              const info = WIDGET_INFO[widgetKey];
-              const isVisible = !hiddenWidgets.has(widgetKey);
-
-              return (
-                <label
-                  key={widgetKey}
-                  className={`${styles.widgetItem} ${isVisible ? styles.widgetItemActive : ""}`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={isVisible}
-                    onChange={() => toggleWidget(widgetKey)}
-                    className={styles.widgetCheckbox}
-                  />
-                  <div className={styles.widgetIcon}>
-                    <span className="material-icons">{info.icon}</span>
-                  </div>
-                  <div className={styles.widgetContent}>
-                    <div className={styles.widgetTitle}>{info.title}</div>
-                    <div className={styles.widgetDescription}>{info.description}</div>
-                  </div>
-                </label>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className={styles.modalFooter}>
-          <button
-            type="button"
-            className={styles.secondaryButton}
-            onClick={onClose}
-            disabled={isSaving}
-          >
-            Отмена
-          </button>
-          <button
-            type="button"
-            className={styles.primaryButton}
-            onClick={handleSave}
-            disabled={isSaving}
-          >
-            {isSaving ? "Сохранение..." : "Сохранить"}
-          </button>
-        </div>
-      </div>
-    </div>
+        <DialogFooter><Button variant="outline" onClick={onClose} disabled={isSaving}>Отмена</Button><Button onClick={handleSave} disabled={isSaving}>{isSaving ? "Сохранение..." : "Сохранить"}</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

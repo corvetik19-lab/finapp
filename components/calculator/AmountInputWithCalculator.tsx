@@ -3,7 +3,11 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Calculator from "./Calculator";
-import styles from "./AmountInputWithCalculator.module.css";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import { Calculator as CalculatorIcon } from "lucide-react";
 
 type AmountInputWithCalculatorProps = {
   value: string;
@@ -96,50 +100,36 @@ export default function AmountInputWithCalculator({
   };
 
   return (
-    <div className={`${styles.container} ${compact ? styles.compact : ""} ${className || ""}`} ref={containerRef}>
-      {label && <label className={styles.label}>{label}</label>}
-      
-      <div className={styles.inputWrapper}>
-        <input
+    <div className={cn("space-y-1", compact && "space-y-0", className)} ref={containerRef}>
+      {label && <Label>{label}</Label>}
+      <div className="relative flex">
+        <Input
           type="text"
           inputMode="decimal"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className={`${styles.input} ${inputClassName || ""} ${error ? styles.inputError : ""}`}
+          className={cn("pr-10", inputClassName, error && "border-destructive")}
         />
-        
-        <button
+        <Button
           ref={buttonRef}
           type="button"
+          variant={showCalculator ? "default" : "ghost"}
+          size="icon"
+          className="absolute right-0 top-0 h-full rounded-l-none"
           onClick={handleToggleCalculator}
-          className={`${styles.calculatorBtn} ${showCalculator ? styles.active : ""}`}
           title="Открыть калькулятор"
         >
-          <span className="material-icons">calculate</span>
-        </button>
-
+          <CalculatorIcon className="h-4 w-4" />
+        </Button>
         {showCalculator && typeof window !== 'undefined' && createPortal(
-          <div
-            ref={calculatorRef}
-            style={{
-              position: 'fixed',
-              top: `${position.top}px`,
-              left: `${position.left}px`,
-              zIndex: 9999,
-            }}
-          >
-            <Calculator
-              onResult={handleCalculatorResult}
-              onClose={() => setShowCalculator(false)}
-              initialValue={value}
-            />
+          <div ref={calculatorRef} style={{ position: 'fixed', top: `${position.top}px`, left: `${position.left}px`, zIndex: 9999 }}>
+            <Calculator onResult={handleCalculatorResult} onClose={() => setShowCalculator(false)} initialValue={value} />
           </div>,
           document.body
         )}
       </div>
-
-      {error && <div className={styles.error}>{error}</div>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
   );
 }

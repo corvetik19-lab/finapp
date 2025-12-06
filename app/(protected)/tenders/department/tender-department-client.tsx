@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import Link from 'next/link';
 import { TenderKanban } from '@/components/tenders/tender-kanban';
 import { TenderQuickFilters } from '@/components/tenders/tender-quick-filters';
 import { TenderSearchEISModal } from '@/components/tenders/tender-search-eis-modal';
@@ -9,7 +10,10 @@ import type { Tender, TenderStage, TenderType, TenderStageTemplate } from '@/lib
 import type { EISTenderData } from '@/lib/tenders/eis-mock-data';
 import { loadStageTemplates } from '@/lib/tenders/template-service';
 import { subscribeToStagesUpdates } from '@/lib/tenders/events';
-import styles from '../tenders.module.css';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Plus, RefreshCw, Settings, AlertCircle } from 'lucide-react';
 
 interface Platform {
   id: string;
@@ -269,27 +273,27 @@ export function TenderDepartmentClient({ stages: initialStages, types, companyId
   };
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div className="h-full flex flex-col min-w-0 max-w-full overflow-x-hidden">
       {/* Header */}
-      <div className={styles.pageHeader}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <div>
-            <h1 className={styles.pageTitle}>
-              Тендерный отдел (этапы 1-ой категории)
-            </h1>
-            <p className={styles.pageDescription}>
-              Управление предконтрактной работой
-            </p>
+      <Card className="mb-3 flex-shrink-0 overflow-hidden">
+        <CardContent className="p-3 md:p-4 overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="text-lg md:text-xl font-bold text-gray-900">Тендерный отдел</h1>
+              <p className="text-gray-500 text-xs md:text-sm mt-0.5">Управление предконтрактной работой</p>
+            </div>
+            <div className="flex flex-shrink-0 items-center gap-2">
+              <Button size="sm" onClick={() => setIsSearchModalOpen(true)}>
+                <Plus className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Добавить</span>
+              </Button>
+              <Button size="sm" variant="outline" asChild>
+                <Link href="/tenders/settings"><Settings className="h-4 w-4" /></Link>
+              </Button>
+            </div>
           </div>
-          <button
-            onClick={() => setIsSearchModalOpen(true)}
-            className={`${styles.btn} ${styles.btnPrimary}`}
-          >
-            <span className={styles.btnIcon}>+</span>
-            Добавить тендер
-          </button>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Быстрые фильтры */}
       <TenderQuickFilters
@@ -299,23 +303,21 @@ export function TenderDepartmentClient({ stages: initialStages, types, companyId
       />
 
       {/* Kanban */}
-      <div style={{ flex: 1, overflowX: 'auto', padding: '1.5rem' }}>
+      <div className="flex-1 min-h-0 overflow-hidden">
         {loading ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-            <div style={{ fontSize: '2rem' }}>⏳ Загрузка...</div>
+          <div className="flex flex-col items-center justify-center h-64 gap-4">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-64 w-full" />
           </div>
         ) : error ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ color: '#ef4444', fontSize: '1.125rem', marginBottom: '0.5rem' }}>⚠️ Ошибка</div>
-              <p style={{ color: '#64748b', marginBottom: '1rem' }}>{error}</p>
-              <button
-                onClick={loadTenders}
-                className={`${styles.btn} ${styles.btnPrimary}`}
-              >
-                Попробовать снова
-              </button>
-            </div>
+          <div className="flex flex-col items-center justify-center h-64 text-center">
+            <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+            <p className="text-lg font-medium mb-2">Ошибка загрузки</p>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={loadTenders}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Попробовать снова
+            </Button>
           </div>
         ) : (
           <TenderKanban

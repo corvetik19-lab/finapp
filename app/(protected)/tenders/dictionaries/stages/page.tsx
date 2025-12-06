@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { TenderStage } from '@/lib/tenders/types';
+import { Edit, Trash2 } from 'lucide-react';
 
 export default function TenderStagesPage() {
   const [stages, setStages] = useState<TenderStage[]>([]);
@@ -306,14 +307,14 @@ export default function TenderStagesPage() {
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title="Редактировать"
                           >
-                            <span className="material-icons text-sm">edit</span>
+                            <Edit className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(stage.id, stage.name)}
                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                             title="Удалить"
                           >
-                            <span className="material-icons text-sm">delete</span>
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
                       )}

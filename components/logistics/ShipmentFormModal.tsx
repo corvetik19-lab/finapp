@@ -5,7 +5,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { shipmentFormSchema, type ShipmentFormInput } from "@/lib/logistics/validation";
 import { SHIPMENT_TYPE_LABELS, Driver } from "@/types/logistics";
 import { useState, useEffect } from "react";
-import styles from "./ShipmentFormModal.module.css";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Loader2, Package } from "lucide-react";
 
 interface ShipmentFormModalProps {
   isOpen: boolean;
@@ -55,247 +62,56 @@ export function ShipmentFormModal({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.header}>
-          <h2 className={styles.title}>📦 Новая отправка</h2>
-          <button onClick={onClose} className={styles.closeBtn}>&times;</button>
-        </div>
-
-        <form onSubmit={handleSubmit(handleFormSubmit)} className={styles.form}>
+    <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle className="flex items-center gap-2"><Package className="h-5 w-5" />Новая отправка</DialogTitle></DialogHeader>
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
           {/* Тип отправки */}
-          <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>Тип доставки</h3>
-            <div className={styles.radioGroup}>
-              {Object.entries(SHIPMENT_TYPE_LABELS).map(([type, label]) => (
-                <label key={type} className={styles.radioLabel}>
-                  <input 
-                    type="radio" 
-                    value={type} 
-                    {...register('type')} 
-                    className={styles.radioInput} 
-                  />
-                  <span className={styles.radioCustom}></span>
-                  {label}
-                  {type === 'express' && <span className={styles.typeBadge}>⚡ Быстро</span>}
-                  {type === 'overnight' && <span className={styles.typeBadge}>🌙 За ночь</span>}
-                </label>
-              ))}
-            </div>
+          <div className="space-y-2"><h4 className="font-medium text-sm">Тип доставки</h4>
+            <RadioGroup defaultValue="standard" onValueChange={(v) => register('type').onChange({ target: { value: v } })} className="flex flex-wrap gap-3">
+              {Object.entries(SHIPMENT_TYPE_LABELS).map(([type, label]) => <label key={type} className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value={type} {...register('type')} /><span className="text-sm">{label}</span></label>)}
+            </RadioGroup>
           </div>
 
           {/* Отправитель */}
-          <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>📤 Отправитель</h3>
-            <div className={styles.row}>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Имя / Организация *</label>
-                <input {...register('sender_name')} className={styles.input} />
-                {errors.sender_name && <span className={styles.errorText}>{errors.sender_name.message}</span>}
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Компания</label>
-                <input {...register('sender_company')} placeholder="ООО 'Компания'" className={styles.input} />
-              </div>
-            </div>
-            
-            <div className={styles.row}>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Телефон</label>
-                <input {...register('sender_phone')} type="tel" placeholder="+7 (999) 123-45-67" className={styles.input} />
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Email</label>
-                <input {...register('sender_email')} type="email" className={styles.input} />
-              </div>
-            </div>
-
-            <div className={styles.addressSection}>
-              <h4 className={styles.addressTitle}>Адрес отправителя</h4>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Улица, дом *</label>
-                <input {...register('sender_street')} placeholder="ул. Ленина, д. 1" className={styles.input} />
-                {errors.sender_street && <span className={styles.errorText}>{errors.sender_street.message}</span>}
-              </div>
-              
-              <div className={styles.row}>
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>Город *</label>
-                  <input {...register('sender_city')} placeholder="Москва" className={styles.input} />
-                  {errors.sender_city && <span className={styles.errorText}>{errors.sender_city.message}</span>}
-                </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>Регион</label>
-                  <input {...register('sender_region')} placeholder="Московская область" className={styles.input} />
-                </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>Индекс</label>
-                  <input {...register('sender_postal_code')} placeholder="123456" className={styles.input} />
-                </div>
-              </div>
-            </div>
+          <div className="space-y-3 border-t pt-3"><h4 className="font-medium text-sm">📤 Отправитель</h4>
+            <div className="grid grid-cols-2 gap-3"><div className="space-y-1"><Label>Имя / Организация *</Label><Input {...register('sender_name')} />{errors.sender_name && <span className="text-xs text-destructive">{errors.sender_name.message}</span>}</div><div className="space-y-1"><Label>Компания</Label><Input {...register('sender_company')} placeholder="ООО 'Компания'" /></div></div>
+            <div className="grid grid-cols-2 gap-3"><div className="space-y-1"><Label>Телефон</Label><Input {...register('sender_phone')} type="tel" placeholder="+7 (999) 123-45-67" /></div><div className="space-y-1"><Label>Email</Label><Input {...register('sender_email')} type="email" /></div></div>
+            <div className="space-y-1"><Label>Улица, дом *</Label><Input {...register('sender_street')} placeholder="ул. Ленина, д. 1" />{errors.sender_street && <span className="text-xs text-destructive">{errors.sender_street.message}</span>}</div>
+            <div className="grid grid-cols-3 gap-3"><div className="space-y-1"><Label>Город *</Label><Input {...register('sender_city')} placeholder="Москва" />{errors.sender_city && <span className="text-xs text-destructive">{errors.sender_city.message}</span>}</div><div className="space-y-1"><Label>Регион</Label><Input {...register('sender_region')} /></div><div className="space-y-1"><Label>Индекс</Label><Input {...register('sender_postal_code')} /></div></div>
           </div>
 
           {/* Получатель */}
-          <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>📥 Получатель</h3>
-            <div className={styles.row}>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Имя / Организация *</label>
-                <input {...register('recipient_name')} className={styles.input} />
-                {errors.recipient_name && <span className={styles.errorText}>{errors.recipient_name.message}</span>}
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Компания</label>
-                <input {...register('recipient_company')} className={styles.input} />
-              </div>
-            </div>
-            
-            <div className={styles.row}>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Телефон</label>
-                <input {...register('recipient_phone')} type="tel" className={styles.input} />
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Email</label>
-                <input {...register('recipient_email')} type="email" className={styles.input} />
-              </div>
-            </div>
-
-            <div className={styles.addressSection}>
-              <h4 className={styles.addressTitle}>Адрес получателя</h4>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Улица, дом *</label>
-                <input {...register('recipient_street')} className={styles.input} />
-                {errors.recipient_street && <span className={styles.errorText}>{errors.recipient_street.message}</span>}
-              </div>
-              
-              <div className={styles.row}>
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>Город *</label>
-                  <input {...register('recipient_city')} className={styles.input} />
-                  {errors.recipient_city && <span className={styles.errorText}>{errors.recipient_city.message}</span>}
-                </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>Регион</label>
-                  <input {...register('recipient_region')} className={styles.input} />
-                </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>Индекс</label>
-                  <input {...register('recipient_postal_code')} className={styles.input} />
-                </div>
-              </div>
-            </div>
+          <div className="space-y-3 border-t pt-3"><h4 className="font-medium text-sm">📥 Получатель</h4>
+            <div className="grid grid-cols-2 gap-3"><div className="space-y-1"><Label>Имя / Организация *</Label><Input {...register('recipient_name')} />{errors.recipient_name && <span className="text-xs text-destructive">{errors.recipient_name.message}</span>}</div><div className="space-y-1"><Label>Компания</Label><Input {...register('recipient_company')} /></div></div>
+            <div className="grid grid-cols-2 gap-3"><div className="space-y-1"><Label>Телефон</Label><Input {...register('recipient_phone')} type="tel" /></div><div className="space-y-1"><Label>Email</Label><Input {...register('recipient_email')} type="email" /></div></div>
+            <div className="space-y-1"><Label>Улица, дом *</Label><Input {...register('recipient_street')} />{errors.recipient_street && <span className="text-xs text-destructive">{errors.recipient_street.message}</span>}</div>
+            <div className="grid grid-cols-3 gap-3"><div className="space-y-1"><Label>Город *</Label><Input {...register('recipient_city')} />{errors.recipient_city && <span className="text-xs text-destructive">{errors.recipient_city.message}</span>}</div><div className="space-y-1"><Label>Регион</Label><Input {...register('recipient_region')} /></div><div className="space-y-1"><Label>Индекс</Label><Input {...register('recipient_postal_code')} /></div></div>
           </div>
 
           {/* Груз */}
-          <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>📦 Информация о грузе</h3>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Описание груза *</label>
-              <textarea {...register('description')} rows={3} placeholder="Документы, оборудование, товары..." className={styles.textarea} />
-              {errors.description && <span className={styles.errorText}>{errors.description.message}</span>}
-            </div>
-            
-            <div className={styles.row}>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Вес (кг)</label>
-                <input {...register('weight_kg', { valueAsNumber: true })} type="number" step="0.1" className={styles.input} />
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Длина (см)</label>
-                <input {...register('length_cm', { valueAsNumber: true })} type="number" className={styles.input} />
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Ширина (см)</label>
-                <input {...register('width_cm', { valueAsNumber: true })} type="number" className={styles.input} />
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Высота (см)</label>
-                <input {...register('height_cm', { valueAsNumber: true })} type="number" className={styles.input} />
-              </div>
-            </div>
-            
-            <div className={styles.row}>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Объявленная стоимость (₽)</label>
-                <input {...register('value_amount', { valueAsNumber: true })} type="number" step="0.01" className={styles.input} />
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Стоимость доставки (₽) *</label>
-                <input {...register('cost_amount', { valueAsNumber: true })} type="number" step="0.01" className={styles.input} />
-                {errors.cost_amount && <span className={styles.errorText}>{errors.cost_amount.message}</span>}
-              </div>
-            </div>
+          <div className="space-y-3 border-t pt-3"><h4 className="font-medium text-sm">📦 Груз</h4>
+            <div className="space-y-1"><Label>Описание *</Label><Textarea {...register('description')} rows={2} placeholder="Документы, оборудование..." />{errors.description && <span className="text-xs text-destructive">{errors.description.message}</span>}</div>
+            <div className="grid grid-cols-4 gap-3"><div className="space-y-1"><Label>Вес (кг)</Label><Input {...register('weight_kg', { valueAsNumber: true })} type="number" step="0.1" /></div><div className="space-y-1"><Label>Длина (см)</Label><Input {...register('length_cm', { valueAsNumber: true })} type="number" /></div><div className="space-y-1"><Label>Ширина (см)</Label><Input {...register('width_cm', { valueAsNumber: true })} type="number" /></div><div className="space-y-1"><Label>Высота (см)</Label><Input {...register('height_cm', { valueAsNumber: true })} type="number" /></div></div>
+            <div className="grid grid-cols-2 gap-3"><div className="space-y-1"><Label>Объявл. стоимость (₽)</Label><Input {...register('value_amount', { valueAsNumber: true })} type="number" step="0.01" /></div><div className="space-y-1"><Label>Стоимость доставки (₽) *</Label><Input {...register('cost_amount', { valueAsNumber: true })} type="number" step="0.01" />{errors.cost_amount && <span className="text-xs text-destructive">{errors.cost_amount.message}</span>}</div></div>
           </div>
 
-          {/* Даты и исполнители */}
-          <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>📅 Сроки и исполнители</h3>
-            <div className={styles.row}>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Дата забора</label>
-                <input {...register('pickup_date')} type="date" className={styles.input} />
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Планируемая доставка</label>
-                <input {...register('estimated_delivery')} type="date" className={styles.input} />
-              </div>
-            </div>
-            
-            <div className={styles.row}>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Водитель</label>
-                <select {...register('driver_id')} className={styles.select}>
-                  <option value="">Выберите водителя</option>
-                  {drivers.map(driver => (
-                    <option key={driver.id} value={driver.id}>
-                      {driver.name} {driver.vehicle_info?.number && `(${driver.vehicle_info.number})`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Курьерская служба</label>
-                <input {...register('courier_company')} placeholder="СДЭК, Почта России..." className={styles.input} />
-              </div>
-            </div>
+          {/* Даты */}
+          <div className="space-y-3 border-t pt-3"><h4 className="font-medium text-sm">📅 Сроки</h4>
+            <div className="grid grid-cols-2 gap-3"><div className="space-y-1"><Label>Дата забора</Label><Input {...register('pickup_date')} type="date" /></div><div className="space-y-1"><Label>Доставка до</Label><Input {...register('estimated_delivery')} type="date" /></div></div>
+            <div className="grid grid-cols-2 gap-3"><div className="space-y-1"><Label>Водитель</Label><Select onValueChange={(v) => register('driver_id').onChange({ target: { value: v } })}><SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger><SelectContent>{drivers.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent></Select></div><div className="space-y-1"><Label>Курьерская служба</Label><Input {...register('courier_company')} placeholder="СДЭК, Почта России..." /></div></div>
           </div>
 
           {/* Дополнительно */}
-          <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>📝 Дополнительная информация</h3>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Особые указания</label>
-              <textarea {...register('special_instructions')} rows={2} placeholder="Хрупкое, осторожно..." className={styles.textarea} />
-            </div>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Заметки</label>
-              <textarea {...register('notes')} rows={2} className={styles.textarea} />
-            </div>
+          <div className="space-y-3 border-t pt-3"><h4 className="font-medium text-sm">📝 Дополнительно</h4>
+            <div className="space-y-1"><Label>Особые указания</Label><Textarea {...register('special_instructions')} rows={2} placeholder="Хрупкое, осторожно..." /></div>
+            <div className="space-y-1"><Label>Заметки</Label><Textarea {...register('notes')} rows={2} /></div>
           </div>
 
-          {/* Кнопки */}
-          <div className={styles.footer}>
-            <button type="button" onClick={onClose} className={styles.cancelBtn}>
-              Отмена
-            </button>
-            <button type="submit" disabled={isSubmitting} className={styles.submitBtn}>
-              {isSubmitting ? (
-                <>
-                  <span className={styles.spinner}></span>
-                  Создаём...
-                </>
-              ) : (
-                'Создать отправку'
-              )}
-            </button>
-          </div>
+          <DialogFooter><Button type="button" variant="outline" onClick={onClose}>Отмена</Button><Button type="submit" disabled={isSubmitting}>{isSubmitting ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Создаём...</> : 'Создать отправку'}</Button></DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

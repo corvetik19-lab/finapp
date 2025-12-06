@@ -6,9 +6,11 @@ import { getQuickPresets } from "@/lib/quick-presets/service";
 import { createTransactionFromValues } from "@/app/(protected)/finance/transactions/actions";
 import type { QuickTransactionPreset } from "@/types/quick-preset";
 import type { TransactionFormValues } from "@/lib/validation/transaction";
-import styles from "./QuickTransactionButton.module.css";
 import { useToast } from "@/components/toast/ToastContext";
 import AmountInputWithCalculator from "@/components/calculator/AmountInputWithCalculator";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Zap, Loader2 } from "lucide-react";
 
 type Account = {
   id: string;
@@ -129,136 +131,90 @@ export default function QuickTransactionButton({ accounts }: { accounts: Account
 
   return (
     <>
-      <button 
-        type="button" 
-        className={styles.quickBtn}
-        onClick={() => setOpen(true)}
-        title="Быстрое добавление"
-      >
-        <span className="material-icons">bolt</span>
+      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+        <Zap className="h-4 w-4 mr-1" />
         Быстрое
-      </button>
+      </Button>
 
-      {open && (
-        <div className={styles.overlay} onClick={() => setOpen(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.header}>
-              <h2 className={styles.title}>Быстрое добавление</h2>
-              <button 
-                type="button" 
-                className={styles.closeBtn}
-                onClick={() => setOpen(false)}
-                aria-label="Закрыть"
-              >
-                <span className="material-icons">close</span>
-              </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Zap className="h-5 w-5" />
+              Быстрое добавление
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedPreset ? (
+            <form onSubmit={handleCustomAmountSubmit} className="space-y-4">
+              <div className="text-center">
+                <h3 className="font-semibold text-lg">{selectedPreset.name}</h3>
+                <p className="text-sm text-muted-foreground">Введите сумму для этой транзакции:</p>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <AmountInputWithCalculator value={customAmount} onChange={(value) => setCustomAmount(value)} placeholder="0.00" className="w-48 text-xl text-center font-semibold" />
+                <span className="text-xl font-semibold text-muted-foreground">₽</span>
+              </div>
+              <div className="flex justify-center gap-2">
+                <Button type="button" variant="outline" onClick={() => { setSelectedPreset(null); setCustomAmount(""); }}>Отмена</Button>
+                <Button type="submit" disabled={!customAmount || parseFloat(customAmount) <= 0}>Добавить</Button>
+              </div>
+            </form>
+          ) : loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-
-            <div className={styles.body}>
-              {selectedPreset ? (
-                <form className={styles.amountForm} onSubmit={handleCustomAmountSubmit}>
-                  <h3 className={styles.formTitle}>{selectedPreset.name}</h3>
-                  <p className={styles.formHint}>Введите сумму для этой транзакции:</p>
-                  <div className={styles.inputGroup}>
-                    <AmountInputWithCalculator
-                      value={customAmount}
-                      onChange={(value) => setCustomAmount(value)}
-                      placeholder="0.00"
-                      className={styles.amountInput}
-                    />
-                    <span className={styles.currency}>₽</span>
+          ) : presets.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Zap className="h-12 w-12 mx-auto mb-2 opacity-30" />
+              <p>Нет настроенных быстрых пресетов</p>
+              <p className="text-sm">Добавьте пресеты в настройках для быстрого создания транзакций</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {incomePresets.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
+                    <span className="p-1 rounded-full bg-green-100 dark:bg-green-900/30">💰</span>
+                    Доходы
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {incomePresets.map((preset) => (
+                      <button key={preset.id} type="button" onClick={() => handlePresetClick(preset)}
+                        className="p-3 rounded-xl bg-gradient-to-br from-green-50 to-white dark:from-green-950/30 dark:to-card border border-green-200/50 dark:border-green-800/30 hover:shadow-md hover:shadow-green-200/50 dark:hover:shadow-green-900/30 transition-all text-left group">
+                        <div className="font-medium text-sm truncate group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors">{preset.name}</div>
+                        <div className="text-green-600 dark:text-green-400 font-bold">
+                          {preset.amount && preset.amount > 0 ? `+${(preset.amount / 100).toFixed(2)} ₽` : "Ввести сумму"}
+                        </div>
+                      </button>
+                    ))}
                   </div>
-                  <div className={styles.formActions}>
-                    <button
-                      type="button"
-                      className={styles.cancelBtn}
-                      onClick={() => {
-                        setSelectedPreset(null);
-                        setCustomAmount("");
-                      }}
-                    >
-                      Отмена
-                    </button>
-                    <button
-                      type="submit"
-                      className={styles.submitBtn}
-                      disabled={!customAmount || parseFloat(customAmount) <= 0}
-                    >
-                      Добавить
-                    </button>
-                  </div>
-                </form>
-              ) : loading ? (
-                <div className={styles.loading}>Загрузка...</div>
-              ) : presets.length === 0 ? (
-                <div className={styles.empty}>
-                  <span className="material-icons" style={{ fontSize: 48, color: "#ccc" }}>
-                    bolt_off
-                  </span>
-                  <p>Нет настроенных быстрых пресетов</p>
-                  <p className={styles.hint}>
-                    Добавьте пресеты в настройках для быстрого создания транзакций
-                  </p>
                 </div>
-              ) : (
-                <>
-                  {incomePresets.length > 0 && (
-                    <div className={styles.section}>
-                      <h3 className={styles.sectionTitle}>
-                        <span className={styles.incomeIcon}>💰</span>
-                        Доходы
-                      </h3>
-                      <div className={styles.grid}>
-                        {incomePresets.map((preset) => (
-                          <button
-                            key={preset.id}
-                            type="button"
-                            className={`${styles.presetCard} ${styles.income}`}
-                            onClick={() => handlePresetClick(preset)}
-                          >
-                            <div className={styles.presetName}>{preset.name}</div>
-                            <div className={styles.presetAmount}>
-                              {preset.amount && preset.amount > 0 
-                                ? `+${(preset.amount / 100).toFixed(2)} ₽`
-                                : "Ввести сумму"}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+              )}
 
-                  {expensePresets.length > 0 && (
-                    <div className={styles.section}>
-                      <h3 className={styles.sectionTitle}>
-                        <span className={styles.expenseIcon}>💸</span>
-                        Расходы
-                      </h3>
-                      <div className={styles.grid}>
-                        {expensePresets.map((preset) => (
-                          <button
-                            key={preset.id}
-                            type="button"
-                            className={`${styles.presetCard} ${styles.expense}`}
-                            onClick={() => handlePresetClick(preset)}
-                          >
-                            <div className={styles.presetName}>{preset.name}</div>
-                            <div className={styles.presetAmount}>
-                              {preset.amount && preset.amount > 0 
-                                ? `−${(preset.amount / 100).toFixed(2)} ₽`
-                                : "Ввести сумму"}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </>
+              {expensePresets.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
+                    <span className="p-1 rounded-full bg-red-100 dark:bg-red-900/30">💸</span>
+                    Расходы
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {expensePresets.map((preset) => (
+                      <button key={preset.id} type="button" onClick={() => handlePresetClick(preset)}
+                        className="p-3 rounded-xl bg-gradient-to-br from-red-50 to-white dark:from-red-950/30 dark:to-card border border-red-200/50 dark:border-red-800/30 hover:shadow-md hover:shadow-red-200/50 dark:hover:shadow-red-900/30 transition-all text-left group">
+                        <div className="font-medium text-sm truncate group-hover:text-red-700 dark:group-hover:text-red-400 transition-colors">{preset.name}</div>
+                        <div className="text-red-600 dark:text-red-400 font-bold">
+                          {preset.amount && preset.amount > 0 ? `−${(preset.amount / 100).toFixed(2)} ₽` : "Ввести сумму"}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
-          </div>
-        </div>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

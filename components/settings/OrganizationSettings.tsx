@@ -1,10 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import type { Organization } from "@/lib/organizations/types";
 import { deleteOrganization } from "@/lib/admin/organizations";
 import { useRouter } from "next/navigation";
-import styles from "./OrganizationSettings.module.css";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Building2, Users, Calendar, Fingerprint, LayoutGrid, AlertTriangle, Trash2, CheckCircle2, Link2, Loader2 } from "lucide-react";
 
 interface Member {
   id: string;
@@ -125,195 +132,41 @@ export default function OrganizationSettings({
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>Информация об организации</h1>
-          <p className={styles.subtitle}>Просмотр и управление данными вашей организации</p>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <div><h1 className="text-2xl font-bold flex items-center gap-2"><Building2 className="h-6 w-6" />Информация об организации</h1><p className="text-sm text-muted-foreground">Просмотр и управление данными</p></div>
 
-      <div className={styles.content}>
-        {/* Основная информация */}
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>
-            <span className="material-icons" style={{ marginRight: 8, color: 'var(--primary)' }}>business</span>
-            Основная информация
-          </h2>
-          
-          {isAdmin ? (
-            <form onSubmit={handleSubmit} className={styles.form}>
-              <div className={styles.formGroup}>
-                <label htmlFor="name" className={styles.label}>
-                  Название организации
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className={styles.input}
-                  required
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label htmlFor="slug" className={styles.label}>
-                  Slug (URL идентификатор)
-                </label>
-                <input
-                  id="slug"
-                  type="text"
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
-                  className={styles.input}
-                  pattern="[a-z0-9-]+"
-                  required
-                />
-                <p className={styles.hint}>Только строчные буквы, цифры и дефисы</p>
-              </div>
-
-              {message && (
-                <div className={`${styles.message} ${styles[message.type]}`}>
-                  <span className="material-icons">
-                    {message.type === "success" ? "check_circle" : "error"}
-                  </span>
-                  {message.text}
-                </div>
-              )}
-
-              <button type="submit" className={styles.button} disabled={isLoading}>
-                {isLoading ? "Сохранение..." : "Сохранить изменения"}
-              </button>
-            </form>
-          ) : (
-            <div className={styles.infoGrid}>
-              <div className={styles.infoItem}>
-                <span className="material-icons">badge</span>
-                <div>
-                  <p className={styles.infoLabel}>Название</p>
-                  <p className={styles.infoValue}>{organization.name}</p>
-                </div>
-              </div>
-              <div className={styles.infoItem}>
-                <span className="material-icons">link</span>
-                <div>
-                  <p className={styles.infoLabel}>Slug</p>
-                  <p className={styles.infoValue}>{organization.slug || '—'}</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* Участники */}
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>
-            <span className="material-icons" style={{ marginRight: 8, color: 'var(--primary)' }}>group</span>
-            Участники организации ({members.length})
-          </h2>
-          
-          <div className={styles.membersList}>
-            {members.map((member) => (
-              <div 
-                key={member.id} 
-                className={`${styles.memberCard} ${member.profiles?.id === currentUserId ? styles.currentUser : ''}`}
-              >
-                <div className={styles.memberAvatar}>
-                  {member.profiles?.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={member.profiles.avatar_url} alt="" />
-                  ) : (
-                    <span>{(member.profiles?.full_name || member.profiles?.email || '?')[0].toUpperCase()}</span>
-                  )}
-                </div>
-                <div className={styles.memberInfo}>
-                  <p className={styles.memberName}>
-                    {member.profiles?.full_name || 'Без имени'}
-                    {member.profiles?.id === currentUserId && <span className={styles.youBadge}>Вы</span>}
-                  </p>
-                  <p className={styles.memberEmail}>{member.profiles?.email || '—'}</p>
-                </div>
-                <div 
-                  className={styles.memberRole}
-                  style={{ background: `${getRoleColor(member.role)}20`, color: getRoleColor(member.role) }}
-                >
-                  {getRoleName(member.role)}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Дополнительная информация */}
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>
-            <span className="material-icons" style={{ marginRight: 8, color: 'var(--primary)' }}>info</span>
-            Дополнительная информация
-          </h2>
-          
-          <div className={styles.infoGrid}>
-            <div className={styles.infoItem}>
-              <span className="material-icons">calendar_today</span>
-              <div>
-                <p className={styles.infoLabel}>Дата создания</p>
-                <p className={styles.infoValue}>
-                  {new Date(organization.created_at).toLocaleDateString("ru-RU", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </p>
-              </div>
-            </div>
-
-            <div className={styles.infoItem}>
-              <span className="material-icons">fingerprint</span>
-              <div>
-                <p className={styles.infoLabel}>ID организации</p>
-                <p className={styles.infoValue} style={{ fontSize: 12, fontFamily: 'monospace' }}>{organization.id}</p>
-              </div>
-            </div>
-
-            {organization.allowed_modes && organization.allowed_modes.length > 0 && (
-              <div className={styles.infoItem}>
-                <span className="material-icons">apps</span>
-                <div>
-                  <p className={styles.infoLabel}>Доступные режимы</p>
-                  <p className={styles.infoValue}>{organization.allowed_modes.join(', ')}</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Опасная зона - только для админов */}
-        {isAdmin && (
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle} style={{ color: "var(--error)" }}>
-              <span className="material-icons" style={{ marginRight: 8 }}>warning</span>
-              Опасная зона
-            </h2>
-            
-            <div className={styles.dangerZone}>
-              <div>
-                <h3 className={styles.dangerTitle}>Удалить организацию</h3>
-                <p className={styles.dangerDesc}>
-                  Это действие необратимо. Все данные организации будут удалены навсегда.
-                </p>
-              </div>
-              <button 
-                className={styles.dangerButton} 
-                onClick={handleDelete}
-                disabled={isLoading}
-              >
-                <span className="material-icons">delete_forever</span>
-                {isLoading ? "Удаление..." : "Удалить организацию"}
-              </button>
-            </div>
-          </section>
+      {/* Основная информация */}
+      <Card><CardHeader><CardTitle className="flex items-center gap-2"><Building2 className="h-5 w-5 text-primary" />Основная информация</CardTitle></CardHeader><CardContent>
+        {isAdmin ? (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1"><Label>Название организации</Label><Input value={name} onChange={e => setName(e.target.value)} required /></div>
+            <div className="space-y-1"><Label>Slug (URL идентификатор)</Label><Input value={slug} onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))} pattern="[a-z0-9-]+" required /><p className="text-xs text-muted-foreground">Только строчные буквы, цифры и дефисы</p></div>
+            {message && <Alert className={message.type === 'success' ? 'border-green-500' : 'border-destructive'}>{message.type === 'success' ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <AlertTriangle className="h-4 w-4" />}<AlertDescription>{message.text}</AlertDescription></Alert>}
+            <Button type="submit" disabled={isLoading}>{isLoading ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Сохранение...</> : 'Сохранить изменения'}</Button>
+          </form>
+        ) : (
+          <div className="grid grid-cols-2 gap-4"><div className="flex items-center gap-3"><Building2 className="h-5 w-5 text-muted-foreground" /><div><p className="text-xs text-muted-foreground">Название</p><p className="font-medium">{organization.name}</p></div></div><div className="flex items-center gap-3"><Link2 className="h-5 w-5 text-muted-foreground" /><div><p className="text-xs text-muted-foreground">Slug</p><p className="font-medium">{organization.slug || '—'}</p></div></div></div>
         )}
-      </div>
+      </CardContent></Card>
+
+      {/* Участники */}
+      <Card><CardHeader><CardTitle className="flex items-center gap-2"><Users className="h-5 w-5 text-primary" />Участники ({members.length})</CardTitle></CardHeader><CardContent>
+        <div className="space-y-2">
+          {members.map(member => <div key={member.id} className={`flex items-center gap-3 p-2 rounded ${member.profiles?.id === currentUserId ? 'bg-muted' : ''}`}><div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-sm font-medium">{member.profiles?.avatar_url ? <Image src={member.profiles.avatar_url} alt="" fill className="rounded-full object-cover" /> : (member.profiles?.full_name || member.profiles?.email || '?')[0].toUpperCase()}</div><div className="flex-1"><p className="text-sm font-medium">{member.profiles?.full_name || 'Без имени'}{member.profiles?.id === currentUserId && <Badge variant="outline" className="ml-2 text-xs">Вы</Badge>}</p><p className="text-xs text-muted-foreground">{member.profiles?.email || '—'}</p></div><Badge style={{ background: `${getRoleColor(member.role)}20`, color: getRoleColor(member.role) }}>{getRoleName(member.role)}</Badge></div>)}
+        </div>
+      </CardContent></Card>
+
+      {/* Доп. информация */}
+      <Card><CardHeader><CardTitle>Дополнительно</CardTitle></CardHeader><CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex items-center gap-3"><Calendar className="h-5 w-5 text-muted-foreground" /><div><p className="text-xs text-muted-foreground">Дата создания</p><p className="font-medium">{new Date(organization.created_at).toLocaleDateString("ru-RU", { year: "numeric", month: "long", day: "numeric" })}</p></div></div>
+          <div className="flex items-center gap-3"><Fingerprint className="h-5 w-5 text-muted-foreground" /><div><p className="text-xs text-muted-foreground">ID</p><p className="text-xs font-mono">{organization.id}</p></div></div>
+          {organization.allowed_modes && organization.allowed_modes.length > 0 && <div className="flex items-center gap-3"><LayoutGrid className="h-5 w-5 text-muted-foreground" /><div><p className="text-xs text-muted-foreground">Режимы</p><p className="font-medium">{organization.allowed_modes.join(', ')}</p></div></div>}
+        </div>
+      </CardContent></Card>
+
+      {/* Опасная зона */}
+      {isAdmin && <Card className="border-destructive"><CardHeader><CardTitle className="text-destructive flex items-center gap-2"><AlertTriangle className="h-5 w-5" />Опасная зона</CardTitle><CardDescription>Это действие необратимо</CardDescription></CardHeader><CardContent className="flex items-center justify-between"><div><h3 className="font-medium">Удалить организацию</h3><p className="text-sm text-muted-foreground">Все данные будут удалены навсегда</p></div><Button variant="destructive" onClick={handleDelete} disabled={isLoading}><Trash2 className="h-4 w-4 mr-1" />{isLoading ? 'Удаление...' : 'Удалить'}</Button></CardContent></Card>}
     </div>
   );
 }

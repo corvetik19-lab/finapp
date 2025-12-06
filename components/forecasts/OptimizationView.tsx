@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import styles from "./Forecasts.module.css";
-import {
-  type OptimizationReport,
-  getPriorityColor,
-  getImpactColor,
-} from "@/lib/ai/optimization-advisor";
+import { type OptimizationReport, getPriorityColor, getImpactColor } from "@/lib/ai/optimization-advisor";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { AlertCircle, CheckCircle, Lightbulb, TrendingDown, DollarSign, Target } from "lucide-react";
 
 export default function OptimizationView() {
   const [loading, setLoading] = useState(true);
@@ -44,244 +42,65 @@ export default function OptimizationView() {
   };
 
   if (loading) {
-    return (
-      <div className={styles.loading}>
-        <div className={styles.spinner}></div>
-        <p>Анализируем возможности экономии...</p>
-      </div>
-    );
+    return <Card><CardContent className="flex flex-col items-center justify-center py-12"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /><p className="mt-4 text-muted-foreground">Анализируем возможности экономии...</p></CardContent></Card>;
   }
 
   if (error) {
-    return (
-      <div className={styles.error}>
-        <div className={styles.errorIcon}>⚠️</div>
-        <h2>Ошибка загрузки</h2>
-        <p>{error}</p>
-      </div>
-    );
+    return <Card><CardContent className="flex flex-col items-center justify-center py-12 text-center"><AlertCircle className="h-12 w-12 text-destructive mb-4" /><h2 className="text-lg font-semibold">Ошибка загрузки</h2><p className="text-muted-foreground">{error}</p></CardContent></Card>;
   }
 
   if (!report || report.opportunities.length === 0) {
-    return (
-      <div className={styles.noAlerts}>
-        <div className={styles.noAlertsIcon}>✅</div>
-        <h2>Ваш бюджет оптимален!</h2>
-        <p>Мы не нашли значительных возможностей для экономии. Продолжайте контролировать расходы.</p>
-      </div>
-    );
+    return <Card><CardContent className="flex flex-col items-center justify-center py-12 text-center"><CheckCircle className="h-12 w-12 text-green-500 mb-4" /><h2 className="text-lg font-semibold">Ваш бюджет оптимален!</h2><p className="text-muted-foreground">Мы не нашли значительных возможностей для экономии</p></CardContent></Card>;
   }
 
   return (
-    <div className={styles.optimizationView}>
-      {/* Общая статистика */}
-      <div className={styles.optimizationSummary}>
-        <div className={styles.summaryCard}>
-          <div className={styles.summaryIcon}>💰</div>
-          <div className={styles.summaryContent}>
-            <div className={styles.summaryLabel}>Потенциальная экономия</div>
-            <div className={styles.summaryValue}>{formatMoney(report.total_potential_savings)}</div>
-            <div className={styles.summarySubtext}>в месяц</div>
-          </div>
-        </div>
-        <div className={styles.summaryCard}>
-          <div className={styles.summaryIcon}>📊</div>
-          <div className={styles.summaryContent}>
-            <div className={styles.summaryLabel}>Текущие траты</div>
-            <div className={styles.summaryValue}>{formatMoney(report.total_monthly_spending)}</div>
-            <div className={styles.summarySubtext}>в месяц</div>
-          </div>
-        </div>
-        <div className={styles.summaryCard}>
-          <div className={styles.summaryIcon}>🎯</div>
-          <div className={styles.summaryContent}>
-            <div className={styles.summaryLabel}>Рекомендуемый бюджет</div>
-            <div className={styles.summaryValue}>{formatMoney(report.recommended_spending)}</div>
-            <div className={styles.summarySubtext}>в месяц</div>
-          </div>
-        </div>
-        <div className={styles.summaryCard}>
-          <div className={styles.summaryIcon}>📉</div>
-          <div className={styles.summaryContent}>
-            <div className={styles.summaryLabel}>Сокращение</div>
-            <div className={styles.summaryValue} style={{ color: "#10b981" }}>
-              -{report.savings_percentage.toFixed(1)}%
-            </div>
-            <div className={styles.summarySubtext}>от текущих трат</div>
-          </div>
-        </div>
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card><CardContent className="pt-4 text-center"><DollarSign className="h-8 w-8 mx-auto text-green-500 mb-2" /><div className="text-xs text-muted-foreground">Потенциальная экономия</div><div className="text-xl font-bold">{formatMoney(report.total_potential_savings)}</div><div className="text-xs text-muted-foreground">в месяц</div></CardContent></Card>
+        <Card><CardContent className="pt-4 text-center"><TrendingDown className="h-8 w-8 mx-auto text-blue-500 mb-2" /><div className="text-xs text-muted-foreground">Текущие траты</div><div className="text-xl font-bold">{formatMoney(report.total_monthly_spending)}</div><div className="text-xs text-muted-foreground">в месяц</div></CardContent></Card>
+        <Card><CardContent className="pt-4 text-center"><Target className="h-8 w-8 mx-auto text-purple-500 mb-2" /><div className="text-xs text-muted-foreground">Рекомендуемый бюджет</div><div className="text-xl font-bold">{formatMoney(report.recommended_spending)}</div><div className="text-xs text-muted-foreground">в месяц</div></CardContent></Card>
+        <Card><CardContent className="pt-4 text-center"><TrendingDown className="h-8 w-8 mx-auto text-emerald-500 mb-2" /><div className="text-xs text-muted-foreground">Сокращение</div><div className="text-xl font-bold text-green-500">-{report.savings_percentage.toFixed(1)}%</div><div className="text-xs text-muted-foreground">от текущих трат</div></CardContent></Card>
       </div>
 
-      {/* Быстрые победы */}
       {report.quick_wins.length > 0 && (
-        <div className={styles.quickWinsSection}>
-          <h2>⚡ Быстрые победы</h2>
-          <p className={styles.sectionSubtitle}>Простые действия, которые дадут результат уже сегодня</p>
-          <div className={styles.quickWinsList}>
-            {report.quick_wins.map((win, idx) => (
-              <div key={idx} className={styles.quickWinCard}>
-                <div className={styles.quickWinIcon}>✓</div>
-                <div className={styles.quickWinText}>{win}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <Card><CardHeader><CardTitle>⚡ Быстрые победы</CardTitle><p className="text-sm text-muted-foreground">Простые действия с быстрым результатом</p></CardHeader><CardContent>
+          <div className="grid md:grid-cols-2 gap-2">{report.quick_wins.map((win, idx) => (<div key={idx} className="flex items-center gap-2 p-2 rounded bg-green-50 dark:bg-green-950"><CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" /><span className="text-sm">{win}</span></div>))}</div>
+        </CardContent></Card>
       )}
 
-      {/* Топ-3 категории */}
-      <div className={styles.top3Section}>
-        <h2>🎯 Топ-3 категории для оптимизации</h2>
-        <div className={styles.top3Grid}>
-          {report.top_3_categories.map((cat, idx) => (
-            <div key={cat.category} className={styles.top3Card}>
-              <div className={styles.top3Rank}>#{idx + 1}</div>
-              <div className={styles.top3Category}>{cat.category}</div>
-              <div className={styles.top3Current}>
-                <span className={styles.top3Label}>Сейчас:</span>
-                <span>{formatMoney(cat.current)}/мес</span>
-              </div>
-              <div className={styles.top3Savings}>
-                <span className={styles.top3Label}>Экономия:</span>
-                <span style={{ color: "#10b981", fontWeight: 600 }}>
-                  {formatMoney(cat.savings)}/мес
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <Card><CardHeader><CardTitle>🎯 Топ-3 категории для оптимизации</CardTitle></CardHeader><CardContent>
+        <div className="grid md:grid-cols-3 gap-4">{report.top_3_categories.map((cat, idx) => (
+          <div key={cat.category} className="p-4 rounded-lg border"><Badge className="mb-2">#{idx + 1}</Badge><div className="font-semibold mb-2">{cat.category}</div><div className="flex justify-between text-sm"><span className="text-muted-foreground">Сейчас:</span><span>{formatMoney(cat.current)}/мес</span></div><div className="flex justify-between text-sm"><span className="text-muted-foreground">Экономия:</span><span className="text-green-500 font-semibold">{formatMoney(cat.savings)}/мес</span></div></div>
+        ))}</div>
+      </CardContent></Card>
 
-      {/* Возможности оптимизации */}
-      <div className={styles.opportunitiesSection}>
-        <h2>💡 Возможности оптимизации ({report.opportunities.length})</h2>
-        <div className={styles.opportunitiesList}>
-          {report.opportunities.map((opp) => (
-            <div key={opp.id} className={styles.opportunityCard}>
-              <div className={styles.opportunityHeader}>
-                <div className={styles.opportunityTitle}>
-                  <span className={styles.opportunityCategory}>{opp.category}</span>
-                  <span
-                    className={styles.opportunityPriority}
-                    style={{ backgroundColor: getPriorityColor(opp.priority) }}
-                  >
-                    {opp.priority === "high"
-                      ? "ВЫСОКИЙ"
-                      : opp.priority === "medium"
-                      ? "СРЕДНИЙ"
-                      : "НИЗКИЙ"}
-                  </span>
-                </div>
-                <div className={styles.opportunitySavings}>
-                  Экономия: <strong>{formatMoney(opp.potential_savings)}/мес</strong>
-                </div>
-              </div>
+      <Card><CardHeader><CardTitle className="flex items-center gap-2"><Lightbulb className="h-5 w-5" />Возможности оптимизации ({report.opportunities.length})</CardTitle></CardHeader><CardContent className="space-y-4">
+        {report.opportunities.map((opp) => (
+          <div key={opp.id} className="p-4 rounded-lg border space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2"><div className="flex items-center gap-2"><span className="font-semibold">{opp.category}</span><Badge style={{ backgroundColor: getPriorityColor(opp.priority) }}>{opp.priority === "high" ? "ВЫСОКИЙ" : opp.priority === "medium" ? "СРЕДНИЙ" : "НИЗКИЙ"}</Badge></div><span className="text-green-500 font-semibold">Экономия: {formatMoney(opp.potential_savings)}/мес</span></div>
+            <div className="grid grid-cols-3 gap-4 text-sm"><div><span className="text-muted-foreground">Тратите:</span> <span className="font-medium">{formatMoney(opp.current_spending)}</span></div><div><span className="text-muted-foreground">Рекомендуем:</span> <span className="font-medium text-green-500">{formatMoney(opp.recommended_spending)}</span></div><div><span className="text-muted-foreground">Сокращение:</span> <span className="font-medium text-yellow-500">-{opp.savings_percentage.toFixed(1)}%</span></div></div>
+            <div className="text-sm"><strong>💬 Совет:</strong> {opp.advice}</div>
+            <div className="text-sm"><strong>📋 Действия:</strong><ul className="list-disc list-inside mt-1">{opp.specific_tips.map((tip, idx) => (<li key={idx}>{tip}</li>))}</ul></div>
+          </div>
+        ))}
+      </CardContent></Card>
 
-              <div className={styles.opportunityStats}>
-                <div className={styles.opportunityStat}>
-                  <span className={styles.statLabel}>Тратите сейчас:</span>
-                  <span className={styles.statValue}>{formatMoney(opp.current_spending)}</span>
-                </div>
-                <div className={styles.opportunityStat}>
-                  <span className={styles.statLabel}>Рекомендуем:</span>
-                  <span className={styles.statValue} style={{ color: "#10b981" }}>
-                    {formatMoney(opp.recommended_spending)}
-                  </span>
-                </div>
-                <div className={styles.opportunityStat}>
-                  <span className={styles.statLabel}>Сокращение:</span>
-                  <span className={styles.statValue} style={{ color: "#f59e0b" }}>
-                    -{opp.savings_percentage.toFixed(1)}%
-                  </span>
-                </div>
-              </div>
-
-              <div className={styles.opportunityAdvice}>
-                <strong>💬 Совет:</strong> {opp.advice}
-              </div>
-
-              <div className={styles.opportunityTips}>
-                <strong>📋 Конкретные действия:</strong>
-                <ul>
-                  {opp.specific_tips.map((tip, idx) => (
-                    <li key={idx}>{tip}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Денежные утечки */}
       {report.money_leaks.length > 0 && (
-        <div className={styles.leaksSection}>
-          <h2>🚰 Денежные утечки</h2>
-          <p className={styles.sectionSubtitle}>
-            Регулярные мелкие траты, которые незаметно &quot;съедают&quot; ваш бюджет
-          </p>
-          <div className={styles.leaksList}>
-            {report.money_leaks.map((leak, idx) => (
-              <div key={idx} className={styles.leakCard}>
-                <div className={styles.leakHeader}>
-                  <div className={styles.leakCategory}>{leak.category}</div>
-                  <div
-                    className={styles.leakImpact}
-                    style={{ backgroundColor: getImpactColor(leak.impact) }}
-                  >
-                    {leak.impact === "high"
-                      ? "ВЫСОКОЕ ВЛИЯНИЕ"
-                      : leak.impact === "medium"
-                      ? "СРЕДНЕЕ"
-                      : "НИЗКОЕ"}
-                  </div>
-                </div>
-                <div className={styles.leakStats}>
-                  <div className={styles.leakStat}>
-                    <div className={styles.leakStatLabel}>Частота</div>
-                    <div className={styles.leakStatValue}>{leak.frequency} раз/мес</div>
-                  </div>
-                  <div className={styles.leakStat}>
-                    <div className={styles.leakStatLabel}>Средний чек</div>
-                    <div className={styles.leakStatValue}>{formatMoney(leak.average_amount)}</div>
-                  </div>
-                  <div className={styles.leakStat}>
-                    <div className={styles.leakStatLabel}>Итого в месяц</div>
-                    <div className={styles.leakStatValue} style={{ color: "#dc2626" }}>
-                      {formatMoney(leak.monthly_total)}
-                    </div>
-                  </div>
-                  <div className={styles.leakStat}>
-                    <div className={styles.leakStatLabel}>Тип</div>
-                    <div className={styles.leakStatValue}>
-                      {leak.leak_type === "frequent_small"
-                        ? "Частые мелкие"
-                        : leak.leak_type === "subscription"
-                        ? "Подписка"
-                        : "Импульсивные"}
-                    </div>
-                  </div>
-                </div>
-                <div className={styles.leakSuggestion}>
-                  <strong>💡 Рекомендация:</strong> {leak.suggestion}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <Card><CardHeader><CardTitle>🚰 Денежные утечки</CardTitle><p className="text-sm text-muted-foreground">Мелкие траты, которые незаметно съедают бюджет</p></CardHeader><CardContent className="space-y-3">
+          {report.money_leaks.map((leak, idx) => (
+            <div key={idx} className="p-4 rounded-lg border">
+              <div className="flex items-center justify-between mb-3"><span className="font-semibold">{leak.category}</span><Badge style={{ backgroundColor: getImpactColor(leak.impact) }}>{leak.impact === "high" ? "ВЫСОКОЕ" : leak.impact === "medium" ? "СРЕДНЕЕ" : "НИЗКОЕ"}</Badge></div>
+              <div className="grid grid-cols-4 gap-4 text-sm mb-3"><div><div className="text-muted-foreground">Частота</div><div className="font-medium">{leak.frequency}/мес</div></div><div><div className="text-muted-foreground">Средний чек</div><div className="font-medium">{formatMoney(leak.average_amount)}</div></div><div><div className="text-muted-foreground">Итого</div><div className="font-medium text-red-500">{formatMoney(leak.monthly_total)}</div></div><div><div className="text-muted-foreground">Тип</div><div className="font-medium">{leak.leak_type === "frequent_small" ? "Частые мелкие" : leak.leak_type === "subscription" ? "Подписка" : "Импульсивные"}</div></div></div>
+              <div className="text-sm"><strong>💡</strong> {leak.suggestion}</div>
+            </div>
+          ))}
+        </CardContent></Card>
       )}
 
-      {/* Персональные советы */}
       {report.personalized_advice.length > 0 && (
-        <div className={styles.personalAdviceSection}>
-          <h2>🎓 Персональные советы</h2>
-          <div className={styles.adviceList}>
-            {report.personalized_advice.map((advice, idx) => (
-              <div key={idx} className={styles.adviceCard}>
-                {advice}
-              </div>
-            ))}
-          </div>
-        </div>
+        <Card><CardHeader><CardTitle>🎓 Персональные советы</CardTitle></CardHeader><CardContent>
+          <div className="space-y-2">{report.personalized_advice.map((advice, idx) => (<div key={idx} className="p-3 rounded-lg bg-muted/50 text-sm">{advice}</div>))}</div>
+        </CardContent></Card>
       )}
     </div>
   );

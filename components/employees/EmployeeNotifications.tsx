@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import styles from './EmployeeNotifications.module.css';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Bell, BellOff, Loader2, X, ChevronDown, ChevronUp } from "lucide-react";
 
 interface Notification {
   id: string;
@@ -114,89 +117,16 @@ export function EmployeeNotifications({ onUnreadCountChange }: EmployeeNotificat
     ? notifications 
     : notifications.slice(0, 5);
 
-  if (loading) {
-    return (
-      <div className={styles.loading}>
-        <span>⏳</span> Загрузка...
-      </div>
-    );
-  }
+  if (loading) return <div className="flex items-center justify-center py-8 text-muted-foreground"><Loader2 className="h-5 w-5 mr-2 animate-spin" />Загрузка...</div>;
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h4 className={styles.title}>
-          🔔 Уведомления
-          {unreadCount > 0 && (
-            <span className={styles.badge}>{unreadCount}</span>
-          )}
-        </h4>
-        {unreadCount > 0 && (
-          <button onClick={markAllAsRead} className={styles.markAllButton}>
-            Прочитать все
-          </button>
-        )}
-      </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between"><h4 className="font-semibold flex items-center gap-2"><Bell className="h-5 w-5" />Уведомления{unreadCount > 0 && <Badge>{unreadCount}</Badge>}</h4>{unreadCount > 0 && <Button variant="ghost" size="sm" onClick={markAllAsRead}>Прочитать все</Button>}</div>
 
-      {notifications.length === 0 ? (
-        <div className={styles.empty}>
-          <span className={styles.emptyIcon}>🔕</span>
-          <p>Нет уведомлений</p>
-        </div>
-      ) : (
-        <>
-          <div className={styles.list}>
-            {displayedNotifications.map((notification) => (
-              <div
-                key={notification.id}
-                className={`${styles.notification} ${!notification.is_read ? styles.unread : ''}`}
-                onClick={() => !notification.is_read && markAsRead(notification.id)}
-              >
-                <div className={styles.notificationIcon}>
-                  {notification.icon}
-                </div>
-                <div className={styles.notificationContent}>
-                  <div className={styles.notificationTitle}>
-                    {notification.title}
-                  </div>
-                  <div className={styles.notificationMessage}>
-                    {notification.message}
-                  </div>
-                  <div className={styles.notificationMeta}>
-                    <span className={styles.notificationTime}>
-                      {formatTime(notification.created_at)}
-                    </span>
-                    {notification.employee && (
-                      <span className={styles.notificationEmployee}>
-                        {notification.employee.full_name}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteNotification(notification.id);
-                  }}
-                  className={styles.deleteButton}
-                  title="Удалить"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {notifications.length > 5 && (
-            <button
-              onClick={() => setShowAll(!showAll)}
-              className={styles.showMoreButton}
-            >
-              {showAll ? '▲ Свернуть' : `▼ Показать все (${notifications.length})`}
-            </button>
-          )}
-        </>
-      )}
+      {notifications.length === 0 ? <div className="text-center py-8"><BellOff className="h-12 w-12 mx-auto text-muted-foreground mb-2" /><p className="text-muted-foreground">Нет уведомлений</p></div> : <>
+        <div className="space-y-2">{displayedNotifications.map(n => <Card key={n.id} className={`cursor-pointer transition-colors ${!n.is_read ? 'border-blue-500 bg-blue-50/50' : ''}`} onClick={() => !n.is_read && markAsRead(n.id)}><CardContent className="pt-3 flex items-start gap-3"><span className="text-xl">{n.icon}</span><div className="flex-1"><div className="font-medium text-sm">{n.title}</div><div className="text-sm text-muted-foreground">{n.message}</div><div className="text-xs text-muted-foreground mt-1">{formatTime(n.created_at)}{n.employee && <> • {n.employee.full_name}</>}</div></div><Button variant="ghost" size="icon" className="h-6 w-6" onClick={e => { e.stopPropagation(); deleteNotification(n.id); }}><X className="h-3 w-3" /></Button></CardContent></Card>)}</div>
+        {notifications.length > 5 && <Button variant="ghost" className="w-full" onClick={() => setShowAll(!showAll)}>{showAll ? <><ChevronUp className="h-4 w-4 mr-1" />Свернуть</> : <><ChevronDown className="h-4 w-4 mr-1" />Показать все ({notifications.length})</>}</Button>}
+      </>}
     </div>
   );
 }

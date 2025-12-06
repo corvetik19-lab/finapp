@@ -2,7 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import styles from "./FirstStepsChecklist.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
+import { X, Check, ArrowRight, PartyPopper } from "lucide-react";
 
 interface ChecklistItem {
   id: string;
@@ -132,74 +137,31 @@ export default function FirstStepsChecklist() {
   const allCompleted = completedCount === items.length;
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h3 className={styles.title}>
-            {allCompleted ? "🎉 Отличная работа!" : "🚀 Первые шаги"}
-          </h3>
-          <p className={styles.subtitle}>
-            {allCompleted
-              ? "Вы освоили основы Finappka!"
-              : `${completedCount} из ${items.length} выполнено`}
-          </p>
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div><CardTitle className="text-base">{allCompleted ? "🎉 Отличная работа!" : "🚀 Первые шаги"}</CardTitle><p className="text-sm text-muted-foreground">{allCompleted ? "Вы освоили основы Finappka!" : `${completedCount} из ${items.length} выполнено`}</p></div>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={dismiss}><X className="h-4 w-4" /></Button>
         </div>
-        <button className={styles.closeBtn} onClick={dismiss} title="Скрыть">
-          ✕
-        </button>
-      </div>
-
-      <div className={styles.progress}>
-        <div className={styles.progressBar} style={{ width: `${progress}%` }} />
-      </div>
-
-      <div className={styles.list}>
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className={`${styles.item} ${
-              item.completed ? styles.completed : ""
-            }`}
-          >
-            <div className={styles.checkbox}>
-              {item.completed ? (
-                <span className={styles.checkmark}>✓</span>
-              ) : (
-                <input
-                  type="checkbox"
-                  checked={false}
-                  onChange={() => markCompleted(item.id)}
-                />
-              )}
-            </div>
-
-            <div className={styles.content}>
-              <div className={styles.itemHeader}>
-                <span className={styles.icon}>{item.icon}</span>
-                <h4 className={styles.itemTitle}>{item.title}</h4>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Progress value={progress} className="h-2" />
+        <div className="space-y-3">
+          {items.map((item) => (
+            <div key={item.id} className={cn("flex items-start gap-3 p-3 rounded-lg border", item.completed && "bg-muted/50")}>
+              <div className="flex-shrink-0 mt-0.5">
+                {item.completed ? <div className="h-5 w-5 rounded-full bg-green-500 flex items-center justify-center"><Check className="h-3 w-3 text-white" /></div> : <Checkbox checked={false} onCheckedChange={() => markCompleted(item.id)} />}
               </div>
-              <p className={styles.itemDescription}>{item.description}</p>
+              <div className="flex-1">
+                <div className="flex items-center gap-2"><span>{item.icon}</span><h4 className={cn("font-medium", item.completed && "line-through text-muted-foreground")}>{item.title}</h4></div>
+                <p className="text-sm text-muted-foreground">{item.description}</p>
+              </div>
+              {!item.completed && item.action && <Button variant="outline" size="sm" onClick={() => handleAction(item)}>Перейти<ArrowRight className="h-4 w-4 ml-1" /></Button>}
             </div>
-
-            {!item.completed && item.action && (
-              <button
-                className={styles.actionBtn}
-                onClick={() => handleAction(item)}
-              >
-                Перейти →
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {allCompleted && (
-        <div className={styles.celebration}>
-          <p>
-            🎊 Теперь вы готовы эффективно управлять своими финансами!
-          </p>
+          ))}
         </div>
-      )}
-    </div>
+        {allCompleted && <div className="flex items-center gap-2 p-4 rounded-lg bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300"><PartyPopper className="h-5 w-5" /><p>Теперь вы готовы эффективно управлять финансами!</p></div>}
+      </CardContent>
+    </Card>
   );
 }

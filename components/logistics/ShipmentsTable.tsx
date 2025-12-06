@@ -1,10 +1,15 @@
 "use client";
 
-import { Shipment, SHIPMENT_STATUS_LABELS, ShipmentStatus, STATUS_COLORS } from "@/types/logistics";
+import { Shipment, SHIPMENT_STATUS_LABELS, ShipmentStatus } from "@/types/logistics";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { formatMoney } from "@/lib/utils/format";
-import styles from "./ShipmentsTable.module.css";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, Filter, Eye, Pencil, Trash2, Truck } from "lucide-react";
 
 interface ShipmentsTableProps {
   initialShipments: Shipment[];
@@ -88,203 +93,55 @@ export function ShipmentsTable({ initialShipments }: ShipmentsTableProps) {
   }, {} as Record<ShipmentStatus, number>);
 
   return (
-    <div className={styles.container}>
+    <div className="space-y-4">
       {/* Табы фильтрации */}
-      <div className={styles.tabs}>
-        <button
-          className={`${styles.tab} ${filter === 'all' ? styles.activeTab : ''}`}
-          onClick={() => setFilter('all')}
-        >
-          🚚 Все отправки
-          {shipments.length > 0 && <span className={styles.badge}>{shipments.length}</span>}
-        </button>
-        
+      <div className="flex flex-wrap gap-2">
+        <Button variant={filter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setFilter('all')}>
+          <Truck className="h-4 w-4 mr-1" />Все отправки{shipments.length > 0 && <Badge variant="secondary" className="ml-1">{shipments.length}</Badge>}
+        </Button>
         {Object.entries(SHIPMENT_STATUS_LABELS).map(([status, label]) => (
-          <button
-            key={status}
-            className={`${styles.tab} ${filter === status ? styles.activeTab : ''}`}
-            onClick={() => setFilter(status as ShipmentStatus)}
-            style={{ 
-              '--status-color': STATUS_COLORS[status as ShipmentStatus] 
-            } as React.CSSProperties}
-          >
-            {label}
-            {statusCounts[status as ShipmentStatus] > 0 && (
-              <span className={styles.badge}>
-                {statusCounts[status as ShipmentStatus]}
-              </span>
-            )}
-          </button>
+          <Button key={status} variant={filter === status ? 'default' : 'outline'} size="sm" onClick={() => setFilter(status as ShipmentStatus)}>
+            {label}{statusCounts[status as ShipmentStatus] > 0 && <Badge variant="secondary" className="ml-1">{statusCounts[status as ShipmentStatus]}</Badge>}
+          </Button>
         ))}
       </div>
 
       {/* Панель управления */}
-      <div className={styles.controls}>
-        <div className={styles.searchBox}>
-          <span className="material-icons">search</span>
-          <input
-            type="text"
-            placeholder="Поиск по номеру, отправителю, получателю..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={styles.searchInput}
-          />
-        </div>
-        <button
-          className={styles.filterBtn}
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <span className="material-icons">filter_list</span>
-          {showFilters ? 'Скрыть фильтры' : 'Показать фильтры'}
-        </button>
+      <div className="flex gap-2">
+        <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="text" placeholder="Поиск по номеру, отправителю, получателю..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" /></div>
+        <Button variant="outline" onClick={() => setShowFilters(!showFilters)}><Filter className="h-4 w-4 mr-1" />{showFilters ? 'Скрыть' : 'Фильтры'}</Button>
       </div>
 
       {/* Таблица */}
-      <div className={styles.tableWrapper}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Трек-номер</th>
-              <th>Статус</th>
-              <th>Отправитель</th>
-              <th>Получатель</th>
-              <th>Маршрут</th>
-              <th>Описание груза</th>
-              <th>Вес</th>
-              <th>Стоимость</th>
-              <th>Дата забора</th>
-              <th>Доставка до</th>
-              <th>Действия</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div className="border rounded-lg overflow-x-auto">
+        <Table>
+          <TableHeader><TableRow><TableHead>Трек-номер</TableHead><TableHead>Статус</TableHead><TableHead>Отправитель</TableHead><TableHead>Получатель</TableHead><TableHead>Маршрут</TableHead><TableHead>Описание</TableHead><TableHead>Вес</TableHead><TableHead>Стоимость</TableHead><TableHead>Забор</TableHead><TableHead>Доставка</TableHead><TableHead className="w-28">Действия</TableHead></TableRow></TableHeader>
+          <TableBody>
             {filteredShipments.length === 0 ? (
-              <tr>
-                <td colSpan={11} className={styles.empty}>
-                  {searchQuery ? 'Ничего не найдено' : 'Нет отправок'}
-                </td>
-              </tr>
+              <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">{searchQuery ? 'Ничего не найдено' : 'Нет отправок'}</TableCell></TableRow>
             ) : (
               filteredShipments.map((shipment) => (
-                <tr key={shipment.id} className={styles.row}>
-                  <td className={styles.trackingCell}>
-                    <div className={styles.trackingNumber}>
-                      {shipment.tracking_number}
-                    </div>
-                    <div className={styles.shipmentType}>
-                      {shipment.type === 'express' && '⚡'}
-                      {shipment.type === 'overnight' && '🌙'}
-                      {shipment.type === 'freight' && '📦'}
-                      {shipment.type === 'standard' && '📋'}
-                    </div>
-                  </td>
-                  
-                  <td>
-                    <select
-                      value={shipment.status}
-                      onChange={(e) => handleStatusChange(shipment, e.target.value as ShipmentStatus)}
-                      className={styles.statusSelect}
-                    >
-                      {Object.entries(SHIPMENT_STATUS_LABELS).map(([status, label]) => (
-                        <option key={status} value={status}>
-                          {label}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  
-                  <td className={styles.contactCell}>
-                    <div className={styles.contactName}>{shipment.sender.name}</div>
-                    {shipment.sender.company && (
-                      <div className={styles.contactCompany}>{shipment.sender.company}</div>
-                    )}
-                    {shipment.sender.phone && (
-                      <div className={styles.contactPhone}>{shipment.sender.phone}</div>
-                    )}
-                  </td>
-                  
-                  <td className={styles.contactCell}>
-                    <div className={styles.contactName}>{shipment.recipient.name}</div>
-                    {shipment.recipient.company && (
-                      <div className={styles.contactCompany}>{shipment.recipient.company}</div>
-                    )}
-                    {shipment.recipient.phone && (
-                      <div className={styles.contactPhone}>{shipment.recipient.phone}</div>
-                    )}
-                  </td>
-                  
-                  <td className={styles.routeCell}>
-                    <div className={styles.routeFrom}>
-                      📍 {shipment.sender_address.city}
-                    </div>
-                    <div className={styles.routeArrow}>↓</div>
-                    <div className={styles.routeTo}>
-                      🏁 {shipment.recipient_address.city}
-                    </div>
-                  </td>
-                  
-                  <td className={styles.descriptionCell}>
-                    <span title={shipment.description}>
-                      {shipment.description.length > 50 
-                        ? `${shipment.description.slice(0, 50)}...` 
-                        : shipment.description}
-                    </span>
-                  </td>
-                  
-                  <td>
-                    {shipment.weight_kg ? `${shipment.weight_kg} кг` : '—'}
-                  </td>
-                  
-                  <td className={styles.amountCell}>
-                    {formatMoney(shipment.cost_amount, shipment.currency)}
-                  </td>
-                  
-                  <td>
-                    {shipment.pickup_date 
-                      ? new Date(shipment.pickup_date).toLocaleDateString('ru-RU')
-                      : '—'}
-                  </td>
-                  
-                  <td>
-                    {shipment.estimated_delivery 
-                      ? new Date(shipment.estimated_delivery).toLocaleDateString('ru-RU')
-                      : '—'}
-                  </td>
-                  
-                  <td className={styles.actions}>
-                    <button
-                      className={`${styles.actionBtn} ${styles.viewBtn}`}
-                      onClick={() => router.push(`/tenders/logistics/${shipment.id}`)}
-                      title="Подробнее"
-                    >
-                      <span className="material-icons">visibility</span>
-                    </button>
-                    <button
-                      className={`${styles.actionBtn} ${styles.editBtn}`}
-                      onClick={() => router.push(`/tenders/logistics/${shipment.id}`)}
-                      title="Редактировать"
-                    >
-                      <span className="material-icons">edit</span>
-                    </button>
-                    <button
-                      className={`${styles.actionBtn} ${styles.deleteBtn}`}
-                      onClick={() => handleDelete(shipment.id)}
-                      title="Удалить"
-                    >
-                      <span className="material-icons">delete</span>
-                    </button>
-                  </td>
-                </tr>
+                <TableRow key={shipment.id}>
+                  <TableCell><div className="font-mono font-medium">{shipment.tracking_number}</div><div className="text-xs">{shipment.type === 'express' && '⚡'}{shipment.type === 'overnight' && '🌙'}{shipment.type === 'freight' && '📦'}{shipment.type === 'standard' && '📋'}</div></TableCell>
+                  <TableCell><Select value={shipment.status} onValueChange={(v) => handleStatusChange(shipment, v as ShipmentStatus)}><SelectTrigger className="w-32 h-8"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(SHIPMENT_STATUS_LABELS).map(([status, label]) => <SelectItem key={status} value={status}>{label}</SelectItem>)}</SelectContent></Select></TableCell>
+                  <TableCell><div className="text-sm font-medium">{shipment.sender.name}</div>{shipment.sender.company && <div className="text-xs text-muted-foreground">{shipment.sender.company}</div>}{shipment.sender.phone && <div className="text-xs text-muted-foreground">{shipment.sender.phone}</div>}</TableCell>
+                  <TableCell><div className="text-sm font-medium">{shipment.recipient.name}</div>{shipment.recipient.company && <div className="text-xs text-muted-foreground">{shipment.recipient.company}</div>}{shipment.recipient.phone && <div className="text-xs text-muted-foreground">{shipment.recipient.phone}</div>}</TableCell>
+                  <TableCell><div className="text-xs">📍 {shipment.sender_address.city}</div><div className="text-xs text-muted-foreground">↓</div><div className="text-xs">🏁 {shipment.recipient_address.city}</div></TableCell>
+                  <TableCell className="max-w-32"><span className="text-sm line-clamp-2" title={shipment.description}>{shipment.description}</span></TableCell>
+                  <TableCell className="text-sm">{shipment.weight_kg ? `${shipment.weight_kg} кг` : '—'}</TableCell>
+                  <TableCell className="text-sm font-medium">{formatMoney(shipment.cost_amount, shipment.currency)}</TableCell>
+                  <TableCell className="text-sm">{shipment.pickup_date ? new Date(shipment.pickup_date).toLocaleDateString('ru-RU') : '—'}</TableCell>
+                  <TableCell className="text-sm">{shipment.estimated_delivery ? new Date(shipment.estimated_delivery).toLocaleDateString('ru-RU') : '—'}</TableCell>
+                  <TableCell><div className="flex gap-1"><Button variant="ghost" size="icon" onClick={() => router.push(`/tenders/logistics/${shipment.id}`)} title="Подробнее"><Eye className="h-4 w-4" /></Button><Button variant="ghost" size="icon" onClick={() => router.push(`/tenders/logistics/${shipment.id}`)} title="Редактировать"><Pencil className="h-4 w-4" /></Button><Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(shipment.id)} title="Удалить"><Trash2 className="h-4 w-4" /></Button></div></TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Информация о результатах */}
-      <div className={styles.resultsInfo}>
-        Показано {filteredShipments.length} из {shipments.length} отправок
-      </div>
+      <div className="text-sm text-muted-foreground">Показано {filteredShipments.length} из {shipments.length} отправок</div>
     </div>
   );
 }

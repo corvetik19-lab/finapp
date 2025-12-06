@@ -12,7 +12,14 @@ import type {
   ChecklistItem,
   CreateTaskInput
 } from '@/lib/tenders/tasks-service';
-import styles from './Tasks.module.css';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Search, List, LayoutGrid, ChevronDown, ChevronUp, Trash2, ExternalLink, Pencil } from 'lucide-react';
 
 interface Props {
   initialData: TasksData;
@@ -250,14 +257,11 @@ export default function TasksClient({ initialData, employees, tenders, companyId
     setDraggedTask(task);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', task.id);
-    // Add dragging class
-    (e.target as HTMLDivElement).classList.add(styles.dragging);
   };
 
-  const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragEnd = () => {
     setDraggedTask(null);
     setDragOverColumn(null);
-    (e.target as HTMLDivElement).classList.remove(styles.dragging);
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>, status: TaskStatus) => {
@@ -327,99 +331,43 @@ export default function TasksClient({ initialData, employees, tenders, companyId
   const { stats } = data;
 
   return (
-    <div className={styles.container}>
+    <div className="space-y-6">
       {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.headerInfo}>
-          <h1 className={styles.title}>
-            <span className={styles.titleIcon}>✅</span>
-            Задачи
-          </h1>
-          <p className={styles.subtitle}>Управление задачами по тендерам</p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">✅ Задачи</h1>
+          <p className="text-gray-500 mt-1">Управление задачами по тендерам</p>
         </div>
-        <div className={styles.headerActions}>
-          <div className={styles.viewModeButtons}>
+        <div className="flex items-center gap-3">
+          <div className="flex bg-gray-100 rounded-lg p-1">
             {(['list', 'board'] as ViewMode[]).map(mode => (
-              <button
-                key={mode}
-                className={`${styles.viewModeBtn} ${viewMode === mode ? styles.viewModeBtnActive : ''}`}
-                onClick={() => setViewMode(mode)}
-              >
-                {mode === 'list' ? '📋 Список' : '📊 Доска'}
-              </button>
+              <Button key={mode} variant={viewMode === mode ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode(mode)}>
+                {mode === 'list' ? <><List className="h-4 w-4 mr-1" />Список</> : <><LayoutGrid className="h-4 w-4 mr-1" />Доска</>}
+              </Button>
             ))}
           </div>
-          <button className={styles.createButton} onClick={() => setShowCreateModal(true)}>
-            <span>+</span> Создать задачу
-          </button>
+          <Button onClick={() => setShowCreateModal(true)}><Plus className="h-4 w-4 mr-1" />Создать задачу</Button>
         </div>
       </div>
 
       {/* Stats */}
-      <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <div className={styles.statIcon}>📋</div>
-          <div className={styles.statContent}>
-            <div className={styles.statValue}>{stats.total}</div>
-            <div className={styles.statLabel}>Всего</div>
-          </div>
-        </div>
-        <div className={`${styles.statCard} ${styles.statWarning}`}>
-          <div className={styles.statIcon}>⏳</div>
-          <div className={styles.statContent}>
-            <div className={styles.statValue}>{stats.pending}</div>
-            <div className={styles.statLabel}>Ожидают</div>
-          </div>
-        </div>
-        <div className={`${styles.statCard} ${styles.statInfo}`}>
-          <div className={styles.statIcon}>🔄</div>
-          <div className={styles.statContent}>
-            <div className={styles.statValue}>{stats.inProgress}</div>
-            <div className={styles.statLabel}>В работе</div>
-          </div>
-        </div>
-        <div className={`${styles.statCard} ${styles.statSuccess}`}>
-          <div className={styles.statIcon}>✅</div>
-          <div className={styles.statContent}>
-            <div className={styles.statValue}>{stats.completed}</div>
-            <div className={styles.statLabel}>Выполнено</div>
-          </div>
-        </div>
-        <div className={`${styles.statCard} ${styles.statDanger}`}>
-          <div className={styles.statIcon}>🔥</div>
-          <div className={styles.statContent}>
-            <div className={styles.statValue}>{stats.overdue}</div>
-            <div className={styles.statLabel}>Просрочено</div>
-          </div>
-        </div>
-        <div className={`${styles.statCard} ${styles.statUrgent}`}>
-          <div className={styles.statIcon}>🔴</div>
-          <div className={styles.statContent}>
-            <div className={styles.statValue}>{stats.highPriority}</div>
-            <div className={styles.statLabel}>Срочные</div>
-          </div>
-        </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <Card><CardContent className="p-3 flex items-center gap-3"><span className="text-2xl">📋</span><div><div className="text-xl font-bold">{stats.total}</div><div className="text-xs text-gray-500">Всего</div></div></CardContent></Card>
+        <Card className="border-l-4 border-l-amber-400"><CardContent className="p-3 flex items-center gap-3"><span className="text-2xl">⏳</span><div><div className="text-xl font-bold text-amber-600">{stats.pending}</div><div className="text-xs text-gray-500">Ожидают</div></div></CardContent></Card>
+        <Card className="border-l-4 border-l-blue-400"><CardContent className="p-3 flex items-center gap-3"><span className="text-2xl">🔄</span><div><div className="text-xl font-bold text-blue-600">{stats.inProgress}</div><div className="text-xs text-gray-500">В работе</div></div></CardContent></Card>
+        <Card className="border-l-4 border-l-green-400"><CardContent className="p-3 flex items-center gap-3"><span className="text-2xl">✅</span><div><div className="text-xl font-bold text-green-600">{stats.completed}</div><div className="text-xs text-gray-500">Выполнено</div></div></CardContent></Card>
+        <Card className="border-l-4 border-l-red-400"><CardContent className="p-3 flex items-center gap-3"><span className="text-2xl">🔥</span><div><div className="text-xl font-bold text-red-600">{stats.overdue}</div><div className="text-xs text-gray-500">Просрочено</div></div></CardContent></Card>
+        <Card className="border-l-4 border-l-red-600"><CardContent className="p-3 flex items-center gap-3"><span className="text-2xl">🔴</span><div><div className="text-xl font-bold text-red-700">{stats.highPriority}</div><div className="text-xs text-gray-500">Срочные</div></div></CardContent></Card>
       </div>
 
       {/* Filters */}
-      <div className={styles.filters}>
-        <div className={styles.searchBox}>
-          <span className={styles.searchIcon}>🔍</span>
-          <input
-            type="text"
-            placeholder="Поиск задач..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className={styles.searchInput}
-          />
+      <div className="flex flex-col md:flex-row gap-3 items-start md:items-center">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input type="text" placeholder="Поиск задач..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9" />
         </div>
-        
-        <div className={styles.filterGroup}>
-          <select
-            value={filterStatus}
-            onChange={e => setFilterStatus(e.target.value as FilterStatus)}
-            className={styles.filterSelect}
-          >
+        <div className="flex gap-2 flex-wrap">
+          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as FilterStatus)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
             <option value="active">Активные</option>
             <option value="all">Все статусы</option>
             <option value="pending">Ожидают</option>
@@ -427,181 +375,89 @@ export default function TasksClient({ initialData, employees, tenders, companyId
             <option value="completed">Выполнено</option>
             <option value="cancelled">Отменено</option>
           </select>
-
-          <select
-            value={filterPriority}
-            onChange={e => setFilterPriority(e.target.value as TaskPriority | 'all')}
-            className={styles.filterSelect}
-          >
+          <select value={filterPriority} onChange={e => setFilterPriority(e.target.value as TaskPriority | 'all')} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
             <option value="all">Все приоритеты</option>
             <option value="urgent">🔴 Срочно</option>
             <option value="high">🟡 Высокий</option>
             <option value="normal">🟢 Обычный</option>
             <option value="low">🔵 Низкий</option>
           </select>
-
-          <select
-            value={filterAssignee}
-            onChange={e => setFilterAssignee(e.target.value)}
-            className={styles.filterSelect}
-          >
+          <select value={filterAssignee} onChange={e => setFilterAssignee(e.target.value)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
             <option value="all">Все исполнители</option>
-            {employees.map(emp => (
-              <option key={emp.id} value={emp.id}>{emp.full_name}</option>
-            ))}
+            {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.full_name}</option>)}
           </select>
         </div>
       </div>
 
       {/* Task List View */}
       {viewMode === 'list' && (
-        <div className={styles.taskList}>
+        <div className="space-y-3">
           {filteredTasks.length === 0 ? (
-            <div className={styles.emptyState}>
-              <span className={styles.emptyIcon}>📝</span>
-              <h3>Нет задач</h3>
-              <p>Создайте первую задачу для начала работы</p>
-              <button className={styles.createButton} onClick={() => setShowCreateModal(true)}>
-                + Создать задачу
-              </button>
-            </div>
+            <Card className="py-12 text-center">
+              <CardContent>
+                <span className="text-5xl">📝</span>
+                <h3 className="text-lg font-semibold mt-4">Нет задач</h3>
+                <p className="text-gray-500 mt-1">Создайте первую задачу для начала работы</p>
+                <Button className="mt-4" onClick={() => setShowCreateModal(true)}><Plus className="h-4 w-4 mr-1" />Создать задачу</Button>
+              </CardContent>
+            </Card>
           ) : (
             filteredTasks.map(task => {
               const overdue = isOverdue(task);
               const dueToday = isDueToday(task);
               const isExpanded = expandedTasks.has(task.id);
               const checklistProgress = getChecklistProgress(task.checklist);
-
               return (
-                <div
-                  key={task.id}
-                  className={`${styles.taskCard} ${overdue ? styles.taskOverdue : ''} ${dueToday ? styles.taskDueToday : ''}`}
-                >
-                  <div className={styles.taskMain}>
-                    {/* Checkbox */}
-                    <button
-                      className={`${styles.taskCheckbox} ${task.status === 'completed' ? styles.taskCheckboxChecked : ''}`}
-                      onClick={() => handleStatusChange(task, task.status === 'completed' ? 'pending' : 'completed')}
-                    >
-                      {task.status === 'completed' && '✓'}
-                    </button>
-
-                    {/* Content */}
-                    <div className={styles.taskContent}>
-                      <div className={styles.taskHeader}>
-                        <h3 className={`${styles.taskTitle} ${task.status === 'completed' ? styles.taskTitleCompleted : ''}`}>
-                          {task.title}
-                        </h3>
-                        <div className={styles.taskBadges}>
-                          {overdue && <span className={styles.badgeOverdue}>Просрочено</span>}
-                          {dueToday && !overdue && <span className={styles.badgeToday}>Сегодня</span>}
-                          <span 
-                            className={styles.badgePriority}
-                            style={{ backgroundColor: PRIORITY_CONFIG[task.priority].color }}
-                          >
-                            {PRIORITY_CONFIG[task.priority].icon} {PRIORITY_CONFIG[task.priority].label}
-                          </span>
-                          <span 
-                            className={styles.badgeStatus}
-                            style={{ backgroundColor: STATUS_CONFIG[task.status].color }}
-                          >
-                            {STATUS_CONFIG[task.status].label}
-                          </span>
-                        </div>
-                      </div>
-
-                      {task.description && (
-                        <p className={styles.taskDescription}>{task.description}</p>
-                      )}
-
-                      {/* Checklist progress */}
-                      {checklistProgress && (
-                        <div className={styles.checklistProgress}>
-                          <div className={styles.checklistBar}>
-                            <div 
-                              className={styles.checklistBarFill}
-                              style={{ width: `${checklistProgress.percent}%` }}
-                            />
+                <Card key={task.id} className={`${overdue ? 'border-l-4 border-l-red-500 bg-red-50/50' : dueToday ? 'border-l-4 border-l-amber-500 bg-amber-50/50' : ''}`}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <button className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 mt-1 transition-colors ${task.status === 'completed' ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 hover:border-green-500'}`} onClick={() => handleStatusChange(task, task.status === 'completed' ? 'pending' : 'completed')}>
+                        {task.status === 'completed' && '✓'}
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 flex-wrap">
+                          <h3 className={`font-medium ${task.status === 'completed' ? 'line-through text-gray-400' : ''}`}>{task.title}</h3>
+                          <div className="flex items-center gap-1 flex-wrap">
+                            {overdue && <Badge variant="destructive" className="text-xs">Просрочено</Badge>}
+                            {dueToday && !overdue && <Badge className="text-xs bg-amber-500">Сегодня</Badge>}
+                            <Badge className="text-xs text-white" style={{ backgroundColor: PRIORITY_CONFIG[task.priority].color }}>{PRIORITY_CONFIG[task.priority].icon} {PRIORITY_CONFIG[task.priority].label}</Badge>
+                            <Badge className="text-xs text-white" style={{ backgroundColor: STATUS_CONFIG[task.status].color }}>{STATUS_CONFIG[task.status].label}</Badge>
                           </div>
-                          <span className={styles.checklistText}>
-                            {checklistProgress.completed}/{checklistProgress.total} подзадач
-                          </span>
                         </div>
-                      )}
-
-                      <div className={styles.taskMeta}>
-                        {task.due_date && (
-                          <span className={`${styles.taskMetaItem} ${overdue ? styles.taskMetaOverdue : ''}`}>
-                            📅 {formatDateTime(task.due_date, task.due_time)}
-                          </span>
-                        )}
-                        {task.assignee && (
-                          <span className={styles.taskMetaItem}>
-                            👤 {task.assignee.full_name}
-                          </span>
-                        )}
-                        {task.tender && (
-                          <Link href={`/tenders/${task.tender.id}`} className={styles.taskTenderLink}>
-                            📑 {task.tender.customer?.substring(0, 30)}...
-                          </Link>
-                        )}
-                        {task.tags && task.tags.length > 0 && (
-                          <div className={styles.taskTags}>
-                            {task.tags.map(tag => (
-                              <span key={tag} className={styles.taskTag}>#{tag}</span>
-                            ))}
+                        {task.description && <p className="text-sm text-gray-500 mt-1">{task.description}</p>}
+                        {checklistProgress && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden"><div className="h-full bg-green-500 transition-all" style={{ width: `${checklistProgress.percent}%` }} /></div>
+                            <span className="text-xs text-gray-500">{checklistProgress.completed}/{checklistProgress.total}</span>
                           </div>
                         )}
+                        <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 flex-wrap">
+                          {task.due_date && <span className={overdue ? 'text-red-600 font-medium' : ''}>📅 {formatDateTime(task.due_date, task.due_time)}</span>}
+                          {task.assignee && <span>👤 {task.assignee.full_name}</span>}
+                          {task.tender && <Link href={`/tenders/${task.tender.id}`} className="text-blue-600 hover:underline flex items-center gap-1"><ExternalLink className="h-3 w-3" />{task.tender.customer?.substring(0, 30)}...</Link>}
+                          {task.tags?.map(tag => <span key={tag} className="bg-gray-100 px-2 py-0.5 rounded">#{tag}</span>)}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {task.checklist.length > 0 && <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleTaskExpanded(task.id)}>{isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</Button>}
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingTask(task)} title="Редактировать"><Pencil className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleDeleteTask(task.id)} title="Удалить"><Trash2 className="h-4 w-4" /></Button>
                       </div>
                     </div>
-
-                    {/* Actions */}
-                    <div className={styles.taskActions}>
-                      {task.checklist.length > 0 && (
-                        <button
-                          className={styles.taskActionBtn}
-                          onClick={() => toggleTaskExpanded(task.id)}
-                          title="Показать подзадачи"
-                        >
-                          {isExpanded ? '▲' : '▼'}
-                        </button>
-                      )}
-                      <button
-                        className={styles.taskActionBtn}
-                        onClick={() => setEditingTask(task)}
-                        title="Редактировать"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        className={`${styles.taskActionBtn} ${styles.taskActionBtnDanger}`}
-                        onClick={() => handleDeleteTask(task.id)}
-                        title="Удалить"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Expanded Checklist */}
-                  {isExpanded && task.checklist.length > 0 && (
-                    <div className={styles.taskChecklist}>
-                      {task.checklist.map(item => (
-                        <div key={item.id} className={styles.checklistItem}>
-                          <button
-                            className={`${styles.checklistCheckbox} ${item.completed ? styles.checklistCheckboxChecked : ''}`}
-                            onClick={() => handleChecklistItemToggle(task, item.id)}
-                          >
-                            {item.completed && '✓'}
-                          </button>
-                          <span className={`${styles.checklistText} ${item.completed ? styles.checklistTextCompleted : ''}`}>
-                            {item.text}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                    {isExpanded && task.checklist.length > 0 && (
+                      <div className="mt-3 pt-3 border-t space-y-2">
+                        {task.checklist.map(item => (
+                          <div key={item.id} className="flex items-center gap-2">
+                            <button className={`w-5 h-5 rounded border flex items-center justify-center text-xs transition-colors ${item.completed ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 hover:border-green-500'}`} onClick={() => handleChecklistItemToggle(task, item.id)}>
+                              {item.completed && '✓'}
+                            </button>
+                            <span className={`text-sm ${item.completed ? 'line-through text-gray-400' : ''}`}>{item.text}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               );
             })
           )}
@@ -610,109 +466,64 @@ export default function TasksClient({ initialData, employees, tenders, companyId
 
       {/* Board View */}
       {viewMode === 'board' && (
-        <div className={styles.boardView}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {(['pending', 'in_progress', 'completed'] as TaskStatus[]).map(status => (
             <div 
               key={status} 
-              className={`${styles.boardColumn} ${dragOverColumn === status ? styles.boardColumnDragOver : ''}`}
+              className={`bg-gray-50 rounded-lg min-h-[400px] ${dragOverColumn === status ? 'ring-2 ring-blue-400' : ''}`}
               onDragOver={(e) => handleDragOver(e, status)}
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, status)}
             >
-              <div 
-                className={styles.boardColumnHeader}
-                style={{ borderTopColor: STATUS_CONFIG[status].color }}
-              >
+              <div className="p-3 border-t-4 rounded-t-lg flex items-center gap-2" style={{ borderTopColor: STATUS_CONFIG[status].color }}>
                 <span>{STATUS_CONFIG[status].icon}</span>
-                <h3>{STATUS_CONFIG[status].label}</h3>
-                <span className={styles.boardColumnCount}>{tasksByStatus[status].length}</span>
+                <h3 className="font-medium flex-1">{STATUS_CONFIG[status].label}</h3>
+                <Badge variant="secondary">{tasksByStatus[status].length}</Badge>
               </div>
-              <div className={styles.boardColumnBody}>
+              <div className="p-2 space-y-2">
                 {tasksByStatus[status].map(task => {
                   const overdue = isOverdue(task);
                   const checklistProgress = getChecklistProgress(task.checklist);
                   const isCardExpanded = expandedBoardCards.has(task.id);
                   const hasChecklist = task.checklist && task.checklist.length > 0;
-
                   return (
-                    <div
+                    <Card
                       key={task.id}
-                      className={`${styles.boardCard} ${overdue ? styles.boardCardOverdue : ''} ${draggedTask?.id === task.id ? styles.boardCardDragging : ''}`}
+                      className={`cursor-grab ${overdue ? 'border-l-4 border-l-red-500' : ''} ${draggedTask?.id === task.id ? 'opacity-50' : ''}`}
                       draggable
                       onDragStart={(e) => handleDragStart(e, task)}
                       onDragEnd={handleDragEnd}
                     >
-                      <div className={styles.boardCardHeader}>
-                        <span 
-                          className={styles.boardCardPriority}
-                          style={{ backgroundColor: PRIORITY_CONFIG[task.priority].color }}
-                        />
-                        <h4 className={styles.boardCardTitle}>{task.title}</h4>
-                        <span className={styles.boardCardDragHandle}>⋮⋮</span>
-                      </div>
-                      
-                      {task.description && !isCardExpanded && (
-                        <p className={styles.boardCardDescription}>
-                          {task.description.substring(0, 60)}...
-                        </p>
-                      )}
-
-                      {/* Checklist progress bar - clickable to expand */}
-                      {hasChecklist && (
-                        <div 
-                          className={styles.boardCardProgress}
-                          onClick={() => toggleBoardCardExpanded(task.id)}
-                          style={{ cursor: 'pointer' }}
-                        >
-                          <div className={styles.checklistBar}>
-                            <div 
-                              className={styles.checklistBarFill}
-                              style={{ width: `${checklistProgress?.percent || 0}%` }}
-                            />
+                      <CardContent className="p-3">
+                        <div className="flex items-start gap-2">
+                          <span className="w-2 h-2 rounded-full mt-2 shrink-0" style={{ backgroundColor: PRIORITY_CONFIG[task.priority].color }} />
+                          <h4 className="font-medium text-sm flex-1">{task.title}</h4>
+                          <span className="text-gray-400 cursor-grab">⋮⋮</span>
+                        </div>
+                        {task.description && !isCardExpanded && <p className="text-xs text-gray-500 mt-1 line-clamp-2">{task.description.substring(0, 60)}...</p>}
+                        {hasChecklist && (
+                          <div className="flex items-center gap-2 mt-2 cursor-pointer" onClick={() => toggleBoardCardExpanded(task.id)}>
+                            <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden"><div className="h-full bg-green-500" style={{ width: `${checklistProgress?.percent || 0}%` }} /></div>
+                            <span className="text-xs text-gray-500">{checklistProgress?.completed}/{checklistProgress?.total}</span>
+                            {isCardExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                           </div>
-                          <span>{checklistProgress?.completed}/{checklistProgress?.total}</span>
-                          <span className={styles.expandIcon}>{isCardExpanded ? '▲' : '▼'}</span>
-                        </div>
-                      )}
-
-                      {/* Expanded checklist items */}
-                      {isCardExpanded && hasChecklist && (
-                        <div className={styles.boardCardChecklist}>
-                          {task.checklist.map(item => (
-                            <div 
-                              key={item.id} 
-                              className={styles.boardChecklistItem}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleChecklistItemToggle(task, item.id);
-                              }}
-                            >
-                              <span 
-                                className={`${styles.boardChecklistCheckbox} ${item.completed ? styles.boardChecklistChecked : ''}`}
-                              >
-                                {item.completed ? '✓' : ''}
-                              </span>
-                              <span className={`${styles.boardChecklistText} ${item.completed ? styles.boardChecklistTextDone : ''}`}>
-                                {item.text}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      <div className={styles.boardCardFooter}>
-                        {task.due_date && (
-                          <span className={overdue ? styles.boardCardOverdueText : ''}>
-                            📅 {formatDate(task.due_date)}
-                          </span>
                         )}
-                        {task.assignee && (
-                          <span className={styles.boardCardAssignee}>
-                            {task.assignee.full_name.split(' ').map(n => n[0]).join('')}
-                          </span>
+                        {isCardExpanded && hasChecklist && (
+                          <div className="mt-2 space-y-1">
+                            {task.checklist.map(item => (
+                              <div key={item.id} className="flex items-center gap-2 text-xs cursor-pointer" onClick={(e) => { e.stopPropagation(); handleChecklistItemToggle(task, item.id); }}>
+                                <span className={`w-4 h-4 rounded border flex items-center justify-center ${item.completed ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'}`}>{item.completed ? '✓' : ''}</span>
+                                <span className={item.completed ? 'line-through text-gray-400' : ''}>{item.text}</span>
+                              </div>
+                            ))}
+                          </div>
                         )}
-                      </div>
-                    </div>
+                        <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
+                          {task.due_date && <span className={overdue ? 'text-red-600' : ''}>📅 {formatDate(task.due_date)}</span>}
+                          {task.assignee && <span className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">{task.assignee.full_name.split(' ').map(n => n[0]).join('')}</span>}
+                        </div>
+                      </CardContent>
+                    </Card>
                   );
                 })}
               </div>
@@ -789,10 +600,7 @@ function TaskModal({
 
   const handleAddChecklistItem = () => {
     if (!newChecklistItem.trim()) return;
-    setChecklist([
-      ...checklist,
-      { id: Date.now().toString(), text: newChecklistItem.trim(), completed: false },
-    ]);
+    setChecklist([...checklist, { id: Date.now().toString(), text: newChecklistItem.trim(), completed: false }]);
     setNewChecklistItem('');
   };
 
@@ -803,7 +611,6 @@ function TaskModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
-
     onSave({
       title: title.trim(),
       description: description.trim() || null,
@@ -819,138 +626,85 @@ function TaskModal({
   };
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modal} onClick={e => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h2>{task ? 'Редактировать задачу' : 'Новая задача'}</h2>
-          <button onClick={onClose} className={styles.modalClose}>✕</button>
-        </div>
-
-        <form onSubmit={handleSubmit} className={styles.modalBody}>
-          <div className={styles.formGroup}>
-            <label>Название *</label>
-            <input
-              type="text"
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              placeholder="Введите название задачи"
-              required
-              autoFocus
-            />
+    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{task ? 'Редактировать задачу' : 'Новая задача'}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Название *</Label>
+            <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Введите название задачи" required autoFocus />
           </div>
-
-          <div className={styles.formGroup}>
-            <label>Описание</label>
-            <textarea
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              placeholder="Подробное описание задачи"
-              rows={3}
-            />
+          <div className="space-y-2">
+            <Label>Описание</Label>
+            <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Подробное описание задачи" rows={3} />
           </div>
-
-          <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-              <label>Статус</label>
-              <select value={status} onChange={e => setStatus(e.target.value as TaskStatus)}>
-                {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-                  <option key={key} value={key}>{cfg.icon} {cfg.label}</option>
-                ))}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Статус</Label>
+              <select value={status} onChange={e => setStatus(e.target.value as TaskStatus)} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm">
+                {Object.entries(STATUS_CONFIG).map(([key, cfg]) => <option key={key} value={key}>{cfg.icon} {cfg.label}</option>)}
               </select>
             </div>
-            <div className={styles.formGroup}>
-              <label>Приоритет</label>
-              <select value={priority} onChange={e => setPriority(e.target.value as TaskPriority)}>
-                {Object.entries(PRIORITY_CONFIG).map(([key, cfg]) => (
-                  <option key={key} value={key}>{cfg.icon} {cfg.label}</option>
-                ))}
+            <div className="space-y-2">
+              <Label>Приоритет</Label>
+              <select value={priority} onChange={e => setPriority(e.target.value as TaskPriority)} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm">
+                {Object.entries(PRIORITY_CONFIG).map(([key, cfg]) => <option key={key} value={key}>{cfg.icon} {cfg.label}</option>)}
               </select>
             </div>
           </div>
-
-          <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-              <label>Срок выполнения</label>
-              <input
-                type="date"
-                value={dueDate}
-                onChange={e => setDueDate(e.target.value)}
-              />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Срок выполнения</Label>
+              <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
             </div>
-            <div className={styles.formGroup}>
-              <label>Время</label>
-              <input
-                type="time"
-                value={dueTime}
-                onChange={e => setDueTime(e.target.value)}
-              />
+            <div className="space-y-2">
+              <Label>Время</Label>
+              <Input type="time" value={dueTime} onChange={e => setDueTime(e.target.value)} />
             </div>
           </div>
-
-          <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-              <label>Исполнитель</label>
-              <select value={assignedTo} onChange={e => setAssignedTo(e.target.value)}>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Исполнитель</Label>
+              <select value={assignedTo} onChange={e => setAssignedTo(e.target.value)} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm">
                 <option value="">Не назначен</option>
-                {employees.map(emp => (
-                  <option key={emp.id} value={emp.id}>{emp.full_name}</option>
-                ))}
+                {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.full_name}</option>)}
               </select>
             </div>
-            <div className={styles.formGroup}>
-              <label>Тендер</label>
-              <select value={tenderId} onChange={e => setTenderId(e.target.value)}>
+            <div className="space-y-2">
+              <Label>Тендер</Label>
+              <select value={tenderId} onChange={e => setTenderId(e.target.value)} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm">
                 <option value="">Без тендера</option>
-                {tenders.map(t => (
-                  <option key={t.id} value={t.id}>{t.customer?.substring(0, 40)}</option>
-                ))}
+                {tenders.map(t => <option key={t.id} value={t.id}>{t.customer?.substring(0, 40)}</option>)}
               </select>
             </div>
           </div>
-
-          <div className={styles.formGroup}>
-            <label>Теги (через запятую)</label>
-            <input
-              type="text"
-              value={tags}
-              onChange={e => setTags(e.target.value)}
-              placeholder="документы, срочно, ожидание"
-            />
+          <div className="space-y-2">
+            <Label>Теги (через запятую)</Label>
+            <Input value={tags} onChange={e => setTags(e.target.value)} placeholder="документы, срочно, ожидание" />
           </div>
-
-          {/* Checklist */}
-          <div className={styles.formGroup}>
-            <label>Подзадачи</label>
-            <div className={styles.checklistEditor}>
+          <div className="space-y-2">
+            <Label>Подзадачи</Label>
+            <div className="space-y-2 p-3 bg-gray-50 rounded-lg">
               {checklist.map(item => (
-                <div key={item.id} className={styles.checklistEditorItem}>
-                  <span>{item.text}</span>
-                  <button type="button" onClick={() => handleRemoveChecklistItem(item.id)}>✕</button>
+                <div key={item.id} className="flex items-center justify-between bg-white p-2 rounded border">
+                  <span className="text-sm">{item.text}</span>
+                  <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleRemoveChecklistItem(item.id)}><Trash2 className="h-3 w-3" /></Button>
                 </div>
               ))}
-              <div className={styles.checklistEditorAdd}>
-                <input
-                  type="text"
-                  value={newChecklistItem}
-                  onChange={e => setNewChecklistItem(e.target.value)}
-                  placeholder="Добавить подзадачу..."
-                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddChecklistItem())}
-                />
-                <button type="button" onClick={handleAddChecklistItem}>+</button>
+              <div className="flex gap-2">
+                <Input value={newChecklistItem} onChange={e => setNewChecklistItem(e.target.value)} placeholder="Добавить подзадачу..." onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddChecklistItem())} />
+                <Button type="button" variant="outline" size="icon" onClick={handleAddChecklistItem}><Plus className="h-4 w-4" /></Button>
               </div>
             </div>
           </div>
-
-          <div className={styles.modalFooter}>
-            <button type="button" onClick={onClose} className={styles.btnSecondary}>
-              Отмена
-            </button>
-            <button type="submit" className={styles.btnPrimary}>
-              {task ? 'Сохранить' : 'Создать'}
-            </button>
-          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>Отмена</Button>
+            <Button type="submit">{task ? 'Сохранить' : 'Создать'}</Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

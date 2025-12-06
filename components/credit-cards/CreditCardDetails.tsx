@@ -1,4 +1,7 @@
-import styles from "./CreditCardDetails.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+import { TrendingDown, Calendar, Bell } from "lucide-react";
 import { formatMoney } from "@/lib/utils/format";
 import type { CreditCard } from "./CreditCardsList";
 
@@ -46,138 +49,40 @@ export default function CreditCardDetails({ card }: CreditCardDetailsProps) {
   const daysUntilPayment = calculateDaysUntilPayment();
 
   return (
-    <div className={styles.container}>
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Детали карты</h2>
-        <div className={styles.detailsGrid}>
-          <div className={styles.detailsCard}>
-            <div className={styles.detailRow}>
-              <span className={styles.detailLabel}>Банк:</span>
-              <span className={styles.detailValue}>{card.bank}</span>
-            </div>
-            <div className={styles.detailRow}>
-              <span className={styles.detailLabel}>Кредитный лимит:</span>
-              <span className={styles.detailValue}>{formatMoney(card.limit, card.currency)}</span>
-            </div>
-            <div className={styles.detailRow}>
-              <span className={styles.detailLabel}>Процентная ставка:</span>
-              <span className={styles.detailValue}>{card.interestRate}%</span>
-            </div>
-            <div className={styles.detailRow}>
-              <span className={styles.detailLabel}>Льготный период:</span>
-              <span className={styles.detailValue}>{card.gracePeriod} дней</span>
-            </div>
+    <div className="space-y-6">
+      <Card><CardHeader><CardTitle>Детали карты</CardTitle></CardHeader><CardContent>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Банк:</span><span className="font-medium">{card.bank}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Кредитный лимит:</span><span className="font-medium">{formatMoney(card.limit, card.currency)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Процентная ставка:</span><span className="font-medium">{card.interestRate}%</span></div>
+            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Льготный период:</span><span className="font-medium">{card.gracePeriod} дней</span></div>
           </div>
-
-          <div className={styles.detailsCard}>
-            <div className={styles.detailRow}>
-              <span className={styles.detailLabel}>Текущая задолженность:</span>
-              <span className={styles.detailValue}>{formatMoney(card.balance, card.currency)}</span>
-            </div>
-            <div className={styles.detailRow}>
-              <span className={styles.detailLabel}>Минимальный платеж:</span>
-              <span className={styles.detailValue}>{formatMoney(card.minPayment, card.currency)}</span>
-            </div>
-            <div className={styles.detailRow}>
-              <span className={styles.detailLabel}>Доступный лимит:</span>
-              <span className={styles.detailValue}>{formatMoney(card.available, card.currency)}</span>
-            </div>
-            <div className={styles.detailRow}>
-              <span className={styles.detailLabel}>Следующий платеж:</span>
-              <span className={styles.detailValue}>
-                {card.nextPaymentDate 
-                  ? new Date(card.nextPaymentDate).toLocaleDateString("ru-RU")
-                  : "Не указано"
-                }
-              </span>
-            </div>
-            <div className={styles.detailRow}>
-              <span className={styles.detailLabel}>Дней до платежа:</span>
-              <span 
-                className={styles.detailValue}
-                style={{
-                  color: daysUntilPayment !== null && daysUntilPayment < 0 
-                    ? "var(--danger)" 
-                    : daysUntilPayment !== null && daysUntilPayment <= 3 
-                      ? "var(--warning)" 
-                      : undefined
-                }}
-              >
-                {daysUntilPayment !== null 
-                  ? `${daysUntilPayment} ${getDaysWord(daysUntilPayment)}`
-                  : "—"
-                }
-              </span>
-            </div>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Задолженность:</span><span className="font-medium">{formatMoney(card.balance, card.currency)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Мин. платеж:</span><span className="font-medium">{formatMoney(card.minPayment, card.currency)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Доступно:</span><span className="font-medium">{formatMoney(card.available, card.currency)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-muted-foreground">След. платеж:</span><span className="font-medium">{card.nextPaymentDate ? new Date(card.nextPaymentDate).toLocaleDateString("ru-RU") : "—"}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Дней до платежа:</span><span className={cn("font-medium", daysUntilPayment !== null && daysUntilPayment < 0 ? "text-destructive" : daysUntilPayment !== null && daysUntilPayment <= 3 ? "text-yellow-600" : "")}>{daysUntilPayment !== null ? `${daysUntilPayment} ${getDaysWord(daysUntilPayment)}` : "—"}</span></div>
           </div>
         </div>
-      </div>
+      </CardContent></Card>
 
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Использование лимита</h2>
-        <div className={styles.utilizationCard}>
-          <div className={styles.utilizationHeader}>
-            <span className={styles.utilizationLabel}>Использовано</span>
-            <span className={styles.utilizationPercent}>{utilizationPercent}%</span>
-          </div>
-          <div className={styles.utilizationBar}>
-            <div
-              className={styles.utilizationFill}
-              style={{ width: `${Math.min(utilizationPercent, 100)}%` }}
-            />
-          </div>
-          <div className={styles.utilizationInfo}>
-            <span>{formatMoney(card.balance, card.currency)} из {formatMoney(card.limit, card.currency)}</span>
-          </div>
+      <Card><CardHeader><CardTitle>Использование лимита</CardTitle></CardHeader><CardContent>
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm"><span>Использовано</span><span className="font-bold">{utilizationPercent}%</span></div>
+          <Progress value={Math.min(utilizationPercent, 100)} className="h-3" />
+          <div className="text-sm text-muted-foreground">{formatMoney(card.balance, card.currency)} из {formatMoney(card.limit, card.currency)}</div>
         </div>
-      </div>
+      </CardContent></Card>
 
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Рекомендации</h2>
-        <div className={styles.tipsGrid}>
-          <div className={styles.tipCard}>
-            <div className={styles.tipIcon}>
-              <span className="material-icons" aria-hidden>
-                trending_down
-              </span>
-            </div>
-            <div className={styles.tipContent}>
-              <div className={styles.tipTitle}>Частичное досрочное погашение</div>
-              <div className={styles.tipText}>
-                Выплата {formatMoney(card.minPayment * 2, card.currency)} снизит использование лимита.
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.tipCard}>
-            <div className={styles.tipIcon}>
-              <span className="material-icons" aria-hidden>
-                event
-              </span>
-            </div>
-            <div className={styles.tipContent}>
-              <div className={styles.tipTitle}>Разбейте платёж</div>
-              <div className={styles.tipText}>
-                Несколько небольших выплат упростят достижение цели по снижению задолженности.
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.tipCard}>
-            <div className={styles.tipIcon}>
-              <span className="material-icons" aria-hidden>
-                notifications
-              </span>
-            </div>
-            <div className={styles.tipContent}>
-              <div className={styles.tipTitle}>Напоминания</div>
-              <div className={styles.tipText}>
-                Включите напоминания, чтобы не пропустить платежи и избежать штрафов.
-              </div>
-            </div>
-          </div>
+      <Card><CardHeader><CardTitle>Рекомендации</CardTitle></CardHeader><CardContent>
+        <div className="grid md:grid-cols-3 gap-4">
+          <div className="flex gap-3 p-3 rounded-lg border"><TrendingDown className="h-8 w-8 text-green-600 flex-shrink-0" /><div><div className="font-medium text-sm">Досрочное погашение</div><div className="text-xs text-muted-foreground">Выплата {formatMoney(card.minPayment * 2, card.currency)} снизит использование</div></div></div>
+          <div className="flex gap-3 p-3 rounded-lg border"><Calendar className="h-8 w-8 text-blue-600 flex-shrink-0" /><div><div className="font-medium text-sm">Разбейте платёж</div><div className="text-xs text-muted-foreground">Несколько небольших выплат упростят погашение</div></div></div>
+          <div className="flex gap-3 p-3 rounded-lg border"><Bell className="h-8 w-8 text-yellow-600 flex-shrink-0" /><div><div className="font-medium text-sm">Напоминания</div><div className="text-xs text-muted-foreground">Включите напоминания, чтобы не пропустить платеж</div></div></div>
         </div>
-      </div>
+      </CardContent></Card>
     </div>
   );
 }

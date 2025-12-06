@@ -1,8 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import styles from "./Chat.module.css";
-import modelStyles from "./ModelSidebar.module.css";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
+import { Menu, Search, ChevronDown, ChevronUp, Check, RefreshCw, Send, Loader2, MessageCircle, AlertTriangle } from "lucide-react";
 import ChatSidebar from "./ChatSidebar";
 import {
   getChatMessagesAction,
@@ -150,61 +155,20 @@ export default function Chat() {
   const modelGroupConfig: Array<{
     key: ModelGroupKey;
     title: string;
-    badge?: { text: string; className: string };
+    badge?: string;
   }> = [
-    {
-      key: "recommended",
-      title: "🌟 Рекомендуемые",
-      badge: { text: "TOP", className: styles.badgeRecommended },
-    },
-    {
-      key: "gpt5",
-      title: "🚀 GPT-5 серия",
-      badge: { text: "NEW", className: styles.badgeRecommended },
-    },
-    {
-      key: "gpt41",
-      title: "🎯 GPT-4.1 серия",
-    },
-    {
-      key: "gpt4o",
-      title: "⚡ GPT-4o серия",
-    },
-    {
-      key: "reasoning",
-      title: "🧠 Reasoning модели",
-      badge: { text: "PRO", className: styles.badgePremium },
-    },
-    {
-      key: "realtime",
-      title: "🎙️ Realtime модели",
-      badge: { text: "VOICE", className: styles.badgePremium },
-    },
-    {
-      key: "audio",
-      title: "🔊 Audio модели",
-    },
-    {
-      key: "specialized",
-      title: "🛠️ Специализированные",
-    },
-    {
-      key: "embeddings",
-      title: "🔍 Embeddings модели",
-      badge: { text: "VECTOR", className: styles.badgePremium },
-    },
-    {
-      key: "gpt4",
-      title: "📚 GPT-4 классика",
-    },
-    {
-      key: "other",
-      title: "💼 Другие модели",
-    },
-    {
-      key: "free",
-      title: "🆓 Бесплатные",
-    },
+    { key: "recommended", title: "🌟 Рекомендуемые", badge: "TOP" },
+    { key: "gpt5", title: "🚀 GPT-5 серия", badge: "NEW" },
+    { key: "gpt41", title: "🎯 GPT-4.1 серия" },
+    { key: "gpt4o", title: "⚡ GPT-4o серия" },
+    { key: "reasoning", title: "🧠 Reasoning модели", badge: "PRO" },
+    { key: "realtime", title: "🎙️ Realtime модели", badge: "VOICE" },
+    { key: "audio", title: "🔊 Audio модели" },
+    { key: "specialized", title: "🛠️ Специализированные" },
+    { key: "embeddings", title: "🔍 Embeddings модели", badge: "VECTOR" },
+    { key: "gpt4", title: "📚 GPT-4 классика" },
+    { key: "other", title: "💼 Другие модели" },
+    { key: "free", title: "🆓 Бесплатные" },
   ];
 
   const filteredModelGroups = modelGroupConfig.map((group) => ({
@@ -285,20 +249,18 @@ export default function Chat() {
     }
 
     return (
-      <div className={styles.assistantMessageWrapper}>
+      <div className="space-y-3">
         {paragraphs.map((text, index) => (
           <p key={`paragraph-${index}`}>{text}</p>
         ))}
         {items.length > 0 && (
-          <div className={styles.assistantList}>
+          <div className="space-y-2">
             {items.map((item, index) => (
-              <div className={styles.assistantListItem} key={`item-${index}`}>
-                <div className={styles.assistantListIcon}>{item.icon}</div>
-                <div className={styles.assistantListContent}>
-                  <div className={styles.assistantListTitle}>{item.title}</div>
-                  {item.description && (
-                    <div className={styles.assistantListDescription}>{item.description}</div>
-                  )}
+              <div className="flex items-start gap-3" key={`item-${index}`}>
+                <div className="text-xl">{item.icon}</div>
+                <div>
+                  <div className="font-medium">{item.title}</div>
+                  {item.description && <div className="text-sm text-muted-foreground">{item.description}</div>}
                 </div>
               </div>
             ))}
@@ -487,329 +449,72 @@ export default function Chat() {
   };
 
   return (
-    <div className={styles.container}>
-      <ChatSidebar
-        currentChatId={currentChatId}
-        onSelectChat={handleSelectChat}
-        onNewChat={handleNewChat}
-        refreshKey={refreshKey}
-        isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-      />
+    <div className="flex h-full">
+      <ChatSidebar currentChatId={currentChatId} onSelectChat={handleSelectChat} onNewChat={handleNewChat} refreshKey={refreshKey} isCollapsed={isSidebarCollapsed} onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
 
-      <div className={styles.chatArea}>
-        {/* Header */}
-        <div className={styles.header}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {isSidebarCollapsed && (
-              <button
-                onClick={() => setIsSidebarCollapsed(false)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '6px',
-                  borderRadius: '4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  color: '#202123',
-                  transition: 'background-color 0.15s ease'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = '#f7f7f8'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                <span className="material-icons" style={{ fontSize: '20px' }}>menu</span>
-              </button>
-            )}
-            <h2>ChatGPT</h2>
+      <div className="flex-1 flex flex-col">
+        <div className="p-3 border-b flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {isSidebarCollapsed && <Button variant="ghost" size="icon" onClick={() => setIsSidebarCollapsed(false)}><Menu className="h-5 w-5" /></Button>}
+            <h2 className="font-semibold">ChatGPT</h2>
           </div>
-          <div className={styles.modelDropdownWrapper}>
-            <button
-              className={styles.modelButton}
-              onClick={() => setShowModelSelector(!showModelSelector)}
-              disabled={isLoading}
-            >
-              <span>{selectedModel.split("/")[1] || selectedModel}</span>
-              <span className={styles.totalModelsCount}>
-                {models.all.length}
-              </span>
-              <span style={{ marginLeft: '6px', fontSize: '12px' }}>
-                {showModelSelector ? '▲' : '▼'}
-              </span>
-            </button>
-          </div>
+          <Button variant="outline" size="sm" onClick={() => setShowModelSelector(!showModelSelector)} disabled={isLoading}>
+            {selectedModel.split("/")[1] || selectedModel} <Badge variant="secondary" className="ml-2">{models.all.length}</Badge> {showModelSelector ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />}
+          </Button>
         </div>
 
-        {/* Model Selector Sidebar */}
-        <div className={`${modelStyles.modelSidebar} ${!showModelSelector ? modelStyles.collapsed : ''}`}>
-          <div className={modelStyles.header}>
-            <div className={modelStyles.title}>Выбор модели</div>
-            <button 
-              className={modelStyles.closeBtn}
-              onClick={() => setShowModelSelector(false)}
-            >
-              ×
-            </button>
-          </div>
-          <div className={modelStyles.content}>
-            <div className={modelStyles.modelSearch}>
-              <input
-                type="text"
-                placeholder="🔍 Поиск моделей..."
-                value={modelSearchQuery}
-                onChange={(e) => setModelSearchQuery(e.target.value)}
-                className={modelStyles.modelSearchInput}
-              />
-            </div>
-
-            {filteredModelGroups.map((group) => {
-              if (group.models.length === 0) {
-                return null;
-              }
-
-              return (
-                <div key={group.key} className={modelStyles.modelGroup}>
-                  <h3 className={modelStyles.modelGroupTitle}>
-                    {group.title}
-                    <span className={modelStyles.modelCount}>{group.models.length}</span>
-                  </h3>
+        <Sheet open={showModelSelector} onOpenChange={setShowModelSelector}>
+          <SheetContent side="right" className="w-80 p-0">
+            <SheetHeader className="p-4 border-b"><SheetTitle>Выбор модели</SheetTitle></SheetHeader>
+            <div className="p-4"><div className="relative"><Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="Поиск моделей..." value={modelSearchQuery} onChange={(e) => setModelSearchQuery(e.target.value)} className="pl-8" /></div></div>
+            <div className="overflow-y-auto max-h-[calc(100vh-180px)] px-4 pb-4">
+              {filteredModelGroups.map((group) => group.models.length === 0 ? null : (
+                <div key={group.key} className="mb-4">
+                  <h3 className="text-sm font-medium mb-2 flex items-center gap-2">{group.title} <Badge variant="outline">{group.models.length}</Badge></h3>
                   {group.models.map((model) => (
-                    <button
-                      key={model.id}
-                      onClick={() => {
-                        setSelectedModel(model.id);
-                        setShowModelSelector(false);
-                      }}
-                      className={`${modelStyles.modelButton} ${selectedModel === model.id ? modelStyles.selected : ""}`}
-                    >
-                      <div className={modelStyles.modelInfo}>
-                        <div className={modelStyles.modelName}>
-                          {model.name}
-                          {model.is_free && (
-                            <span className={`${modelStyles.modelBadge} ${modelStyles.badgeFree}`}>
-                              FREE
-                            </span>
-                          )}
-                          {group.badge && (
-                            <span className={`${modelStyles.modelBadge} ${group.badge.className}`}>
-                              {group.badge.text}
-                            </span>
-                          )}
-                        </div>
-                        {model.description && (
-                          <div className={modelStyles.modelDescription}>{model.description}</div>
-                        )}
-                      </div>
-                      {selectedModel === model.id && <span className={modelStyles.checkmark}>✓</span>}
+                    <button key={model.id} onClick={() => { setSelectedModel(model.id); setShowModelSelector(false); }} className={cn("w-full text-left p-2 rounded-md hover:bg-muted flex items-center justify-between", selectedModel === model.id && "bg-muted")}>
+                      <div><div className="font-medium text-sm">{model.name} {model.is_free && <Badge variant="secondary" className="ml-1">FREE</Badge>} {group.badge && <Badge className="ml-1">{group.badge}</Badge>}</div>{model.description && <div className="text-xs text-muted-foreground">{model.description}</div>}</div>
+                      {selectedModel === model.id && <Check className="h-4 w-4" />}
                     </button>
                   ))}
                 </div>
-              );
-            })}
+              ))}
+              {modelSearchQuery && !hasFilteredResults && <div className="text-center py-8 text-muted-foreground"><Search className="h-8 w-8 mx-auto" /><p className="mt-2">Модели не найдены</p></div>}
+            </div>
+          </SheetContent>
+        </Sheet>
 
-            {modelSearchQuery && !hasFilteredResults && (
-              <div className={modelStyles.noResults}>
-                <div className={modelStyles.noResultsIcon}>🔍</div>
-                <div className={modelStyles.noResultsText}>
-                  Модели не найдены
-                </div>
-                <div className={modelStyles.noResultsHint}>
-                  Попробуйте изменить запрос
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Messages */}
-        <div className={styles.messages}>
+        <div className="flex-1 overflow-y-auto p-4">
           {messages.length === 0 ? (
-            <div className={styles.welcomeMessage}>
-              <div className={styles.welcomeIcon}>💬</div>
-              <h3>Привет! Я ваш финансовый помощник</h3>
-              <p>
-                Я могу помочь вам управлять финансами прямо через чат. Просто напишите что хотите сделать!
-              </p>
-              
-              <div className={styles.commandsGrid}>
-                <div className={styles.commandGroup}>
-                  <div className={styles.commandGroupTitle}>📁 Категории</div>
-                  <div className={styles.commandExample}>
-                    &quot;Создай категорию расходов Транспорт&quot;
-                  </div>
-                </div>
-                
-                <div className={styles.commandGroup}>
-                  <div className={styles.commandGroupTitle}>💰 Транзакции</div>
-                  <div className={styles.commandExample}>
-                    &quot;Потратил 500 рублей на Еду&quot;
-                  </div>
-                  <div className={styles.commandExample}>
-                    &quot;Покажи мои траты&quot;
-                  </div>
-                </div>
-                
-                <div className={styles.commandGroup}>
-                  <div className={styles.commandGroupTitle}>💳 Счета</div>
-                  <div className={styles.commandExample}>
-                    &quot;Добавь счёт Сбербанк&quot;
-                  </div>
-                  <div className={styles.commandExample}>
-                    &quot;Сколько денег на счетах?&quot;
-                  </div>
-                </div>
-                
-                <div className={styles.commandGroup}>
-                  <div className={styles.commandGroupTitle}>📊 Бюджеты</div>
-                  <div className={styles.commandExample}>
-                    &quot;Поставь бюджет 10000 на Еду&quot;
-                  </div>
-                </div>
-                
-                <div className={styles.commandGroup}>
-                  <div className={styles.commandGroupTitle}>📝 Заметки</div>
-                  <div className={styles.commandExample}>
-                    &quot;Запомни что надо купить молоко&quot;
-                  </div>
-                  <div className={styles.commandExample}>
-                    &quot;Покажи мои заметки&quot;
-                  </div>
-                </div>
-                
-                <div className={styles.commandGroup}>
-                  <div className={styles.commandGroupTitle}>🎯 Планы</div>
-                  <div className={styles.commandExample}>
-                    &quot;Создай план накопить 100000 на отпуск&quot;
-                  </div>
-                  <div className={styles.commandExample}>
-                    &quot;Покажи мои планы&quot;
-                  </div>
-                </div>
-                
-                <div className={styles.commandGroup}>
-                  <div className={styles.commandGroupTitle}>🔖 Закладки</div>
-                  <div className={styles.commandExample}>
-                    &quot;Сохрани закладку на GitHub&quot;
-                  </div>
-                </div>
-                
-                <div className={styles.commandGroup}>
-                  <div className={styles.commandGroupTitle}>💪 Фитнес</div>
-                  <div className={styles.commandExample}>
-                    &quot;Бегал 30 минут&quot;
-                  </div>
-                  <div className={styles.commandExample}>
-                    &quot;Тренировка в зале 60 минут&quot;
-                  </div>
-                </div>
+            <div className="max-w-2xl mx-auto text-center py-8">
+              <MessageCircle className="h-12 w-12 mx-auto text-muted-foreground" />
+              <h3 className="text-lg font-semibold mt-4">Привет! Я ваш финансовый помощник</h3>
+              <p className="text-muted-foreground mt-2">Я могу помочь вам управлять финансами прямо через чат. Просто напишите что хотите сделать!</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
+                {[{t:"📁 Категории",e:"Создай категорию расходов"},{t:"💰 Транзакции",e:"Потратил 500р на Еду"},{t:"💳 Счета",e:"Добавь счёт Сбербанк"},{t:"📊 Бюджеты",e:"Поставь бюджет 10000"},{t:"📝 Заметки",e:"Запомни что надо..."},{t:"🎯 Планы",e:"Создай план накопить..."},{t:"🔖 Закладки",e:"Сохрани закладку"},{t:"💪 Фитнес",e:"Бегал 30 минут"}].map((c,i) => (
+                  <Card key={i} className="text-left"><CardContent className="pt-4"><div className="text-sm font-medium">{c.t}</div><div className="text-xs text-muted-foreground mt-1">&quot;{c.e}&quot;</div></CardContent></Card>
+                ))}
               </div>
-              
-              <p className={styles.helpText}>
-                💡 Пишите естественным языком - я пойму!
-              </p>
-              
-              {/* Быстрые команды */}
-              <div className={styles.quickCommands}>
-                <div className={styles.quickCommandsTitle}>⚡ Быстрые команды:</div>
-                <div className={styles.quickCommandsGrid}>
-                  {getQuickCommands().map((cmd, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setInput(cmd.command)}
-                      className={styles.quickCommandButton}
-                      type="button"
-                    >
-                      <span className={styles.quickCommandIcon}>{cmd.icon}</span>
-                      <span className={styles.quickCommandLabel}>{cmd.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <p className="text-sm text-muted-foreground mt-6">💡 Пишите естественным языком - я пойму!</p>
+              <div className="mt-6"><p className="text-sm font-medium mb-3">⚡ Быстрые команды:</p><div className="flex flex-wrap gap-2 justify-center">{getQuickCommands().map((cmd, idx) => (<Button key={idx} variant="outline" size="sm" onClick={() => setInput(cmd.command)}>{cmd.icon} {cmd.label}</Button>))}</div></div>
             </div>
           ) : (
             messages.map((message) => (
-              <div
-                key={message.id}
-                className={
-                  message.role === "user"
-                    ? styles.userMessage
-                    : styles.assistantMessage
-                }
-              >
-                <div className={styles.messageIcon}>
-                  {message.role === "user" ? "👤" : "🤖"}
-                </div>
-                <div className={styles.messageContent}>
-                  {message.role === "assistant"
-                    ? renderAssistantMessage(message.content)
-                    : message.content}
-                </div>
+              <div key={message.id} className={cn("flex gap-3 mb-4", message.role === "user" && "flex-row-reverse")}>
+                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-lg shrink-0">{message.role === "user" ? "👤" : "🤖"}</div>
+                <div className={cn("max-w-[80%] p-3 rounded-lg", message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted")}>{message.role === "assistant" ? renderAssistantMessage(message.content) : message.content}</div>
               </div>
             ))
           )}
           {connectionStatus === "error" && errorMessage && (
-            <div className={styles.errorMessage}>
-              <div className={styles.errorIcon}>⚠️</div>
-              <div className={styles.errorContent}>
-                <h3>Ошибка подключения к AI</h3>
-                <p>&quot;{errorMessage}&quot;</p>
-                <div className={styles.errorHelp}>
-                  <p>
-                    <strong>Возможные причины:</strong>
-                  </p>
-                  <ul>
-                    <li>OpenAI API ключ не настроен</li>
-                    <li>Проблемы с интернет-соединением</li>
-                    <li>API ключ недействителен или исчерпан лимит</li>
-                  </ul>
-                  <p>
-                    <strong>Как исправить:</strong>
-                  </p>
-                  <ul>
-                    <li>
-                      Проверьте переменную окружения{" "}
-                      <code>OPENAI_API_KEY</code> в .env.local
-                    </li>
-                    <li>
-                      Убедитесь что API ключ действителен на
-                      https://platform.openai.com/api-keys
-                    </li>
-                    <li>Попробуйте перезагрузить страницу</li>
-                  </ul>
-                </div>
-                <button
-                  onClick={() => {
-                    setConnectionStatus("checking");
-                    setErrorMessage("");
-                    window.location.reload();
-                  }}
-                  className={styles.retryButton}
-                >
-                  🔄 Попробовать снова
-                </button>
-              </div>
-            </div>
+            <Card className="border-destructive"><CardContent className="pt-6"><div className="flex items-start gap-4"><AlertTriangle className="h-6 w-6 text-destructive shrink-0" /><div><h3 className="font-semibold">Ошибка подключения к AI</h3><p className="text-sm text-muted-foreground mt-1">{errorMessage}</p><div className="mt-4 text-sm"><p className="font-medium">Возможные причины:</p><ul className="list-disc pl-4 mt-1 text-muted-foreground"><li>OpenAI API ключ не настроен</li><li>Проблемы с интернет-соединением</li><li>API ключ недействителен</li></ul></div><Button className="mt-4" onClick={() => { setConnectionStatus("checking"); setErrorMessage(""); window.location.reload(); }}><RefreshCw className="h-4 w-4 mr-2" />Попробовать снова</Button></div></div></CardContent></Card>
           )}
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
-        <form className={styles.inputForm} onSubmit={handleSubmit}>
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Сообщение ChatGPT"
-            disabled={isLoading}
-            className={styles.input}
-          />
-          <button
-            type="submit"
-            disabled={isLoading || !input.trim()}
-            className={styles.sendButton}
-          >
-            {isLoading ? "⏳" : "↑"}
-          </button>
+        <form className="p-4 border-t flex gap-2" onSubmit={handleSubmit}>
+          <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Сообщение ChatGPT" disabled={isLoading} className="flex-1" />
+          <Button type="submit" disabled={isLoading || !input.trim()}>{isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}</Button>
         </form>
       </div>
     </div>

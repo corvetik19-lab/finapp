@@ -1,12 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import styles from "@/components/budgets/Budgets.module.css";
 import { BudgetWithUsage } from "@/lib/budgets/service";
 import { formatMoney } from "@/lib/utils/format";
 import { deleteBudget, updateBudget } from "@/app/(protected)/finance/budgets/actions";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/toast/ToastContext";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { Pencil, Trash2, Save, X, CreditCard } from "lucide-react";
 
 type Category = {
   id: string;
@@ -99,7 +104,13 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
   };
 
   if (budgets.length === 0) {
-    return <div className={styles.empty}>Бюджеты ещё не настроены. Создайте первый лимит в форме выше.</div>;
+    return (
+      <Card>
+        <CardContent className="pt-6 text-center text-muted-foreground">
+          Бюджеты ещё не настроены. Создайте первый лимит в форме выше.
+        </CardContent>
+      </Card>
+    );
   }
 
   // Группируем бюджеты
@@ -107,208 +118,161 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
   const expenseBudgets = budgets.filter(b => b.category?.kind === "expense" || b.account_id); // Кредитные карты тоже в расходах
 
   const renderBudget = (budget: BudgetWithUsage) => {
-        const cardClass =
-          budget.status === "over"
-            ? `${styles.card} ${styles.statusOver}`
-            : budget.status === "warning"
-              ? `${styles.card} ${styles.statusWarning}`
-              : `${styles.card} ${styles.statusOk}`;
+    const isEditing = editingId === budget.id;
+    const isIncome = budget.category?.kind === "income" || budget.category?.kind === "both";
+    const progressValue = Math.min(Math.max(budget.progress, 0), 1) * 100;
+    
+    const cardStyle = budget.status === "over" 
+      ? "bg-gradient-to-br from-red-50 to-white dark:from-red-950/20 dark:to-card border-red-200/50 dark:border-red-800/30" 
+      : budget.status === "warning" 
+        ? "bg-gradient-to-br from-amber-50 to-white dark:from-amber-950/20 dark:to-card border-amber-200/50 dark:border-amber-800/30" 
+        : "bg-gradient-to-br from-green-50 to-white dark:from-green-950/20 dark:to-card border-green-200/50 dark:border-green-800/30";
 
-        const isEditing = editingId === budget.id;
-
-        return (
-          <div key={budget.id} className={cardClass}>
-            <div className={styles.cardHeader}>
-              <div>
-                <div className={styles.cardTitle}>
-                  {budget.account_id ? `💳 ${budget.account?.name ?? "Кредитная карта"}` : (budget.category?.name ?? "Без категории")}
-                </div>
-                <div className={styles.cardPeriod}>
-                  {formatDate(budget.period_start)} — {formatDate(budget.period_end)}
-                </div>
-              </div>
-              <div className={styles.actions}>
-                {!isEditing && (
-                  <>
-                    <button
-                      type="button"
-                      className={styles.editBtn}
-                      onClick={() => handleEdit(budget)}
-                    >
-                      <span className="material-icons" aria-hidden>
-                        edit
-                      </span>
-                      Редактировать
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.deleteBtn}
-                      onClick={() => handleDelete(budget.id)}
-                    >
-                      <span className="material-icons" aria-hidden>
-                        delete
-                      </span>
-                      Удалить
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {isEditing && editForm ? (
-              <div className={styles.editForm}>
-                <div className={styles.editFormGrid}>
-                  <label>
-                    <span className={styles.label}>Категория</span>
-                    <select
-                      className={styles.select}
-                      value={editForm.category_id}
-                      onChange={(e) => setEditForm({ ...editForm, category_id: e.target.value })}
-                    >
-                      <option value="">— выберите категорию —</option>
-                      {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    <span className={styles.label}>Дата начала</span>
-                    <input
-                      type="date"
-                      className={styles.input}
-                      value={editForm.period_start}
-                      onChange={(e) => setEditForm({ ...editForm, period_start: e.target.value })}
-                    />
-                  </label>
-                  <label>
-                    <span className={styles.label}>Дата окончания</span>
-                    <input
-                      type="date"
-                      className={styles.input}
-                      value={editForm.period_end}
-                      onChange={(e) => setEditForm({ ...editForm, period_end: e.target.value })}
-                    />
-                  </label>
-                  <label>
-                    <span className={styles.label}>Лимит (₽)</span>
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      className={styles.input}
-                      value={editForm.limit_amount}
-                      onChange={(e) => setEditForm({ ...editForm, limit_amount: e.target.value })}
-                    />
-                  </label>
-                  <label style={{ gridColumn: '1 / -1' }}>
-                    <span className={styles.label}>Комментарий</span>
-                    <textarea
-                      className={styles.input}
-                      rows={2}
-                      value={editForm.notes}
-                      onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                      placeholder="Добавьте заметку к бюджету..."
-                    />
-                  </label>
-                </div>
-                <div className={styles.editFormActions}>
-                  <button type="button" className={styles.secondaryBtn} onClick={handleCancelEdit}>
-                    Отмена
-                  </button>
-                  <button type="button" className={styles.primaryBtn} onClick={() => handleSaveEdit(budget.id)}>
-                    <span className="material-icons" aria-hidden>
-                      save
-                    </span>
-                    Сохранить
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className={styles.cardAmounts}>
-                  <div className={styles.amountItem}>
-                    <span className={styles.amountLabel}>
-                      {budget.category?.kind === "income" || budget.category?.kind === "both" ? "План" : "Лимит"}
-                    </span>
-                    <span className={styles.amountValue}>{formatMoney(budget.limit_minor, budget.currency)}</span>
-                  </div>
-                  <div className={styles.amountItem}>
-                    <span className={styles.amountLabel}>
-                      {budget.category?.kind === "income" || budget.category?.kind === "both" ? "Получено" : "Потрачено"}
-                    </span>
-                    <span className={styles.amountValue}>{formatMoney(budget.spent_minor, budget.currency)}</span>
-                  </div>
-                  <div className={styles.amountItem}>
-                    <span className={styles.amountLabel}>
-                      {budget.category?.kind === "income" || budget.category?.kind === "both"
-                        ? (budget.remaining_minor < 0 ? "Недобор" : "Сверх плана")
-                        : (budget.remaining_minor >= 0 ? "Остаток" : "Перерасход")
-                      }
-                    </span>
-                    <span className={styles.amountValue}>
-                      {formatMoney(Math.abs(budget.remaining_minor), budget.currency)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className={styles.progressBar}>
-                  <div
-                    className={styles.progressFill}
-                    style={{ width: `${Math.min(Math.max(budget.progress, 0), 1) * 100}%` }}
-                  />
-                  <span className={styles.progressText}>
-                    {Math.round(budget.progress * 100)}%
+    return (
+      <Card key={budget.id} className={`${cardStyle} hover:shadow-md transition-shadow`}>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base font-medium">
+                {budget.account_id ? (
+                  <span className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    {budget.account?.name ?? "Кредитная карта"}
                   </span>
-                </div>
-
-                <div
-                  className={`${styles.statusLine} ${
-                    budget.status === "over"
-                      ? styles.statusLineOver
-                      : budget.status === "warning"
-                        ? styles.statusLineWarning
-                        : styles.statusLineOk
-                  }`}
-                >
-                  <span
-                    className={`${styles.statusDot} ${
-                      budget.status === "over"
-                        ? styles.statusDotOver
-                        : budget.status === "warning"
-                          ? styles.statusDotWarning
-                          : styles.statusDotOk
-                    }`}
-                  />
-                  {budget.category?.kind === "income" || budget.category?.kind === "both"
-                    ? (budget.progress >= 1
-                        ? "План выполнен" 
-                        : "План не выполнен")
-                    : (budget.status === "over"
-                        ? "Лимит превышен"
-                        : budget.status === "warning"
-                          ? "Осталось менее 15%"
-                          : "В пределах лимита")
-                  }
-                </div>
-                
-                {budget.notes && (
-                  <div style={{ 
-                    marginTop: '0.75rem', 
-                    padding: '0.5rem', 
-                    background: '#f9fafb', 
-                    borderRadius: '4px',
-                    fontSize: '0.875rem',
-                    color: '#6b7280',
-                    fontStyle: 'italic'
-                  }}>
-                    💬 {budget.notes}
-                  </div>
+                ) : (
+                  budget.category?.name ?? "Без категории"
                 )}
-              </>
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                {formatDate(budget.period_start)} — {formatDate(budget.period_end)}
+              </p>
+            </div>
+            {!isEditing && (
+              <div className="flex gap-1">
+                <Button variant="ghost" size="icon" onClick={() => handleEdit(budget)}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => handleDelete(budget.id)}>
+                  <Trash2 className="h-4 w-4 text-red-500" />
+                </Button>
+              </div>
             )}
           </div>
-        );
+        </CardHeader>
+        <CardContent className="pt-0">
+          {isEditing && editForm ? (
+            <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Категория</Label>
+                  <select
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={editForm.category_id}
+                    onChange={(e) => setEditForm({ ...editForm, category_id: e.target.value })}
+                  >
+                    <option value="">— выберите категорию —</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Лимит (₽)</Label>
+                  <Input
+                    type="text"
+                    inputMode="decimal"
+                    value={editForm.limit_amount}
+                    onChange={(e) => setEditForm({ ...editForm, limit_amount: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Дата начала</Label>
+                  <Input
+                    type="date"
+                    value={editForm.period_start}
+                    onChange={(e) => setEditForm({ ...editForm, period_start: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Дата окончания</Label>
+                  <Input
+                    type="date"
+                    value={editForm.period_end}
+                    onChange={(e) => setEditForm({ ...editForm, period_end: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Комментарий</Label>
+                <textarea
+                  className="w-full min-h-[60px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={editForm.notes}
+                  onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                  placeholder="Добавьте заметку к бюджету..."
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={handleCancelEdit}>
+                  <X className="h-4 w-4 mr-1" /> Отмена
+                </Button>
+                <Button onClick={() => handleSaveEdit(budget.id)}>
+                  <Save className="h-4 w-4 mr-1" /> Сохранить
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground">{isIncome ? "План" : "Лимит"}</p>
+                  <p className="font-semibold">{formatMoney(budget.limit_minor, budget.currency)}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">{isIncome ? "Получено" : "Потрачено"}</p>
+                  <p className="font-semibold">{formatMoney(budget.spent_minor, budget.currency)}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">
+                    {isIncome
+                      ? (budget.remaining_minor < 0 ? "Недобор" : "Сверх плана")
+                      : (budget.remaining_minor >= 0 ? "Остаток" : "Перерасход")
+                    }
+                  </p>
+                  <p className={`font-semibold ${budget.remaining_minor < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {formatMoney(Math.abs(budget.remaining_minor), budget.currency)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="relative">
+                <Progress value={progressValue} className="h-2" />
+                <span className="absolute right-0 -top-5 text-xs text-muted-foreground">
+                  {Math.round(progressValue)}%
+                </span>
+              </div>
+
+              <div className={`flex items-center gap-2 text-xs ${
+                budget.status === "over" ? "text-red-600" : budget.status === "warning" ? "text-amber-600" : "text-green-600"
+              }`}>
+                <span className={`w-2 h-2 rounded-full ${
+                  budget.status === "over" ? "bg-red-500" : budget.status === "warning" ? "bg-amber-500" : "bg-green-500"
+                }`} />
+                {isIncome
+                  ? (budget.progress >= 1 ? "План выполнен" : "План не выполнен")
+                  : (budget.status === "over" ? "Лимит превышен" : budget.status === "warning" ? "Осталось менее 15%" : "В пределах лимита")
+                }
+              </div>
+
+              {budget.notes && (
+                <p className="text-sm text-muted-foreground bg-muted p-2 rounded italic">
+                  💬 {budget.notes}
+                </p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
   };
 
   // Считаем итоговые суммы
@@ -316,47 +280,38 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
   const totalExpenseLimit = expenseBudgets.reduce((sum, b) => sum + b.limit_minor, 0);
 
   return (
-    <>
+    <div className="space-y-6">
       {incomeBudgets.length > 0 && (
-        <>
-          <h3 style={{ 
-            fontSize: '1.1rem', 
-            fontWeight: 600, 
-            marginBottom: '1rem', 
-            color: 'var(--primary-dark)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <span>💰 Доходы</span>
-            <span style={{ fontSize: '0.95rem', fontWeight: 500, color: '#059669' }}>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              💰 Доходы
+            </h3>
+            <span className="text-sm font-medium text-green-600">
               {formatMoney(totalIncomeLimit, 'RUB')}
             </span>
-          </h3>
-          {incomeBudgets.map(renderBudget)}
-        </>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {incomeBudgets.map(renderBudget)}
+          </div>
+        </div>
       )}
       
       {expenseBudgets.length > 0 && (
-        <>
-          <h3 style={{ 
-            fontSize: '1.1rem', 
-            fontWeight: 600, 
-            marginTop: incomeBudgets.length > 0 ? '2rem' : 0, 
-            marginBottom: '1rem', 
-            color: 'var(--primary-dark)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <span>💸 Расходы</span>
-            <span style={{ fontSize: '0.95rem', fontWeight: 500, color: '#dc2626' }}>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              💸 Расходы
+            </h3>
+            <span className="text-sm font-medium text-red-600">
               {formatMoney(totalExpenseLimit, 'RUB')}
             </span>
-          </h3>
-          {expenseBudgets.map(renderBudget)}
-        </>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {expenseBudgets.map(renderBudget)}
+          </div>
+        </div>
       )}
-    </>
+    </div>
   );
 }

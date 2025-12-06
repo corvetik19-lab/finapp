@@ -2,11 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
-import styles from "./Forecasts.module.css";
 import EnhancedForecastView from "@/components/forecasts/EnhancedForecastView";
 import GoalForecastView from "@/components/forecasts/GoalForecastView";
 import SpendingAlertsView from "@/components/forecasts/SpendingAlertsView";
 import OptimizationView from "@/components/forecasts/OptimizationView";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, TrendingUp, TrendingDown, Minus, Lightbulb, Target } from "lucide-react";
 
 interface ExpenseForecast {
   month: string;
@@ -122,17 +128,6 @@ export default function ForecastsClient() {
     }).format(amount / 100);
   }
 
-  function getTrendIcon(trend: string) {
-    switch (trend) {
-      case "increasing":
-        return "📈";
-      case "decreasing":
-        return "📉";
-      default:
-        return "➡️";
-    }
-  }
-
   function getTrendText(trend: string) {
     switch (trend) {
       case "increasing":
@@ -168,58 +163,22 @@ export default function ForecastsClient() {
     ],
   } : null;
 
-  // Показываем загрузку до монтирования на клиенте (избегаем hydration mismatch)
   if (!mounted) {
-    return <div className={styles.loading}>Загрузка...</div>;
+    return <div className="flex items-center justify-center py-12 text-muted-foreground"><Loader2 className="h-5 w-5 mr-2 animate-spin" />Загрузка...</div>;
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>Финансовые прогнозы</h1>
-          <p className={styles.subtitle}>AI анализ и сценарии &quot;Что если?&quot;</p>
-        </div>
-      </div>
+    <div className="space-y-6 p-6">
+      <div><h1 className="text-2xl font-bold">Финансовые прогнозы</h1><p className="text-muted-foreground">AI анализ и сценарии &quot;Что если?&quot;</p></div>
 
-      <div className={styles.tabs}>
-        <button
-          className={activeTab === "enhanced" ? styles.active : ""}
-          onClick={() => setActiveTab("enhanced")}
-        >
-          🔮 Улучшенный прогноз
-        </button>
-        <button
-          className={activeTab === "forecast" ? styles.active : ""}
-          onClick={() => setActiveTab("forecast")}
-        >
-          📊 Простой прогноз
-        </button>
-        <button
-          className={activeTab === "scenarios" ? styles.active : ""}
-          onClick={() => setActiveTab("scenarios")}
-        >
-          🎯 Сценарии &quot;Что если?&quot;
-        </button>
-        <button
-          className={activeTab === "goals" ? styles.active : ""}
-          onClick={() => setActiveTab("goals")}
-        >
-          🎯 Прогноз целей
-        </button>
-        <button
-          className={activeTab === "risks" ? styles.active : ""}
-          onClick={() => setActiveTab("risks")}
-        >
-          ⚠️ Риски перерасхода
-        </button>
-        <button
-          className={activeTab === "optimization" ? styles.active : ""}
-          onClick={() => setActiveTab("optimization")}
-        >
-          💡 Оптимизация
-        </button>
-      </div>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}><TabsList className="flex flex-wrap h-auto gap-1">
+        <TabsTrigger value="enhanced">🔮 Улучшенный</TabsTrigger>
+        <TabsTrigger value="forecast">📊 Простой</TabsTrigger>
+        <TabsTrigger value="scenarios">🎯 Сценарии</TabsTrigger>
+        <TabsTrigger value="goals">🎯 Цели</TabsTrigger>
+        <TabsTrigger value="risks">⚠️ Риски</TabsTrigger>
+        <TabsTrigger value="optimization">💡 Оптимизация</TabsTrigger>
+      </TabsList></Tabs>
 
       {activeTab === "enhanced" && <EnhancedForecastView />}
 
@@ -229,211 +188,29 @@ export default function ForecastsClient() {
 
       {activeTab === "optimization" && <OptimizationView />}
 
-      {activeTab === "forecast" && (
-        <div className={styles.content}>
-          {loading ? (
-            <div className={styles.loading}>Анализируем ваши финансы...</div>
-          ) : !forecast ? (
-            <div className={styles.error}>
-              <div className={styles.errorIcon}>📊</div>
-              <h2>Недостаточно данных</h2>
-              <p>Для создания прогноза необходимо минимум 2 месяца транзакций</p>
-            </div>
-          ) : (
-            <div className={styles.forecastCard}>
-              <div className={styles.forecastHeader}>
-                <h2>Прогноз на {forecast.month}</h2>
-                <div className={styles.confidence}>
-                  Уверенность: {forecast.confidence}%
-                </div>
-              </div>
+      {activeTab === "forecast" && <div className="space-y-4">
+        {loading ? <div className="flex items-center justify-center py-12 text-muted-foreground"><Loader2 className="h-5 w-5 mr-2 animate-spin" />Анализируем...</div>
+        : !forecast ? <Card><CardContent className="py-12 text-center"><div className="text-4xl mb-4">📊</div><h2 className="text-lg font-semibold">Недостаточно данных</h2><p className="text-muted-foreground">Нужно минимум 2 месяца транзакций</p></CardContent></Card>
+        : <Card><CardHeader><div className="flex items-center justify-between"><CardTitle>Прогноз на {forecast.month}</CardTitle><Badge variant="outline">Уверенность: {forecast.confidence}%</Badge></div></CardHeader><CardContent className="space-y-4">
+          <div className="text-3xl font-bold">{formatMoney(forecast.predicted_expense)}<span className="text-base font-normal text-muted-foreground ml-2 flex items-center gap-1 inline-flex">{forecast.trend === 'increasing' ? <TrendingUp className="h-4 w-4 text-red-500" /> : forecast.trend === 'decreasing' ? <TrendingDown className="h-4 w-4 text-green-500" /> : <Minus className="h-4 w-4" />}{getTrendText(forecast.trend)}</span></div>
+          {insights && <div className="flex gap-2 p-3 bg-blue-50 rounded-lg"><Lightbulb className="h-5 w-5 text-blue-500 flex-shrink-0" /><p className="text-sm">{insights}</p></div>}
+          <div><h3 className="font-semibold mb-2">Факторы влияния:</h3><ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">{forecast.factors.map((f, i) => <li key={i}>{f}</li>)}</ul></div>
+        </CardContent></Card>}
+      </div>}
 
-              <div className={styles.forecastAmount}>
-                {formatMoney(forecast.predicted_expense)}
-                <span className={styles.trend}>
-                  {getTrendIcon(forecast.trend)} {getTrendText(forecast.trend)}
-                </span>
-              </div>
-
-              {insights && (
-                <div className={styles.insights}>
-                  <div className={styles.insightsIcon}>💡</div>
-                  <div className={styles.insightsText}>{insights}</div>
-                </div>
-              )}
-
-              <div className={styles.factors}>
-                <h3>Факторы влияния:</h3>
-                <ul>
-                  {forecast.factors.map((factor, idx) => (
-                    <li key={idx}>{factor}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          )}
+      {activeTab === "scenarios" && <div className="grid md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <h3 className="font-semibold">Готовые сценарии</h3>
+          {predefinedScenarios.map((s, i) => <Card key={i} className={`cursor-pointer transition-colors hover:border-primary ${selectedScenario?.name === s.name ? 'border-primary bg-primary/5' : ''}`} onClick={() => simulateScenario(s)}><CardContent className="pt-4"><div className="font-medium">{s.name}</div><div className="text-sm text-muted-foreground">{s.description}</div><Badge className={`mt-2 ${(s.monthly_change > 0 && s.affects === 'income') || (s.monthly_change < 0 && s.affects === 'expense') ? 'bg-green-500' : 'bg-red-500'}`}>{s.monthly_change > 0 ? '+' : ''}{formatMoney(Math.abs(s.monthly_change))}/мес</Badge></CardContent></Card>)}
+          <Card><CardHeader><CardTitle className="text-base">Создать свой</CardTitle></CardHeader><CardContent><form onSubmit={e => { e.preventDefault(); const fd = new FormData(e.currentTarget); simulateScenario({ name: fd.get('name') as string, description: fd.get('description') as string, monthly_change: Number(fd.get('amount')) * 100, affects: fd.get('type') as 'income' | 'expense' }); e.currentTarget.reset(); }} className="space-y-3"><div><Label>Название</Label><Input name="name" placeholder="Фриланс" required /></div><div><Label>Описание</Label><Input name="description" placeholder="Доп. доход" required /></div><div className="grid grid-cols-2 gap-2"><div><Label>Тип</Label><select name="type" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" required><option value="income">Доход</option><option value="expense">Расход</option></select></div><div><Label>Сумма/мес (₽)</Label><Input type="number" name="amount" placeholder="10000" min="0" required /></div></div><Button type="submit" className="w-full"><Target className="h-4 w-4 mr-1" />Симулировать</Button></form></CardContent></Card>
         </div>
-      )}
-
-      {activeTab === "scenarios" && (
-        <div className={styles.content}>
-          <div className={styles.scenariosGrid}>
-            <div className={styles.scenariosList}>
-              <h3>Готовые сценарии</h3>
-              {predefinedScenarios.map((scenario, idx) => (
-                <button
-                  key={idx}
-                  className={`${styles.scenarioCard} ${
-                    selectedScenario?.name === scenario.name ? styles.selected : ""
-                  }`}
-                  onClick={() => simulateScenario(scenario)}
-                >
-                  <div className={styles.scenarioName}>{scenario.name}</div>
-                  <div className={styles.scenarioDesc}>{scenario.description}</div>
-                  <div
-                    className={`${styles.scenarioChange} ${
-                      scenario.monthly_change > 0 && scenario.affects === "income"
-                        ? styles.positive
-                        : scenario.monthly_change < 0 && scenario.affects === "expense"
-                        ? styles.positive
-                        : styles.negative
-                    }`}
-                  >
-                    {scenario.monthly_change > 0 ? "+" : ""}
-                    {formatMoney(Math.abs(scenario.monthly_change))}/мес
-                  </div>
-                </button>
-              ))}
-
-              <div className={styles.customScenario}>
-                <h3>Создать свой сценарий</h3>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const formData = new FormData(e.currentTarget);
-                    const customScenario: WhatIfScenario = {
-                      name: formData.get("name") as string,
-                      description: formData.get("description") as string,
-                      monthly_change: Number(formData.get("amount")) * 100,
-                      affects: formData.get("type") as "income" | "expense",
-                    };
-                    simulateScenario(customScenario);
-                    e.currentTarget.reset();
-                  }}
-                  className={styles.customForm}
-                >
-                  <div className={styles.formGroup}>
-                    <label>Название сценария</label>
-                    <input
-                      type="text"
-                      name="name"
-                      placeholder="Например: Фриланс"
-                      required
-                    />
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label>Описание</label>
-                    <input
-                      type="text"
-                      name="description"
-                      placeholder="Дополнительный доход от проектов"
-                      required
-                    />
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label>Тип</label>
-                    <select name="type" required>
-                      <option value="income">Доход</option>
-                      <option value="expense">Расход</option>
-                    </select>
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label>Сумма в месяц (₽)</label>
-                    <input
-                      type="number"
-                      name="amount"
-                      placeholder="10000"
-                      min="0"
-                      step="100"
-                      required
-                    />
-                  </div>
-                  <button type="submit" className={styles.simulateBtn}>
-                    🎯 Симулировать
-                  </button>
-                </form>
-              </div>
-            </div>
-
-            {scenarioResult && (
-              <div className={styles.scenarioResult}>
-                <h3>Результат симуляции</h3>
-                
-                <div className={styles.impactSummary}>
-                  <div className={styles.impactItem}>
-                    <div className={styles.impactLabel}>Текущий баланс</div>
-                    <div className={styles.impactValue}>
-                      {formatMoney(scenarioResult.original_balance)}/мес
-                    </div>
-                  </div>
-                  <div className={styles.arrow}>→</div>
-                  <div className={styles.impactItem}>
-                    <div className={styles.impactLabel}>Новый баланс</div>
-                    <div className={`${styles.impactValue} ${
-                      scenarioResult.new_balance > scenarioResult.original_balance
-                        ? styles.positive
-                        : styles.negative
-                    }`}>
-                      {formatMoney(scenarioResult.new_balance)}/мес
-                    </div>
-                  </div>
-                </div>
-
-                <div className={styles.difference}>
-                  <strong>Изменение:</strong>{" "}
-                  {scenarioResult.difference > 0 ? "+" : ""}
-                  {formatMoney(scenarioResult.difference)}/мес
-                  <span className={styles.percentage}>
-                    ({(scenarioResult.impact_percentage || 0) > 0 ? "+" : ""}
-                    {(scenarioResult.impact_percentage || 0).toFixed(1)}%)
-                  </span>
-                </div>
-
-                <div className={styles.recommendation}>
-                  <strong>💡 Рекомендация:</strong>
-                  <p>{scenarioResult.recommendation}</p>
-                </div>
-
-                {scenarioChartData && (
-                  <div className={styles.chart}>
-                    <h4>Прогноз на 12 месяцев</h4>
-                    <Line
-                      data={scenarioChartData}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                          legend: {
-                            position: "top",
-                          },
-                        },
-                        scales: {
-                          y: {
-                            beginAtZero: true,
-                            ticks: {
-                              callback: (value) => `${value} ₽`,
-                            },
-                          },
-                        },
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+        {scenarioResult && <Card><CardHeader><CardTitle>Результат симуляции</CardTitle></CardHeader><CardContent className="space-y-4">
+          <div className="flex items-center justify-around p-4 bg-muted rounded-lg"><div className="text-center"><div className="text-sm text-muted-foreground">Текущий</div><div className="text-xl font-bold">{formatMoney(scenarioResult.original_balance)}</div></div><span className="text-2xl">→</span><div className="text-center"><div className="text-sm text-muted-foreground">Новый</div><div className={`text-xl font-bold ${scenarioResult.new_balance > scenarioResult.original_balance ? 'text-green-600' : 'text-red-600'}`}>{formatMoney(scenarioResult.new_balance)}</div></div></div>
+          <div className="text-center"><strong>Изменение:</strong> <span className={scenarioResult.difference > 0 ? 'text-green-600' : 'text-red-600'}>{scenarioResult.difference > 0 ? '+' : ''}{formatMoney(scenarioResult.difference)}/мес ({(scenarioResult.impact_percentage || 0) > 0 ? '+' : ''}{(scenarioResult.impact_percentage || 0).toFixed(1)}%)</span></div>
+          <div className="flex gap-2 p-3 bg-blue-50 rounded-lg"><Lightbulb className="h-5 w-5 text-blue-500 flex-shrink-0" /><p className="text-sm">{scenarioResult.recommendation}</p></div>
+          {scenarioChartData && <div className="h-64"><h4 className="font-semibold mb-2">Прогноз на 12 месяцев</h4><Line data={scenarioChartData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, ticks: { callback: v => `${v} ₽` } } } }} /></div>}
+        </CardContent></Card>}
+      </div>}
     </div>
   );
 }

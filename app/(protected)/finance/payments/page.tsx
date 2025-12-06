@@ -1,5 +1,4 @@
 import type { UpcomingPayment } from "@/components/dashboard/UpcomingPaymentsCard";
-import styles from "./page.module.css";
 import { createRSCClient } from "@/lib/supabase/helpers";
 import PaymentsPageClient from "@/components/payments/PaymentsPageClient";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
@@ -57,8 +56,9 @@ export default async function PaymentsPage() {
     `)
     .order("due_date", { ascending: true });
 
+  // Показываем платежи компании ИЛИ личные (без company_id)
   if (companyId) {
-    query = query.eq("company_id", companyId);
+    query = query.or(`company_id.eq.${companyId},company_id.is.null`);
   }
 
   const { data, error } = await query;
@@ -93,11 +93,11 @@ export default async function PaymentsPage() {
   const currency = getCurrency(payments);
 
   return (
-    <div className={styles.wrapper}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>Платежи</h1>
-      </header>
-
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">Платежи</h1>
+        <p className="text-muted-foreground">Управление регулярными платежами</p>
+      </div>
       <PaymentsPageClient payments={payments} currency={currency} />
     </div>
   );

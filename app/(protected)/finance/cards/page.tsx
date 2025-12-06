@@ -1,5 +1,6 @@
 import { createRSCClient } from "@/lib/supabase/server";
-import styles from "./cards.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import AddCardModal from "./AddCardModal";
 import AddFundsModal from "./AddFundsModal";
 import TransferModalLauncher from "./TransferModalLauncher";
@@ -137,77 +138,81 @@ export default async function CardsPage() {
   }));
 
   return (
-    <div className={styles.cardsPage}>
-      <div className={styles.topBar}>
-        <div className={styles.pageTitle}>Дебетовые карты</div>
-        <AddCardModal triggerClassName={styles.addCardBtn} />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Счета</h1>
+          <p className="text-sm text-muted-foreground">Управление дебетовыми картами</p>
+        </div>
+        <AddCardModal />
       </div>
 
-      <div className={styles.cardsContainer}>
+      {/* Cards Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {accountsData.map((card, idx) => {
           const stash = stashByAccount.get(card.id);
           const balance = balanceByAccount.get(card.id) ?? 0;
           
-          // Кубышка - виртуальный лимит от банка
           const stashLimit = stash?.target_amount ?? 0;
           const stashAvailable = stash?.balance ?? 0;
           const stashUsed = stashLimit - stashAvailable;
           const usedPercent = usagePercent(stashAvailable, stashLimit);
 
           return (
-            <div key={card.id} className={`${styles.debitCard}${idx === 0 ? " " + styles.debitCardActive : ""}`}>
-              {/* Верхняя часть с балансом и кнопками действий */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
-                <div style={{ flex: 1 }}>
-                  <div className={styles.cardBalance}>{formatCurrency(balance, card.currency)}</div>
-                  <div className={styles.cardType}>{card.name}</div>
-                </div>
-                <div style={{ display: "flex", gap: "8px" }}>
-                  <EditDebitCardButton 
-                    cardId={card.id} 
-                    cardName={card.name}
-                    cardBalance={balance}
-                    className={styles.editCardBtn}
-                  />
-                  <DeleteDebitCardButton 
-                    cardId={card.id} 
-                    cardName={card.name}
-                    className={styles.deleteCardBtn}
-                  />
-                </div>
-              </div>
-
-              {/* Информация о кубышке */}
-              {stash ? (
-                <div className={styles.kubyshkaInfo}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontWeight: 600 }}>💰 Кубышка (виртуальный лимит)</span>
-                    <span style={{ fontSize: "14px", fontWeight: 700 }}>{formatCurrency(stashAvailable, stash.currency)}</span>
+            <Card key={card.id} className={idx === 0 ? "border-primary" : ""}>
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-2xl font-bold">{formatCurrency(balance, card.currency)}</p>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{card.name}</CardTitle>
                   </div>
-                  <div className={styles.progressContainer}>
-                    <div className={styles.progressBar}>
-                      <div className={styles.progressFill} style={{ width: `${usedPercent}%` }} />
+                  <div className="flex gap-1">
+                    <EditDebitCardButton 
+                      cardId={card.id} 
+                      cardName={card.name}
+                      cardBalance={balance}
+                    />
+                    <DeleteDebitCardButton 
+                      cardId={card.id} 
+                      cardName={card.name}
+                    />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {stash ? (
+                  <div className="space-y-2 bg-muted/50 rounded-lg p-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">💰 Кубышка</span>
+                      <span className="text-sm font-bold">{formatCurrency(stashAvailable, stash.currency)}</span>
                     </div>
+                    <Progress value={usedPercent} className="h-2" />
+                    <p className="text-xs text-muted-foreground">
+                      Лимит: {formatCurrency(stashLimit, stash.currency)} • Использовано: {formatCurrency(stashUsed, stash.currency)} ({usedPercent}%)
+                    </p>
                   </div>
-                  <div style={{ fontSize: "12px", opacity: 0.9 }}>
-                    Лимит: {formatCurrency(stashLimit, stash.currency)} • Использовано: {formatCurrency(stashUsed, stash.currency)} ({usedPercent}%)
+                ) : (
+                  <div className="text-center text-sm text-muted-foreground py-4">
+                    💭 Кубышка ещё не настроена
                   </div>
-                </div>
-              ) : (
-                <div className={styles.kubyshkaInfo}>
-                  <div style={{ opacity: 0.8, textAlign: "center" }}>💭 Кубышка ещё не настроена</div>
-                </div>
-              )}
-            </div>
+                )}
+              </CardContent>
+            </Card>
           );
         })}
       </div>
 
       {accountsData.length === 0 && (
-        <div className={styles.emptyState}>Пока нет ни одной карты. Добавьте карту, чтобы начать работать с Кубышкой.</div>
+        <Card>
+          <CardContent className="py-8 text-center text-muted-foreground">
+            Пока нет ни одной карты. Добавьте карту, чтобы начать работать с Кубышкой.
+          </CardContent>
+        </Card>
       )}
 
-      <div className={styles.quickActions}>
+      {/* Quick Actions */}
+      <div className="flex flex-wrap gap-2">
         <AddFundsModal icon="add_circle" label="Добавить средства" options={fundsOptions} />
         <TransferModalLauncher
           mode="to_stash"

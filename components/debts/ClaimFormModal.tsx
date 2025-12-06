@@ -4,9 +4,16 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Debt, CLAIM_STAGE_LABELS } from "@/types/debt";
 import { debtFormSchema, DebtFormSchema } from "@/lib/validation/debt";
-import styles from "./ClaimFormModal.module.css";
 import { useEffect, useState } from "react";
 import { getTenders } from "@/lib/debts/service";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
 
 interface ClaimFormModalProps {
   isOpen: boolean;
@@ -69,149 +76,49 @@ export function ClaimFormModal({ isOpen, onClose, onSubmit, initialData }: Claim
     }
   }, [initialData, reset, setValue, isOpen]);
 
-  if (!isOpen) return null;
-
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={e => e.stopPropagation()} style={{ maxWidth: '800px' }}>
-        <div className={styles.header}>
-          <h2 className={styles.title}>{initialData ? 'Редактировать претензию' : 'Добавить претензию'}</h2>
-          <button onClick={onClose} className={styles.closeBtn}>&times;</button>
-        </div>
-        
-        <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
-          {/* Тип долга */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Тип</label>
-            <div className={styles.radioGroup}>
-              <label className={`${styles.radioLabel} ${type === 'owe' ? styles.radioActive : ''}`}>
-                <input type="radio" value="owe" {...register('type')} className={styles.radioInput} /> 
-                Мы должны
-              </label>
-              <label className={`${styles.radioLabel} ${type === 'owed' ? styles.radioActive : ''}`}>
-                <input type="radio" value="owed" {...register('type')} className={styles.radioInput} /> 
-                Нам должны
-              </label>
-            </div>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>{initialData ? 'Редактировать претензию' : 'Добавить претензию'}</DialogTitle></DialogHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Тип</Label>
+            <RadioGroup value={type} onValueChange={(v) => setValue('type', v as 'owe' | 'owed')} className="flex gap-4"><div className="flex items-center gap-2"><RadioGroupItem value="owe" id="owe" /><Label htmlFor="owe">Мы должны</Label></div><div className="flex items-center gap-2"><RadioGroupItem value="owed" id="owed" /><Label htmlFor="owed">Нам должны</Label></div></RadioGroup>
           </div>
 
-          {/* Связь с тендером */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Тендер (название)</label>
-            <select {...register('tender_id')} className={styles.select}>
-              <option value="">Выберите тендер с просроченной оплатой</option>
-              {tenders.map(tender => (
-                <option key={tender.id} value={tender.id}>
-                  {tender.number} - {tender.title}
-                </option>
-              ))}
-            </select>
+          <div className="space-y-2"><Label>Тендер</Label><Select onValueChange={(v) => setValue('tender_id', v || undefined)}><SelectTrigger><SelectValue placeholder="Выберите тендер" /></SelectTrigger><SelectContent>{tenders.map(t => (<SelectItem key={t.id} value={t.id}>{t.number} - {t.title}</SelectItem>))}</SelectContent></Select></div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2"><Label>№ Заявки</Label><Input {...register('application_number')} placeholder="Номер заявки" /></div>
+            <div className="space-y-2"><Label>№ Договора</Label><Input {...register('contract_number')} placeholder="Номер договора" /></div>
           </div>
 
-          {/* Номера заявки и договора */}
-          <div className={styles.row}>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>№ Заявки</label>
-              <input {...register('application_number')} placeholder="Номер заявки" className={styles.input} />
-            </div>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>№ Договора</label>
-              <input {...register('contract_number')} placeholder="Номер договора" className={styles.input} />
-            </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2"><Label>Истец</Label><Input {...register('plaintiff')} placeholder={type === 'owed' ? 'Наша организация' : 'Заказчик'} />{type === 'owed' && <p className="text-xs text-muted-foreground">Истец наша организация</p>}</div>
+            <div className="space-y-2"><Label>Ответчик</Label><Input {...register('defendant')} placeholder={type === 'owed' ? 'Заказчик (должник)' : 'Наша организация'} />{type === 'owe' && <p className="text-xs text-muted-foreground">Ответчик наша организация</p>}</div>
           </div>
 
-          {/* Истец и ответчик */}
-          <div className={styles.row}>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Истец</label>
-              <input 
-                {...register('plaintiff')} 
-                placeholder={type === 'owed' ? 'Наша организация' : 'Заказчик'}
-                className={styles.input} 
-              />
-              {type === 'owed' && <span className={styles.hint}>При выборе &quot;Нам должны&quot; - истец наша организация</span>}
-            </div>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Ответчик</label>
-              <input 
-                {...register('defendant')} 
-                placeholder={type === 'owed' ? 'Заказчик (должник)' : 'Наша организация'}
-                className={styles.input} 
-              />
-              {type === 'owe' && <span className={styles.hint}>При выборе &quot;Мы должны&quot; - ответчик наша организация</span>}
-            </div>
+          <div className="space-y-2"><Label>{type === 'owe' ? 'Кому мы должны' : 'Кто нам должен'}</Label><Input {...register('creditor_debtor_name')} placeholder="Название организации" />{errors.creditor_debtor_name && <p className="text-xs text-destructive">{errors.creditor_debtor_name.message}</p>}</div>
+
+          <div className="space-y-2"><Label>Основной долг (₽)</Label><Input type="number" step="0.01" {...register('amount', { valueAsNumber: true })} placeholder="0.00" />{errors.amount && <p className="text-xs text-destructive">{errors.amount.message}</p>}<input type="hidden" {...register('currency')} value="RUB" /></div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2"><Label>Дата возникновения</Label><Input type="date" {...register('date_created')} />{errors.date_created && <p className="text-xs text-destructive">{errors.date_created.message}</p>}</div>
+            <div className="space-y-2"><Label>Срок возврата</Label><Input type="date" {...register('date_due')} /></div>
           </div>
 
-          {/* Имя кредитора/должника (основное поле) */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              {type === 'owe' ? 'Кому мы должны (Имя кредитора)' : 'Кто нам должен (Имя должника)'}
-            </label>
-            <input {...register('creditor_debtor_name')} placeholder="Название организации" className={styles.input} />
-            {errors.creditor_debtor_name && <span className={styles.errorText}>{errors.creditor_debtor_name.message}</span>}
-          </div>
+          <div className="space-y-2"><Label>Этап взыскания</Label><Select defaultValue="new" onValueChange={(v) => setValue('stage', v as 'new' | 'claim' | 'court' | 'writ' | 'bailiff' | 'paid')}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{Object.entries(CLAIM_STAGE_LABELS).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}</SelectContent></Select></div>
 
-          {/* Сумма долга */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Основной долг (сумма в рублях)</label>
-            <input 
-              type="number" 
-              step="0.01" 
-              {...register('amount', { valueAsNumber: true })} 
-              className={styles.input}
-              placeholder="0.00" 
-            />
-            {errors.amount && <span className={styles.errorText}>{errors.amount.message}</span>}
-            {/* Скрытое поле для валюты - всегда RUB */}
-            <input type="hidden" {...register('currency')} value="RUB" />
-          </div>
+          <div className="space-y-2"><Label>Описание</Label><Textarea {...register('description')} rows={2} placeholder="Детали долга..." /></div>
 
-          {/* Даты */}
-          <div className={styles.row}>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Дата возникновения</label>
-              <input type="date" {...register('date_created')} className={styles.input} />
-              {errors.date_created && <span className={styles.errorText}>{errors.date_created.message}</span>}
-            </div>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Срок возврата</label>
-              <input type="date" {...register('date_due')} className={styles.input} />
-            </div>
-          </div>
+          <div className="space-y-2"><Label>Комментарии</Label><Textarea {...register('comments')} rows={3} placeholder="Комментарии по претензии..." /></div>
 
-          {/* Этап взыскания */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Этап взыскания</label>
-            <select {...register('stage')} className={styles.select}>
-              <option value="new">{CLAIM_STAGE_LABELS.new}</option>
-              <option value="claim">{CLAIM_STAGE_LABELS.claim}</option>
-              <option value="court">{CLAIM_STAGE_LABELS.court}</option>
-              <option value="writ">{CLAIM_STAGE_LABELS.writ}</option>
-              <option value="bailiff">{CLAIM_STAGE_LABELS.bailiff}</option>
-              <option value="paid">{CLAIM_STAGE_LABELS.paid}</option>
-            </select>
-          </div>
-
-          {/* Описание */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Описание</label>
-            <textarea {...register('description')} className={styles.textarea} rows={2} placeholder="Детали долга..." />
-          </div>
-
-          {/* Комментарии */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Комментарии</label>
-            <textarea {...register('comments')} className={styles.textarea} rows={3} placeholder="Комментарии по претензии..." />
-          </div>
-
-          <div className={styles.footer}>
-            <button type="button" onClick={onClose} className={styles.cancelBtn}>Отмена</button>
-            <button type="submit" disabled={isSubmitting} className={styles.submitBtn}>
-              {isSubmitting ? 'Сохранение...' : 'Сохранить'}
-            </button>
-          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>Отмена</Button>
+            <Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}{isSubmitting ? 'Сохранение...' : 'Сохранить'}</Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

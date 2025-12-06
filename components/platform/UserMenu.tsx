@@ -1,9 +1,18 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-import styles from "./UserMenu.module.css";
+import Link from "next/link";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User, Settings, Building2, HelpCircle, LogOut, ChevronDown } from "lucide-react";
 
 interface UserMenuProps {
   user: {
@@ -14,7 +23,6 @@ interface UserMenuProps {
 }
 
 export default function UserMenu({ user }: UserMenuProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
 
   const userInitial = user.full_name?.[0] || user.email?.[0] || "U";
@@ -29,110 +37,90 @@ export default function UserMenu({ user }: UserMenuProps) {
 
   const menuItems = [
     {
-      icon: "person",
+      icon: User,
       label: "Профиль",
       href: "/settings/profile",
     },
     {
-      icon: "settings",
+      icon: Settings,
       label: "Настройки",
       href: "/settings",
     },
     {
-      icon: "business",
+      icon: Building2,
       label: "Организация",
       href: "/settings/organization",
     },
     {
-      icon: "help",
+      icon: HelpCircle,
       label: "Помощь",
       href: "/help",
     },
   ];
 
   return (
-    <div className={styles.userMenu}>
-      <button
-        className={styles.userMenuButton}
-        onClick={() => setIsOpen(!isOpen)}
-        aria-label="Меню пользователя"
-      >
-        <div className={styles.userAvatar}>
-          {user.avatar_url ? (
-            <Image 
-              src={user.avatar_url} 
-              alt={user.full_name || "User"} 
-              width={32}
-              height={32}
-            />
-          ) : (
-            <span>{userInitial.toUpperCase()}</span>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="flex items-center gap-2 px-2 h-10">
+          <Avatar className="h-8 w-8">
+            {user.avatar_url && <AvatarImage src={user.avatar_url} alt={user.full_name || "User"} />}
+            <AvatarFallback className="bg-blue-600 text-white text-sm font-medium">
+              {userInitial.toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          {user.full_name && (
+            <span className="hidden md:inline text-sm font-medium max-w-[120px] truncate">
+              {user.full_name}
+            </span>
           )}
-        </div>
-        {user.full_name && (
-          <span className={styles.userName}>{user.full_name}</span>
-        )}
-        <span className="material-icons">
-          {isOpen ? "expand_less" : "expand_more"}
-        </span>
-      </button>
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+        </Button>
+      </DropdownMenuTrigger>
 
-      {isOpen && (
-        <>
-          <div
-            className={styles.userMenuOverlay}
-            onClick={() => setIsOpen(false)}
-          />
-          <div className={styles.userMenuDropdown}>
-            <div className={styles.userMenuHeader}>
-              <div className={styles.userAvatarLarge}>
-                {user.avatar_url ? (
-                  <Image 
-                    src={user.avatar_url} 
-                    alt={user.full_name || "User"} 
-                    width={48}
-                    height={48}
-                  />
-                ) : (
-                  <span>{userInitial.toUpperCase()}</span>
-                )}
-              </div>
-              <div className={styles.userInfo}>
-                <div className={styles.userFullName}>
-                  {user.full_name || "Пользователь"}
-                </div>
-                <div className={styles.userEmail}>{user.email}</div>
-              </div>
+      <DropdownMenuContent align="end" className="w-64">
+        {/* Header with user info */}
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex items-center gap-3 py-2">
+            <Avatar className="h-12 w-12">
+              {user.avatar_url && <AvatarImage src={user.avatar_url} alt={user.full_name || "User"} />}
+              <AvatarFallback className="bg-blue-600 text-white text-lg font-medium">
+                {userInitial.toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col space-y-1">
+              <p className="text-sm font-medium leading-none">
+                {user.full_name || "Пользователь"}
+              </p>
+              <p className="text-xs text-muted-foreground truncate max-w-[180px]">
+                {user.email}
+              </p>
             </div>
-
-            <div className={styles.userMenuDivider} />
-
-            <div className={styles.userMenuList}>
-              {menuItems.map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className={styles.userMenuItem}
-                  onClick={() => setIsOpen(false)}
-                >
-                  <span className="material-icons">{item.icon}</span>
-                  <span>{item.label}</span>
-                </a>
-              ))}
-            </div>
-
-            <div className={styles.userMenuDivider} />
-
-            <button
-              className={`${styles.userMenuItem} ${styles.userMenuItemDanger}`}
-              onClick={handleSignOut}
-            >
-              <span className="material-icons">logout</span>
-              <span>Выйти</span>
-            </button>
           </div>
-        </>
-      )}
-    </div>
+        </DropdownMenuLabel>
+
+        <DropdownMenuSeparator />
+
+        {/* Menu items */}
+        {menuItems.map((item) => (
+          <DropdownMenuItem key={item.href} asChild>
+            <Link href={item.href} className="flex items-center gap-2 cursor-pointer">
+              <item.icon className="h-4 w-4" />
+              <span>{item.label}</span>
+            </Link>
+          </DropdownMenuItem>
+        ))}
+
+        <DropdownMenuSeparator />
+
+        {/* Sign out */}
+        <DropdownMenuItem 
+          onClick={handleSignOut}
+          className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+        >
+          <LogOut className="h-4 w-4 mr-2" />
+          <span>Выйти</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

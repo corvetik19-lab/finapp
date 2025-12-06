@@ -4,16 +4,16 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
-import styles from "@/components/dashboard/Dashboard.module.css";
 import type { NoteRecord } from "@/lib/notes/service";
 import { noteFormSchema } from "@/lib/notes/schema";
 import type { NoteFormInput } from "@/lib/notes/schema";
-import {
-  createNoteAction,
-  updateNoteAction,
-  deleteNoteAction,
-} from "@/app/(protected)/notes/actions";
+import { createNoteAction, updateNoteAction, deleteNoteAction } from "@/app/(protected)/notes/actions";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { StickyNote, Plus, X, Pencil, Trash2, Loader2 } from "lucide-react";
 
 export type RecentNotesCardProps = {
   notes: NoteRecord[];
@@ -153,122 +153,82 @@ export default function RecentNotesCard({
   const hasNotes = notes.length > 0;
   const isEditing = Boolean(editingNote);
   const formTitle = isEditing ? "Редактирование заметки" : "Новая заметка";
-  const toggleIcon = isFormOpen && !isEditing ? "close" : "add";
-  const toggleLabel = isFormOpen && !isEditing ? "Закрыть форму" : "Новая заметка";
 
   return (
-    <section className={`${styles.chartCard} ${styles.notesCard}`}>
-      <header className={styles.chartHeader}>
-        <div>
-          <div className={styles.chartTitle}>{cardTitle}</div>
-          <div className={styles.chartSubtitle}>{cardSubtitle}</div>
-        </div>
-        <div className={styles.chartActions}>
-          {canShowOpenAllButton && (
-            <button type="button" className={styles.chartActionButton} onClick={handleOpenAll}>
-              Все заметки
-            </button>
-          )}
-          <button
-            type="button"
-            className={styles.chartIconButton}
-            onClick={handleToggleCreate}
-            aria-label={toggleLabel}
-            disabled={isPending}
-          >
-            <span className="material-icons" aria-hidden>
-              {toggleIcon}
-            </span>
-          </button>
-        </div>
-      </header>
-
-      {cardError && <div className={`${styles.notesServerError} ${styles.notesCardError}`}>{cardError}</div>}
-
-      {isFormOpen && (
-        <form className={styles.notesForm} onSubmit={handleSubmit} noValidate>
-          <div className={styles.notesFormTitle}>{formTitle}</div>
-          <label className={styles.notesLabel}>
-            Заголовок
-            <input
-              type="text"
-              className={styles.notesInput}
-              placeholder="Без названия"
-              {...form.register("title")}
-              disabled={isPending}
-            />
-            {form.formState.errors.title && (
-              <span className={styles.notesError}>{form.formState.errors.title.message}</span>
-            )}
-          </label>
-          <label className={styles.notesLabel}>
-            Текст заметки
-            <textarea
-              className={styles.notesTextarea}
-              rows={4}
-              placeholder="Введите заметку"
-              {...form.register("content")}
-              disabled={isPending}
-            />
-            {form.formState.errors.content && (
-              <span className={styles.notesError}>{form.formState.errors.content.message}</span>
-            )}
-          </label>
-          {formError && <div className={styles.notesServerError}>{formError}</div>}
-          <div className={styles.notesActions}>
-            <button type="button" className={styles.notesSecondaryButton} onClick={closeForm} disabled={isPending}>
-              Отмена
-            </button>
-            <button type="submit" className={styles.notesPrimaryButton} disabled={isPending}>
-              {isPending ? "Сохраняем…" : isEditing ? "Сохранить изменения" : "Сохранить"}
-            </button>
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-base flex items-center gap-2">
+              <StickyNote className="h-4 w-4" />
+              {cardTitle}
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">{cardSubtitle}</p>
           </div>
-        </form>
-      )}
+          <div className="flex items-center gap-1">
+            {canShowOpenAllButton && (
+              <Button variant="ghost" size="sm" onClick={handleOpenAll}>Все заметки</Button>
+            )}
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleToggleCreate} disabled={isPending}>
+              {isFormOpen && !isEditing ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {cardError && <div className="text-sm text-destructive">{cardError}</div>}
 
-      {hasNotes ? (
-        <div className={styles.notesList}>
-          {notes.map((note) => (
-            <article key={note.id} className={styles.noteItem}>
-              <header className={styles.noteHeader}>
-                <div className={styles.noteHeaderMain}>
-                  <span className={styles.noteTitle}>{note.title || "Без названия"}</span>
-                  <span className={styles.noteMeta}>{formatDate(note.updated_at)}</span>
+        {isFormOpen && (
+          <form onSubmit={handleSubmit} noValidate className="space-y-3 p-3 rounded-lg border bg-muted/50">
+            <div className="font-medium text-sm">{formTitle}</div>
+            <div className="space-y-2">
+              <Label htmlFor="note-title">Заголовок</Label>
+              <Input id="note-title" placeholder="Без названия" {...form.register("title")} disabled={isPending} />
+              {form.formState.errors.title && <p className="text-xs text-destructive">{form.formState.errors.title.message}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="note-content">Текст заметки</Label>
+              <Textarea id="note-content" rows={4} placeholder="Введите заметку" {...form.register("content")} disabled={isPending} />
+              {form.formState.errors.content && <p className="text-xs text-destructive">{form.formState.errors.content.message}</p>}
+            </div>
+            {formError && <div className="text-sm text-destructive">{formError}</div>}
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={closeForm} disabled={isPending}>Отмена</Button>
+              <Button type="submit" size="sm" disabled={isPending}>
+                {isPending ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Сохраняем…</> : isEditing ? "Сохранить изменения" : "Сохранить"}
+              </Button>
+            </div>
+          </form>
+        )}
+
+        {hasNotes ? (
+          <div className="space-y-2">
+            {notes.map((note) => (
+              <article key={note.id} className="p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm truncate">{note.title || "Без названия"}</div>
+                    <div className="text-xs text-muted-foreground">{formatDate(note.updated_at)}</div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(note)} disabled={isPending}>
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDelete(note)} disabled={isPending}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
-                <div className={styles.noteActions}>
-                  <button
-                    type="button"
-                    className={styles.noteActionButton}
-                    onClick={() => handleEdit(note)}
-                    disabled={isPending}
-                    aria-label="Редактировать заметку"
-                  >
-                    <span className="material-icons" aria-hidden>
-                      edit
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.noteActionButton} ${styles.noteDeleteButton}`}
-                    onClick={() => handleDelete(note)}
-                    disabled={isPending}
-                    aria-label="Удалить заметку"
-                  >
-                    <span className="material-icons" aria-hidden>
-                      delete
-                    </span>
-                  </button>
-                </div>
-              </header>
-              {note.content && <p className={styles.noteContent}>{note.content}</p>}
-            </article>
-          ))}
-        </div>
-      ) : (
-        <div className={styles.notesEmpty}>
-          Нет заметок. {isFormOpen ? "Заполните форму и сохраните первую запись." : "Создайте первую, чтобы сохранить важные идеи."}
-        </div>
-      )}
-    </section>
+                {note.content && <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{note.content}</p>}
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-6 text-muted-foreground">
+            Нет заметок. {isFormOpen ? "Заполните форму и сохраните первую запись." : "Создайте первую, чтобы сохранить важные идеи."}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

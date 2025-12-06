@@ -1,21 +1,25 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { TendersRegistry } from '@/components/tenders/TendersRegistry';
-import { TendersCards } from '@/components/tenders/TendersCards';
+import { TendersTable } from '@/components/tenders/tenders-table';
+import { TendersKanban } from '@/components/tenders/tenders-kanban';
 import { TendersRegistryFilters } from '@/components/tenders/TendersRegistryFilters';
 import { TenderFormModal } from '@/components/tenders/tender-form-modal';
 import { TenderSearchEISModal } from '@/components/tenders/tender-search-eis-modal';
+import { TendersListHeader } from '@/components/tenders/list/tenders-list-header';
 import type { Tender, TenderStage, TenderType, TenderFilters } from '@/lib/tenders/types';
 import type { EISTenderData } from '@/lib/tenders/eis-mock-data';
-import styles from '../tenders.module.css';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 
 interface TendersListClientProps {
   stages: TenderStage[];
   types: TenderType[];
+  companyId: string;
 }
 
-export function TendersListClient({ stages, types }: TendersListClientProps) {
+export function TendersListClient({ stages, types, companyId }: TendersListClientProps) {
   const [tenders, setTenders] = useState<Tender[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,9 +38,6 @@ export function TendersListClient({ stages, types }: TendersListClientProps) {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [eisData, setEisData] = useState<EISTenderData | null>(null);
   const [employees, setEmployees] = useState<Array<{ id: string; full_name: string; role?: string }>>([]);
-
-  // TODO: Получить company_id из контекста пользователя
-  const companyId = '74b4c286-ca75-4eb4-9353-4db3d177c939';
 
   // Стабилизируем stages чтобы избежать бесконечного цикла
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -165,133 +166,113 @@ export function TendersListClient({ stages, types }: TendersListClientProps) {
     }
   };
 
+  const handleStageChange = async (tenderId: string, newStageId: string) => {
+    try {
+      const response = await fetch(`/api/tenders/${tenderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage_id: newStageId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка обновления этапа');
+      }
+
+      // Перезагружаем список
+      await loadTenders();
+    } catch (err) {
+      console.error('Error changing stage:', err);
+      alert('Ошибка при изменении этапа');
+    }
+  };
+
+  const [showFilters, setShowFilters] = useState(false);
+
   return (
-    <div>
-      {/* Действия и переключатель вида */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-        <div className={styles.btnGroup}>
-          <button
-            onClick={() => setIsSearchModalOpen(true)}
-            className={`${styles.btn} ${styles.btnPrimary}`}
-          >
-            ➕ Добавить тендер
-          </button>
-          <button className={`${styles.btn} ${styles.btnSecondary}`}>
-            📥 Импорт из ЕИС
-          </button>
-          <button className={`${styles.btn} ${styles.btnSecondary}`}>
-            📤 Экспорт
-          </button>
-        </div>
-
-        <div className={styles.btnGroup}>
-          <button
-            onClick={() => setViewMode('table')}
-            className={viewMode === 'table' ? `${styles.btn} ${styles.btnPrimary}` : `${styles.btn} ${styles.btnSecondary}`}
-          >
-            📋 Таблица
-          </button>
-          <button
-            onClick={() => setViewMode('kanban')}
-            className={viewMode === 'kanban' ? `${styles.btn} ${styles.btnPrimary}` : `${styles.btn} ${styles.btnSecondary}`}
-          >
-            🗂️ Карточки
-          </button>
-        </div>
-      </div>
-
-      {/* Фильтры */}
-      <TendersRegistryFilters
-        filters={filters}
-        onFiltersChange={handleFiltersChange}
-        stages={stableStages}
-        types={types}
-        employees={employees}
+    <div className="space-y-4">
+      {/* Header с действиями */}
+      <TendersListHeader
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        onAddClick={() => setIsSearchModalOpen(true)}
+        searchValue={filters.search || ''}
+        onSearchChange={(value) => handleFiltersChange({ ...filters, search: value })}
+        onFilterClick={() => setShowFilters(!showFilters)}
+        stats={{
+          total,
+          active: tenders.filter((t) => t.status === 'active').length,
+          won: tenders.filter((t) => t.status === 'won').length,
+          lost: tenders.filter((t) => t.status === 'lost').length,
+        }}
       />
 
-      {/* Статистика */}
-      <div className={styles.statsRow}>
-        <div className={styles.statItem}>
-          <span className={styles.statLabel}>Всего</span>
-          <span className={styles.statValue}>{total}</span>
-        </div>
-        <div className={styles.statItem}>
-          <span className={styles.statLabel}>Активные</span>
-          <span className={styles.statValue}>
-            {tenders.filter((t) => t.status === 'active').length}
-          </span>
-        </div>
-        <div className={styles.statItem}>
-          <span className={styles.statLabel}>Выиграно</span>
-          <span className={styles.statValue}>
-            {tenders.filter((t) => t.status === 'won').length}
-          </span>
-        </div>
-        <div className={styles.statItem}>
-          <span className={styles.statLabel}>Проиграно</span>
-          <span className={styles.statValue}>
-            {tenders.filter((t) => t.status === 'lost').length}
-          </span>
-        </div>
-      </div>
+      {/* Фильтры (разворачиваемые) */}
+      {showFilters && (
+        <TendersRegistryFilters
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          stages={stableStages}
+          types={types}
+          employees={employees}
+        />
+      )}
 
       {/* Контент */}
       {loading ? (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3rem 0' }}>
-          <div style={{ fontSize: '2rem' }}>⏳ Загрузка...</div>
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-64 w-full" />
         </div>
       ) : error ? (
-        <div style={{ textAlign: 'center', padding: '3rem 0' }}>
-          <div style={{ color: '#ef4444', fontSize: '1.125rem', marginBottom: '0.5rem' }}>⚠️ Ошибка</div>
-          <p style={{ color: '#64748b' }}>{error}</p>
-          <button
-            onClick={loadTenders}
-            className={`${styles.btn} ${styles.btnPrimary}`}
-            style={{ marginTop: '1rem' }}
-          >
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+          <p className="text-lg font-medium mb-2">Ошибка загрузки</p>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <Button onClick={loadTenders}>
+            <RefreshCw className="mr-2 h-4 w-4" />
             Попробовать снова
-          </button>
+          </Button>
         </div>
       ) : viewMode === 'table' ? (
-        <TendersRegistry
+        <TendersTable
           tenders={tenders}
           stages={stableStages}
           types={types}
           onDelete={handleDelete}
         />
       ) : (
-        <TendersCards
+        <TendersKanban
           tenders={tenders}
           stages={stableStages}
           types={types}
           onDelete={handleDelete}
+          onStageChange={handleStageChange}
         />
       )}
 
       {/* Пагинация */}
       {total > 50 && (
-        <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
-            Показано {(page - 1) * 50 + 1}-{Math.min(page * 50, total)} из{' '}
-            {total}
-          </div>
-          <div className={styles.btnGroup}>
-            <button
+        <div className="flex items-center justify-between pt-4">
+          <p className="text-sm text-muted-foreground">
+            Показано {(page - 1) * 50 + 1}-{Math.min(page * 50, total)} из {total}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className={`${styles.btn} ${styles.btnSecondary}`}
-              style={{ opacity: page === 1 ? 0.5 : 1, cursor: page === 1 ? 'not-allowed' : 'pointer' }}
             >
               ← Назад
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setPage((p) => p + 1)}
               disabled={page * 50 >= total}
-              className={`${styles.btn} ${styles.btnSecondary}`}
-              style={{ opacity: page * 50 >= total ? 0.5 : 1, cursor: page * 50 >= total ? 'not-allowed' : 'pointer' }}
             >
               Вперед →
-            </button>
+            </Button>
           </div>
         </div>
       )}

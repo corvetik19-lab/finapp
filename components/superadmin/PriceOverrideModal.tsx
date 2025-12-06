@@ -4,7 +4,19 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { OrganizationPriceOverride, SubscriptionPlan } from '@/types/billing';
 import { savePriceOverride, deletePriceOverride } from '@/app/(protected)/superadmin/actions';
-import styles from './SuperadminModals.module.css';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Building2 } from 'lucide-react';
 
 interface PriceOverrideModalProps {
   isOpen: boolean;
@@ -111,50 +123,48 @@ export function PriceOverrideModal({
   };
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.header}>
-          <h2>Индивидуальные цены</h2>
-          <button className={styles.closeButton} onClick={onClose}>
-            <span className="material-icons">close</span>
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Индивидуальные цены</DialogTitle>
+        </DialogHeader>
 
         <form onSubmit={handleSubmit}>
-          <div className={styles.body}>
+          <div className="space-y-4 py-4">
             {error && (
-              <div className={styles.error}>
-                <span className="material-icons">error</span>
-                {error}
-              </div>
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             )}
 
-            <div className={styles.orgHeader}>
-              <span className="material-icons">business</span>
-              <span>{organizationName}</span>
+            <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+              <Building2 className="h-5 w-5 text-gray-500" />
+              <span className="font-medium">{organizationName}</span>
             </div>
 
             {currentPlan && (
-              <div className={styles.infoBox}>
-                <strong>Текущий тариф: {currentPlan.name}</strong>
-                <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
+              <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                <div className="font-medium">Текущий тариф: {currentPlan.name}</div>
+                <div className="text-sm text-gray-500 mt-1">
                   Стандартные цены: {formatMoney(currentPlan.base_price_monthly)}/мес, 
                   {formatMoney(currentPlan.price_per_user_monthly)}/польз.
                 </div>
               </div>
             )}
 
-            <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '16px' }}>
+            <p className="text-sm text-gray-500">
               Оставьте поле пустым чтобы использовать стандартную цену тарифа.
               Заполните только те поля, которые хотите переопределить.
             </p>
 
-            <div className={styles.formSection}>
-              <h4>Базовая стоимость</h4>
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label>За месяц (₽)</label>
-                  <input
+            <div className="space-y-3">
+              <h4 className="font-medium text-gray-700">Базовая стоимость</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="basePriceMonthly">За месяц (₽)</Label>
+                  <Input
+                    id="basePriceMonthly"
                     type="number"
                     step="0.01"
                     min="0"
@@ -163,9 +173,10 @@ export function PriceOverrideModal({
                     placeholder={currentPlan ? (currentPlan.base_price_monthly / 100).toString() : '0'}
                   />
                 </div>
-                <div className={styles.formGroup}>
-                  <label>За год (₽)</label>
-                  <input
+                <div className="space-y-2">
+                  <Label htmlFor="basePriceYearly">За год (₽)</Label>
+                  <Input
+                    id="basePriceYearly"
                     type="number"
                     step="0.01"
                     min="0"
@@ -177,12 +188,13 @@ export function PriceOverrideModal({
               </div>
             </div>
 
-            <div className={styles.formSection}>
-              <h4>За дополнительного сотрудника</h4>
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label>За месяц (₽)</label>
-                  <input
+            <div className="space-y-3">
+              <h4 className="font-medium text-gray-700">За дополнительного сотрудника</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="pricePerUserMonthly">За месяц (₽)</Label>
+                  <Input
+                    id="pricePerUserMonthly"
                     type="number"
                     step="0.01"
                     min="0"
@@ -191,9 +203,10 @@ export function PriceOverrideModal({
                     placeholder={currentPlan ? (currentPlan.price_per_user_monthly / 100).toString() : '0'}
                   />
                 </div>
-                <div className={styles.formGroup}>
-                  <label>За год (₽)</label>
-                  <input
+                <div className="space-y-2">
+                  <Label htmlFor="pricePerUserYearly">За год (₽)</Label>
+                  <Input
+                    id="pricePerUserYearly"
                     type="number"
                     step="0.01"
                     min="0"
@@ -205,12 +218,13 @@ export function PriceOverrideModal({
               </div>
             </div>
 
-            <div className={styles.formSection}>
-              <h4>Лимиты пользователей</h4>
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label>Включено в тариф</label>
-                  <input
+            <div className="space-y-3">
+              <h4 className="font-medium text-gray-700">Лимиты пользователей</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="usersIncluded">Включено в тариф</Label>
+                  <Input
+                    id="usersIncluded"
                     type="number"
                     min="1"
                     value={usersIncluded}
@@ -218,9 +232,10 @@ export function PriceOverrideModal({
                     placeholder={currentPlan ? currentPlan.users_included.toString() : '1'}
                   />
                 </div>
-                <div className={styles.formGroup}>
-                  <label>Максимум (пусто = ∞)</label>
-                  <input
+                <div className="space-y-2">
+                  <Label htmlFor="maxUsers">Максимум (пусто = ∞)</Label>
+                  <Input
+                    id="maxUsers"
                     type="number"
                     min="1"
                     value={maxUsers}
@@ -231,9 +246,10 @@ export function PriceOverrideModal({
               </div>
             </div>
 
-            <div className={styles.formGroup}>
-              <label>Заметки</label>
-              <textarea
+            <div className="space-y-2">
+              <Label htmlFor="notes">Заметки</Label>
+              <Textarea
+                id="notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Причина индивидуальных цен..."
@@ -242,36 +258,30 @@ export function PriceOverrideModal({
             </div>
           </div>
 
-          <div className={styles.footer}>
-            {override && (
-              <button
-                type="button"
-                className={`${styles.button} ${styles.danger}`}
-                onClick={handleReset}
-                disabled={loading}
-              >
-                Сбросить к стандартным
-              </button>
-            )}
-            <div style={{ flex: 1 }} />
-            <button
-              type="button"
-              className={`${styles.button} ${styles.secondary}`}
-              onClick={onClose}
-              disabled={loading}
-            >
-              Отмена
-            </button>
-            <button
-              type="submit"
-              className={`${styles.button} ${styles.primary}`}
-              disabled={loading}
-            >
-              {loading ? 'Сохранение...' : 'Сохранить'}
-            </button>
-          </div>
+          <DialogFooter className="flex justify-between">
+            <div>
+              {override && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleReset}
+                  disabled={loading}
+                >
+                  Сбросить к стандартным
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+                Отмена
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Сохранение...' : 'Сохранить'}
+              </Button>
+            </div>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

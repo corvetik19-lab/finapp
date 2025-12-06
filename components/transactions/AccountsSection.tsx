@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { formatMoney } from "@/lib/utils/format";
-import styles from "./Transactions.module.css";
+import { Card, CardContent } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown, ChevronUp, CreditCard, Wallet, Landmark, Banknote } from "lucide-react";
 
 type Account = {
   id: string;
@@ -87,120 +89,47 @@ export default function AccountsSection({ accounts }: AccountsSectionProps) {
 
   const renderAccountCard = (a: Account) => {
     const currentBalance = a.balance ?? 0;
-    let icon = "account_balance_wallet";
-    let typeLabel = "";
-
-    if (a.type === "card") {
-      if (a.credit_limit && a.credit_limit > 0) {
-        icon = "credit_card";
-        typeLabel = "💳 Кредитная";
-      } else {
-        icon = "payment";
-        typeLabel = "💳 Дебетовая";
-      }
-    } else if (a.type === "cash") {
-      icon = "payments";
-      typeLabel = "💵 Наличные";
-    } else if (a.type === "loan") {
-      icon = "account_balance";
-      typeLabel = "💰 Кредит";
-    } else if (a.type === "bank") {
-      icon = "account_balance";
-      typeLabel = "🏦 Счёт";
-    }
+    const isCreditCard = a.type === "card" && a.credit_limit && a.credit_limit > 0;
+    const Icon = a.type === "loan" ? Landmark : isCreditCard ? CreditCard : a.type === "cash" ? Banknote : Wallet;
 
     return (
-      <div key={a.id} className={styles.accountCard}>
-        <div className={styles.accountHeader}>
-          <span
-            className="material-icons"
-            style={{ fontSize: 20, color: "var(--primary-color)" }}
-          >
-            {icon}
-          </span>
-          {typeLabel && <span className={styles.accountType}>{typeLabel}</span>}
-        </div>
-        <div className={styles.accountName}>{a.name}</div>
-        <div className={styles.accountBalance}>
-          {formatMoney(currentBalance, a.currency)}
-        </div>
-      </div>
+      <Card key={a.id} className="min-w-[140px]">
+        <CardContent className="pt-3 pb-3 px-3">
+          <div className="flex items-center gap-2 mb-1">
+            <Icon className="h-4 w-4 text-primary" />
+          </div>
+          <div className="text-sm font-medium truncate">{a.name}</div>
+          <div className={`text-lg font-bold ${currentBalance < 0 ? "text-red-600" : ""}`}>
+            {formatMoney(currentBalance, a.currency)}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderSection = (title: string, items: Account[], expanded: boolean, toggle: () => void) => {
+    if (items.length === 0) return null;
+    return (
+      <Collapsible open={expanded} onOpenChange={toggle}>
+        <CollapsibleTrigger className="flex items-center justify-between w-full py-2 text-sm font-medium hover:bg-muted/50 px-2 rounded">
+          <span>{title}</span>
+          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="flex gap-3 overflow-x-auto pb-2 pt-1 px-1">
+            {items.map(renderAccountCard)}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
     );
   };
 
   return (
-    <>
-      {debitCards.length > 0 && (
-        <section className={styles.accountsSection}>
-          <div
-            className={styles.accountsSectionHeader}
-            onClick={toggleDebit}
-          >
-            <h3 className={styles.accountsTitle}>💳 Дебетовые карты</h3>
-            <span className="material-icons" style={{ cursor: "pointer" }}>
-              {debitExpanded ? "expand_less" : "expand_more"}
-            </span>
-          </div>
-          {debitExpanded && (
-            <div className={styles.accounts}>
-              {debitCards.map(renderAccountCard)}
-            </div>
-          )}
-        </section>
-      )}
-
-      {creditCards.length > 0 && (
-        <section className={styles.accountsSection}>
-          <div
-            className={styles.accountsSectionHeader}
-            onClick={toggleCredit}
-          >
-            <h3 className={styles.accountsTitle}>💳 Кредитные карты</h3>
-            <span className="material-icons" style={{ cursor: "pointer" }}>
-              {creditExpanded ? "expand_less" : "expand_more"}
-            </span>
-          </div>
-          {creditExpanded && (
-            <div className={styles.accounts}>
-              {creditCards.map(renderAccountCard)}
-            </div>
-          )}
-        </section>
-      )}
-
-      {loans.length > 0 && (
-        <section className={styles.accountsSection}>
-          <div
-            className={styles.accountsSectionHeader}
-            onClick={toggleLoans}
-          >
-            <h3 className={styles.accountsTitle}>💰 Кредиты</h3>
-            <span className="material-icons" style={{ cursor: "pointer" }}>
-              {loansExpanded ? "expand_less" : "expand_more"}
-            </span>
-          </div>
-          {loansExpanded && (
-            <div className={styles.accounts}>{loans.map(renderAccountCard)}</div>
-          )}
-        </section>
-      )}
-
-      {others.length > 0 && (
-        <section className={styles.accountsSection}>
-          <div
-            className={styles.accountsSectionHeader}
-            onClick={toggleOthers}
-          >
-            <h3 className={styles.accountsTitle}>🏦 Другие счета</h3>
-            <span className="material-icons" style={{ cursor: "pointer" }}>
-              {othersExpanded ? "expand_less" : "expand_more"}
-            </span>
-          </div>
-          {othersExpanded && (
-            <div className={styles.accounts}>{others.map(renderAccountCard)}</div>
-          )}
-        </section>
-      )}
-    </>
+    <div className="space-y-2">
+      {renderSection("💳 Дебетовые карты", debitCards, debitExpanded, toggleDebit)}
+      {renderSection("💳 Кредитные карты", creditCards, creditExpanded, toggleCredit)}
+      {renderSection("💰 Кредиты", loans, loansExpanded, toggleLoans)}
+      {renderSection("🏦 Другие счета", others, othersExpanded, toggleOthers)}
+    </div>
   );
 }

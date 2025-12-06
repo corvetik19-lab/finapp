@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from "react";
 import type { ReportPeriod, ReportDataType, ReportBuilderConfig } from "@/lib/reports/types";
-import styles from "./ReportBuilder.module.css";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 
 type Category = {
   id: string;
@@ -142,68 +145,63 @@ export default function ReportBuilder({ onGenerate, onAddToChart, isGenerating }
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h2 className={styles.title}>Создать пользовательский отчет</h2>
-        <div className={styles.actions}>
+    <div className="bg-card rounded-lg border p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-lg font-semibold">Создать пользовательский отчет</h2>
+        <div className="flex gap-2">
           {onAddToChart && (
-            <button
-              type="button"
-              className={styles.btnSecondary}
-              onClick={handleAddToChart}
-              disabled={isGenerating}
-            >
+            <Button variant="outline" onClick={handleAddToChart} disabled={isGenerating}>
               Добавить в график
-            </button>
+            </Button>
           )}
-          <button
-            type="button"
-            className={styles.btnPrimary}
-            onClick={handleGenerate}
-            disabled={isGenerating}
-          >
+          <Button onClick={handleGenerate} disabled={isGenerating}>
+            {isGenerating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             {isGenerating ? "Формирование..." : "Сформировать"}
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div className={styles.content}>
-        <div className={styles.section}>
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="space-y-4">
           {/* Период */}
-          <div className={styles.group}>
-            <label className={styles.label}>Период</label>
-            <div className={styles.options}>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Период</label>
+            <div className="flex flex-wrap gap-2">
               {periodOptions.map(opt => (
-                <div
+                <button
                   key={opt.value}
-                  className={`${styles.option} ${period === opt.value ? styles.active : ""}`}
+                  type="button"
+                  className={cn(
+                    "px-3 py-1.5 text-sm rounded-md border transition-colors",
+                    period === opt.value
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background hover:bg-muted"
+                  )}
                   onClick={() => setPeriod(opt.value)}
                 >
                   {opt.label}
-                </div>
+                </button>
               ))}
             </div>
 
             {period === "custom" && (
-              <div className={styles.customPeriod}>
-                <div className={styles.inputGroup}>
-                  <label htmlFor="dateFrom">От</label>
-                  <input
+              <div className="grid grid-cols-2 gap-4 mt-2">
+                <div className="space-y-1">
+                  <label htmlFor="dateFrom" className="text-sm">От</label>
+                  <Input
                     type="date"
                     id="dateFrom"
                     value={customDateFrom}
                     onChange={(e) => setCustomDateFrom(e.target.value)}
-                    className={styles.input}
                   />
                 </div>
-                <div className={styles.inputGroup}>
-                  <label htmlFor="dateTo">До</label>
-                  <input
+                <div className="space-y-1">
+                  <label htmlFor="dateTo" className="text-sm">До</label>
+                  <Input
                     type="date"
                     id="dateTo"
                     value={customDateTo}
                     onChange={(e) => setCustomDateTo(e.target.value)}
-                    className={styles.input}
                   />
                 </div>
               </div>
@@ -211,84 +209,102 @@ export default function ReportBuilder({ onGenerate, onAddToChart, isGenerating }
           </div>
 
           {/* Данные */}
-          <div className={styles.group}>
-            <label className={styles.label}>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
               Данные {dataTypes.length > 0 && `(выбрано: ${dataTypes.length})`}
             </label>
-            <div className={styles.options}>
+            <div className="flex flex-wrap gap-2">
               {dataTypeOptions.map(opt => (
-                <div
+                <button
                   key={opt.value}
-                  className={`${styles.option} ${dataTypes.includes(opt.value) ? styles.active : ""}`}
+                  type="button"
+                  className={cn(
+                    "px-3 py-1.5 text-sm rounded-md border transition-colors",
+                    dataTypes.includes(opt.value)
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background hover:bg-muted"
+                  )}
                   onClick={() => toggleDataType(opt.value)}
                 >
                   {opt.label}
-                </div>
+                </button>
               ))}
             </div>
           </div>
         </div>
 
-        <div className={styles.section}>
+        <div className="space-y-4">
           {/* Название */}
-          <div className={styles.group}>
-            <label htmlFor="reportName" className={styles.label}>
+          <div className="space-y-2">
+            <label htmlFor="reportName" className="text-sm font-medium">
               Название отчета
             </label>
-            <input
+            <Input
               type="text"
               id="reportName"
               value={reportName}
               onChange={(e) => setReportName(e.target.value)}
               placeholder="Введите название отчета"
-              className={styles.input}
             />
           </div>
 
           {/* Категории */}
-          <div className={styles.group}>
-            <div className={styles.labelRow}>
-              <label className={styles.label}>Категории</label>
-              <button
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium">Категории</label>
+              <Button
                 type="button"
-                className={styles.miniBtn}
+                variant="ghost"
+                size="sm"
                 onClick={selectAllCategories}
               >
                 {selectedCategories.length === categories.length ? "Снять все" : "Выбрать все"}
-              </button>
+              </Button>
             </div>
-            <div className={styles.options}>
+            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
               {categories.length === 0 ? (
-                <div className={styles.empty}>Нет доступных категорий</div>
+                <div className="text-sm text-muted-foreground">Нет доступных категорий</div>
               ) : (
                 categories.map(cat => (
-                  <div
+                  <button
                     key={cat.id}
-                    className={`${styles.option} ${selectedCategories.includes(cat.id) ? styles.active : ""}`}
+                    type="button"
+                    className={cn(
+                      "px-3 py-1.5 text-sm rounded-md border transition-colors",
+                      selectedCategories.includes(cat.id)
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background hover:bg-muted"
+                    )}
                     onClick={() => toggleCategory(cat.id)}
                   >
                     {cat.name}
-                  </div>
+                  </button>
                 ))
               )}
             </div>
           </div>
 
           {/* Счета/Карты */}
-          <div className={styles.group}>
-            <label className={styles.label}>Счета/Карты</label>
-            <div className={styles.options}>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Счета/Карты</label>
+            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
               {accounts.length === 0 ? (
-                <div className={styles.empty}>Нет доступных счетов</div>
+                <div className="text-sm text-muted-foreground">Нет доступных счетов</div>
               ) : (
                 accounts.map(acc => (
-                  <div
+                  <button
                     key={acc.id}
-                    className={`${styles.option} ${selectedAccounts.includes(acc.id) ? styles.active : ""}`}
+                    type="button"
+                    className={cn(
+                      "px-3 py-1.5 text-sm rounded-md border transition-colors",
+                      selectedAccounts.includes(acc.id)
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background hover:bg-muted"
+                    )}
                     onClick={() => toggleAccount(acc.id)}
                   >
                     {acc.name}
-                  </div>
+                  </button>
                 ))
               )}
             </div>

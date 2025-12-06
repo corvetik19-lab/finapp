@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Bell, Check } from 'lucide-react';
 
 interface Notification {
   id: string;
@@ -105,17 +107,19 @@ export default function NotificationBell() {
 
   return (
     <div className="relative">
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+        className="relative"
       >
-        <span className="text-2xl">🔔</span>
+        <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
           <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
-      </button>
+      </Button>
 
       {isOpen && (
         <>
@@ -127,13 +131,14 @@ export default function NotificationBell() {
             <div className="p-4 border-b border-gray-200 flex items-center justify-between">
               <h3 className="font-semibold text-gray-900">Уведомления</h3>
               {unreadCount > 0 && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={markAllAsRead}
                   disabled={loading}
-                  className="text-sm text-blue-600 hover:text-blue-700 disabled:opacity-50"
                 >
                   Прочитать все
-                </button>
+                </Button>
               )}
             </div>
 
@@ -162,12 +167,14 @@ export default function NotificationBell() {
                               {notification.title}
                             </h4>
                             {!notification.is_read && (
-                              <button
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-5 w-5"
                                 onClick={() => markAsRead(notification.id)}
-                                className="text-blue-600 hover:text-blue-700 text-xs flex-shrink-0"
                               >
-                                ✓
-                              </button>
+                                <Check className="h-3 w-3" />
+                              </Button>
                             )}
                           </div>
                           <p className="text-sm text-gray-600 mt-1 line-clamp-2">

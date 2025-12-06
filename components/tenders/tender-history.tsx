@@ -3,7 +3,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { formatCurrency } from '@/lib/tenders/types';
 import type { TenderStageHistory, TenderFieldHistory, TenderStage } from '@/lib/tenders/types';
-import styles from './tender-history.module.css';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ArrowRight, History, Pencil, RefreshCw, Loader2, AlertCircle } from 'lucide-react';
 
 interface TenderHistoryProps {
   tenderId: string;
@@ -89,116 +92,92 @@ export function TenderHistory({ tenderId, stages }: TenderHistoryProps) {
 
   if (loading) {
     return (
-      <div className={styles.centerState}>
-        <div className={styles.spinner}></div>
+      <div className="p-6 flex flex-col items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
+        <p className="text-gray-500">Загрузка истории...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className={styles.centerState}>
-        <div className={styles.errorTitle}>⚠️ Ошибка</div>
-        <p className={styles.emptyText}>{error}</p>
+      <div className="p-6 flex flex-col items-center justify-center py-12">
+        <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+        <h3 className="text-lg font-medium text-red-600 mb-2">Ошибка</h3>
+        <p className="text-gray-500">{error}</p>
       </div>
     );
   }
 
   if (history.length === 0) {
     return (
-      <div className={styles.centerState}>
-        <div className={styles.emptyIcon}>📋</div>
-        <h3 className={styles.emptyTitle}>История пуста</h3>
-        <p className={styles.emptyText}>
-          Изменения этапов тендера будут отображаться здесь
-        </p>
+      <div className="p-6 flex flex-col items-center justify-center py-12">
+        <History className="h-12 w-12 text-gray-300 mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">История пуста</h3>
+        <p className="text-gray-500">Изменения этапов тендера будут отображаться здесь</p>
       </div>
     );
   }
 
   return (
-    <div className={styles.container}>
+    <div className="p-6 space-y-4">
       {history.map((item, index) => (
-        <div key={item.id} className={styles.card}>
-          <div className={styles.itemLayout}>
-            {/* Timeline indicator */}
-            <div className={styles.timelineColumn}>
-              <div className={`${styles.timelineIcon} ${item.type === 'stage_change' ? styles.iconStage : styles.iconField}`}>
-                <span className="material-icons">
-                  {item.type === 'stage_change' ? 'swap_horiz' : 'edit'}
-                </span>
+        <Card key={item.id}>
+          <CardContent className="p-4">
+            <div className="flex gap-4">
+              {/* Timeline indicator */}
+              <div className="flex flex-col items-center">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${item.type === 'stage_change' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'}`}>
+                  {item.type === 'stage_change' ? <RefreshCw className="h-5 w-5" /> : <Pencil className="h-5 w-5" />}
+                </div>
+                {index < history.length - 1 && <div className="w-0.5 flex-1 bg-gray-200 mt-2" />}
               </div>
-              {index < history.length - 1 && (
-                <div className={styles.timelineLine}></div>
-              )}
-            </div>
 
-            {/* Content */}
-            <div className={styles.contentColumn}>
-              <div className={styles.header}>
-                <div>
-                  <h4 className={styles.title}>
-                    {item.type === 'stage_change'
-                      ? 'Смена этапа'
-                      : `Изменение поля "${getFieldName('field_name' in item ? item.field_name : '')}"`}
-                  </h4>
-                  <div className={styles.meta}>
-                    <span className={styles.date}>{formatDate(item.created_at)}</span>
-                    <div className={styles.userInfo}>
-                      <div className={styles.avatar}>
-                        {item.changed_by_user?.avatar_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={item.changed_by_user.avatar_url}
-                            alt=""
-                            className={styles.avatar}
-                          />
-                        ) : (
-                          item.changed_by_user?.full_name?.[0] || '?'
-                        )}
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <h4 className="font-medium text-gray-900">
+                      {item.type === 'stage_change' ? 'Смена этапа' : `Изменение поля "${getFieldName('field_name' in item ? item.field_name : '')}"`}
+                    </h4>
+                    <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
+                      <span>{formatDate(item.created_at)}</span>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-5 w-5">
+                          <AvatarImage src={item.changed_by_user?.avatar_url || undefined} />
+                          <AvatarFallback className="text-xs">{item.changed_by_user?.full_name?.[0] || '?'}</AvatarFallback>
+                        </Avatar>
+                        <span>{item.changed_by_user?.full_name || 'Пользователь'}</span>
                       </div>
-                      <span className={styles.userName}>
-                        {item.changed_by_user?.full_name || 'Пользователь'}
-                      </span>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {item.type === 'stage_change' ? (
-                <div className={styles.stageChangeBlock}>
-                  <span className={styles.stageTag}>
-                    {getStageName((item as TenderStageHistory).from_stage_id)}
-                  </span>
-                  <span className={`material-icons ${styles.arrowIcon}`}>arrow_forward</span>
-                  <span className={`${styles.stageTag} ${styles.stageTagNew}`}>
-                    {getStageName((item as TenderStageHistory).to_stage_id)}
-                  </span>
-                </div>
-              ) : (
-                'field_name' in item && (
-                  <div className={styles.fieldChangeBlock}>
-                    <span className={styles.oldValue}>
-                      {formatFieldValue(item.field_name, item.old_value)}
-                    </span>
-                    <span className={`material-icons ${styles.arrowIcon}`}>arrow_forward</span>
-                    <span className={styles.newValue}>
-                      {formatFieldValue(item.field_name, item.new_value)}
-                    </span>
+                {item.type === 'stage_change' ? (
+                  <div className="flex items-center gap-2 mt-3">
+                    <Badge variant="outline" className="bg-gray-50">{getStageName((item as TenderStageHistory).from_stage_id)}</Badge>
+                    <ArrowRight className="h-4 w-4 text-gray-400" />
+                    <Badge className="bg-blue-600">{getStageName((item as TenderStageHistory).to_stage_id)}</Badge>
                   </div>
-                )
-              )}
+                ) : (
+                  'field_name' in item && (
+                    <div className="flex items-center gap-2 mt-3">
+                      <span className="text-sm text-gray-500 line-through">{formatFieldValue(item.field_name, item.old_value)}</span>
+                      <ArrowRight className="h-4 w-4 text-gray-400" />
+                      <span className="text-sm font-medium text-green-600">{formatFieldValue(item.field_name, item.new_value)}</span>
+                    </div>
+                  )
+                )}
 
-              {item.type === 'stage_change' && (item as TenderStageHistory).comment && (
-                <div className={styles.commentBlock}>
-                  <p className={styles.commentText}>
-                    &quot;{(item as TenderStageHistory).comment}&quot;
-                  </p>
-                </div>
-              )}
+                {item.type === 'stage_change' && (item as TenderStageHistory).comment && (
+                  <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-600 italic">&quot;{(item as TenderStageHistory).comment}&quot;</p>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       ))}
     </div>
   );

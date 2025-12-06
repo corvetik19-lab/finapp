@@ -2,7 +2,8 @@
 
 import { useState, useTransition, useEffect } from "react";
 import TransactionsGroupedList, { type Txn, type Category, type Account } from "./TransactionsGroupedList";
-import styles from "./LoadMoreButton.module.css";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 interface ClientPaginatedListProps {
   initialTransactions: Txn[];
@@ -80,33 +81,23 @@ export default function ClientPaginatedList({
       <TransactionsGroupedList txns={transactions} categories={categories} accounts={accounts} />
       
       {transactions.length === 0 && (
-        <div style={{ color: "#888", display: "flex", alignItems: "center", gap: 10 }}>
+        <div className="flex items-center gap-3 text-muted-foreground">
           <span>Ничего не найдено по текущим фильтрам.</span>
-          <a className={styles.lightBtn} href="/finance/transactions" style={{ textDecoration: "none" }}>
-            Сбросить фильтры
-          </a>
+          <Button variant="link" asChild className="p-0 h-auto"><a href="/finance/transactions">Сбросить фильтры</a></Button>
         </div>
       )}
 
       {hasMore && transactions.length > 0 && (
-        <div className={styles.container}>
-          <div className={styles.info}>
-            Показано {transactions.length} из {totalCount ?? "?"} транзакций
-          </div>
-          <button
-            onClick={loadMore}
-            className={styles.button}
-            disabled={isLoading || isPending}
-          >
-            {isLoading || isPending ? "Загрузка..." : "Загрузить ещё 50 транзакций"}
-          </button>
+        <div className="flex flex-col items-center gap-3 py-4">
+          <span className="text-sm text-muted-foreground">Показано {transactions.length} из {totalCount ?? "?"} транзакций</span>
+          <Button onClick={loadMore} disabled={isLoading || isPending} variant="outline">
+            {isLoading || isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Загрузка...</> : "Загрузить ещё 50 транзакций"}
+          </Button>
         </div>
       )}
 
       {!hasMore && transactions.length > 0 && (
-        <div className={styles.info}>
-          Показаны все транзакции ({transactions.length})
-        </div>
+        <div className="text-sm text-muted-foreground text-center py-4">Показаны все транзакции ({transactions.length})</div>
       )}
     </>
   );

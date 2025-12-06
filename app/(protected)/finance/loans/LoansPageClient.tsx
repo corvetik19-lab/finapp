@@ -4,10 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Loan, LoanSummary } from "@/lib/loans/types";
 import { formatMoney } from "@/lib/utils/format";
+import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Plus, Wallet, Building2, Pencil, Trash2, Receipt, CheckCircle, Calendar, Percent, CreditCard, Clock, Landmark } from "lucide-react";
 import LoanFormModal from "@/components/loans/LoanFormModal";
 import LoanRepayModal from "@/components/loans/LoanRepayModal";
 import LoanTransactionsModal from "@/components/loans/LoanTransactionsModal";
-import styles from "./Loans.module.css";
+import { useToast } from "@/components/toast/ToastContext";
 
 type LoansPageClientProps = {
   loans: Loan[];
@@ -16,6 +21,7 @@ type LoansPageClientProps = {
 
 export default function LoansPageClient({ loans, summary }: LoansPageClientProps) {
   const router = useRouter();
+  const toast = useToast();
   const [filter, setFilter] = useState<"all" | "active" | "paid">("all");
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isRepayModalOpen, setIsRepayModalOpen] = useState(false);
@@ -37,7 +43,10 @@ export default function LoansPageClient({ loans, summary }: LoansPageClientProps
 
     const res = await fetch(`/api/loans?id=${id}`, { method: "DELETE" });
     if (res.ok) {
+      toast.show("Кредит удалён", { type: "success" });
       router.refresh();
+    } else {
+      toast.show("Ошибка при удалении кредита", { type: "error" });
     }
   };
 
@@ -57,184 +66,125 @@ export default function LoansPageClient({ loans, summary }: LoansPageClientProps
   };
 
   const handleFormSuccess = () => {
+    toast.show("Кредит сохранён", { type: "success" });
     router.refresh();
   };
 
   const handleRepaySuccess = () => {
+    toast.show("Платёж записан", { type: "success" });
     router.refresh();
   };
 
   return (
-    <div className={styles.wrapper}>
-      <header className={styles.topBar}>
-        <h1 className={styles.pageTitle}>Кредиты</h1>
-        <div style={{ display: "flex", gap: 10 }}>
-          <button className={styles.addBtn} onClick={handleOpenAddModal}>
-            <span className="material-icons">add</span>
-            Добавить кредит
-          </button>
-          <button className={styles.repayBtn} onClick={() => setIsRepayModalOpen(true)}>
-            <span className="material-icons">payments</span>
-            Погасить кредит
-          </button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Кредиты</h1>
+        <div className="flex gap-2">
+          <Button onClick={handleOpenAddModal}><Plus className="h-4 w-4 mr-1" />Добавить кредит</Button>
+          <Button variant="outline" onClick={() => setIsRepayModalOpen(true)}><Wallet className="h-4 w-4 mr-1" />Погасить кредит</Button>
         </div>
-      </header>
+      </div>
 
       {/* Статистика */}
-      <div className={styles.summaryContainer}>
-        <div className={styles.summaryCard}>
-          <div className={styles.summaryTitle}>Общий долг</div>
-          <div className={styles.summaryValue}>{formatMoney(summary.totalDebt * 100, "RUB")}</div>
-        </div>
-        <div className={styles.summaryCard}>
-          <div className={styles.summaryTitle}>Ежемесячный платёж</div>
-          <div className={styles.summaryValue}>{formatMoney(summary.monthlyPayment * 100, "RUB")}</div>
-        </div>
-        <div className={styles.summaryCard}>
-          <div className={styles.summaryTitle}>Ближайший платёж</div>
-          <div className={styles.summaryValue}>
-            {summary.nextPayment ? formatMoney(summary.nextPayment.amount * 100, "RUB") : "—"}
-          </div>
-          {summary.nextPayment && (
-            <div className={styles.summaryChange}>через {summary.nextPayment.daysUntil} дн.</div>
-          )}
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-red-100"><CreditCard className="h-5 w-5 text-red-600" /></div>
+              <div><div className="text-sm text-muted-foreground">Общий долг</div><div className="text-xl font-bold">{formatMoney(summary.totalDebt * 100, "RUB")}</div></div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-100"><Calendar className="h-5 w-5 text-blue-600" /></div>
+              <div><div className="text-sm text-muted-foreground">Ежемесячный платёж</div><div className="text-xl font-bold">{formatMoney(summary.monthlyPayment * 100, "RUB")}</div></div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-amber-100"><Clock className="h-5 w-5 text-amber-600" /></div>
+              <div>
+                <div className="text-sm text-muted-foreground">Ближайший платёж</div>
+                <div className="text-xl font-bold">{summary.nextPayment ? formatMoney(summary.nextPayment.amount * 100, "RUB") : "—"}</div>
+                {summary.nextPayment && <div className="text-xs text-muted-foreground">через {summary.nextPayment.daysUntil} дн.</div>}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Список кредитов */}
-      <div className={styles.loansContainer}>
-        <div className={styles.loansHeader}>
-          <div className={styles.loansTitle}>Мои кредиты ({filteredLoans.length})</div>
-          <div className={styles.loansFilters}>
-            <button className={filter === "all" ? styles.filterBtnActive : styles.filterBtn} onClick={() => setFilter("all")}>
-              Все
-            </button>
-            <button className={filter === "active" ? styles.filterBtnActive : styles.filterBtn} onClick={() => setFilter("active")}>
-              Активные
-            </button>
-            <button className={filter === "paid" ? styles.filterBtnActive : styles.filterBtn} onClick={() => setFilter("paid")}>
-              Погашенные
-            </button>
-          </div>
-        </div>
-
-        {filteredLoans.length === 0 && (
-          <div className={styles.emptyState}>
-            <span className="material-icons" style={{ fontSize: 48, color: "#ccc", marginBottom: 12 }}>
-              account_balance
-            </span>
-            <p>Нет кредитов</p>
-          </div>
-        )}
-
-        {filteredLoans.map((loan) => (
-          <div key={loan.id} className={styles.loanItem}>
-            <div className={styles.loanHeader}>
-              <div className={styles.loanName}>{loan.name}</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                {loan.isPaidThisMonth ? (
-                  <div className={styles.loanStatusPaid}>
-                    <span className="material-icons" style={{ fontSize: 16 }}>check_circle</span>
-                    Оплачено
-                  </div>
-                ) : (
-                  <div className={styles.loanStatus}>{loan.status === "active" ? "Активен" : "Погашен"}</div>
-                )}
-                <button 
-                  className={styles.editBtn} 
-                  onClick={() => setTransactionsModalLoan(loan)}
-                  title="Посмотреть транзакции"
-                >
-                  <span className="material-icons" style={{ fontSize: 16 }}>receipt_long</span>
-                  Транзакции
-                </button>
-                <button className={styles.editBtn} onClick={() => handleOpenEditModal(loan)}>
-                  <span className="material-icons" style={{ fontSize: 16 }}>edit</span>
-                  Изменить
-                </button>
-                <button className={styles.deleteBtn} onClick={() => handleDelete(loan.id)}>
-                  <span className="material-icons" style={{ fontSize: 16 }}>delete</span>
-                </button>
-              </div>
-            </div>
-            
-            <div className={styles.loanDetails}>
-              <div className={styles.loanDetail}>
-                <div className={styles.loanDetailLabel}>Сумма кредита</div>
-                <div className={styles.loanDetailValue}>{formatMoney(loan.principalAmount * 100, loan.currency)}</div>
-              </div>
-              <div className={styles.loanDetail}>
-                <div className={styles.loanDetailLabel}>Остаток долга</div>
-                <div className={styles.loanDetailValue}>{formatMoney(loan.remainingDebt * 100, loan.currency)}</div>
-              </div>
-              <div className={styles.loanDetail}>
-                <div className={styles.loanDetailLabel}>Процентная ставка</div>
-                <div className={styles.loanDetailValue}>{loan.interestRate}%</div>
-              </div>
-            </div>
-
-            <div className={styles.loanDetails}>
-              <div className={styles.loanDetail}>
-                <div className={styles.loanDetailLabel}>Ежемесячный платёж</div>
-                <div className={styles.loanDetailValue}>{formatMoney(loan.monthlyPayment * 100, loan.currency)}</div>
-              </div>
-              <div className={styles.loanDetail}>
-                <div className={styles.loanDetailLabel}>Следующий платёж</div>
-                <div className={styles.loanDetailValue}>{formatDate(loan.nextPaymentDate)}</div>
-              </div>
-              <div className={styles.loanDetail}>
-                <div className={styles.loanDetailLabel}>Банк</div>
-                <div className={styles.loanDetailValue}>{loan.bank}</div>
-              </div>
-            </div>
-
-            <div className={styles.loanDetails}>
-              <div className={styles.loanDetail}>
-                <div className={styles.loanDetailLabel}>Дата выдачи</div>
-                <div className={styles.loanDetailValue}>{formatDate(loan.issueDate)}</div>
-              </div>
-              <div className={styles.loanDetail}>
-                <div className={styles.loanDetailLabel}>Срок кредита</div>
-                <div className={styles.loanDetailValue}>{loan.termMonths ? `${loan.termMonths} мес` : "—"}</div>
-              </div>
-              <div className={styles.loanDetail}>
-                <div className={styles.loanDetailLabel}>Дата окончания</div>
-                <div className={styles.loanDetailValue}>{formatDate(loan.endDate)}</div>
-              </div>
-            </div>
-
-            <div className={styles.loanProgress}>
-              <div className={styles.loanProgressBar} style={{ width: `${loan.progressPercent}%` }} />
-              <div className={styles.loanProgressLabel} style={{ left: `${loan.progressPercent}%` }}>
-                {loan.progressPercent}%
-              </div>
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">Мои кредиты ({filteredLoans.length})</CardTitle>
+            <div className="flex gap-1">
+              <Button variant={filter === "all" ? "default" : "ghost"} size="sm" onClick={() => setFilter("all")}>Все</Button>
+              <Button variant={filter === "active" ? "default" : "ghost"} size="sm" onClick={() => setFilter("active")}>Активные</Button>
+              <Button variant={filter === "paid" ? "default" : "ghost"} size="sm" onClick={() => setFilter("paid")}>Погашенные</Button>
             </div>
           </div>
-        ))}
-      </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {filteredLoans.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Landmark className="h-12 w-12 mb-3 opacity-50" />
+              <p>Нет кредитов</p>
+            </div>
+          )}
+
+          {filteredLoans.map((loan) => (
+            <div key={loan.id} className="p-4 rounded-lg border bg-card space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="font-semibold text-lg">{loan.name}</div>
+                <div className="flex items-center gap-2">
+                  {loan.isPaidThisMonth ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700"><CheckCircle className="h-3 w-3" />Оплачено</span>
+                  ) : (
+                    <span className={cn("px-2 py-1 rounded-full text-xs font-medium", loan.status === "active" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-700")}>{loan.status === "active" ? "Активен" : "Погашен"}</span>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={() => setTransactionsModalLoan(loan)}><Receipt className="h-4 w-4 mr-1" />Транзакции</Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleOpenEditModal(loan)}><Pencil className="h-4 w-4 mr-1" />Изменить</Button>
+                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDelete(loan.id)}><Trash2 className="h-4 w-4" /></Button>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4">
+                <div><div className="text-xs text-muted-foreground">Сумма кредита</div><div className="font-medium">{formatMoney(loan.principalAmount * 100, loan.currency)}</div></div>
+                <div><div className="text-xs text-muted-foreground">Остаток долга</div><div className="font-medium text-red-600">{formatMoney(loan.remainingDebt * 100, loan.currency)}</div></div>
+                <div><div className="text-xs text-muted-foreground flex items-center gap-1"><Percent className="h-3 w-3" />Ставка</div><div className="font-medium">{loan.interestRate}%</div></div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div><div className="text-xs text-muted-foreground">Ежемесячный платёж</div><div className="font-medium">{formatMoney(loan.monthlyPayment * 100, loan.currency)}</div></div>
+                <div><div className="text-xs text-muted-foreground">Следующий платёж</div><div className="font-medium">{formatDate(loan.nextPaymentDate)}</div></div>
+                <div><div className="text-xs text-muted-foreground flex items-center gap-1"><Building2 className="h-3 w-3" />Банк</div><div className="font-medium">{loan.bank}</div></div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div><div className="text-xs text-muted-foreground">Дата выдачи</div><div className="font-medium">{formatDate(loan.issueDate)}</div></div>
+                <div><div className="text-xs text-muted-foreground">Срок кредита</div><div className="font-medium">{loan.termMonths ? `${loan.termMonths} мес` : "—"}</div></div>
+                <div><div className="text-xs text-muted-foreground">Дата окончания</div><div className="font-medium">{formatDate(loan.endDate)}</div></div>
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs"><span className="text-muted-foreground">Прогресс погашения</span><span className="font-medium">{loan.progressPercent}%</span></div>
+                <Progress value={loan.progressPercent} className="h-2" />
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
       {/* Модальные окна */}
-      <LoanFormModal
-        open={isFormModalOpen}
-        onClose={handleCloseFormModal}
-        onSuccess={handleFormSuccess}
-        loan={editingLoan}
-      />
-
-      <LoanRepayModal
-        open={isRepayModalOpen}
-        onClose={() => setIsRepayModalOpen(false)}
-        onSuccess={handleRepaySuccess}
-        loans={loans}
-      />
-
-      {transactionsModalLoan && (
-        <LoanTransactionsModal
-          isOpen={true}
-          onClose={() => setTransactionsModalLoan(null)}
-          loan={transactionsModalLoan}
-        />
-      )}
+      <LoanFormModal open={isFormModalOpen} onClose={handleCloseFormModal} onSuccess={handleFormSuccess} loan={editingLoan} />
+      <LoanRepayModal open={isRepayModalOpen} onClose={() => setIsRepayModalOpen(false)} onSuccess={handleRepaySuccess} loans={loans} />
+      {transactionsModalLoan && <LoanTransactionsModal isOpen={true} onClose={() => setTransactionsModalLoan(null)} loan={transactionsModalLoan} />}
     </div>
   );
 }

@@ -1,9 +1,8 @@
 import { Suspense } from "react";
 import { createRSCClient } from "@/lib/supabase/helpers";
 import { listTransactions, type TransactionRecord } from "@/lib/transactions/service";
-import styles from "@/components/transactions/Transactions.module.css";
-// Charts temporarily removed per design update
-// ExpenseStructure removed; using ExpenseDoughnut below transactions instead
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import AddTransactionButton from "./txn/AddTransactionButton";
 import TransferButton from "./txn/TransferButton";
 import QuickTransactionButton from "@/components/transactions/QuickTransactionButton";
@@ -11,6 +10,7 @@ import SummaryWithPeriod from "@/components/transactions/SummaryWithPeriod";
 import FiltersAndSearch from "@/components/transactions/FiltersAndSearch";
 import AccountsSection from "@/components/transactions/AccountsSection";
 import ImportCsvTrigger from "@/components/transactions/ImportCsvTrigger";
+import BankImportTrigger from "@/components/transactions/BankImportTrigger";
 import ExportCsvButton from "@/components/transactions/ExportCsvButton";
 import ClientPaginatedList from "@/components/transactions/ClientPaginatedList";
 import { type Txn as GroupTxn } from "@/components/transactions/TransactionsGroupedList";
@@ -319,13 +319,17 @@ export default async function TransactionsPage({
   // Charts and expense analytics removed per design update
 
   return (
-    <div>
-      <div className={styles.topBar}>
-        <div className={styles.pageTitle}>Транзакции</div>
-        <div className={styles.topActions}>
-          <ImportCsvTrigger className={styles.topBtn} />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Транзакции</h1>
+          <p className="text-sm text-muted-foreground">История операций</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <BankImportTrigger />
+          <ImportCsvTrigger />
           <ExportCsvButton
-            className={styles.topBtn}
             searchParams={{
               q: f_q,
               period: f_period,
@@ -339,7 +343,7 @@ export default async function TransactionsPage({
             }}
           />
           {(accounts as Account[]).length >= 2 && (
-            <Suspense fallback={<button className={styles.topBtn}>Перевод</button>}>
+            <Suspense fallback={<Button variant="secondary" size="sm" disabled>Перевод</Button>}>
               <TransferButton accounts={accounts as Account[]} />
             </Suspense>
           )}
@@ -373,11 +377,12 @@ export default async function TransactionsPage({
 
       {/* Форма добавления открывается в модальном окне по кнопке вверху */}
 
-      <section className={styles.listCard}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <div style={{ fontWeight: 500 }}>Транзакции</div>
-        </div>
-        <div className={styles.list}>
+      {/* Transactions List */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium">Транзакции</CardTitle>
+        </CardHeader>
+        <CardContent>
           <ClientPaginatedList
             key={`txns-${txns.length}-${txns[0]?.id || 'empty'}`}
             initialTransactions={txns as Txn[]}
@@ -394,86 +399,79 @@ export default async function TransactionsPage({
               search: f_q || undefined,
             }}
           />
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
-      <section className={styles.analyticsSection}>
-        <div className={`${styles.analyticsGrid} ${styles.two}`}>
-          <div className={styles.analyticsCard}>
-            <span className={styles.analyticsBadge}>Временные тренды</span>
-            <div className={styles.analyticsTitle}>Категории: динамика и сравнение</div>
-            <div className={styles.analyticsPlaceholder}>
-              <strong>Сравнение с прошлым периодом</strong>
-              <span>Здесь появятся проценты роста/падения и суммы по категориям, как только подключим API.</span>
+      {/* Analytics Section */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Временные тренды</span>
             </div>
-            <div className={styles.analyticsPlaceholder}>
-              <strong>Мини-графики (sparklines)</strong>
-              <span>В планах отрисовать тренды по месяцам для каждой категории.</span>
+            <CardTitle className="text-base">Категории: динамика и сравнение</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-muted-foreground">
+            <div><strong className="text-foreground">Сравнение с прошлым периодом</strong><br/>Здесь появятся проценты роста/падения и суммы по категориям.</div>
+            <div><strong className="text-foreground">Мини-графики (sparklines)</strong><br/>В планах отрисовать тренды по месяцам для каждой категории.</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">Бюджетный контроль</span>
             </div>
-          </div>
-          <div className={styles.analyticsCard}>
-            <span className={styles.analyticsBadge}>Бюджетный контроль</span>
-            <div className={styles.analyticsTitle}>Лимиты и прогноз</div>
-            <div className={styles.analyticsPlaceholder}>
-              <strong>Превышения бюджета</strong>
-              <span>Отображение категорий, превысивших лимит.</span>
-            </div>
-            <div className={styles.analyticsPlaceholder}>
-              <strong>Остаток до лимита</strong>
-              <span>Процент и сумма до достижения лимита.</span>
-            </div>
-            <div className={styles.analyticsPlaceholder}>
-              <strong>Прогноз расходов</strong>
-              <span>Прогноз на конец текущего периода.</span>
-            </div>
-          </div>
-        </div>
+            <CardTitle className="text-base">Лимиты и прогноз</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-muted-foreground">
+            <div><strong className="text-foreground">Превышения бюджета</strong><br/>Отображение категорий, превысивших лимит.</div>
+            <div><strong className="text-foreground">Остаток до лимита</strong><br/>Процент и сумма до достижения лимита.</div>
+            <div><strong className="text-foreground">Прогноз расходов</strong><br/>Прогноз на конец текущего периода.</div>
+          </CardContent>
+        </Card>
+      </div>
 
-        <div className={`${styles.analyticsGrid} ${styles.three}`} style={{ marginTop: 20 }}>
-          <div className={styles.analyticsCard}>
-            <span className={styles.analyticsBadge}>Финансовое здоровье</span>
-            <div className={styles.analyticsTitle}>Ключевые коэффициенты</div>
-            <div className={styles.analyticsPlaceholder}>
-              <strong>Коэффициент накоплений</strong>
-              <span>Рассчитаем (доходы - расходы) / доходы по периодам.</span>
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Финансовое здоровье</span>
             </div>
-            <div className={styles.analyticsPlaceholder}>
-              <strong>Индекс разнообразия трат</strong>
-              <span>Подсчёт распределения расходов по категориям.</span>
-            </div>
-            <div className={styles.analyticsPlaceholder}>
-              <strong>Стабильность расходов</strong>
-              <span>Отклонение от среднемесячных трат.</span>
-            </div>
-          </div>
+            <CardTitle className="text-base">Ключевые коэффициенты</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-muted-foreground">
+            <div><strong className="text-foreground">Коэффициент накоплений</strong><br/>Рассчитаем (доходы - расходы) / доходы по периодам.</div>
+            <div><strong className="text-foreground">Индекс разнообразия трат</strong><br/>Подсчёт распределения расходов по категориям.</div>
+            <div><strong className="text-foreground">Стабильность расходов</strong><br/>Отклонение от среднемесячных трат.</div>
+          </CardContent>
+        </Card>
 
-          <div className={styles.analyticsCard}>
-            <span className={styles.analyticsBadge}>Цели и достижения</span>
-            <div className={styles.analyticsTitle}>Прогресс и рекорды</div>
-            <div className={styles.analyticsPlaceholder}>
-              <strong>Прогресс по целям</strong>
-              <span>Покажем процент выполнения целей экономии.</span>
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Цели и достижения</span>
             </div>
-            <div className={styles.analyticsPlaceholder}>
-              <strong>Рекорды</strong>
-              <span>Самый экономный месяц и категория с большими сокращениями.</span>
-            </div>
-          </div>
+            <CardTitle className="text-base">Прогресс и рекорды</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-muted-foreground">
+            <div><strong className="text-foreground">Прогресс по целям</strong><br/>Покажем процент выполнения целей экономии.</div>
+            <div><strong className="text-foreground">Рекорды</strong><br/>Самый экономный месяц и категория с большими сокращениями.</div>
+          </CardContent>
+        </Card>
 
-          <div className={styles.analyticsCard}>
-            <span className={styles.analyticsBadge}>AI рекомендации</span>
-            <div className={styles.analyticsTitle}>Что можно улучшить</div>
-            <div className={styles.analyticsPlaceholder}>
-              <strong>Персональные рекомендации</strong>
-              <span>Здесь появятся советы, например «Сократите траты на категорию Х на 10%».</span>
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full">AI рекомендации</span>
             </div>
-            <div className={styles.analyticsPlaceholder}>
-              <strong>Следующие шаги</strong>
-              <span>Автоматически сформируем действия после связи с AI API.</span>
-            </div>
-          </div>
-        </div>
-      </section>
+            <CardTitle className="text-base">Что можно улучшить</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-muted-foreground">
+            <div><strong className="text-foreground">Персональные рекомендации</strong><br/>Здесь появятся советы, например «Сократите траты на категорию Х на 10%».</div>
+            <div><strong className="text-foreground">Следующие шаги</strong><br/>Автоматически сформируем действия после связи с AI API.</div>
+          </CardContent>
+        </Card>
+      </div>
 
     </div>
   );

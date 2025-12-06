@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import styles from "./Prompts.module.css";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
 
 type Prompt = {
   id: string;
@@ -90,135 +96,24 @@ export default function PromptModal({ prompt, onClose, categories, aiModels }: P
   }
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h2>{prompt ? "Редактировать промпт" : "Создать промпт"}</h2>
-          <button 
-            type="button"
-            onClick={onClose} 
-            className={styles.closeBtn}
-            aria-label="Закрыть"
-          >
-            <span className="material-icons">close</span>
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className={styles.modalBody}>
-          <div className={styles.formGroup}>
-            <label htmlFor="title">
-              Название <span className={styles.required}>*</span>
-            </label>
-            <input
-              id="title"
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Например: Генерация идей для статьи"
-              className={styles.input}
-              required
-            />
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader><DialogTitle>{prompt ? "Редактировать промпт" : "Создать промпт"}</DialogTitle></DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2"><Label>Название *</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Генерация идей для статьи" required /></div>
+          <div className="space-y-2"><Label>Описание</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Краткое описание..." rows={2} /></div>
+          <div className="space-y-2"><Label>Текст промпта *</Label><Textarea value={promptText} onChange={(e) => setPromptText(e.target.value)} placeholder="Введите текст промпта..." rows={8} required /><p className="text-xs text-muted-foreground text-right">{promptText.length} символов</p></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2"><Label>Категория</Label><Select value={category} onValueChange={setCategory}><SelectTrigger><SelectValue placeholder="Не выбрано" /></SelectTrigger><SelectContent>{categories.map((cat) => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select></div>
+            <div className="space-y-2"><Label>Нейросеть</Label><Select value={aiModel} onValueChange={setAiModel}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{aiModels.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select></div>
           </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="description">Описание</label>
-            <textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Краткое описание промпта..."
-              className={styles.textarea}
-              rows={2}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="promptText">
-              Текст промпта <span className={styles.required}>*</span>
-            </label>
-            <textarea
-              id="promptText"
-              value={promptText}
-              onChange={(e) => setPromptText(e.target.value)}
-              placeholder="Введите текст промпта..."
-              className={styles.textarea}
-              rows={8}
-              required
-            />
-            <div className={styles.charCount}>
-              {promptText.length} символов
-            </div>
-          </div>
-
-          <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-              <label htmlFor="category">Категория</label>
-              <select
-                id="category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className={styles.select}
-              >
-                <option value="">Не выбрано</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className={styles.formGroup}>
-              <label htmlFor="aiModel">Нейросеть</label>
-              <select
-                id="aiModel"
-                value={aiModel}
-                onChange={(e) => setAiModel(e.target.value)}
-                className={styles.select}
-              >
-                {aiModels.map((model) => (
-                  <option key={model} value={model}>
-                    {model}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="tags">Теги</label>
-            <input
-              id="tags"
-              type="text"
-              value={tagsInput}
-              onChange={(e) => setTagsInput(e.target.value)}
-              placeholder="Через запятую: идеи, контент, маркетинг"
-              className={styles.input}
-            />
-            <div className={styles.hint}>
-              Теги помогут быстрее найти промпт
-            </div>
-          </div>
-
-          <div className={styles.modalFooter}>
-            <button
-              type="button"
-              onClick={onClose}
-              className={styles.cancelBtn}
-              disabled={isSaving}
-            >
-              Отмена
-            </button>
-            <button
-              type="submit"
-              className={styles.saveBtn}
-              disabled={isSaving}
-            >
-              {isSaving ? "Сохранение..." : prompt ? "Сохранить" : "Создать"}
-            </button>
-          </div>
+          <div className="space-y-2"><Label>Теги</Label><Input value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} placeholder="идеи, контент, маркетинг" /></div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSaving}>Отмена</Button>
+            <Button type="submit" disabled={isSaving}>{isSaving ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Сохранение...</> : prompt ? "Сохранить" : "Создать"}</Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

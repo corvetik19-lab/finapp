@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import styles from "./SmartNotificationsList.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { Bell, X, AlertCircle, AlertTriangle, CheckCircle, Info, Lightbulb } from "lucide-react";
 
 interface SmartNotification {
   id: string;
@@ -79,19 +83,20 @@ export default function SmartNotificationsList() {
 
   function getSeverityIcon(severity: string) {
     switch (severity) {
-      case "alert":
-        return "⚠️";
-      case "warning":
-        return "⚡";
-      case "success":
-        return "✅";
-      default:
-        return "ℹ️";
+      case "alert": return <AlertCircle className="h-5 w-5 text-red-500" />;
+      case "warning": return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+      case "success": return <CheckCircle className="h-5 w-5 text-green-500" />;
+      default: return <Info className="h-5 w-5 text-blue-500" />;
     }
   }
 
-  function getSeverityClass(severity: string) {
-    return styles[severity] || styles.info;
+  function getSeverityStyle(severity: string) {
+    switch (severity) {
+      case "alert": return "bg-gradient-to-r from-red-50 to-transparent dark:from-red-950/30 dark:to-transparent border border-red-200/50 dark:border-red-800/30";
+      case "warning": return "bg-gradient-to-r from-yellow-50 to-transparent dark:from-yellow-950/30 dark:to-transparent border border-yellow-200/50 dark:border-yellow-800/30";
+      case "success": return "bg-gradient-to-r from-green-50 to-transparent dark:from-green-950/30 dark:to-transparent border border-green-200/50 dark:border-green-800/30";
+      default: return "bg-gradient-to-r from-blue-50 to-transparent dark:from-blue-950/30 dark:to-transparent border border-blue-200/50 dark:border-blue-800/30";
+    }
   }
 
   function formatDate(dateStr: string) {
@@ -119,87 +124,40 @@ export default function SmartNotificationsList() {
   }
 
   if (loading) {
-    return <div className={styles.loading}>Загрузка...</div>;
+    return <Card><CardContent className="flex items-center justify-center py-12"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></CardContent></Card>;
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h2 className={styles.title}>Уведомления</h2>
-        <div className={styles.filters}>
-          <button
-            className={filter === "all" ? styles.active : ""}
-            onClick={() => setFilter("all")}
-          >
-            Все
-          </button>
-          <button
-            className={filter === "unread" ? styles.active : ""}
-            onClick={() => setFilter("unread")}
-          >
-            Непрочитанные
-          </button>
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle>Уведомления</CardTitle>
+          <div className="flex gap-2">
+            <Button variant={filter === "all" ? "default" : "outline"} size="sm" onClick={() => setFilter("all")}>Все</Button>
+            <Button variant={filter === "unread" ? "default" : "outline"} size="sm" onClick={() => setFilter("unread")}>Непрочитанные</Button>
+          </div>
         </div>
-      </div>
-
-      {notifications.length === 0 ? (
-        <div className={styles.empty}>
-          <div className={styles.emptyIcon}>🔔</div>
-          <p>
-            {filter === "unread"
-              ? "Нет новых уведомлений"
-              : "Уведомлений пока нет"}
-          </p>
-        </div>
-      ) : (
-        <div className={styles.list}>
-          {notifications.map(notification => (
-            <div
-              key={notification.id}
-              className={`${styles.notification} ${getSeverityClass(notification.severity)} ${!notification.is_read ? styles.unread : ""}`}
-              onClick={() => {
-                if (!notification.is_read) {
-                  markAsRead(notification.id);
-                }
-                if (notification.action_url) {
-                  window.location.href = notification.action_url;
-                }
-              }}
-            >
-              <div className={styles.icon}>
-                {getSeverityIcon(notification.severity)}
-              </div>
-              <div className={styles.content}>
-                <div className={styles.notificationTitle}>
-                  {notification.title}
-                  {!notification.is_read && (
-                    <span className={styles.badge}>Новое</span>
-                  )}
+      </CardHeader>
+      <CardContent>
+        {notifications.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground"><Bell className="h-12 w-12 opacity-30 mb-4" /><p>{filter === "unread" ? "Нет новых уведомлений" : "Уведомлений пока нет"}</p></div>
+        ) : (
+          <div className="space-y-3">
+            {notifications.map(notification => (
+              <div key={notification.id} className={cn("flex items-start gap-3 p-3 rounded-xl hover:shadow-md transition-all", getSeverityStyle(notification.severity), !notification.is_read && "ring-2 ring-primary/20", notification.action_url && "cursor-pointer")} onClick={() => { if (!notification.is_read) markAsRead(notification.id); if (notification.action_url) window.location.href = notification.action_url; }}>
+                <div className="flex-shrink-0 mt-0.5">{getSeverityIcon(notification.severity)}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1"><span className="font-medium">{notification.title}</span>{!notification.is_read && <Badge variant="secondary" className="text-xs">Новое</Badge>}</div>
+                  <p className="text-sm text-muted-foreground">{notification.message}</p>
+                  {notification.metadata?.recommendation && <div className="flex items-center gap-1 text-sm mt-2"><Lightbulb className="h-4 w-4 text-yellow-500" /><span>{notification.metadata.recommendation}</span></div>}
+                  <div className="text-xs text-muted-foreground mt-2">{formatDate(notification.created_at)}</div>
                 </div>
-                <div className={styles.message}>{notification.message}</div>
-                {notification.metadata?.recommendation && (
-                  <div className={styles.recommendation}>
-                    💡 {notification.metadata.recommendation}
-                  </div>
-                )}
-                <div className={styles.meta}>
-                  {formatDate(notification.created_at)}
-                </div>
+                <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={(e) => { e.stopPropagation(); dismiss(notification.id); }}><X className="h-4 w-4" /></Button>
               </div>
-              <button
-                className={styles.dismissBtn}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  dismiss(notification.id);
-                }}
-                title="Закрыть"
-              >
-                ✕
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

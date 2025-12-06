@@ -8,7 +8,11 @@ import {
 } from '@/lib/billing/subscription-service';
 import { OrganizationActions } from '@/components/superadmin/OrganizationActions';
 import type { PaymentStatus } from '@/types/billing';
-import styles from '../../superadmin.module.css';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, CheckCircle, AlertTriangle, Package, Users, Clock, CreditCard, UserCircle, Receipt, Plus } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 function formatMoney(kopecks: number): string {
   return new Intl.NumberFormat('ru-RU', {
@@ -37,16 +41,13 @@ function formatDateTime(dateStr: string): string {
   });
 }
 
-function getPaymentStatusLabel(status: PaymentStatus): string {
-  switch (status) {
-    case 'completed': return 'Оплачен';
-    case 'pending': return 'Ожидает';
-    case 'processing': return 'Обработка';
-    case 'failed': return 'Ошибка';
-    case 'refunded': return 'Возврат';
-    default: return status;
-  }
-}
+const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {
+  completed: { variant: 'default', label: 'Оплачен' },
+  pending: { variant: 'secondary', label: 'Ожидает' },
+  processing: { variant: 'secondary', label: 'Обработка' },
+  failed: { variant: 'destructive', label: 'Ошибка' },
+  refunded: { variant: 'outline', label: 'Возврат' },
+};
 
 export const dynamic = 'force-dynamic';
 
@@ -112,259 +113,287 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
     : 0;
 
   return (
-    <div>
-      <header className={styles.pageHeader}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '8px' }}>
-          <Link href="/superadmin/billing" style={{ color: '#64748b' }}>
-            <span className="material-icons">arrow_back</span>
+    <div className="space-y-6">
+      <header>
+        <div className="flex items-center gap-4 mb-2">
+          <Link href="/superadmin/billing" className="text-gray-500 hover:text-gray-700">
+            <ArrowLeft className="h-5 w-5" />
           </Link>
-          <h1 className={styles.pageTitle}>{organization.name}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{organization.name}</h1>
         </div>
-        <p className={styles.pageDescription}>
-          ID: {organization.id} • Создана {formatDate(organization.created_at)}
-        </p>
+        <p className="text-gray-500">ID: {organization.id} • Создана {formatDate(organization.created_at)}</p>
       </header>
 
       {/* Информация о подписке */}
-      <div className={styles.statsGrid}>
-        <div className={`${styles.statCard} ${subscription?.status === 'active' ? styles.success : styles.warning}`}>
-          <div className={styles.statHeader}>
-            <span className={styles.statLabel}>Статус подписки</span>
-            <div className={styles.statIcon}>
-              <span className="material-icons">
-                {subscription?.status === 'active' ? 'check_circle' : 'warning'}
-              </span>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className={cn(
+          "hover:shadow-md transition-shadow",
+          subscription?.status === 'active' 
+            ? "bg-gradient-to-br from-green-50 to-white border-green-100" 
+            : "bg-gradient-to-br from-amber-50 to-white border-amber-100"
+        )}>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className={cn("text-sm font-medium",
+                subscription?.status === 'active' ? "text-green-700" : "text-amber-700"
+              )}>Статус подписки</span>
+              <div className={cn("h-10 w-10 rounded-full flex items-center justify-center shadow-sm",
+                subscription?.status === 'active' ? "bg-green-500" : "bg-amber-500"
+              )}>
+                {subscription?.status === 'active' 
+                  ? <CheckCircle className="h-5 w-5 text-white" />
+                  : <AlertTriangle className="h-5 w-5 text-white" />
+                }
+              </div>
             </div>
-          </div>
-          <div className={styles.statValue}>
-            {subscription ? (
-              subscription.status === 'active' ? 'Активна' :
-              subscription.status === 'trial' ? 'Пробный период' :
-              subscription.status === 'expired' ? 'Истекла' :
-              subscription.status === 'cancelled' ? 'Отменена' : 'Просрочена'
-            ) : 'Нет подписки'}
-          </div>
-        </div>
+            <div className={cn("text-3xl font-bold",
+              subscription?.status === 'active' ? "text-green-700" : "text-amber-700"
+            )}>
+              {subscription ? (
+                subscription.status === 'active' ? 'Активна' :
+                subscription.status === 'trial' ? 'Пробный период' :
+                subscription.status === 'expired' ? 'Истекла' :
+                subscription.status === 'cancelled' ? 'Отменена' : 'Просрочена'
+              ) : 'Нет подписки'}
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className={styles.statCard}>
-          <div className={styles.statHeader}>
-            <span className={styles.statLabel}>Тариф</span>
-            <div className={styles.statIcon}>
-              <span className="material-icons">inventory_2</span>
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-gray-500 font-medium">Тариф</span>
+              <div className="h-10 w-10 rounded-lg bg-purple-50 flex items-center justify-center">
+                <Package className="h-5 w-5 text-purple-600" />
+              </div>
             </div>
-          </div>
-          <div className={styles.statValue}>{subscription?.plan?.name || '—'}</div>
-          {subscription && (
-            <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
-              {subscription.billing_period === 'yearly' ? 'Годовая оплата' : 'Месячная оплата'}
-            </div>
-          )}
-        </div>
+            <div className="text-2xl font-bold text-gray-900">{subscription?.plan?.name || '—'}</div>
+            {subscription && (
+              <div className="text-xs text-gray-500 mt-1">
+                {subscription.billing_period === 'yearly' ? 'Годовая оплата' : 'Месячная оплата'}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-        <div className={styles.statCard}>
-          <div className={styles.statHeader}>
-            <span className={styles.statLabel}>Пользователей</span>
-            <div className={styles.statIcon}>
-              <span className="material-icons">group</span>
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-gray-500 font-medium">Пользователей</span>
+              <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                <Users className="h-5 w-5 text-blue-600" />
+              </div>
             </div>
-          </div>
-          <div className={styles.statValue}>{members?.length || 0}</div>
-          {subscription && subscription.plan && (
-            <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
-              Включено: {subscription.plan.users_included}, макс: {subscription.plan.max_users || '∞'}
-            </div>
-          )}
-        </div>
+            <div className="text-2xl font-bold text-gray-900">{members?.length || 0}</div>
+            {subscription && subscription.plan && (
+              <div className="text-xs text-gray-500 mt-1">
+                Включено: {subscription.plan.users_included}, макс: {subscription.plan.max_users || '∞'}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-        <div className={`${styles.statCard} ${daysUntilExpiry <= 7 ? styles.danger : ''}`}>
-          <div className={styles.statHeader}>
-            <span className={styles.statLabel}>До окончания</span>
-            <div className={styles.statIcon}>
-              <span className="material-icons">schedule</span>
+        <Card className={cn(
+          "hover:shadow-md transition-shadow",
+          daysUntilExpiry <= 7 && "bg-gradient-to-br from-red-50 to-white border-red-100"
+        )}>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className={cn("text-sm font-medium",
+                daysUntilExpiry <= 7 ? "text-red-700" : "text-gray-500"
+              )}>До окончания</span>
+              <div className={cn("h-10 w-10 rounded-full flex items-center justify-center shadow-sm",
+                daysUntilExpiry <= 7 ? "bg-red-500" : "bg-gray-200"
+              )}>
+                <Clock className={cn("h-5 w-5", daysUntilExpiry <= 7 ? "text-white" : "text-gray-600")} />
+              </div>
             </div>
-          </div>
-          <div className={styles.statValue}>
-            {subscription ? (daysUntilExpiry > 0 ? `${daysUntilExpiry} дней` : 'Истекла') : '—'}
-          </div>
-          {subscription && (
-            <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
-              до {formatDate(subscription.current_period_end)}
+            <div className={cn("text-3xl font-bold",
+              daysUntilExpiry <= 7 ? "text-red-700" : "text-gray-900"
+            )}>
+              {subscription ? (daysUntilExpiry > 0 ? `${daysUntilExpiry} дней` : 'Истекла') : '—'}
             </div>
-          )}
-        </div>
+            {subscription && (
+              <div className="text-xs text-gray-500 mt-1">до {formatDate(subscription.current_period_end)}</div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Кнопка создания подписки если её нет */}
       {!subscription && (
-        <div className={styles.subscriptionDetails} style={{ marginBottom: '24px' }}>
-          <div style={{ textAlign: 'center', padding: '20px' }}>
-            <span className="material-icons" style={{ fontSize: '48px', color: '#cbd5e1', marginBottom: '12px', display: 'block' }}>
-              card_membership
-            </span>
-            <h3 style={{ fontSize: '16px', color: '#64748b', marginBottom: '16px' }}>
-              У организации нет активной подписки
-            </h3>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <CreditCard className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-500 mb-4">У организации нет активной подписки</h3>
             <OrganizationActions
               organizationId={organizationId}
               organizationName={organization.name}
               subscription={null}
               plans={plans}
             />
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Детали подписки */}
       {subscription && (
-        <div className={styles.subscriptionDetails} style={{ marginBottom: '24px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>
-            Детали подписки
-          </h3>
-          <div className={styles.detailsGrid}>
-            <div className={styles.detailItem}>
-              <span className={styles.detailLabel}>Базовая стоимость</span>
-              <span className={styles.detailValue}>{formatMoney(subscription.base_amount)}</span>
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Детали подписки</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-6">
+              <div>
+                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Базовая стоимость</div>
+                <div className="font-semibold">{formatMoney(subscription.base_amount)}</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">За доп. пользователей</div>
+                <div className="font-semibold">{formatMoney(subscription.users_amount)}</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Скидка</div>
+                <div className="font-semibold">
+                  {subscription.discount_percent > 0 
+                    ? `${subscription.discount_percent}% (${formatMoney(subscription.discount_amount)})`
+                    : '—'
+                  }
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Итого</div>
+                <div className="text-xl font-bold text-purple-600">{formatMoney(subscription.total_amount)}</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Начало периода</div>
+                <div className="font-semibold">{formatDate(subscription.current_period_start)}</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Следующий платёж</div>
+                <div className="font-semibold text-sm">
+                  {subscription.next_payment_date 
+                    ? `${formatMoney(subscription.next_payment_amount || 0)} — ${formatDate(subscription.next_payment_date)}`
+                    : '—'
+                  }
+                </div>
+              </div>
             </div>
-            <div className={styles.detailItem}>
-              <span className={styles.detailLabel}>За доп. пользователей</span>
-              <span className={styles.detailValue}>{formatMoney(subscription.users_amount)}</span>
-            </div>
-            <div className={styles.detailItem}>
-              <span className={styles.detailLabel}>Скидка</span>
-              <span className={styles.detailValue}>
-                {subscription.discount_percent > 0 
-                  ? `${subscription.discount_percent}% (${formatMoney(subscription.discount_amount)})`
-                  : '—'
-                }
-              </span>
-            </div>
-            <div className={styles.detailItem}>
-              <span className={styles.detailLabel}>Итого</span>
-              <span className={styles.detailValue} style={{ color: '#667eea', fontSize: '20px' }}>
-                {formatMoney(subscription.total_amount)}
-              </span>
-            </div>
-            <div className={styles.detailItem}>
-              <span className={styles.detailLabel}>Начало периода</span>
-              <span className={styles.detailValue}>{formatDate(subscription.current_period_start)}</span>
-            </div>
-            <div className={styles.detailItem}>
-              <span className={styles.detailLabel}>Следующий платёж</span>
-              <span className={styles.detailValue}>
-                {subscription.next_payment_date 
-                  ? `${formatMoney(subscription.next_payment_amount || 0)} — ${formatDate(subscription.next_payment_date)}`
-                  : '—'
-                }
-              </span>
-            </div>
-          </div>
 
-          {/* Действия с подпиской */}
-          <OrganizationActions
-            organizationId={organizationId}
-            organizationName={organization.name}
-            subscription={subscription}
-            plans={plans}
-          />
-        </div>
+            {/* Действия с подпиской */}
+            <OrganizationActions
+              organizationId={organizationId}
+              organizationName={organization.name}
+              subscription={subscription}
+              plans={plans}
+            />
+          </CardContent>
+        </Card>
       )}
 
       {/* Пользователи организации */}
-      <div className={styles.tableContainer} style={{ marginBottom: '24px' }}>
-        <div className={styles.tableHeader}>
-          <h3 className={styles.tableTitle}>Пользователи ({members?.length || 0})</h3>
-        </div>
-        {members && members.length > 0 ? (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Пользователь</th>
-                <th>Компания</th>
-                <th>Роль</th>
-                <th>Добавлен</th>
-              </tr>
-            </thead>
-            <tbody>
-              {members.map((member) => (
-                <tr key={member.id}>
-                  <td>
-                    <div className={styles.orgCell}>
-                      <div className={styles.orgAvatar} style={{ width: '32px', height: '32px', fontSize: '12px' }}>
-                        {(member.user as { full_name?: string })?.full_name?.charAt(0)?.toUpperCase() || '?'}
-                      </div>
-                      <span>{(member.user as { full_name?: string })?.full_name || 'Без имени'}</span>
-                    </div>
-                  </td>
-                  <td>{(member.company as { name?: string })?.name || '—'}</td>
-                  <td>
-                    <span className={`${styles.statusBadge} ${member.role === 'admin' || member.role === 'owner' ? styles.active : ''}`}>
-                      {member.role === 'owner' ? 'Владелец' : member.role === 'admin' ? 'Админ' : 'Участник'}
-                    </span>
-                  </td>
-                  <td>{formatDateTime(member.created_at)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <div className={styles.emptyState}>
-            <span className="material-icons">group</span>
-            <h3>Нет пользователей</h3>
-          </div>
-        )}
-      </div>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Пользователи ({members?.length || 0})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {members && members.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Пользователь</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Компания</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Роль</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Добавлен</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {members.map((member) => (
+                    <tr key={member.id} className="border-b last:border-0 hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white font-semibold text-xs">
+                            {(member.user as { full_name?: string })?.full_name?.charAt(0)?.toUpperCase() || '?'}
+                          </div>
+                          <span className="font-medium">{(member.user as { full_name?: string })?.full_name || 'Без имени'}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-gray-600">{(member.company as { name?: string })?.name || '—'}</td>
+                      <td className="py-3 px-4">
+                        <Badge variant={member.role === 'admin' || member.role === 'owner' ? 'default' : 'secondary'}>
+                          {member.role === 'owner' ? 'Владелец' : member.role === 'admin' ? 'Админ' : 'Участник'}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4 text-gray-500 text-sm">{formatDateTime(member.created_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <UserCircle className="h-12 w-12 text-gray-300 mb-4" />
+              <h3 className="text-lg font-medium text-gray-500">Нет пользователей</h3>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* История платежей */}
-      <div className={styles.tableContainer}>
-        <div className={styles.tableHeader}>
-          <h3 className={styles.tableTitle}>История платежей ({payments.length})</h3>
-          <button className={`${styles.button} ${styles.primary}`}>
-            <span className="material-icons">add</span>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardTitle className="text-lg">История платежей ({payments.length})</CardTitle>
+          <Button size="sm">
+            <Plus className="h-4 w-4 mr-2" />
             Добавить платёж
-          </button>
-        </div>
-        {payments.length > 0 ? (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Дата</th>
-                <th>Сумма</th>
-                <th>Статус</th>
-                <th>Период</th>
-                <th>Метод</th>
-                <th>Описание</th>
-              </tr>
-            </thead>
-            <tbody>
-              {payments.map((payment) => (
-                <tr key={payment.id}>
-                  <td>{payment.payment_date ? formatDateTime(payment.payment_date) : '—'}</td>
-                  <td className={styles.amount}>{formatMoney(payment.amount)}</td>
-                  <td>
-                    <span className={`${styles.statusBadge} ${payment.status === 'completed' ? styles.active : styles.warning}`}>
-                      {getPaymentStatusLabel(payment.status)}
-                    </span>
-                  </td>
-                  <td>
-                    {payment.period_start && payment.period_end 
-                      ? `${formatDate(payment.period_start)} — ${formatDate(payment.period_end)}`
-                      : '—'
-                    }
-                  </td>
-                  <td>{payment.payment_method || '—'}</td>
-                  <td>{payment.description || '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <div className={styles.emptyState}>
-            <span className="material-icons">receipt_long</span>
-            <h3>Нет платежей</h3>
-            <p>Платежи появятся после оплаты подписки</p>
-          </div>
-        )}
-      </div>
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {payments.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Дата</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Сумма</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Статус</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Период</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Метод</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Описание</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payments.map((payment) => {
+                    const statusConf = PAYMENT_STATUS_CONFIG[payment.status] || PAYMENT_STATUS_CONFIG.pending;
+                    return (
+                      <tr key={payment.id} className="border-b last:border-0 hover:bg-gray-50">
+                        <td className="py-3 px-4 text-sm">{payment.payment_date ? formatDateTime(payment.payment_date) : '—'}</td>
+                        <td className="py-3 px-4 font-semibold tabular-nums">{formatMoney(payment.amount)}</td>
+                        <td className="py-3 px-4">
+                          <Badge variant={statusConf.variant}>{statusConf.label}</Badge>
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-600">
+                          {payment.period_start && payment.period_end 
+                            ? `${formatDate(payment.period_start)} — ${formatDate(payment.period_end)}`
+                            : '—'
+                          }
+                        </td>
+                        <td className="py-3 px-4 text-gray-600">{payment.payment_method || '—'}</td>
+                        <td className="py-3 px-4 text-gray-500 text-sm">{payment.description || '—'}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Receipt className="h-12 w-12 text-gray-300 mb-4" />
+              <h3 className="text-lg font-medium text-gray-500">Нет платежей</h3>
+              <p className="text-gray-400">Платежи появятся после оплаты подписки</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

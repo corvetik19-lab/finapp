@@ -1,21 +1,19 @@
 "use client";
 
-import {
-  useMemo,
-  useState,
-  useEffect,
-  useTransition,
-} from "react";
+import { useMemo, useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/components/toast/ToastContext";
-import styles from "@/components/transactions/Transactions.module.css";
-import {
-  deleteTransactionAction,
-  updateTransactionFromValues,
-  duplicateTransactionAction,
-} from "@/app/(protected)/finance/transactions/actions";
+import { deleteTransactionAction, updateTransactionFromValues, duplicateTransactionAction } from "@/app/(protected)/finance/transactions/actions";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown, ChevronRight, ArrowUp, ArrowDown, ArrowLeftRight, Copy, Trash2, Pencil, Loader2, FileText, Calendar, CreditCard, Tag, StickyNote, Info, Paperclip } from "lucide-react";
 import {
   transactionEditFormSchema,
   type TransactionEditFormValues,
@@ -123,8 +121,6 @@ export default function TransactionsGroupedList({
   const [openCats, setOpenCats] = useState<Record<string, boolean>>({});
   const [selected, setSelected] = useState<Txn | null>(null);
   const [editMode, setEditMode] = useState(false);
-  const [viewClosing, setViewClosing] = useState(false);
-  const [editClosing, setEditClosing] = useState(false);
   const [editKey, setEditKey] = useState(0);
   const { show: showToast } = useToast();
   const router = useRouter();
@@ -137,6 +133,10 @@ export default function TransactionsGroupedList({
   const [transactionItems, setTransactionItems] = useState<TransactionItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
   const [editingItems, setEditingItems] = useState<TransactionItem[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [editClosing, setEditClosing] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [viewClosing, setViewClosing] = useState(false);
 
   const [isSaving, startSaving] = useTransition();
   const [isDuplicating, startDuplicating] = useTransition();
@@ -374,779 +374,192 @@ export default function TransactionsGroupedList({
     removingIds,
   }: DirBlockProps) {
     const totalCurrency = groups[0]?.txns[0]?.currency || "RUB";
+    const dirColors = {
+      income: { bg: "bg-green-50", border: "border-green-200", text: "text-green-700", icon: "bg-green-100" },
+      expense: { bg: "bg-red-50", border: "border-red-200", text: "text-red-700", icon: "bg-red-100" },
+      transfer: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", icon: "bg-blue-100" },
+    };
+    const colors = dirColors[dir];
+
     return (
-      <div className={styles.groupBlock}>
-        <div
-          className={`${styles.groupHeader} ${dir === "income" ? styles.income : dir === "expense" ? styles.expense : styles.transfer}`}
-          onClick={() => toggleDir(dir)}
-        >
-          <span className={styles.chevron}>{open ? "▾" : "▸"}</span>
-          <span className={styles.groupTitle}>{dir === "income" ? "Доход" : dir === "expense" ? "Расход" : "Переводы"}</span>
-          <span className={styles.spacer} />
-          <span className={`${styles.groupTotal} ${dir === "income" ? styles.income : dir === "expense" ? styles.expense : styles.transfer}`}>
-            {dir === "income" ? "+" : dir === "expense" ? "" : ""}
-            {formatMoney(dir === "income" ? total : dir === "expense" ? -total : total, totalCurrency)}
+      <Collapsible open={open} onOpenChange={() => toggleDir(dir)} className="mb-4">
+        <CollapsibleTrigger className={cn("w-full flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors hover:bg-muted/50", colors.bg, colors.border)}>
+          {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          <span className="font-medium">{dir === "income" ? "Доход" : dir === "expense" ? "Расход" : "Переводы"}</span>
+          <span className="flex-1" />
+          <span className={cn("font-semibold", colors.text)}>
+            {dir === "income" ? "+" : ""}{formatMoney(dir === "expense" ? -total : total, totalCurrency)}
           </span>
-        </div>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pl-2 mt-2 space-y-2">
+          {groups.map((group) => {
+            const catId = group.category?.id || "uncat";
+            const key = `${dir}|${catId}`;
+            const catName = group.category?.name || "Без категории";
+            const catCurrency = group.txns[0]?.currency || "RUB";
+            const catOpen = openCats[key] ?? false;
 
-        {open && (
-          <div className={styles.groupBody}>
-            {groups.map((group) => {
-              const catId = group.category?.id || "uncat";
-              const key = `${dir}|${catId}`;
-              const catName = group.category?.name || "Без категории";
-              const catCurrency = group.txns[0]?.currency || "RUB";
-              const catOpen = openCats[key] ?? false;
-
-              return (
-                <div key={key} className={styles.subGroup}>
-                  <div className={styles.subHeader} onClick={() => toggleCat(dir, catId)}>
-                    <span className={styles.chevronSmall}>{catOpen ? "▾" : "▸"}</span>
-                    <span className={styles.subTitle}>{catName}</span>
-                    <span className={styles.spacer} />
-                    <span className={`${styles.subTotal} ${dir === "income" ? styles.income : dir === "expense" ? styles.expense : styles.transfer}`}>
-                      {dir === "transfer" ? "" : dir === "income" ? "+" : ""}
-                      {formatMoney(dir === "transfer" ? group.total : dir === "income" ? group.total : -group.total, catCurrency)}
-                    </span>
-                  </div>
-
-                  {catOpen && (
-                    <div className={styles.list}>
-                      {group.txns.map((txn) => {
-                        const signCls =
-                          dir === "transfer"
-                            ? styles.transfer
-                            : dir === "income"
-                              ? styles.income
-                              : styles.expense;
-                        return (
-                          <div
-                            key={txn.id}
-                            className={`${styles.item} ${removingIds[txn.id] ? styles.removing : ""}`}
-                            onClick={() => {
-                              setSelected(txn);
-                              setEditMode(false);
-                            }}
-                          >
-                            <div className={styles.left}>
-                              <div className={`${styles.icon} ${signCls}`}>
-                                <span className="material-icons" aria-hidden>
-                                  {dir === "transfer"
-                                    ? "swap_horiz"
-                                    : txn.transfer_id
-                                      ? "swap_horizontal_circle"
-                                      : dir === "income"
-                                        ? "arrow_upward"
-                                        : "arrow_downward"}
-                                </span>
-                              </div>
-                              <div className={styles.main}>
-                                <div className={styles.title}>
-                                  {dir === "transfer"
-                                    ? "Перевод"
-                                    : txn.transfer_id
-                                      ? txn.transfer_role === "expense"
-                                        ? "Перевод (списание)"
-                                        : "Перевод (зачисление)"
-                                      : txn.counterparty || txn.note || "Без названия"}
-                                </div>
-                                <div className={styles.subtitle}>
-                                  {dir === "transfer" && txn.note
-                                    ? `${txn.note} • `
-                                    : ""}
-                                  {new Date(txn.occurred_at).toLocaleString("ru-RU")}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className={styles.rowActions} onClick={(e) => e.stopPropagation()}>
-                              <div className={`${styles.amount} ${signCls}`}>
-                                {dir === "transfer" ? "" : dir === "income" ? "+" : "−"}
-                                {formatMoney(Math.abs(txn.amount), txn.currency)}
-                              </div>
-
-                              <button
-                                type="button"
-                                className={styles.iconBtn}
-                                title="Дублировать"
-                                aria-label="Дублировать"
-                                disabled={isDuplicating}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  startDuplicating(async () => {
-                                    const result = await duplicateTransactionAction(txn.id);
-                                    if (result.ok) {
-                                      showToast("✅ Транзакция успешно дублирована", { type: "success" });
-                                      router.refresh();
-                                    } else {
-                                      showToast(`❌ Ошибка: ${result.error}`, { type: "error" });
-                                    }
-                                  });
-                                }}
-                              >
-                                <span className="material-icons" aria-hidden>
-                                  content_copy
-                                </span>
-                              </button>
-
-                              <button
-                                type="button"
-                                className={styles.iconBtn}
-                                title="Удалить"
-                                aria-label="Удалить"
-                                disabled={removingIds[txn.id]}
-                                onClick={async (e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  if (!confirm("Удалить эту транзакцию?")) return;
-                                  
-                                  const txnId = txn.id;
-                                  setRemovingIds((prev) => ({ ...prev, [txnId]: true }));
-                                  
-                                  try {
-                                    const formData = new FormData();
-                                    formData.append("id", txnId);
-                                    const result = await deleteTransactionAction({ ok: false }, formData);
-                                    
-                                    if (result.ok) {
-                                      showToast("✅ Транзакция успешно удалена", { type: "success" });
-                                      setClientTxns((prev) => prev.filter((item) => item.id !== txnId));
-                                      setRemovingIds((prev) => {
-                                        const next = { ...prev };
-                                        delete next[txnId];
-                                        return next;
-                                      });
-                                      if (selected?.id === txnId) {
-                                        setSelected(null);
-                                      }
-                                      router.refresh();
-                                    } else {
-                                      showToast(`❌ Ошибка: ${result.error}`, { type: "error" });
-                                      setRemovingIds((prev) => {
-                                        const next = { ...prev };
-                                        delete next[txnId];
-                                        return next;
-                                      });
-                                    }
-                                  } catch (error) {
-                                    showToast(`❌ Ошибка удаления: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`, { type: "error" });
-                                    setRemovingIds((prev) => {
-                                      const next = { ...prev };
-                                      delete next[txnId];
-                                      return next;
-                                    });
-                                  }
-                                }}
-                              >
-                                <span className="material-icons" aria-hidden>
-                                  delete
-                                </span>
-                              </button>
-
-                              <button
-                                type="button"
-                                className={`${styles.iconBtn} ${styles.edit}`}
-                                title="Редактировать"
-                                aria-label="Редактировать"
-                                onClick={() => {
-                                  setSelected(txn);
-                                  setEditMode(true);
-                                  setEditKey((prev) => prev + 1);
-                                }}
-                              >
-                                <span className="material-icons" aria-hidden>
-                                  edit
-                                </span>
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
+            return (
+              <Collapsible key={key} open={catOpen} onOpenChange={() => toggleCat(dir, catId)}>
+                <CollapsibleTrigger className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 cursor-pointer text-sm">
+                  {catOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                  <Tag className="h-3 w-3 text-muted-foreground" />
+                  <span>{catName}</span>
+                  <span className="flex-1" />
+                  <span className={cn("text-sm font-medium", colors.text)}>
+                    {dir === "income" ? "+" : ""}{formatMoney(dir === "expense" ? -group.total : group.total, catCurrency)}
+                  </span>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pl-4 space-y-1 mt-1">
+                  {group.txns.map((txn) => (
+                    <div
+                      key={txn.id}
+                      className={cn("flex items-center gap-3 p-2 rounded-md border bg-card hover:bg-muted/50 cursor-pointer transition-all", removingIds[txn.id] && "opacity-50")}
+                      onClick={() => { setSelected(txn); setEditMode(false); }}
+                    >
+                      <div className={cn("w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0", colors.icon)}>
+                        {dir === "transfer" ? <ArrowLeftRight className={cn("h-4 w-4", colors.text)} /> : dir === "income" ? <ArrowUp className={cn("h-4 w-4", colors.text)} /> : <ArrowDown className={cn("h-4 w-4", colors.text)} />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">{dir === "transfer" ? "Перевод" : txn.transfer_id ? (txn.transfer_role === "expense" ? "Перевод (списание)" : "Перевод (зачисление)") : txn.counterparty || txn.note || "Без названия"}</div>
+                        <div className="text-xs text-muted-foreground">{dir === "transfer" && txn.note ? `${txn.note} • ` : ""}{new Date(txn.occurred_at).toLocaleString("ru-RU")}</div>
+                      </div>
+                      <div className={cn("font-semibold text-sm whitespace-nowrap", colors.text)}>{dir === "income" ? "+" : dir === "expense" ? "−" : ""}{formatMoney(Math.abs(txn.amount), txn.currency)}</div>
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" title="Дублировать" disabled={isDuplicating} onClick={(e) => { e.preventDefault(); startDuplicating(async () => { const r = await duplicateTransactionAction(txn.id); if (r.ok) { showToast("✅ Дублировано", { type: "success" }); router.refresh(); } else showToast(`❌ ${r.error}`, { type: "error" }); }); }}><Copy className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" title="Удалить" disabled={removingIds[txn.id]} onClick={async (e) => { e.preventDefault(); if (!confirm("Удалить?")) return; const id = txn.id; setRemovingIds(p => ({ ...p, [id]: true })); try { const fd = new FormData(); fd.append("id", id); const r = await deleteTransactionAction({ ok: false }, fd); if (r.ok) { showToast("✅ Удалено", { type: "success" }); setClientTxns(p => p.filter(i => i.id !== id)); setRemovingIds(p => { const n = { ...p }; delete n[id]; return n; }); if (selected?.id === id) setSelected(null); router.refresh(); } else { showToast(`❌ ${r.error}`, { type: "error" }); setRemovingIds(p => { const n = { ...p }; delete n[id]; return n; }); } } catch (err) { showToast(`❌ ${err instanceof Error ? err.message : "Ошибка"}`, { type: "error" }); setRemovingIds(p => { const n = { ...p }; delete n[id]; return n; }); } }}><Trash2 className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" title="Редактировать" onClick={() => { setSelected(txn); setEditMode(true); setEditKey(p => p + 1); }}><Pencil className="h-3 w-3" /></Button>
+                      </div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+            );
+          })}
+        </CollapsibleContent>
+      </Collapsible>
     );
   }
 
   return (
-    <div className={styles.groupedList}>
-      <DirBlock
-        dir="income"
-        groups={byDir.income}
-        total={incomeTotal}
-        open={openDir.income}
-        toggleDir={toggleDir}
-        openCats={openCats}
-        toggleCat={toggleCat}
-        setSelected={setSelected}
-        setEditMode={setEditMode}
-        setEditKey={setEditKey}
-        setRemovingIds={setRemovingIds}
-        removingIds={removingIds}
-      />
+    <div className="space-y-4">
+      <DirBlock dir="income" groups={byDir.income} total={incomeTotal} open={openDir.income} toggleDir={toggleDir} openCats={openCats} toggleCat={toggleCat} setSelected={setSelected} setEditMode={setEditMode} setEditKey={setEditKey} setRemovingIds={setRemovingIds} removingIds={removingIds} />
+      <DirBlock dir="expense" groups={byDir.expense} total={expenseTotal} open={openDir.expense} toggleDir={toggleDir} openCats={openCats} toggleCat={toggleCat} setSelected={setSelected} setEditMode={setEditMode} setEditKey={setEditKey} setRemovingIds={setRemovingIds} removingIds={removingIds} />
+      <DirBlock dir="transfer" groups={byDir.transfer} total={transferTotal} open={openDir.transfer} toggleDir={toggleDir} openCats={openCats} toggleCat={toggleCat} setSelected={setSelected} setEditMode={setEditMode} setEditKey={setEditKey} setRemovingIds={setRemovingIds} removingIds={removingIds} />
 
-      <DirBlock
-        dir="expense"
-        groups={byDir.expense}
-        total={expenseTotal}
-        open={openDir.expense}
-        toggleDir={toggleDir}
-        openCats={openCats}
-        toggleCat={toggleCat}
-        setSelected={setSelected}
-        setEditMode={setEditMode}
-        setEditKey={setEditKey}
-        setRemovingIds={setRemovingIds}
-        removingIds={removingIds}
-      />
+      {viewingFile && <FileViewerModal fileName={viewingFile.fileName} fileUrl={viewingFile.fileUrl} mimeType={viewingFile.mimeType} onClose={() => setViewingFile(null)} />}
 
-      <DirBlock
-        dir="transfer"
-        groups={byDir.transfer}
-        total={transferTotal}
-        open={openDir.transfer}
-        toggleDir={toggleDir}
-        openCats={openCats}
-        toggleCat={toggleCat}
-        setSelected={setSelected}
-        setEditMode={setEditMode}
-        setEditKey={setEditKey}
-        setRemovingIds={setRemovingIds}
-        removingIds={removingIds}
-      />
-
-      {viewingFile && (
-        <FileViewerModal
-          fileName={viewingFile.fileName}
-          fileUrl={viewingFile.fileUrl}
-          mimeType={viewingFile.mimeType}
-          onClose={() => setViewingFile(null)}
-        />
-      )}
-
-      {!editMode && selected && (
-        <div 
-          className={styles.modalOverlay} 
-          onClick={(e) => {
-            // Закрываем только если клик именно по overlay, а не по его содержимому
-            if (e.target === e.currentTarget) {
-              closeView();
-            }
-          }}
-        >
-          <div
-            className={`${styles.modal} ${viewClosing ? styles.closing : ""}`}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="txnModalTitle"
-          >
-            <div className={styles.modalBody}>
-              <div className={styles.amountHero}>
-                <span className={`${styles.badgeAmount} ${selected.direction === "income" ? styles.badgeIncome : selected.direction === "transfer" ? styles.badgeTransfer : styles.badgeExpense}`}>
-                  <span className="material-icons" aria-hidden style={{ fontSize: 18 }}>
-                    {selected.direction === "income" ? "arrow_upward" : selected.direction === "transfer" ? "swap_horiz" : "arrow_downward"}
+      {/* Модалка просмотра транзакции */}
+      <Dialog open={!editMode && !!selected} onOpenChange={(v) => !v && closeView()}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {selected && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  {selected.direction === "transfer" ? <ArrowLeftRight className="h-5 w-5 text-blue-600" /> : selected.direction === "income" ? <ArrowUp className="h-5 w-5 text-green-600" /> : <ArrowDown className="h-5 w-5 text-red-600" />}
+                  <span className={cn("text-xl font-bold", selected.direction === "income" ? "text-green-600" : selected.direction === "expense" ? "text-red-600" : "text-blue-600")}>
+                    {selected.direction === "income" ? "+" : selected.direction === "expense" ? "−" : ""}{formatMoney(Math.abs(selected.amount), selected.currency)}
                   </span>
-                  {selected.direction === "income" ? "+" : selected.direction === "transfer" ? "" : "−"}
-                  {formatMoney(Math.abs(selected.amount), selected.currency)}
-                </span>
-              </div>
-
-              <div className={styles.modalGrid}>
-                <div className={styles.modalCol}>
-                  <div className={styles.modalSectionTitle}>Детали</div>
-                  <div className={styles.sectionCard}>
-                    <div className={styles.kv}>
-                      <div className={styles.modalRow}>
-                        <span className={styles.modalLabel}>
-                          <span className={styles.iconMini}>
-                            <span className="material-icons" aria-hidden>
-                              description
-                            </span>
-                          </span>
-                          Название
-                        </span>
-                        <span className={styles.modalValue}>{selected.counterparty || selected.note || "Без названия"}</span>
-                      </div>
-
-                      <div className={styles.modalRow}>
-                        <span className={styles.modalLabel}>
-                          <span className={styles.iconMini}>
-                            <span className="material-icons" aria-hidden>
-                              label
-                            </span>
-                          </span>
-                          Категория
-                        </span>
-                        <span className={styles.modalValue}>
-                          {selected.direction === "transfer"
-                            ? "—"
-                            : selected.category_id
-                            ? catMap[selected.category_id]?.name ?? "(удалена)"
-                            : "Без категории"}
-                        </span>
-                      </div>
-
-                      <div className={styles.modalRow}>
-                        <span className={styles.modalLabel}>
-                          <span className={styles.iconMini}>
-                            <span className="material-icons" aria-hidden>
-                              {selected.direction === "income" ? "arrow_upward" : selected.direction === "transfer" ? "swap_horiz" : "arrow_downward"}
-                            </span>
-                          </span>
-                          Тип
-                        </span>
-                        <span className={styles.modalValue}>
-                          {selected.direction === "income"
-                            ? "Доход"
-                            : selected.direction === "expense"
-                            ? "Расход"
-                            : selected.direction === "transfer"
-                            ? "Перевод"
-                            : selected.direction}
-                        </span>
-                      </div>
-
-                      {selected.note && selected.note.trim() !== "" && (
-                        <div className={styles.modalRow}>
-                          <span className={styles.modalLabel}>
-                            <span className={styles.iconMini}>
-                              <span className="material-icons" aria-hidden>
-                                notes
-                              </span>
-                            </span>
-                            Заметка
-                          </span>
-                          <span className={styles.modalValue}>
-                            <span className={`${styles.noteBadge} ${styles.noteText}`}>{selected.note}</span>
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                </DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3 p-3 rounded-lg border bg-muted/30">
+                  <div className="text-sm font-medium text-muted-foreground">Детали</div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1"><FileText className="h-3 w-3" />Название</span><span className="font-medium">{selected.counterparty || selected.note || "Без названия"}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1"><Tag className="h-3 w-3" />Категория</span><span>{selected.direction === "transfer" ? "—" : selected.category_id ? catMap[selected.category_id]?.name ?? "(удалена)" : "Без категории"}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1">{selected.direction === "income" ? <ArrowUp className="h-3 w-3" /> : selected.direction === "transfer" ? <ArrowLeftRight className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}Тип</span><span>{selected.direction === "income" ? "Доход" : selected.direction === "expense" ? "Расход" : "Перевод"}</span></div>
+                    {selected.note && selected.note.trim() !== "" && <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1"><StickyNote className="h-3 w-3" />Заметка</span><span className="text-right max-w-[200px] truncate">{selected.note}</span></div>}
                   </div>
                 </div>
-
-                <div className={styles.modalCol}>
-                  <div className={styles.modalSectionTitle}>Параметры</div>
-                  <div className={styles.sectionCard}>
-                    <div className={styles.kv}>
-                      <div className={styles.modalRow}>
-                        <span className={styles.modalLabel}>
-                          <span className={styles.iconMini}>
-                            <span className="material-icons" aria-hidden>
-                              event
-                            </span>
-                          </span>
-                          Дата
-                        </span>
-                        <span className={styles.modalValue}>{new Date(selected.occurred_at).toLocaleString("ru-RU")}</span>
-                      </div>
-
-                      {selected.direction === "transfer" ? (
-                        <>
-                          <div className={styles.modalRow}>
-                            <span className={styles.modalLabel}>
-                              <span className={styles.iconMini}>
-                                <span className="material-icons" aria-hidden>
-                                  call_made
-                                </span>
-                              </span>
-                              Со счёта
-                            </span>
-                            <span className={styles.modalValue}>
-                              {selected.transfer_from_account_id 
-                                ? accMap[selected.transfer_from_account_id]?.name || "(удалённый счёт)" 
-                                : "—"}
-                            </span>
-                          </div>
-                          <div className={styles.modalRow}>
-                            <span className={styles.modalLabel}>
-                              <span className={styles.iconMini}>
-                                <span className="material-icons" aria-hidden>
-                                  call_received
-                                </span>
-                              </span>
-                              На счёт
-                            </span>
-                            <span className={styles.modalValue}>
-                              {selected.transfer_to_account_id 
-                                ? accMap[selected.transfer_to_account_id]?.name || "(удалённый счёт)" 
-                                : "—"}
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        <div className={styles.modalRow}>
-                          <span className={styles.modalLabel}>
-                            <span className={styles.iconMini}>
-                              <span className="material-icons" aria-hidden>
-                                account_balance_wallet
-                              </span>
-                            </span>
-                            Счёт
-                          </span>
-                          <span className={styles.modalValue}>
-                            {selected.account_id 
-                              ? accMap[selected.account_id!]?.name || "(удалённый счёт)" 
-                              : "—"}
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                <div className="space-y-3 p-3 rounded-lg border bg-muted/30">
+                  <div className="text-sm font-medium text-muted-foreground">Параметры</div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" />Дата</span><span>{new Date(selected.occurred_at).toLocaleString("ru-RU")}</span></div>
+                    {selected.direction === "transfer" ? (
+                      <>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Со счёта</span><span>{selected.transfer_from_account_id ? accMap[selected.transfer_from_account_id]?.name || "(удалён)" : "—"}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">На счёт</span><span>{selected.transfer_to_account_id ? accMap[selected.transfer_to_account_id]?.name || "(удалён)" : "—"}</span></div>
+                      </>
+                    ) : (
+                      <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1"><CreditCard className="h-3 w-3" />Счёт</span><span>{selected.account_id ? accMap[selected.account_id!]?.name || "(удалён)" : "—"}</span></div>
+                    )}
                   </div>
                 </div>
               </div>
-
-              {/* Позиции товаров */}
               {transactionItems.length > 0 && (
-                <div className={styles.modalSection}>
-                  <div className={styles.modalSectionTitle}>
-                    <span className="material-icons" style={{ fontSize: 20, marginRight: 8 }}>shopping_cart</span>
-                    Позиции товаров
-                  </div>
-                  <div className={styles.itemsList}>
-                    {transactionItems.map((item) => (
-                      <div key={item.id} className={styles.itemRow}>
-                        <div className={styles.itemIcon}>🛒</div>
-                        <div className={styles.itemContent}>
-                          <div className={styles.itemName}>
-                            {item.name}
-                          </div>
-                          <div className={styles.itemDetails}>
-                            {item.quantity} {item.unit} × {formatMoney(item.price_per_unit, selected.currency)}
-                          </div>
-                        </div>
-                        <div className={styles.itemTotal}>
-                          {formatMoney(item.total_amount, selected.currency)}
-                        </div>
-                      </div>
-                    ))}
-                    <div className={styles.itemsTotal}>
-                      <span>Итого:</span>
-                      <span className={styles.itemsTotalAmount}>
-                        {formatMoney(
-                          transactionItems.reduce((sum, item) => sum + item.total_amount, 0),
-                          selected.currency
-                        )}
-                      </span>
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-muted-foreground">Позиции товаров</div>
+                  <div className="space-y-1">{transactionItems.map((item) => (
+                    <div key={item.id} className="flex items-center gap-2 p-2 rounded border bg-muted/30 text-sm">
+                      <span>🛒</span><div className="flex-1"><div className="font-medium">{item.name}</div><div className="text-xs text-muted-foreground">{item.quantity} {item.unit} × {formatMoney(item.price_per_unit, selected.currency)}</div></div><div className="font-medium">{formatMoney(item.total_amount, selected.currency)}</div>
                     </div>
-                  </div>
+                  ))}</div>
+                  <div className="flex justify-between text-sm font-medium pt-2 border-t"><span>Итого:</span><span>{formatMoney(transactionItems.reduce((s, i) => s + i.total_amount, 0), selected.currency)}</span></div>
                 </div>
               )}
+              {loadingItems && <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />Загрузка позиций...</div>}
+              <div className="space-y-2"><div className="text-sm font-medium text-muted-foreground flex items-center gap-1"><Paperclip className="h-3 w-3" />Вложения</div><AttachmentsList transactionId={selected.id} onViewFile={(file) => setViewingFile(file)} /></div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
-              {loadingItems && (
-                <div className={styles.modalSection}>
-                  <div className={styles.loadingItems}>Загрузка позиций товаров...</div>
-                </div>
-              )}
-
-              {/* Вложения */}
-              <div className={styles.modalSection}>
-                <div className={styles.modalSectionTitle}>Вложения</div>
-                <AttachmentsList 
-                  transactionId={selected.id}
-                  onViewFile={(file) => setViewingFile(file)}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {selected && editMode && (
-        <div 
-          className={styles.modalOverlay} 
-          onClick={(e) => {
-            // Закрываем только если клик именно по overlay, а не по его содержимому
-            if (e.target === e.currentTarget) {
-              closeEdit();
-            }
-          }}
-        >
-          <div
-            className={`${styles.modal} ${editClosing ? styles.closing : ""}`}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="txnEditTitle"
-          >
-            <div className={styles.modalBody}>
-              <div className={styles.amountHero}>
-                <span className={`${styles.badgeAmount} ${directionValue === "income" ? styles.badgeIncome : directionValue === "transfer" ? styles.badgeTransfer : styles.badgeExpense}`}>
-                  <span className="material-icons" aria-hidden style={{ fontSize: 18 }}>
-                    {directionValue === "income" ? "arrow_upward" : directionValue === "transfer" ? "swap_horiz" : "arrow_downward"}
+      {/* Модалка редактирования транзакции */}
+      <Dialog open={editMode && !!selected} onOpenChange={(v) => !v && closeEdit()}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {selected && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Pencil className="h-5 w-5" />Редактирование
+                  <span className={cn("ml-2 text-lg font-bold", directionValue === "income" ? "text-green-600" : directionValue === "expense" ? "text-red-600" : "text-blue-600")}>
+                    {directionValue === "income" ? "+" : directionValue === "expense" ? "−" : ""}{formatMoney(amountValue ? Math.round(parseFloat(amountValue.replace(/\s/g, '').replace(',', '.') || "0") * 100) : 0, selected.currency)}
                   </span>
-                  {directionValue === "income" ? "+" : directionValue === "transfer" ? "" : "−"}
-                  {formatMoney(
-                    amountValue 
-                      ? Math.round(parseFloat(amountValue.replace(/\s/g, '').replace(',', '.') || "0") * 100) 
-                      : 0, 
-                    selected.currency
-                  )}
-                </span>
-              </div>
-
-              <form key={editKey} onSubmit={handleEditSubmit} className={styles.modalForm}>
+                </DialogTitle>
+              </DialogHeader>
+              <form key={editKey} onSubmit={handleEditSubmit} className="space-y-4">
                 {selected.direction === "transfer" && (
-                  <div className={styles.infoMessage}>
-                    <span className="material-icons" aria-hidden style={{ fontSize: 20 }}>
-                      info
-                    </span>
-                    <span>Для переводов нельзя изменить тип, счёт и сумму. Можно изменить только дату и заметку.</span>
-                  </div>
+                  <div className="flex items-center gap-2 p-3 rounded-lg border bg-blue-50 text-blue-700 text-sm"><Info className="h-4 w-4" /><span>Для переводов можно изменить только дату и заметку</span></div>
                 )}
-                <div className={styles.modalGrid}>
-                  <div className={styles.modalCol}>
-                    <div className={styles.modalSectionTitle}>Основное</div>
-                    <div className={styles.sectionCard}>
-                      <div className={styles.kv}>
-                        <div className={styles.modalRow}>
-                          <span className={styles.modalLabel}>
-                            <span className={styles.iconMini}>
-                              <span className="material-icons" aria-hidden>
-                                {directionValue === "income" ? "arrow_upward" : directionValue === "transfer" ? "swap_horiz" : "arrow_downward"}
-                              </span>
-                            </span>
-                            Тип
-                          </span>
-                          <span className={styles.modalValue}>
-                            <select 
-                              {...register("direction")} 
-                              className={styles.select}
-                              disabled={selected.direction === "transfer"}
-                            >
-                              <option value="income">Доход</option>
-                              <option value="expense">Расход</option>
-                              <option value="transfer">Перевод</option>
-                            </select>
-                          </span>
-                        </div>
-
-                        <div className={styles.modalRow}>
-                          <span className={styles.modalLabel}>
-                            <span className={styles.iconMini}>
-                              <span className="material-icons" aria-hidden>
-                                payments
-                              </span>
-                            </span>
-                            Сумма (₽)
-                          </span>
-                          <span className={styles.modalValue}>
-                            <input
-                              type="text"
-                              inputMode="decimal"
-                              value={amountValue}
-                              onChange={(e) => setValue("amount_major", e.target.value)}
-                              placeholder="0"
-                              className={styles.input}
-                              readOnly
-                              style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
-                            />
-                            {errors.amount_major?.message && (
-                              <span className={styles.error}>{errors.amount_major.message}</span>
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <Label>Тип</Label>
+                    <Select value={directionValue} onValueChange={(v) => setValue("direction", v as "income" | "expense")} disabled={selected.direction === "transfer"}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent><SelectItem value="income">Доход</SelectItem><SelectItem value="expense">Расход</SelectItem><SelectItem value="transfer">Перевод</SelectItem></SelectContent>
+                    </Select>
+                    <Label>Сумма (₽)</Label>
+                    <Input type="text" inputMode="decimal" value={amountValue} onChange={(e) => setValue("amount_major", e.target.value)} readOnly className="bg-muted/50" />
+                    {errors.amount_major?.message && <p className="text-xs text-destructive">{errors.amount_major.message}</p>}
                   </div>
-
-                  <div className={styles.modalCol}>
-                    <div className={styles.modalSectionTitle}>Параметры</div>
-                    <div className={styles.sectionCard}>
-                      <div className={styles.kv}>
-                        <div className={styles.modalRow}>
-                          <span className={styles.modalLabel}>
-                            <span className={styles.iconMini}>
-                              <span className="material-icons" aria-hidden>
-                                event
-                              </span>
-                            </span>
-                            Дата
-                          </span>
-                          <span className={styles.modalValue}>
-                            <input
-                              {...register("occurred_at")}
-                              type="datetime-local"
-                              className={styles.input}
-                            />
-                            {errors.occurred_at && (
-                              <div className={styles.fieldError}>{errors.occurred_at.message}</div>
-                            )}
-                          </span>
-                        </div>
-
-                        <div className={styles.modalRow}>
-                          <span className={styles.modalLabel}>
-                            <span className={styles.iconMini}>
-                              <span className="material-icons" aria-hidden>
-                                account_balance_wallet
-                              </span>
-                            </span>
-                            Счёт
-                          </span>
-                          <span className={styles.modalValue}>
-                            <select 
-                              {...register("account_id")} 
-                              className={styles.select}
-                              disabled={selected.direction === "transfer"}
-                            >
-                              <option value="">— выберите —</option>
-                              {accounts.map((account) => (
-                                <option key={account.id} value={account.id}>
-                                  {account.name}
-                                </option>
-                              ))}
-                            </select>
-                            {errors.account_id && (
-                              <div className={styles.fieldError}>{errors.account_id.message}</div>
-                            )}
-                          </span>
-                        </div>
-
-                        <div className={styles.modalRow}>
-                          <span className={styles.modalLabel}>
-                            <span className={styles.iconMini}>
-                              <span className="material-icons" aria-hidden>
-                                description
-                              </span>
-                            </span>
-                            Название
-                          </span>
-                          <span className={styles.modalValue}>
-                            <input {...register("counterparty")} type="text" className={styles.input} placeholder="Например: Магнит" />
-                          </span>
-                        </div>
-
-                        <div className={styles.modalRow}>
-                          <span className={styles.modalLabel}>
-                            <span className={styles.iconMini}>
-                              <span className="material-icons" aria-hidden>
-                                notes
-                              </span>
-                            </span>
-                            Заметка
-                          </span>
-                          <span className={styles.modalValue}>
-                            <input {...register("note")} type="text" className={styles.input} placeholder="Комментарий" />
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                  <div className="space-y-3">
+                    <Label>Дата</Label>
+                    <Input {...register("occurred_at")} type="datetime-local" />
+                    {errors.occurred_at && <p className="text-xs text-destructive">{errors.occurred_at.message}</p>}
+                    <Label>Счёт</Label>
+                    <Select value={watch("account_id") || ""} onValueChange={(v) => setValue("account_id", v)} disabled={selected.direction === "transfer"}>
+                      <SelectTrigger><SelectValue placeholder="— выберите —" /></SelectTrigger>
+                      <SelectContent>{accounts.map((a) => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <Label>Название</Label>
+                    <Input {...register("counterparty")} placeholder="Например: Магнит" />
+                    <Label>Заметка</Label>
+                    <Input {...register("note")} placeholder="Комментарий" />
                   </div>
                 </div>
-
                 <input type="hidden" {...register("id")} />
                 <input type="hidden" {...register("currency")} />
-
-                {/* Позиции товаров */}
-                <div className={styles.modalSection}>
-                  <TransactionItems
-                    items={editingItems.map((item) => ({
-                      id: item.id,
-                      name: item.name,
-                      quantity: item.quantity,
-                      unit: item.unit,
-                      price_per_unit: item.price_per_unit,
-                      total_amount: item.total_amount,
-                      product_id: item.product_id || null,
-                    }))}
-                    onChange={(items) => {
-                      // Обновляем editingItems, используя id для сопоставления
-                      const updatedItems: TransactionItem[] = items.map((item, index) => {
-                        // Ищем существующий элемент по id, если он есть
-                        const existingItem = item.id ? editingItems.find(ei => ei.id === item.id) : undefined;
-                        
-                        return {
-                          id: item.id || existingItem?.id || `temp-${Date.now()}-${index}`,
-                          transaction_id: selected.id,
-                          user_id: "",
-                          name: item.name,
-                          quantity: item.quantity,
-                          unit: item.unit,
-                          price_per_unit: item.price_per_unit,
-                          total_amount: item.total_amount || Math.round(item.quantity * item.price_per_unit),
-                          product_id: item.product_id || existingItem?.product_id || null,
-                          created_at: existingItem?.created_at || new Date().toISOString(),
-                          updated_at: new Date().toISOString(),
-                        };
-                      });
-                      setEditingItems(updatedItems);
-                      
-                      // Автоматически обновляем сумму транзакции
-                      if (items.length > 0) {
-                        const totalMinor = calculateTotalFromItems(items);
-                        const totalMajor = (totalMinor / 100).toFixed(2);
-                        setValue("amount_major", totalMajor, { shouldValidate: true, shouldDirty: true });
-                        
-                        // Обновляем категорию транзакции из любого товара у которого есть category_id
-                        // Приоритет: последний добавленный/изменённый товар (он в конце массива)
-                        const itemWithCategory = [...items].reverse().find(item => 
-                          'category_id' in item && item.category_id
-                        );
-                        if (itemWithCategory && itemWithCategory.category_id) {
-                          setValue("category_id", itemWithCategory.category_id, { shouldValidate: true, shouldDirty: true });
-                        }
-                      } else {
-                        // Если все товары удалены, очищаем сумму
-                        setValue("amount_major", "", { shouldValidate: true, shouldDirty: true });
-                      }
-                    }}
-                    currency={selected.currency}
-                    direction={selected.direction === "transfer" ? undefined : (selected.direction as "income" | "expense")}
-                  />
+                <div className="space-y-2">
+                  <TransactionItems items={editingItems.map((item) => ({ id: item.id, name: item.name, quantity: item.quantity, unit: item.unit, price_per_unit: item.price_per_unit, total_amount: item.total_amount, product_id: item.product_id || null }))} onChange={(items) => { const updatedItems: TransactionItem[] = items.map((item, index) => { const existingItem = item.id ? editingItems.find(ei => ei.id === item.id) : undefined; return { id: item.id || existingItem?.id || `temp-${Date.now()}-${index}`, transaction_id: selected.id, user_id: "", name: item.name, quantity: item.quantity, unit: item.unit, price_per_unit: item.price_per_unit, total_amount: item.total_amount || Math.round(item.quantity * item.price_per_unit), product_id: item.product_id || existingItem?.product_id || null, created_at: existingItem?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() }; }); setEditingItems(updatedItems); if (items.length > 0) { const totalMinor = calculateTotalFromItems(items); setValue("amount_major", (totalMinor / 100).toFixed(2), { shouldValidate: true, shouldDirty: true }); const itemWithCategory = [...items].reverse().find(item => 'category_id' in item && item.category_id); if (itemWithCategory && itemWithCategory.category_id) setValue("category_id", itemWithCategory.category_id, { shouldValidate: true, shouldDirty: true }); } else setValue("amount_major", "", { shouldValidate: true, shouldDirty: true }); }} currency={selected.currency} direction={selected.direction === "transfer" ? undefined : (selected.direction as "income" | "expense")} />
                 </div>
-
-                {/* Загрузка вложений */}
-                <div className={styles.modalSection}>
-                  <div className={styles.modalSectionTitle}>Вложения</div>
-                  <FileUpload 
-                    transactionId={selected.id}
-                    maxSizeMB={10}
-                  />
-                  <div style={{ marginTop: '1rem' }}>
-                    <AttachmentsList 
-                      transactionId={selected.id}
-                      onViewFile={(file) => setViewingFile(file)}
-                    />
-                  </div>
-                </div>
-
-                <div className={styles.modalActions}>
-                  <button
-                    type="button"
-                    className={styles.btnLight}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      closeEdit();
-                    }}
-                  >
-                    Отмена
-                  </button>
-                  <button type="submit" className={styles.btnPrimary} disabled={isSaving}>
-                    {isSaving ? "Сохраняем…" : "Сохранить"}
-                  </button>
-                </div>
+                <div className="space-y-2"><div className="text-sm font-medium">Вложения</div><FileUpload transactionId={selected.id} maxSizeMB={10} /><div className="mt-2"><AttachmentsList transactionId={selected.id} onViewFile={(file) => setViewingFile(file)} /></div></div>
+                <DialogFooter className="gap-2"><Button type="button" variant="outline" onClick={closeEdit}>Отмена</Button><Button type="submit" disabled={isSaving}>{isSaving ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Сохраняем…</> : "Сохранить"}</Button></DialogFooter>
               </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Модальное окно просмотра файла */}
-      {viewingFile && (
-        <FileViewerModal
-          fileName={viewingFile.fileName}
-          fileUrl={viewingFile.fileUrl}
-          mimeType={viewingFile.mimeType}
-          onClose={() => setViewingFile(null)}
-        />
-      )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { RefreshCw, Loader2 } from "lucide-react";
 
 export default function RecalculateButton() {
   const [isRecalculating, setIsRecalculating] = useState(false);
@@ -13,10 +15,7 @@ export default function RecalculateButton() {
     setError(null);
 
     try {
-      const response = await fetch("/api/loans/recalculate", {
-        method: "POST",
-      });
-
+      const response = await fetch("/api/loans/recalculate", { method: "POST" });
       const data = await response.json();
 
       if (!response.ok) {
@@ -24,11 +23,7 @@ export default function RecalculateButton() {
       }
 
       setMessage(`✅ ${data.message}`);
-      
-      // Перезагружаем страницу через 2 секунды
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
+      setTimeout(() => window.location.reload(), 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -37,32 +32,13 @@ export default function RecalculateButton() {
   };
 
   return (
-    <div style={{ marginBottom: 20 }}>
-      <button
-        onClick={handleRecalculate}
-        disabled={isRecalculating}
-        style={{
-          padding: "10px 20px",
-          backgroundColor: "#4CAF50",
-          color: "white",
-          border: "none",
-          borderRadius: "4px",
-          cursor: isRecalculating ? "not-allowed" : "pointer",
-          fontSize: "14px",
-        }}
-      >
-        {isRecalculating ? "Пересчёт..." : "🔄 Пересчитать остатки долга"}
-      </button>
-      {message && (
-        <div style={{ marginTop: 10, color: "#4CAF50", fontSize: "14px" }}>
-          {message}
-        </div>
-      )}
-      {error && (
-        <div style={{ marginTop: 10, color: "#f44336", fontSize: "14px" }}>
-          ❌ {error}
-        </div>
-      )}
+    <div className="mb-5 space-y-2">
+      <Button onClick={handleRecalculate} disabled={isRecalculating} variant="default" className="bg-green-600 hover:bg-green-700">
+        {isRecalculating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+        {isRecalculating ? "Пересчёт..." : "Пересчитать остатки долга"}
+      </Button>
+      {message && <p className="text-sm text-green-600">{message}</p>}
+      {error && <p className="text-sm text-red-600">❌ {error}</p>}
     </div>
   );
 }

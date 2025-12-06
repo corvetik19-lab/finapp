@@ -7,7 +7,9 @@ import UserMenu from "./UserMenu";
 import NotificationCenter from "./NotificationCenter";
 import OrganizationSwitcher from "./OrganizationSwitcher";
 import { stopImpersonating } from "@/lib/admin/organizations";
-import styles from "./Platform.module.css";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Shield, Settings, Calendar, Search, LogOut, Landmark, User } from "lucide-react";
 
 interface PlatformHeaderProps {
   user?: {
@@ -24,6 +26,7 @@ interface PlatformHeaderProps {
     slug: string;
     subscription_plan: string;
   }>;
+  globalEnabledModes?: string[];
   notificationCount?: number;
   impersonating?: {
     userId: string;
@@ -37,6 +40,7 @@ export default function PlatformHeader({
   user,
   organization,
   organizations = [],
+  globalEnabledModes,
   notificationCount = 0,
   impersonating,
   isSuperAdmin = false,
@@ -57,111 +61,110 @@ export default function PlatformHeader({
     <>
       {/* Impersonation Banner */}
       {impersonating && (
-        <div className={styles.impersonationBanner}>
-          <span className="material-icons">person</span>
+        <div className="bg-amber-500 text-white px-4 py-2 flex items-center justify-center gap-2 text-sm">
+          <User className="h-5 w-5" />
           <span>Вы работаете под пользователем: <strong>{impersonating.userName}</strong></span>
-          <button onClick={handleStopImpersonating} className={styles.impersonationExitButton}>
-            <span className="material-icons">logout</span>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleStopImpersonating}
+            className="text-white hover:bg-amber-600 ml-2"
+          >
+            <LogOut className="h-4 w-4 mr-1" />
             Выйти
-          </button>
+          </Button>
         </div>
       )}
-      <header className={`${styles.platformHeader} ${impersonating ? styles.withBanner : ''}`}>
-      <div className={styles.headerContainer}>
-        {/* Logo */}
-        <Link href="/dashboard" className={styles.headerLogo}>
-          <span className={`material-icons ${styles.headerLogoIcon}`}>
-            account_balance
-          </span>
-          <span>FinApp</span>
-        </Link>
-
-        {/* Mode Switcher */}
-        <ModeSwitcher allowedModes={organization?.allowed_modes} />
-
-        {/* Greeting */}
-        <div className={styles.headerGreeting}>
-          Привет, {user?.full_name || 'Пользователь'}!
-        </div>
-
-        {/* Search */}
-        <div className={styles.headerSearch}>
-          <span className="material-icons">search</span>
-          <input 
-            type="search" 
-            placeholder="Поиск..." 
-            className={styles.searchInput}
-          />
-        </div>
-
-        <div className={styles.headerSpacer} />
-
-        {/* Actions */}
-        <div className={styles.headerActions}>
-          {/* Quick Super Admin Access Button - Только для супер-админов */}
-          {isSuperAdmin && (
-            <Link href="/superadmin" className={styles.financeButton} title="Супер-админ">
-              <span className="material-icons">admin_panel_settings</span>
-              <span className={styles.financeButtonText}>Админ</span>
-            </Link>
-          )}
-
-          {/* Organization Admin Button - Для админов организации (не супер-админов) */}
-          {isOrgAdmin && !isSuperAdmin && (
-            <Link href="/admin/settings" className={styles.adminButton} title="Администрирование">
-              <span className="material-icons">settings_applications</span>
-              <span className={styles.financeButtonText}>Управление</span>
-            </Link>
-          )}
-
-          {/* Calendar - Hidden on mobile */}
-          <button className={`${styles.iconButton} ${styles.hideOnMobile}`} aria-label="Календарь">
-            <span className="material-icons">calendar_month</span>
-          </button>
-
-          {/* Settings - разные для супер-админа и обычных пользователей */}
-          <Link 
-            href={isSuperAdmin ? "/admin/settings" : "/settings"} 
-            className={`${styles.iconButton} ${styles.hideOnMobile}`} 
-            title={isSuperAdmin ? "Админ настройки" : "Настройки"}
-          >
-            <span className="material-icons">settings</span>
+      <header className={`bg-white dark:bg-zinc-900 border-b shadow-sm fixed left-0 right-0 z-40 ${impersonating ? 'top-10' : 'top-0'}`}>
+        <div className="max-w-[1800px] mx-auto px-4 h-16 flex items-center gap-4">
+          {/* Logo */}
+          <Link href="/dashboard" className="flex items-center gap-2 text-blue-600 font-bold text-lg hover:text-blue-700 transition-colors">
+            <Landmark className="h-6 w-6" />
+            <span className="hidden sm:inline">FinApp</span>
           </Link>
 
-          {/* Organization Switcher */}
-          {organization && organizations.length > 0 && (
-            <OrganizationSwitcher
-              currentOrganization={{
-                id: organization.name,
-                name: organization.name,
-                slug: organization.name,
-                subscription_plan: 'free'
-              }}
-              organizations={organizations}
-            />
-          )}
+          {/* Mode Switcher */}
+          <ModeSwitcher 
+            allowedModes={organization?.allowed_modes} 
+            globalEnabledModes={globalEnabledModes}
+          />
 
-          {/* Notifications - Hidden on mobile */}
-          <div className={styles.hideOnMobile}>
-            <NotificationCenter
-              unreadCount={notificationCount}
+          {/* Greeting - Hidden on mobile */}
+          <div className="hidden lg:block text-sm text-gray-600">
+            Привет, <span className="font-medium">{user?.full_name || 'Пользователь'}</span>!
+          </div>
+
+          {/* Search */}
+          <div className="hidden md:flex items-center relative flex-1 max-w-md">
+            <Search className="absolute left-3 h-4 w-4 text-gray-400" />
+            <Input 
+              type="search" 
+              placeholder="Поиск..." 
+              className="pl-9 h-9"
             />
           </div>
 
-          {/* User Menu - Hidden on mobile */}
-          {user && (
-            <div className={styles.hideOnMobile}>
+          <div className="flex-1" />
+
+          {/* Actions */}
+          <div className="flex items-center gap-1 md:gap-2">
+            {/* Quick Super Admin Access Button - Только для супер-админов */}
+            {isSuperAdmin && (
+              <Button asChild variant="default" size="sm" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+                <Link href="/superadmin" title="Супер-админ">
+                  <Shield className="h-4 w-4 mr-1.5" />
+                  <span className="hidden sm:inline">Админ</span>
+                </Link>
+              </Button>
+            )}
+
+            {/* Organization Admin Button - Для админов организации (не супер-админов) */}
+            {isOrgAdmin && !isSuperAdmin && (
+              <Button asChild variant="outline" size="sm">
+                <Link href="/admin/settings" title="Управление организацией">
+                  <Settings className="h-4 w-4 mr-1.5" />
+                  <span className="hidden sm:inline">Управление</span>
+                </Link>
+              </Button>
+            )}
+
+            {/* Calendar - Hidden on mobile */}
+            <Button variant="ghost" size="icon" className="hidden md:flex" aria-label="Календарь">
+              <Calendar className="h-5 w-5" />
+            </Button>
+
+            {/* Organization Switcher */}
+            {organization && organizations.length > 0 && (
+              <OrganizationSwitcher
+                currentOrganization={{
+                  id: organization.name,
+                  name: organization.name,
+                  slug: organization.name,
+                  subscription_plan: 'free'
+                }}
+                organizations={organizations}
+              />
+            )}
+
+            {/* Notifications - Hidden on mobile */}
+            <div className="hidden md:block">
+              <NotificationCenter
+                unreadCount={notificationCount}
+              />
+            </div>
+
+            {/* User Menu */}
+            {user && (
               <UserMenu
                 user={{
                   email: user.email || '',
                   full_name: user.full_name || '',
                 }}
               />
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
     </>
   );
 }

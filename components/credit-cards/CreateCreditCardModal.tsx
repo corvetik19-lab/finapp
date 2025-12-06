@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, FormEvent, useEffect } from "react";
-import styles from "./CreateCreditCardModal.module.css";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
 import type { CreditCard } from "./CreditCardsList";
 
 export type CreateCreditCardModalProps = {
@@ -164,171 +168,26 @@ export default function CreateCreditCardModal({
   };
 
   return (
-    <div className={styles.modalOverlay} onClick={handleClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <header className={styles.modalHeader}>
-          <div className={styles.modalTitle}>
-            {isEditMode ? "Редактировать кредитную карту" : "Добавить кредитную карту"}
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader><DialogTitle>{isEditMode ? "Редактировать кредитную карту" : "Добавить кредитную карту"}</DialogTitle></DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && <div className="p-3 rounded bg-destructive/10 text-destructive text-sm">{error}</div>}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2"><Label htmlFor="card-name">Название <span className="text-destructive">*</span></Label><Input id="card-name" placeholder="Тинькофф Платинум" value={formData.name} onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))} required disabled={isSaving} /></div>
+            <div className="space-y-2"><Label htmlFor="card-limit">Лимит (₽) <span className="text-destructive">*</span></Label><Input id="card-limit" type="number" step="0.01" placeholder="250000" value={formData.credit_limit} onChange={(e) => setFormData((prev) => ({ ...prev, credit_limit: e.target.value }))} required disabled={isSaving} /></div>
+            <div className="space-y-2"><Label htmlFor="card-balance">Задолженность (₽)</Label><Input id="card-balance" type="number" step="0.01" min="0" placeholder="15000" value={formData.balance} onChange={(e) => setFormData((prev) => ({ ...prev, balance: e.target.value }))} disabled={isEditMode || isSaving} />{isEditMode && <p className="text-xs text-muted-foreground">Изменяется через транзакции</p>}</div>
+            <div className="space-y-2"><Label htmlFor="card-rate">Ставка (%)</Label><Input id="card-rate" type="number" step="0.1" placeholder="25.9" value={formData.interest_rate} onChange={(e) => setFormData((prev) => ({ ...prev, interest_rate: e.target.value }))} disabled={isSaving} /></div>
+            <div className="space-y-2"><Label htmlFor="card-grace">Льготный период (дн.)</Label><Input id="card-grace" type="number" placeholder="55" value={formData.grace_period} onChange={(e) => setFormData((prev) => ({ ...prev, grace_period: e.target.value }))} disabled={isSaving} /></div>
+            <div className="space-y-2"><Label htmlFor="card-payment-day">День платежа</Label><Input id="card-payment-day" type="number" min="1" max="31" placeholder="25" value={formData.payment_day} onChange={(e) => setFormData((prev) => ({ ...prev, payment_day: e.target.value }))} disabled={isSaving} /><p className="text-xs text-muted-foreground">День месяца (1-31)</p></div>
+            <div className="col-span-2 space-y-2"><Label htmlFor="card-min-payment">Мин. платеж (₽)</Label><Input id="card-min-payment" type="number" step="0.01" min="0" placeholder="1000" value={formData.min_payment} onChange={(e) => setFormData((prev) => ({ ...prev, min_payment: e.target.value }))} disabled={isSaving} /></div>
           </div>
-          <button
-            type="button"
-            className={styles.modalClose}
-            onClick={handleClose}
-            disabled={isSaving}
-            aria-label="Закрыть"
-          >
-            <span className="material-icons" aria-hidden>
-              close
-            </span>
-          </button>
-        </header>
-
-        <form className={styles.modalContent} onSubmit={handleSubmit}>
-          {error && <div className={styles.error}>{error}</div>}
-
-          <div className={styles.formGrid}>
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel} htmlFor="card-name">
-                Название <span style={{ color: "#f44336" }}>*</span>
-              </label>
-              <input
-                id="card-name"
-                className={styles.formInput}
-                placeholder="Например, Тинькофф Платинум"
-                value={formData.name}
-                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                required
-                disabled={isSaving}
-              />
-            </div>
-
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel} htmlFor="card-limit">
-                Кредитный лимит (₽) <span style={{ color: "#f44336" }}>*</span>
-              </label>
-              <input
-                id="card-limit"
-                className={styles.formInput}
-                type="number"
-                step="0.01"
-                placeholder="Например, 250000"
-                value={formData.credit_limit}
-                onChange={(e) => setFormData((prev) => ({ ...prev, credit_limit: e.target.value }))}
-                required
-                disabled={isSaving}
-              />
-            </div>
-
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel} htmlFor="card-balance">
-                Текущая задолженность (₽)
-              </label>
-              <input
-                id="card-balance"
-                className={styles.formInput}
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="Например, 15000"
-                value={formData.balance}
-                onChange={(e) => setFormData((prev) => ({ ...prev, balance: e.target.value }))}
-                disabled={isEditMode || isSaving}
-                title={isEditMode ? "Задолженность можно изменить только через транзакции" : ""}
-              />
-              {isEditMode && (
-                <span style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>
-                  Изменяется только через транзакции
-                </span>
-              )}
-            </div>
-
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel} htmlFor="card-rate">
-                Процентная ставка (%)
-              </label>
-              <input
-                id="card-rate"
-                className={styles.formInput}
-                type="number"
-                step="0.1"
-                placeholder="Например, 25.9"
-                value={formData.interest_rate}
-                onChange={(e) => setFormData((prev) => ({ ...prev, interest_rate: e.target.value }))}
-                disabled={isSaving}
-              />
-            </div>
-
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel} htmlFor="card-grace">
-                Льготный период (дней)
-              </label>
-              <input
-                id="card-grace"
-                className={styles.formInput}
-                type="number"
-                placeholder="Например, 55"
-                value={formData.grace_period}
-                onChange={(e) => setFormData((prev) => ({ ...prev, grace_period: e.target.value }))}
-                disabled={isSaving}
-              />
-            </div>
-
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel} htmlFor="card-payment-day">
-                День платежа
-              </label>
-              <input
-                id="card-payment-day"
-                className={styles.formInput}
-                type="number"
-                min="1"
-                max="31"
-                placeholder="Например, 25"
-                value={formData.payment_day}
-                onChange={(e) => setFormData((prev) => ({ ...prev, payment_day: e.target.value }))}
-                disabled={isSaving}
-              />
-              <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                День месяца, до которого нужно оплатить (1-31)
-              </span>
-            </div>
-
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel} htmlFor="card-min-payment">
-                Минимальный платеж (₽)
-              </label>
-              <input
-                id="card-min-payment"
-                className={styles.formInput}
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="Например, 1000"
-                value={formData.min_payment}
-                onChange={(e) => setFormData((prev) => ({ ...prev, min_payment: e.target.value }))}
-                disabled={isSaving}
-              />
-            </div>
-          </div>
-
-          <div className={styles.modalFooter}>
-            <button
-              type="button"
-              className={styles.btnSecondary}
-              onClick={handleClose}
-              disabled={isSaving}
-            >
-              Отмена
-            </button>
-            <button type="submit" className={styles.btnPrimary} disabled={isSaving}>
-              {isSaving 
-                ? (isEditMode ? "Сохранение..." : "Создание...") 
-                : (isEditMode ? "Сохранить" : "Создать")
-              }
-            </button>
-          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isSaving}>Отмена</Button>
+            <Button type="submit" disabled={isSaving}>{isSaving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}{isSaving ? (isEditMode ? "Сохранение..." : "Создание...") : (isEditMode ? "Сохранить" : "Создать")}</Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

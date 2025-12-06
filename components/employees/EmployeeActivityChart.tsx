@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import styles from './EmployeeActivityChart.module.css';
+import { BarChart3, Loader2 } from "lucide-react";
 
 interface ActivityData {
   month: string;
@@ -42,94 +42,28 @@ export function EmployeeActivityChart({ employeeId }: EmployeeActivityChartProps
     loadActivity();
   }, [employeeId]);
 
-  if (loading) {
-    return (
-      <div className={styles.loading}>
-        <span>⏳</span> Загрузка графика...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className={styles.error}>
-        <span>❌</span> {error}
-      </div>
-    );
-  }
-
-  if (data.length === 0) {
-    return (
-      <div className={styles.empty}>
-        <span className={styles.emptyIcon}>📊</span>
-        <p>Нет данных для отображения</p>
-      </div>
-    );
-  }
+  if (loading) return <div className="flex items-center justify-center py-8 text-muted-foreground"><Loader2 className="h-5 w-5 mr-2 animate-spin" />Загрузка графика...</div>;
+  if (error) return <div className="text-center py-8 text-destructive"><span>❌</span> {error}</div>;
+  if (data.length === 0) return <div className="text-center py-8"><BarChart3 className="h-12 w-12 mx-auto text-muted-foreground mb-2" /><p className="text-muted-foreground">Нет данных</p></div>;
 
   const maxValue = Math.max(...data.map(d => d.tenders_count), 1);
 
   return (
-    <div className={styles.container}>
-      <div className={styles.legend}>
-        <div className={styles.legendItem}>
-          <span className={styles.legendDot} style={{ background: '#3b82f6' }}></span>
-          Всего тендеров
-        </div>
-        <div className={styles.legendItem}>
-          <span className={styles.legendDot} style={{ background: '#22c55e' }}></span>
-          Выиграно
-        </div>
-        <div className={styles.legendItem}>
-          <span className={styles.legendDot} style={{ background: '#ef4444' }}></span>
-          Проиграно
-        </div>
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-4 text-sm">
+        <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-blue-500" />Всего</div>
+        <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-green-500" />Выиграно</div>
+        <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-red-500" />Проиграно</div>
       </div>
-
-      <div className={styles.chart}>
-        {data.map((item, index) => (
-          <div key={index} className={styles.barGroup}>
-            <div className={styles.bars}>
-              <div 
-                className={styles.bar}
-                style={{ 
-                  height: `${(item.tenders_count / maxValue) * 100}%`,
-                  background: '#3b82f6'
-                }}
-                title={`Всего: ${item.tenders_count}`}
-              >
-                {item.tenders_count > 0 && (
-                  <span className={styles.barValue}>{item.tenders_count}</span>
-                )}
-              </div>
-              <div 
-                className={styles.bar}
-                style={{ 
-                  height: `${(item.won_count / maxValue) * 100}%`,
-                  background: '#22c55e'
-                }}
-                title={`Выиграно: ${item.won_count}`}
-              >
-                {item.won_count > 0 && (
-                  <span className={styles.barValue}>{item.won_count}</span>
-                )}
-              </div>
-              <div 
-                className={styles.bar}
-                style={{ 
-                  height: `${(item.lost_count / maxValue) * 100}%`,
-                  background: '#ef4444'
-                }}
-                title={`Проиграно: ${item.lost_count}`}
-              >
-                {item.lost_count > 0 && (
-                  <span className={styles.barValue}>{item.lost_count}</span>
-                )}
-              </div>
-            </div>
-            <div className={styles.barLabel}>{item.month}</div>
+      <div className="flex items-end gap-2 h-40">
+        {data.map((item, idx) => <div key={idx} className="flex-1 flex flex-col items-center gap-1">
+          <div className="flex items-end gap-0.5 h-32 w-full justify-center">
+            <div className="w-3 bg-blue-500 rounded-t transition-all" style={{ height: `${(item.tenders_count / maxValue) * 100}%` }} title={`Всего: ${item.tenders_count}`} />
+            <div className="w-3 bg-green-500 rounded-t transition-all" style={{ height: `${(item.won_count / maxValue) * 100}%` }} title={`Выиграно: ${item.won_count}`} />
+            <div className="w-3 bg-red-500 rounded-t transition-all" style={{ height: `${(item.lost_count / maxValue) * 100}%` }} title={`Проиграно: ${item.lost_count}`} />
           </div>
-        ))}
+          <span className="text-xs text-muted-foreground">{item.month}</span>
+        </div>)}
       </div>
     </div>
   );

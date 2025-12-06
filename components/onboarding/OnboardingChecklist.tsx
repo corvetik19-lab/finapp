@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import styles from './OnboardingChecklist.module.css';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+import { X, ChevronUp, ChevronDown, Check, ArrowRight, PartyPopper, Lightbulb } from "lucide-react";
 
 interface ChecklistItem {
   id: string;
@@ -165,88 +169,37 @@ export default function OnboardingChecklist() {
   }
 
   return (
-    <div className={`${styles.container} ${isMinimized ? styles.minimized : ''}`}>
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h3>🚀 Первые шаги</h3>
-          {!allCompleted && (
-            <span className={styles.progress}>
-              {completedCount} из {totalCount}
-            </span>
-          )}
+    <Card className={cn(isMinimized && "pb-0")}>
+      <CardHeader className="py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2"><CardTitle className="text-base">🚀 Первые шаги</CardTitle>{!allCompleted && <span className="text-sm text-muted-foreground">{completedCount} из {totalCount}</span>}</div>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsMinimized(!isMinimized)}>{isMinimized ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}</Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleHide}><X className="h-4 w-4" /></Button>
+          </div>
         </div>
-        <div className={styles.headerRight}>
-          <button
-            className={styles.minimizeBtn}
-            onClick={() => setIsMinimized(!isMinimized)}
-            title={isMinimized ? 'Развернуть' : 'Свернуть'}
-          >
-            {isMinimized ? '▼' : '▲'}
-          </button>
-          <button
-            className={styles.closeBtn}
-            onClick={handleHide}
-            title="Скрыть чек-лист"
-          >
-            ✕
-          </button>
-        </div>
-      </div>
-
+      </CardHeader>
       {!isMinimized && (
-        <>
+        <CardContent className="space-y-4">
           {allCompleted ? (
-            <div className={styles.congratulations}>
-              <div className={styles.congratsIcon}>🎉</div>
-              <h4>Поздравляем!</h4>
-              <p>Вы освоили основы FinApp и готовы управлять своими финансами!</p>
-              <button className={styles.congratsBtn} onClick={handleHide}>
-                Отлично!
-              </button>
-            </div>
+            <div className="flex flex-col items-center text-center py-6"><PartyPopper className="h-12 w-12 text-yellow-500 mb-4" /><h4 className="font-semibold text-lg">Поздравляем!</h4><p className="text-muted-foreground mb-4">Вы освоили основы FinApp!</p><Button onClick={handleHide}>Отлично!</Button></div>
           ) : (
             <>
-              <div className={styles.progressBar}>
-                <div 
-                  className={styles.progressFill} 
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-
-              <div className={styles.list}>
+              <Progress value={progress} className="h-2" />
+              <div className="space-y-2">
                 {items.map(item => (
-                  <div
-                    key={item.id}
-                    className={`${styles.item} ${item.completed ? styles.completed : ''} ${item.link ? styles.clickable : ''}`}
-                    onClick={() => handleItemClick(item)}
-                  >
-                    <div className={styles.itemIcon}>
-                      {item.completed ? (
-                        <span className={styles.checkmark}>✓</span>
-                      ) : (
-                        <span>{item.icon}</span>
-                      )}
-                    </div>
-                    <div className={styles.itemContent}>
-                      <div className={styles.itemTitle}>{item.title}</div>
-                      <div className={styles.itemDescription}>{item.description}</div>
-                    </div>
-                    {item.link && !item.completed && (
-                      <div className={styles.itemArrow}>→</div>
-                    )}
+                  <div key={item.id} className={cn("flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors", item.completed && "opacity-60", item.link && !item.completed && "cursor-pointer")} onClick={() => handleItemClick(item)}>
+                    <div className="flex-shrink-0">{item.completed ? <div className="h-6 w-6 rounded-full bg-green-500 flex items-center justify-center"><Check className="h-4 w-4 text-white" /></div> : <span className="text-xl">{item.icon}</span>}</div>
+                    <div className="flex-1 min-w-0"><div className={cn("font-medium text-sm", item.completed && "line-through")}>{item.title}</div><div className="text-xs text-muted-foreground">{item.description}</div></div>
+                    {item.link && !item.completed && <ArrowRight className="h-4 w-4 text-muted-foreground" />}
                   </div>
                 ))}
               </div>
-
-              <div className={styles.footer}>
-                <p className={styles.footerText}>
-                  💡 <strong>Совет:</strong> Используйте AI чат для быстрых команд вроде &ldquo;Добавь 500р на кофе&rdquo;
-                </p>
-              </div>
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50 text-sm"><Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5" /><p><strong>Совет:</strong> Используйте AI чат для быстрых команд</p></div>
             </>
           )}
-        </>
+        </CardContent>
       )}
-    </div>
+    </Card>
   );
 }

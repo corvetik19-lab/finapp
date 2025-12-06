@@ -1,8 +1,12 @@
 "use client";
 import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import styles from "@/components/transactions/Transactions.module.css";
 import { formatMoney } from "@/lib/utils/format";
+import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { TrendingUp, TrendingDown, Wallet } from "lucide-react";
 
 export type SummaryPreset = {
   key: string;
@@ -97,84 +101,55 @@ export default function SummaryWithPeriod({
   const customTo = sp.get("s_to") || "";
 
   return (
-    <>
-      <div className={styles.periodBar}>
-        <label className={styles.periodLabel} htmlFor="periodSelect">Период:</label>
-        <select
-          id="periodSelect"
-          className={styles.periodSelect}
-          value={key}
-          onChange={(e) => {
-            const v = e.target.value;
-            setKey(v);
-            if (v === "custom") {
-              updateSummaryUrl({ s_period: "custom" });
-            } else if (v === "month" || v === "prev" || v === "year") {
-              // Do not update URL to avoid server remount flicker; rely on local state
-            }
-          }}
-        >
-          <option value="month">Этот месяц</option>
-          <option value="prev">Прошлый месяц</option>
-          <option value="year">Этот год</option>
-          <option value="custom">Произвольный период</option>
-        </select>
-
-        {key === "custom" && (
-          <div style={{ display: "flex", gap: 8 }}>
-            <input
-              type="date"
-              className={styles.input}
-              value={customFrom}
-              onChange={(e) => updateSummaryUrl({ s_period: "custom", s_from: e.target.value })}
-              placeholder="От"
-            />
-            <input
-              type="date"
-              className={styles.input}
-              value={customTo}
-              onChange={(e) => updateSummaryUrl({ s_period: "custom", s_to: e.target.value })}
-              placeholder="До"
-            />
-          </div>
-        )}
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-sm font-medium">Период:</span>
+        <Select value={key} onValueChange={(v) => { setKey(v); if (v === "custom") updateSummaryUrl({ s_period: "custom" }); }}>
+          <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+          <SelectContent><SelectItem value="month">Этот месяц</SelectItem><SelectItem value="prev">Прошлый месяц</SelectItem><SelectItem value="year">Этот год</SelectItem><SelectItem value="custom">Произвольный</SelectItem></SelectContent>
+        </Select>
+        {key === "custom" && (<div className="flex gap-2"><Input type="date" className="w-36" value={customFrom} onChange={(e) => updateSummaryUrl({ s_period: "custom", s_from: e.target.value })} /><Input type="date" className="w-36" value={customTo} onChange={(e) => updateSummaryUrl({ s_period: "custom", s_to: e.target.value })} /></div>)}
+        <span className="text-sm text-muted-foreground">{fmt(fromD)} — {fmt(toD)}</span>
       </div>
 
-      <div className={styles.summaryCaption}>
-        {fmt(fromD)} — {fmt(toD)}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="bg-gradient-to-br from-green-50 to-white dark:from-green-950/20 dark:to-card hover:shadow-md transition-shadow">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 text-sm mb-1">
+              <div className="p-1.5 rounded-full bg-green-100 dark:bg-green-900/30">
+                <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+              </div>
+              <span className="text-muted-foreground">Общий доход</span>
+            </div>
+            <div className="text-2xl font-bold">{formatMoney(cur?.incomeMinor || 0, cur?.currency || "RUB")}</div>
+            <div className={cn("text-sm", incomeBadge.variant === "positive" ? "text-green-600" : incomeBadge.variant === "negative" ? "text-red-600" : "text-muted-foreground")}>{incomeBadge.text}</div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-red-50 to-white dark:from-red-950/20 dark:to-card hover:shadow-md transition-shadow">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 text-sm mb-1">
+              <div className="p-1.5 rounded-full bg-red-100 dark:bg-red-900/30">
+                <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
+              </div>
+              <span className="text-muted-foreground">Общий расход</span>
+            </div>
+            <div className="text-2xl font-bold">{formatMoney(cur?.expenseMinor || 0, cur?.currency || "RUB")}</div>
+            <div className={cn("text-sm", expenseBadge.variant === "positive" ? "text-green-600" : expenseBadge.variant === "negative" ? "text-red-600" : "text-muted-foreground")}>{expenseBadge.text}</div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-card hover:shadow-md transition-shadow">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 text-sm mb-1">
+              <div className="p-1.5 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                <Wallet className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              </div>
+              <span className="text-muted-foreground">Чистая прибыль</span>
+            </div>
+            <div className={cn("text-2xl font-bold", net < 0 && "text-red-600")}>{formatMoney(net, cur?.currency || "RUB")}</div>
+            <div className={cn("text-sm", netBadge.variant === "positive" ? "text-green-600" : netBadge.variant === "negative" ? "text-red-600" : "text-muted-foreground")}>{netBadge.text}</div>
+          </CardContent>
+        </Card>
       </div>
-
-      <section className={styles.topSummary}>
-        <div className={`${styles.topSummaryCard} ${styles.topSummaryCardIncome}`}>
-          <div className={styles.topSummaryContent}>
-            <span className={styles.topSummaryTitle}>Общий доход</span>
-            <span className={styles.topSummaryValue}>{formatMoney(cur?.incomeMinor || 0, cur?.currency || "RUB")}</span>
-            <span className={`${styles.topSummaryBadge} ${incomeBadge.variant === "positive" ? styles.topSummaryBadgePositive : incomeBadge.variant === "negative" ? styles.topSummaryBadgeNegative : ""}`}>
-              {incomeBadge.text}
-            </span>
-          </div>
-        </div>
-        <div className={`${styles.topSummaryCard} ${styles.topSummaryCardExpense}`}>
-          <div className={styles.topSummaryContent}>
-            <span className={styles.topSummaryTitle}>Общий расход</span>
-            <span className={styles.topSummaryValue}>{formatMoney(cur?.expenseMinor || 0, cur?.currency || "RUB")}</span>
-            <span className={`${styles.topSummaryBadge} ${expenseBadge.variant === "positive" ? styles.topSummaryBadgePositive : expenseBadge.variant === "negative" ? styles.topSummaryBadgeNegative : ""}`}>
-              {expenseBadge.text}
-            </span>
-          </div>
-        </div>
-        <div className={`${styles.topSummaryCard} ${styles.topSummaryCardNet}`}>
-          <div className={styles.topSummaryContent}>
-            <span className={styles.topSummaryTitle}>Чистая прибыль</span>
-            <span className={styles.topSummaryValue} style={{ color: net < 0 ? '#991b1b' : undefined }}>
-              {formatMoney(net, cur?.currency || "RUB")}
-            </span>
-            <span className={`${styles.topSummaryBadge} ${netBadge.variant === "positive" ? styles.topSummaryBadgePositive : netBadge.variant === "negative" ? styles.topSummaryBadgeNegative : ""}`}>
-              {netBadge.text}
-            </span>
-          </div>
-        </div>
-      </section>
-    </>
+    </div>
   );
 }

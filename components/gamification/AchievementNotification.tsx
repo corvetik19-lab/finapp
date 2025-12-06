@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import styles from "./AchievementNotification.module.css";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 
 interface Achievement {
   id: string;
@@ -71,49 +74,29 @@ export default function AchievementNotification() {
   }
 
   return (
-    <div className={styles.container}>
+    <div className="fixed top-4 right-4 z-50 space-y-3 max-w-sm">
       {notifications.map((notification) => {
         const color = rarityColors[notification.achievement.rarity] || rarityColors.common;
-
         return (
-          <div
-            key={notification.timestamp}
-            className={styles.notification}
-            style={{ borderLeftColor: color }}
-          >
-            <div className={styles.icon}>{notification.achievement.icon}</div>
-
-            <div className={styles.content}>
-              <div className={styles.header}>
-                <h3 className={styles.title}>🎉 Достижение разблокировано!</h3>
-                <button
-                  className={styles.closeBtn}
-                  onClick={() => handleClose(notification.timestamp)}
-                >
-                  ✕
-                </button>
+          <Card key={notification.timestamp} className="border-l-4 shadow-lg animate-in slide-in-from-right" style={{ borderLeftColor: color }}>
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <span className="text-3xl">{notification.achievement.icon}</span>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="font-semibold text-sm">🎉 Достижение разблокировано!</h3>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleClose(notification.timestamp)}><X className="h-4 w-4" /></Button>
+                  </div>
+                  <p className="font-medium">{notification.achievement.title}</p>
+                  <p className="text-sm text-muted-foreground">{notification.achievement.description}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge style={{ backgroundColor: color }}>{getRarityLabel(notification.achievement.rarity)}</Badge>
+                    <span className="text-sm font-semibold text-primary">+{notification.achievement.points} XP</span>
+                  </div>
+                </div>
               </div>
-
-              <p className={styles.achievementTitle}>
-                {notification.achievement.title}
-              </p>
-              <p className={styles.description}>
-                {notification.achievement.description}
-              </p>
-
-              <div className={styles.footer}>
-                <span
-                  className={styles.rarity}
-                  style={{ backgroundColor: color }}
-                >
-                  {getRarityLabel(notification.achievement.rarity)}
-                </span>
-                <span className={styles.points}>
-                  +{notification.achievement.points} XP
-                </span>
-              </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         );
       })}
     </div>

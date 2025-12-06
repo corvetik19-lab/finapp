@@ -1,6 +1,8 @@
 import Link from "next/link";
-import styles from "@/components/dashboard/Dashboard.module.css";
 import { formatMoney } from "@/lib/utils/format";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Landmark, TrendingUp, TrendingDown, CreditCard, Wallet, Banknote, Building } from "lucide-react";
 
 type AccountGroup = {
   name: string;
@@ -18,6 +20,13 @@ type NetWorthWidgetProps = {
   monthlyChange?: number;
 };
 
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  credit_card: CreditCard,
+  account_balance_wallet: Wallet,
+  payments: Banknote,
+  account_balance: Building,
+};
+
 export default function NetWorthWidget({
   accounts,
   totalAssets,
@@ -29,73 +38,66 @@ export default function NetWorthWidget({
   const isPositiveChange = monthlyChange >= 0;
 
   return (
-    <section className={styles.netWorthWidget}>
-      <div className={styles.netWorthHeader}>
-        <div className={styles.netWorthTitleGroup}>
-          <span className="material-icons" aria-hidden>
-            account_balance
-          </span>
-          <div className={styles.netWorthTitle}>Чистые активы</div>
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Landmark className="h-4 w-4" />
+            Чистые активы
+          </CardTitle>
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/finance/transactions">Детали</Link>
+          </Button>
         </div>
-        <Link href="/transactions" className={styles.netWorthAction}>
-          Детали
-        </Link>
-      </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <div className={`text-2xl font-bold ${totalMinor < 0 ? "text-red-600" : ""}`}>
+            {formatMoney(totalMinor, currency)}
+          </div>
+          <div className={`flex items-center gap-1 text-sm ${isPositiveChange ? "text-green-600" : "text-red-600"}`}>
+            {isPositiveChange ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+            <span>{isPositiveChange ? "+" : ""}{monthlyChange.toFixed(1)}% за месяц</span>
+          </div>
+        </div>
 
-      <div className={styles.netWorthSummary}>
-        <div className={styles.netWorthAmount} style={{ color: totalMinor < 0 ? 'var(--danger)' : undefined }}>
-          {formatMoney(totalMinor, currency)}
-        </div>
-        <div className={`${styles.netWorthChange} ${isPositiveChange ? styles.netWorthChangePositive : styles.netWorthChangeNegative}`}>
-          <span className="material-icons" aria-hidden>
-            {isPositiveChange ? "arrow_upward" : "arrow_downward"}
-          </span>
-          <span>{isPositiveChange ? "+" : ""}{monthlyChange.toFixed(1)}% за месяц</span>
-        </div>
-      </div>
-
-      <div className={styles.netWorthBreakdown}>
-        {accounts
-          .filter((account) => !account.isDebt)
-          .map((account) => (
-            <div key={account.name} className={styles.assetItem}>
-              <div className={styles.assetInfo}>
-                <div className={`${styles.assetIcon} ${styles[account.iconClass]}`}>
-                  <span className="material-icons" aria-hidden>
-                    {account.icon}
-                  </span>
+        <div className="space-y-2">
+          {accounts.filter((a) => !a.isDebt).map((account) => {
+            const Icon = ICON_MAP[account.icon] || Wallet;
+            return (
+              <div key={account.name} className="flex items-center justify-between py-1">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm">{account.name}</span>
                 </div>
-                <div className={styles.assetName}>{account.name}</div>
+                <span className="font-medium text-sm">{formatMoney(account.balance, currency)}</span>
               </div>
-              <div className={styles.assetValue}>
-                {formatMoney(account.balance, currency)}
-              </div>
-            </div>
-          ))}
-        
-        {accounts.some((account) => account.isDebt) && (
-          <>
-            <div className={styles.netWorthDivider} />
-            {accounts
-              .filter((account) => account.isDebt)
-              .map((account) => (
-                <div key={account.name} className={styles.assetItem}>
-                  <div className={styles.assetInfo}>
-                    <div className={`${styles.assetIcon} ${styles[account.iconClass]}`}>
-                      <span className="material-icons" aria-hidden>
-                        {account.icon}
-                      </span>
+            );
+          })}
+
+          {accounts.some((a) => a.isDebt) && (
+            <>
+              <div className="border-t my-2" />
+              {accounts.filter((a) => a.isDebt).map((account) => {
+                const Icon = ICON_MAP[account.icon] || Building;
+                return (
+                  <div key={account.name} className="flex items-center justify-between py-1">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-100 text-red-600">
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <span className="text-sm">{account.name}</span>
                     </div>
-                    <div className={styles.assetName}>{account.name}</div>
+                    <span className="font-medium text-sm text-red-600">-{formatMoney(account.balance, currency)}</span>
                   </div>
-                  <div className={`${styles.assetValue} ${styles.debtValue}`}>
-                    -{formatMoney(account.balance, currency)}
-                  </div>
-                </div>
-              ))}
-          </>
-        )}
-      </div>
-    </section>
+                );
+              })}
+            </>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

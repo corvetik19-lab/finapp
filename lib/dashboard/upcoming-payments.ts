@@ -34,8 +34,9 @@ export async function loadUpcomingPayments(limit = 10): Promise<UpcomingPaymentR
       .order("due_date", { ascending: true })
       .limit(limit);
 
+    // Показываем платежи компании ИЛИ личные (без company_id)
     if (companyId) {
-      query = query.eq("company_id", companyId);
+      query = query.or(`company_id.eq.${companyId},company_id.is.null`);
     }
 
     const { data, error } = await query;

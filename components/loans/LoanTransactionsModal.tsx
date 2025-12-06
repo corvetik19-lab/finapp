@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import styles from "./LoanTransactionsModal.module.css";
 import { formatMoney } from "@/lib/utils/format";
 import type { Loan } from "@/lib/loans/types";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Landmark, ArrowUp, ArrowDown, Receipt, Loader2, AlertCircle, Trash2 } from "lucide-react";
 
 type Transaction = {
   id: string;
@@ -87,139 +90,68 @@ export default function LoanTransactionsModal({
     }
   };
 
-  if (!isOpen) return null;
-
   const formatDate = (dateString: string) => {
     try {
-      return new Date(dateString).toLocaleDateString("ru-RU", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+      return new Date(dateString).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
     } catch {
       return dateString;
     }
   };
 
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
   return (
-    <div className={styles.modalOverlay} onClick={handleOverlayClick}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <header className={styles.modalHeader}>
-          <div className={styles.modalTitle}>
-            <span className="material-icons" aria-hidden>
-              account_balance
-            </span>
-            Транзакции: {loan.name} ({loan.bank})
-          </div>
-          <button
-            type="button"
-            className={styles.closeButton}
-            onClick={onClose}
-            aria-label="Закрыть"
-          >
-            <span className="material-icons" aria-hidden>
-              close
-            </span>
-          </button>
-        </header>
+    <Dialog open={isOpen} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Landmark className="h-5 w-5" />Транзакции: {loan.name} ({loan.bank})</DialogTitle>
+        </DialogHeader>
 
-        <div className={styles.modalBody}>
+        <div className="space-y-3">
           {isLoading && (
-            <div className={styles.loading}>
-              <div className={styles.spinner}></div>
-              <p>Загрузка транзакций...</p>
+            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+              <Loader2 className="h-8 w-8 animate-spin mb-2" /><p>Загрузка транзакций...</p>
             </div>
           )}
 
           {error && (
-            <div className={styles.error}>
-              <span className="material-icons" aria-hidden>
-                error_outline
-              </span>
-              {error}
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+              <AlertCircle className="h-4 w-4" />{error}
             </div>
           )}
 
           {!isLoading && !error && transactions.length === 0 && (
-            <div className={styles.emptyState}>
-              <span className="material-icons" aria-hidden>
-                receipt_long
-              </span>
-              <p>Нет транзакций по этому кредиту</p>
+            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+              <Receipt className="h-12 w-12 mb-3 opacity-50" /><p>Нет транзакций по этому кредиту</p>
             </div>
           )}
 
           {!isLoading && !error && transactions.length > 0 && (
-            <div className={styles.transactionsList}>
+            <div className="space-y-2">
               {transactions.map((txn) => (
-                <div
-                  key={txn.id}
-                  className={`${styles.transactionItem} ${
-                    txn.direction === "income" ? styles.income : styles.expense
-                  }`}
-                >
-                  <div className={styles.transactionIcon}>
-                    <span className="material-icons" aria-hidden>
-                      {txn.direction === "income" ? "arrow_downward" : "arrow_upward"}
-                    </span>
+                <div key={txn.id} className={cn("flex items-center gap-3 p-3 rounded-lg border", txn.direction === "income" ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200")}>
+                  <div className={cn("p-2 rounded-full", txn.direction === "income" ? "bg-green-100" : "bg-red-100")}>
+                    {txn.direction === "income" ? <ArrowDown className="h-4 w-4 text-green-600" /> : <ArrowUp className="h-4 w-4 text-red-600" />}
                   </div>
-
-                  <div className={styles.transactionInfo}>
-                    <div className={styles.transactionMain}>
-                      <span className={styles.transactionCounterparty}>
-                        {txn.counterparty || txn.note || "Без описания"}
-                      </span>
-                      {txn.category_name && (
-                        <span className={styles.transactionCategory}>{txn.category_name}</span>
-                      )}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium truncate">{txn.counterparty || txn.note || "Без описания"}</div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>{formatDate(txn.occurred_at)}</span>
+                      {txn.category_name && <span className="px-1.5 py-0.5 rounded bg-muted">{txn.category_name}</span>}
                     </div>
-                    <div className={styles.transactionDate}>{formatDate(txn.occurred_at)}</div>
                   </div>
-
-                  <div className={styles.transactionAmount}>
-                    <span
-                      className={
-                        txn.direction === "income"
-                          ? styles.amountIncome
-                          : styles.amountExpense
-                      }
-                    >
-                      {txn.direction === "income" ? "+" : "−"}
-                      {formatMoney(txn.amount, txn.currency)}
-                    </span>
+                  <div className={cn("font-bold", txn.direction === "income" ? "text-green-600" : "text-red-600")}>
+                    {txn.direction === "income" ? "+" : "−"}{formatMoney(txn.amount, txn.currency)}
                   </div>
-
-                  <button
-                    type="button"
-                    className={styles.deleteButton}
-                    onClick={() => handleDelete(txn.id)}
-                    disabled={deletingId === txn.id}
-                    title="Удалить транзакцию"
-                  >
-                    <span className="material-icons" aria-hidden>
-                      {deletingId === txn.id ? "hourglass_empty" : "delete"}
-                    </span>
-                  </button>
+                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDelete(txn.id)} disabled={deletingId === txn.id}>
+                    {deletingId === txn.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  </Button>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        <div className={styles.modalFooter}>
-          <button type="button" className={styles.btnSecondary} onClick={onClose}>
-            Закрыть
-          </button>
-        </div>
-      </div>
-    </div>
+        <DialogFooter><Button variant="outline" onClick={onClose}>Закрыть</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import styles from "./StreakWidget.module.css";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface StreakData {
   current_streak: number;
@@ -33,47 +34,24 @@ export default function StreakWidget() {
   }
 
   if (loading) {
-    return (
-      <div className={styles.widget}>
-        <div className={styles.loading}>Загрузка...</div>
-      </div>
-    );
+    return <Card><CardContent className="flex items-center justify-center py-4"><span className="text-muted-foreground">Загрузка...</span></CardContent></Card>;
   }
 
   if (!streak || streak.current_streak === 0) {
-    return (
-      <div className={styles.widget}>
-        <div className={styles.icon}>📝</div>
-        <div className={styles.content}>
-          <h3 className={styles.title}>Начните стрик!</h3>
-          <p className={styles.description}>
-            Добавляйте транзакции каждый день
-          </p>
-        </div>
-      </div>
-    );
+    return <Card><CardContent className="flex items-center gap-3 py-4"><span className="text-2xl">📝</span><div><h3 className="font-medium">Начните стрик!</h3><p className="text-sm text-muted-foreground">Добавляйте транзакции каждый день</p></div></CardContent></Card>;
   }
 
   const isHot = streak.current_streak >= 7;
   const isOnFire = streak.current_streak >= 30;
 
   return (
-    <div className={`${styles.widget} ${isOnFire ? styles.onFire : isHot ? styles.hot : ""}`}>
-      <div className={styles.icon}>
-        {isOnFire ? "🔥" : isHot ? "⚡" : "✨"}
-      </div>
-      <div className={styles.content}>
-        <h3 className={styles.title}>
-          {streak.current_streak} {getDaysLabel(streak.current_streak)} подряд!
-        </h3>
-        <p className={styles.description}>
-          Максимум: {streak.longest_streak} {getDaysLabel(streak.longest_streak)}
-        </p>
-      </div>
-      <div className={styles.badge}>
-        <span className={styles.number}>{streak.current_streak}</span>
-      </div>
-    </div>
+    <Card className={cn(isOnFire && "bg-orange-50 dark:bg-orange-950 border-orange-300", isHot && !isOnFire && "bg-yellow-50 dark:bg-yellow-950 border-yellow-300")}>
+      <CardContent className="flex items-center gap-3 py-4">
+        <span className="text-2xl">{isOnFire ? "🔥" : isHot ? "⚡" : "✨"}</span>
+        <div className="flex-1"><h3 className="font-medium">{streak.current_streak} {getDaysLabel(streak.current_streak)} подряд!</h3><p className="text-sm text-muted-foreground">Максимум: {streak.longest_streak} {getDaysLabel(streak.longest_streak)}</p></div>
+        <div className={cn("flex items-center justify-center w-10 h-10 rounded-full text-white font-bold", isOnFire ? "bg-orange-500" : isHot ? "bg-yellow-500" : "bg-primary")}>{streak.current_streak}</div>
+      </CardContent>
+    </Card>
   );
 }
 

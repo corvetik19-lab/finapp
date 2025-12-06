@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import styles from "./Prompts.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Star, Copy, Check, Edit, Trash2, Clock } from "lucide-react";
 
 type Prompt = {
   id: string;
@@ -57,98 +60,34 @@ export default function PromptCard({
   };
 
   return (
-    <div className={styles.card}>
-      <div className={styles.cardHeader}>
-        <div className={styles.cardTitle}>
-          <h3>{prompt.title}</h3>
-          <button
-            onClick={() => onToggleFavorite(prompt.id, prompt.is_favorite)}
-            className={styles.favoriteBtn}
-            title={prompt.is_favorite ? "Убрать из избранного" : "Добавить в избранное"}
-          >
-            <span className="material-icons">
-              {prompt.is_favorite ? "star" : "star_border"}
-            </span>
-          </button>
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-start justify-between">
+          <CardTitle className="text-base">{prompt.title}</CardTitle>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onToggleFavorite(prompt.id, prompt.is_favorite)}>
+            <Star className={`h-4 w-4 ${prompt.is_favorite ? "fill-yellow-400 text-yellow-400" : ""}`} />
+          </Button>
         </div>
-
-        {prompt.description && (
-          <p className={styles.cardDescription}>{prompt.description}</p>
-        )}
-      </div>
-
-      <div className={styles.cardBody}>
-        <div className={`${styles.promptText} ${showFullText ? styles.expanded : ""}`}>
-          {prompt.prompt_text}
+        {prompt.description && <p className="text-sm text-muted-foreground">{prompt.description}</p>}
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className={`text-sm bg-muted/50 p-3 rounded-lg ${showFullText ? "" : "line-clamp-3"}`}>{prompt.prompt_text}</div>
+        {prompt.prompt_text.length > 200 && <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => setShowFullText(!showFullText)}>{showFullText ? "Свернуть" : "Показать полностью"}</Button>}
+        <div className="flex flex-wrap gap-1">
+          <Badge>{getAiModelIcon(prompt.ai_model)} {prompt.ai_model}</Badge>
+          {prompt.category && <Badge variant="secondary">{prompt.category}</Badge>}
+          {prompt.tags.map((tag, i) => <Badge key={i} variant="outline" className="text-xs">#{tag}</Badge>)}
         </div>
-        {prompt.prompt_text.length > 200 && (
-          <button
-            onClick={() => setShowFullText(!showFullText)}
-            className={styles.toggleBtn}
-          >
-            {showFullText ? "Свернуть" : "Показать полностью"}
-          </button>
-        )}
-      </div>
-
-      <div className={styles.cardMeta}>
-        <div className={styles.metaRow}>
-          <span className={styles.badge}>
-            {getAiModelIcon(prompt.ai_model)} {prompt.ai_model}
-          </span>
-          {prompt.category && (
-            <span className={styles.badge}>{prompt.category}</span>
-          )}
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1"><Copy className="h-3 w-3" />{prompt.usage_count}</span>
+          <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{new Date(prompt.created_at).toLocaleDateString("ru-RU")}</span>
         </div>
-
-        {prompt.tags.length > 0 && (
-          <div className={styles.tags}>
-            {prompt.tags.map((tag, i) => (
-              <span key={i} className={styles.tag}>
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
-
-        <div className={styles.stats}>
-          <span className={styles.statItem}>
-            <span className="material-icons">content_copy</span>
-            {prompt.usage_count}
-          </span>
-          <span className={styles.statItem}>
-            <span className="material-icons">schedule</span>
-            {new Date(prompt.created_at).toLocaleDateString("ru-RU")}
-          </span>
+        <div className="flex gap-2 pt-2">
+          <Button size="sm" onClick={handleCopy}>{copied ? <><Check className="h-4 w-4 mr-1" />Скопировано</> : <><Copy className="h-4 w-4 mr-1" />Копировать</>}</Button>
+          <Button size="sm" variant="ghost" onClick={() => onEdit(prompt)}><Edit className="h-4 w-4" /></Button>
+          <Button size="sm" variant="ghost" className="text-destructive" onClick={() => onDelete(prompt.id)}><Trash2 className="h-4 w-4" /></Button>
         </div>
-      </div>
-
-      <div className={styles.cardActions}>
-        <button
-          onClick={handleCopy}
-          className={`${styles.actionBtn} ${styles.copyBtn}`}
-          title="Скопировать промпт"
-        >
-          <span className="material-icons">
-            {copied ? "check" : "content_copy"}
-          </span>
-          {copied ? "Скопировано!" : "Копировать"}
-        </button>
-        <button
-          onClick={() => onEdit(prompt)}
-          className={styles.actionBtn}
-          title="Редактировать"
-        >
-          <span className="material-icons">edit</span>
-        </button>
-        <button
-          onClick={() => onDelete(prompt.id)}
-          className={`${styles.actionBtn} ${styles.deleteBtn}`}
-          title="Удалить"
-        >
-          <span className="material-icons">delete</span>
-        </button>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

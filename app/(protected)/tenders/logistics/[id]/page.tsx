@@ -4,7 +4,10 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { formatMoney } from "@/lib/utils/format";
 import { SHIPMENT_STATUS_LABELS, SHIPMENT_TYPE_LABELS, STATUS_COLORS, ShipmentStatus, ShipmentType } from "@/types/logistics";
-import styles from "./shipment-detail.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Edit, Printer, Trash2, MapPin } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Детали отправки | Логистика",
@@ -29,212 +32,63 @@ export default async function ShipmentDetailPage({ params }: PageProps) {
   const statusColor = STATUS_COLORS[shipment.status as ShipmentStatus] || "#6b7280";
 
   return (
-    <div className={styles.container}>
-      {/* Навигация */}
-      <Link href="/tenders/logistics" className={styles.backLink}>
-        <span className="material-icons">arrow_back</span>
-        Назад к списку
-      </Link>
+    <div className="p-6 space-y-6">
+      <Link href="/tenders/logistics"><Button variant="ghost"><ArrowLeft className="h-4 w-4 mr-1" />Назад</Button></Link>
 
-      {/* Заголовок */}
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <div>
-            <h1 className={styles.title}>
-              📦 Отправка {shipment.tracking_number}
-            </h1>
-            <div className={styles.badges}>
-              <span 
-                className={styles.statusBadge}
-                style={{ 
-                  backgroundColor: `${statusColor}15`,
-                  color: statusColor,
-                  border: `1px solid ${statusColor}30`
-                }}
-              >
-                {SHIPMENT_STATUS_LABELS[shipment.status as ShipmentStatus]}
-              </span>
-              <span className={styles.typeBadge}>
-                {SHIPMENT_TYPE_LABELS[shipment.type as ShipmentType]}
-              </span>
-            </div>
-          </div>
-          <div className={styles.costSection}>
-            <div className={styles.costValue}>
-              {formatMoney(shipment.cost_amount, shipment.currency)}
-            </div>
-            <div className={styles.costLabel}>Стоимость доставки</div>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">📦 Отправка {shipment.tracking_number}</h1>
+          <div className="flex gap-2 mt-2">
+            <Badge style={{ backgroundColor: `${statusColor}15`, color: statusColor, border: `1px solid ${statusColor}30` }}>{SHIPMENT_STATUS_LABELS[shipment.status as ShipmentStatus]}</Badge>
+            <Badge variant="secondary">{SHIPMENT_TYPE_LABELS[shipment.type as ShipmentType]}</Badge>
           </div>
         </div>
+        <div className="text-right"><div className="text-2xl font-bold">{formatMoney(shipment.cost_amount, shipment.currency)}</div><div className="text-sm text-muted-foreground">Стоимость доставки</div></div>
       </div>
 
-      {/* Маршрут */}
-      <div className={styles.grid}>
-        {/* Отправитель */}
-        <div className={styles.card}>
-          <h2 className={styles.cardTitle}>
-            <span className={`material-icons ${styles.iconGreen}`}>location_on</span>
-            Отправитель
-          </h2>
-          <div className={styles.contactInfo}>
-            <div>
-              <div className={styles.contactName}>{shipment.sender.name}</div>
-              {shipment.sender.company && (
-                <div className={styles.contactCompany}>{shipment.sender.company}</div>
-              )}
-            </div>
-            <div className={styles.contactAddress}>
-              <div>{shipment.sender_address.street}</div>
-              <div>
-                {shipment.sender_address.city}
-                {shipment.sender_address.postal_code && `, ${shipment.sender_address.postal_code}`}
-              </div>
-              <div>{shipment.sender_address.country}</div>
-            </div>
-            {shipment.sender.phone && (
-              <div className={styles.contactPhone}>{shipment.sender.phone}</div>
-            )}
-            {shipment.sender.email && (
-              <div className={styles.contactEmail}>{shipment.sender.email}</div>
-            )}
-          </div>
-        </div>
+      <div className="grid md:grid-cols-2 gap-4">
+        <Card><CardHeader><CardTitle className="flex items-center gap-2"><MapPin className="h-4 w-4 text-green-600" />Отправитель</CardTitle></CardHeader><CardContent className="space-y-2">
+          <p className="font-medium">{shipment.sender.name}</p>
+          {shipment.sender.company && <p className="text-sm text-muted-foreground">{shipment.sender.company}</p>}
+          <div className="text-sm"><p>{shipment.sender_address.street}</p><p>{shipment.sender_address.city}{shipment.sender_address.postal_code && `, ${shipment.sender_address.postal_code}`}</p><p>{shipment.sender_address.country}</p></div>
+          {shipment.sender.phone && <p className="text-sm">{shipment.sender.phone}</p>}
+          {shipment.sender.email && <p className="text-sm text-muted-foreground">{shipment.sender.email}</p>}
+        </CardContent></Card>
 
-        {/* Получатель */}
-        <div className={styles.card}>
-          <h2 className={styles.cardTitle}>
-            <span className={`material-icons ${styles.iconRed}`}>location_on</span>
-            Получатель
-          </h2>
-          <div className={styles.contactInfo}>
-            <div>
-              <div className={styles.contactName}>{shipment.recipient.name}</div>
-              {shipment.recipient.company && (
-                <div className={styles.contactCompany}>{shipment.recipient.company}</div>
-              )}
-            </div>
-            <div className={styles.contactAddress}>
-              <div>{shipment.recipient_address.street}</div>
-              <div>
-                {shipment.recipient_address.city}
-                {shipment.recipient_address.postal_code && `, ${shipment.recipient_address.postal_code}`}
-              </div>
-              <div>{shipment.recipient_address.country}</div>
-            </div>
-            {shipment.recipient.phone && (
-              <div className={styles.contactPhone}>{shipment.recipient.phone}</div>
-            )}
-            {shipment.recipient.email && (
-              <div className={styles.contactEmail}>{shipment.recipient.email}</div>
-            )}
-          </div>
-        </div>
+        <Card><CardHeader><CardTitle className="flex items-center gap-2"><MapPin className="h-4 w-4 text-red-600" />Получатель</CardTitle></CardHeader><CardContent className="space-y-2">
+          <p className="font-medium">{shipment.recipient.name}</p>
+          {shipment.recipient.company && <p className="text-sm text-muted-foreground">{shipment.recipient.company}</p>}
+          <div className="text-sm"><p>{shipment.recipient_address.street}</p><p>{shipment.recipient_address.city}{shipment.recipient_address.postal_code && `, ${shipment.recipient_address.postal_code}`}</p><p>{shipment.recipient_address.country}</p></div>
+          {shipment.recipient.phone && <p className="text-sm">{shipment.recipient.phone}</p>}
+          {shipment.recipient.email && <p className="text-sm text-muted-foreground">{shipment.recipient.email}</p>}
+        </CardContent></Card>
       </div>
 
-      {/* Информация о грузе */}
-      <div className={styles.card} style={{ marginBottom: '24px' }}>
-        <h2 className={styles.cardTitle}>📋 Информация о грузе</h2>
-        <div className={styles.infoGrid}>
-          <div className={styles.infoItem}>
-            <div className={styles.infoLabel}>Описание</div>
-            <div className={styles.infoValue}>{shipment.description}</div>
-          </div>
-          {shipment.weight_kg && (
-            <div className={styles.infoItem}>
-              <div className={styles.infoLabel}>Вес</div>
-              <div className={styles.infoValue}>{shipment.weight_kg} кг</div>
-            </div>
-          )}
-          {shipment.dimensions && (
-            <div className={styles.infoItem}>
-              <div className={styles.infoLabel}>Габариты (Д×Ш×В)</div>
-              <div className={styles.infoValue}>
-                {shipment.dimensions.length_cm} × {shipment.dimensions.width_cm} × {shipment.dimensions.height_cm} см
-              </div>
-            </div>
-          )}
-          {shipment.value_amount && (
-            <div className={styles.infoItem}>
-              <div className={styles.infoLabel}>Объявленная стоимость</div>
-              <div className={styles.infoValue}>{formatMoney(shipment.value_amount, shipment.currency)}</div>
-            </div>
-          )}
-        </div>
+      <Card><CardHeader><CardTitle>📋 Информация о грузе</CardTitle></CardHeader><CardContent><div className="grid md:grid-cols-2 gap-4">
+        <div><p className="text-sm text-muted-foreground">Описание</p><p className="font-medium">{shipment.description}</p></div>
+        {shipment.weight_kg && <div><p className="text-sm text-muted-foreground">Вес</p><p className="font-medium">{shipment.weight_kg} кг</p></div>}
+        {shipment.dimensions && <div><p className="text-sm text-muted-foreground">Габариты</p><p className="font-medium">{shipment.dimensions.length_cm} × {shipment.dimensions.width_cm} × {shipment.dimensions.height_cm} см</p></div>}
+        {shipment.value_amount && <div><p className="text-sm text-muted-foreground">Объявленная стоимость</p><p className="font-medium">{formatMoney(shipment.value_amount, shipment.currency)}</p></div>}
+      </div></CardContent></Card>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <Card><CardHeader><CardTitle>📅 Даты</CardTitle></CardHeader><CardContent className="space-y-3">
+          {shipment.pickup_date && <div><p className="text-sm text-muted-foreground">Дата забора</p><p className="font-medium">{new Date(shipment.pickup_date).toLocaleDateString('ru-RU')}</p></div>}
+          {shipment.estimated_delivery && <div><p className="text-sm text-muted-foreground">Ожидаемая доставка</p><p className="font-medium">{new Date(shipment.estimated_delivery).toLocaleDateString('ru-RU')}</p></div>}
+          {shipment.delivery_date && <div><p className="text-sm text-muted-foreground">Фактическая доставка</p><p className="font-medium">{new Date(shipment.delivery_date).toLocaleDateString('ru-RU')}</p></div>}
+          <div><p className="text-sm text-muted-foreground">Создано</p><p className="font-medium">{new Date(shipment.created_at).toLocaleDateString('ru-RU')}</p></div>
+        </CardContent></Card>
+
+        {(shipment.notes || shipment.special_instructions) && <Card><CardHeader><CardTitle>📝 Дополнительно</CardTitle></CardHeader><CardContent className="space-y-3">
+          {shipment.notes && <div><p className="text-sm text-muted-foreground">Примечания</p><p>{shipment.notes}</p></div>}
+          {shipment.special_instructions && <div><p className="text-sm text-muted-foreground">Особые указания</p><p>{shipment.special_instructions}</p></div>}
+        </CardContent></Card>}
       </div>
 
-      {/* Даты и дополнительная информация */}
-      <div className={styles.grid}>
-        <div className={styles.card}>
-          <h2 className={styles.cardTitle}>📅 Даты</h2>
-          <div className={styles.datesList}>
-            {shipment.pickup_date && (
-              <div className={styles.dateItem}>
-                <div className={styles.dateLabel}>Дата забора</div>
-                <div className={styles.dateValue}>
-                  {new Date(shipment.pickup_date).toLocaleDateString('ru-RU')}
-                </div>
-              </div>
-            )}
-            {shipment.estimated_delivery && (
-              <div className={styles.dateItem}>
-                <div className={styles.dateLabel}>Ожидаемая доставка</div>
-                <div className={styles.dateValue}>
-                  {new Date(shipment.estimated_delivery).toLocaleDateString('ru-RU')}
-                </div>
-              </div>
-            )}
-            {shipment.delivery_date && (
-              <div className={styles.dateItem}>
-                <div className={styles.dateLabel}>Фактическая доставка</div>
-                <div className={styles.dateValue}>
-                  {new Date(shipment.delivery_date).toLocaleDateString('ru-RU')}
-                </div>
-              </div>
-            )}
-            <div className={styles.dateItem}>
-              <div className={styles.dateLabel}>Создано</div>
-              <div className={styles.dateValue}>
-                {new Date(shipment.created_at).toLocaleDateString('ru-RU')}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {(shipment.notes || shipment.special_instructions) && (
-          <div className={styles.card}>
-            <h2 className={styles.cardTitle}>📝 Дополнительно</h2>
-            <div className={styles.datesList}>
-              {shipment.notes && (
-                <div className={styles.infoItem}>
-                  <div className={styles.infoLabel}>Примечания</div>
-                  <div className={styles.infoValue}>{shipment.notes}</div>
-                </div>
-              )}
-              {shipment.special_instructions && (
-                <div className={styles.infoItem}>
-                  <div className={styles.infoLabel}>Особые указания</div>
-                  <div className={styles.infoValue}>{shipment.special_instructions}</div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Кнопки действий */}
-      <div className={styles.actions}>
-        <button className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}>
-          <span className="material-icons">edit</span>
-          Редактировать
-        </button>
-        <button className={styles.actionBtn}>
-          <span className="material-icons">print</span>
-          Печать накладной
-        </button>
-        <button className={`${styles.actionBtn} ${styles.actionBtnDanger}`}>
-          <span className="material-icons">delete</span>
-          Удалить
-        </button>
+      <div className="flex gap-2">
+        <Button><Edit className="h-4 w-4 mr-1" />Редактировать</Button>
+        <Button variant="outline"><Printer className="h-4 w-4 mr-1" />Печать</Button>
+        <Button variant="destructive"><Trash2 className="h-4 w-4 mr-1" />Удалить</Button>
       </div>
     </div>
   );

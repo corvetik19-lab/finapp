@@ -2,9 +2,17 @@
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import styles from "@/app/(protected)/finance/plans/page.module.css";
 import { formatMoney } from "@/lib/utils/format";
 import type { PlanWithActivity } from "@/lib/plans/service";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Plus, Pencil, Trash2, Target, TrendingUp, Calendar, Loader2, ArrowDownCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/components/toast/ToastContext";
 
 export type PlansPageClientProps = {
   plans: PlanWithActivity[];
@@ -81,19 +89,9 @@ const createInitialForm = (defaultType: string): CreatePlanForm => ({
 const formatAmount = (amountMajor: number, currency: string) =>
   formatMoney(Math.round(amountMajor * 100), currency);
 
-const statusBadgeClass = (
-  status: PlanWithActivity["status"],
-  base: string,
-  ahead: string,
-  behind: string,
-) => {
-  if (status === "ahead") return `${base} ${ahead}`;
-  if (status === "behind") return `${base} ${behind}`;
-  return base;
-};
-
 export default function PlansPageClient({ plans }: PlansPageClientProps) {
   const router = useRouter();
+  const toast = useToast();
   const defaultCurrency = plans[0]?.currency ?? "RUB";
   const [selectedPlanId, setSelectedPlanId] = useState<string>(plans[0]?.id ?? "");
   const [planTypes, setPlanTypes] = useState<PlanType[]>([]);
@@ -431,10 +429,11 @@ export default function PlansPageClient({ plans }: PlansPageClientProps) {
       }
 
       closeCreateModal();
+      toast.show(isEdit ? "План обновлён" : "План создан", { type: "success" });
       router.refresh();
     } catch (error) {
       console.error("Failed to save plan:", error);
-      alert("Ошибка при сохранении плана");
+      toast.show("Ошибка при сохранении плана", { type: "error" });
       setIsSaving(false);
     }
   };
@@ -464,10 +463,11 @@ export default function PlansPageClient({ plans }: PlansPageClientProps) {
         }
       }
 
+      toast.show("План удалён", { type: "success" });
       router.refresh();
     } catch (error) {
       console.error("Failed to delete plan:", error);
-      alert("Ошибка при удалении плана: проблема с сетью");
+      toast.show("Ошибка при удалении плана", { type: "error" });
     }
   };
 
@@ -529,412 +529,309 @@ export default function PlansPageClient({ plans }: PlansPageClientProps) {
       }
 
       closeTopupModal();
+      toast.show("Взнос добавлен", { type: "success" });
       router.refresh();
     } catch (error) {
       console.error("Failed to add topup:", error);
-      alert("Ошибка при добавлении взноса");
+      toast.show("Ошибка при добавлении взноса", { type: "error" });
       setIsSaving(false);
     }
   };
 
-  const renderCreateModal = () => {
-    if (!isCreateModalOpen) return null;
-
-    return (
-      <div className={styles.modalOverlay} role="dialog" aria-modal>
-        <div className={styles.modal}>
-          <div className={styles.modalHeader}>
-            <div className={styles.modalTitle}>{editMode ? "Редактировать план" : "Создать план"}</div>
-            <button type="button" className={styles.modalClose} onClick={closeCreateModal} aria-label="Закрыть">
-              <span className="material-icons" aria-hidden>
-                close
-              </span>
-            </button>
+  const renderCreateModal = () => (
+    <Dialog open={isCreateModalOpen} onOpenChange={(open) => !open && closeCreateModal()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{editMode ? "Редактировать план" : "Создать план"}</DialogTitle>
+          <DialogDescription>Укажите параметры финансового плана</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="plan-name">Название плана</Label>
+            <Input
+              id="plan-name"
+              placeholder="Например, Накопления на отпуск"
+              value={formData.name}
+              onChange={handleFormChange("name")}
+              required
+            />
           </div>
 
-          <form className={styles.modalContent} onSubmit={handleSubmit}>
-            <div className={styles.modalForm}>
-              <div className={styles.formGroupFull}>
-                <label className={styles.formLabel} htmlFor="plan-name">
-                  Название плана
-                </label>
-                <input
-                  id="plan-name"
-                  className={styles.formInput}
-                  placeholder="Например, Накопления на отпуск"
-                  value={formData.name}
-                  onChange={handleFormChange("name")}
-                  required
-                />
-              </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="plan-preset">Пресет</Label>
+              <select
+                id="plan-preset"
+                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={formData.preset}
+                onChange={handlePresetChange}
+              >
+                <option value="">— Свой —</option>
+                {planPresets.map((preset) => (
+                  <option key={preset.id} value={preset.id}>{preset.name}</option>
+                ))}
+              </select>
+            </div>
 
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel} htmlFor="plan-preset">
-                  Пресет
-                </label>
+            <div className="space-y-2">
+              <Label htmlFor="plan-type">Тип плана</Label>
+              <div className="flex gap-2">
                 <select
-                  id="plan-preset"
-                  className={styles.formSelect}
-                  value={formData.preset}
-                  onChange={handlePresetChange}
+                  id="plan-type"
+                  className="flex-1 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={formData.type}
+                  onChange={handleFormChange("type")}
                 >
-                  <option value="">— Свой —</option>
-                  {planPresets.map((preset) => (
-                    <option key={preset.id} value={preset.id}>
-                      {preset.name}
-                    </option>
+                  {planTypes.map((type) => (
+                    <option key={type.id} value={type.id}>{type.name}</option>
+                  ))}
+                </select>
+                <Button type="button" variant="destructive" size="sm" onClick={handleDeletePlanType} disabled={planTypes.length <= 1}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Добавить новый тип"
+                  value={newPlanTypeName}
+                  onChange={(event) => setNewPlanTypeName(event.target.value)}
+                />
+                <Button type="button" variant="outline" size="sm" onClick={handleAddPlanType}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="plan-goal">Цель (₽)</Label>
+              <Input
+                id="plan-goal"
+                placeholder="Например, 100 000"
+                value={formData.goal}
+                onChange={handleFormChange("goal")}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="plan-end">Дата окончания</Label>
+              <Input
+                id="plan-end"
+                type="date"
+                value={formData.endDate}
+                onChange={handleFormChange("endDate")}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="plan-monthly">Ежемесячный взнос (₽)</Label>
+              <Input
+                id="plan-monthly"
+                placeholder="Например, 12 500"
+                value={formData.monthly}
+                onChange={handleFormChange("monthly")}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="plan-priority">Приоритет</Label>
+              <select
+                id="plan-priority"
+                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={formData.priority}
+                onChange={handleFormChange("priority")}
+              >
+                {PRIORITY_OPTIONS.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="plan-tags">Теги (через запятую)</Label>
+            <Input id="plan-tags" placeholder="семья, личное, бизнес" value={formData.tags} onChange={handleFormChange("tags")} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="plan-note">Примечание</Label>
+            <textarea
+              id="plan-note"
+              className="w-full min-h-[60px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+              placeholder="(необязательно)"
+              value={formData.note}
+              onChange={handleFormChange("note")}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="plan-links">Ссылки (URL, через запятую)</Label>
+            <Input id="plan-links" placeholder="https://..." value={formData.links} onChange={handleFormChange("links")} />
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={closeCreateModal}>Отмена</Button>
+            <Button type="submit" disabled={isSaving}>
+              {isSaving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Сохранение...</> : editMode ? "Сохранить" : "Создать"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+
+  const renderTopupModal = () => (
+    <Dialog open={isTopupModalOpen} onOpenChange={(open) => !open && closeTopupModal()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Добавить взнос</DialogTitle>
+          <DialogDescription>Внесите средства в план накопления</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleTopupSubmit} className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="topup-amount">Сумма (₽) *</Label>
+              <Input
+                id="topup-amount"
+                type="number"
+                step="0.01"
+                placeholder="10 000"
+                value={topupForm.amount}
+                onChange={(e) => setTopupForm((prev) => ({ ...prev, amount: e.target.value }))}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="topup-type">Тип операции</Label>
+              <select
+                id="topup-type"
+                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={topupForm.type}
+                onChange={(e) => setTopupForm((prev) => ({ ...prev, type: e.target.value as "topup" | "withdrawal" }))}
+              >
+                <option value="topup">Пополнение (+)</option>
+                <option value="withdrawal">Снятие (−)</option>
+              </select>
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="topup-date">Дата</Label>
+              <Input
+                id="topup-date"
+                type="date"
+                value={topupForm.date}
+                onChange={(e) => setTopupForm((prev) => ({ ...prev, date: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="topup-description">Описание</Label>
+            <Input
+              id="topup-description"
+              placeholder="Ежемесячный взнос"
+              value={topupForm.description}
+              onChange={(e) => setTopupForm((prev) => ({ ...prev, description: e.target.value }))}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="create-tx"
+                checked={topupForm.create_transaction}
+                onCheckedChange={(checked) => setTopupForm((prev) => ({ ...prev, create_transaction: !!checked }))}
+              />
+              <Label htmlFor="create-tx" className="cursor-pointer">Создать связанную транзакцию</Label>
+            </div>
+            <p className="text-xs text-muted-foreground">При включении будет создана транзакция на указанном счёте</p>
+          </div>
+
+          {topupForm.create_transaction && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="topup-account">Счёт *</Label>
+                <select
+                  id="topup-account"
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={topupForm.account_id}
+                  onChange={(e) => setTopupForm((prev) => ({ ...prev, account_id: e.target.value }))}
+                  required
+                >
+                  {accounts.length === 0 && <option value="">Нет счетов</option>}
+                  {accounts.map((account) => (
+                    <option key={account.id} value={account.id}>{account.name}</option>
                   ))}
                 </select>
               </div>
 
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel} htmlFor="plan-type">
-                  Тип плана
-                </label>
-                <div className={styles.inlineActions}>
-                  <select
-                    id="plan-type"
-                    className={styles.formSelect}
-                    value={formData.type}
-                    onChange={handleFormChange("type")}
-                  >
-                    {planTypes.map((type) => (
-                      <option key={type.id} value={type.id}>
-                        {type.name}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    className={styles.btnDanger}
-                    onClick={handleDeletePlanType}
-                    disabled={planTypes.length <= 1}
-                  >
-                    Удалить тип
-                  </button>
-                </div>
-                <div className={styles.inlineActions}>
-                  <input
-                    className={styles.formInput}
-                    placeholder="Добавить новый тип"
-                    value={newPlanTypeName}
-                    onChange={(event) => setNewPlanTypeName(event.target.value)}
-                  />
-                  <button type="button" className={styles.btnSecondary} onClick={handleAddPlanType}>
-                    Добавить
-                  </button>
-                </div>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel} htmlFor="plan-goal">
-                  Цель (₽)
-                </label>
-                <input
-                  id="plan-goal"
-                  className={styles.formInput}
-                  placeholder="Например, 100 000"
-                  value={formData.goal}
-                  onChange={handleFormChange("goal")}
-                  required
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel} htmlFor="plan-end">
-                  Планируемая дата окончания
-                </label>
-                <input
-                  id="plan-end"
-                  className={styles.formInput}
-                  type="date"
-                  value={formData.endDate}
-                  onChange={handleFormChange("endDate")}
-                  required
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel} htmlFor="plan-monthly">
-                  Ежемесячный взнос (₽)
-                </label>
-                <input
-                  id="plan-monthly"
-                  className={styles.formInput}
-                  placeholder="Например, 12 500"
-                  value={formData.monthly}
-                  onChange={handleFormChange("monthly")}
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel} htmlFor="plan-priority">
-                  Приоритет
-                </label>
+              <div className="space-y-2">
+                <Label htmlFor="topup-category">Категория</Label>
                 <select
-                  id="plan-priority"
-                  className={styles.formSelect}
-                  value={formData.priority}
-                  onChange={handleFormChange("priority")}
+                  id="topup-category"
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={topupForm.category_id}
+                  onChange={(e) => setTopupForm((prev) => ({ ...prev, category_id: e.target.value }))}
                 >
-                  {PRIORITY_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
+                  <option value="">Без категории</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>{category.name}</option>
                   ))}
                 </select>
               </div>
-
-              <div className={styles.formGroupFull}>
-                <label className={styles.formLabel} htmlFor="plan-tags">
-                  Теги (через запятую)
-                </label>
-                <input
-                  id="plan-tags"
-                  className={styles.formInput}
-                  placeholder="семья, личное, бизнес"
-                  value={formData.tags}
-                  onChange={handleFormChange("tags")}
-                />
-              </div>
-
-              <div className={styles.formGroupFull}>
-                <label className={styles.formLabel} htmlFor="plan-note">
-                  Примечание
-                </label>
-                <textarea
-                  id="plan-note"
-                  className={styles.formTextarea}
-                  placeholder="(необязательно)"
-                  value={formData.note}
-                  onChange={handleFormChange("note")}
-                />
-              </div>
-
-              <div className={styles.formGroupFull}>
-                <label className={styles.formLabel} htmlFor="plan-links">
-                  Ссылки/файлы (URL, через запятую)
-                </label>
-                <input
-                  id="plan-links"
-                  className={styles.formInput}
-                  placeholder="https://... , https://..."
-                  value={formData.links}
-                  onChange={handleFormChange("links")}
-                />
-              </div>
             </div>
+          )}
 
-            <div className={styles.modalFooter}>
-              <button type="button" className={styles.btnSecondary} onClick={closeCreateModal}>
-                Отмена
-              </button>
-              <button type="submit" className={styles.btnPrimary} disabled={isSaving}>
-                {isSaving ? "Сохранение..." : editMode ? "Сохранить" : "Создать"}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
-  };
-
-  const renderTopupModal = () => {
-    if (!isTopupModalOpen) return null;
-
-    return (
-      <div className={styles.modalOverlay} role="dialog" aria-modal>
-        <div className={styles.modal}>
-          <div className={styles.modalHeader}>
-            <div className={styles.modalTitle}>Добавить взнос</div>
-            <button type="button" className={styles.modalClose} onClick={closeTopupModal} aria-label="Закрыть">
-              <span className="material-icons" aria-hidden>
-                close
-              </span>
-            </button>
-          </div>
-
-          <form className={styles.modalContent} onSubmit={handleTopupSubmit}>
-            <div className={styles.modalForm}>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel} htmlFor="topup-amount">
-                  Сумма (₽) <span style={{ color: "#f44336" }}>*</span>
-                </label>
-                <input
-                  id="topup-amount"
-                  className={styles.formInput}
-                  type="number"
-                  step="0.01"
-                  placeholder="Например, 10 000"
-                  value={topupForm.amount}
-                  onChange={(e) => setTopupForm((prev) => ({ ...prev, amount: e.target.value }))}
-                  required
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel} htmlFor="topup-type">
-                  Тип операции
-                </label>
-                <select
-                  id="topup-type"
-                  className={styles.formSelect}
-                  value={topupForm.type}
-                  onChange={(e) =>
-                    setTopupForm((prev) => ({ ...prev, type: e.target.value as "topup" | "withdrawal" }))
-                  }
-                >
-                  <option value="topup">Пополнение (+)</option>
-                  <option value="withdrawal">Снятие (−)</option>
-                </select>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel} htmlFor="topup-date">
-                  Дата
-                </label>
-                <input
-                  id="topup-date"
-                  className={styles.formInput}
-                  type="date"
-                  value={topupForm.date}
-                  onChange={(e) => setTopupForm((prev) => ({ ...prev, date: e.target.value }))}
-                />
-              </div>
-
-              <div className={styles.formGroupFull}>
-                <label className={styles.formLabel} htmlFor="topup-description">
-                  Описание
-                </label>
-                <input
-                  id="topup-description"
-                  className={styles.formInput}
-                  placeholder="Например, Ежемесячный взнос"
-                  value={topupForm.description}
-                  onChange={(e) => setTopupForm((prev) => ({ ...prev, description: e.target.value }))}
-                />
-              </div>
-
-              <div className={styles.formGroupFull}>
-                <label className={styles.formCheckbox}>
-                  <input
-                    type="checkbox"
-                    checked={topupForm.create_transaction}
-                    onChange={(e) => setTopupForm((prev) => ({ ...prev, create_transaction: e.target.checked }))}
-                  />
-                  <span>Создать связанную транзакцию</span>
-                </label>
-                <div className={styles.formHint}>
-                  При включении будет автоматически создана транзакция на указанном счёте
-                </div>
-              </div>
-
-              {topupForm.create_transaction && (
-                <>
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel} htmlFor="topup-account">
-                      Счёт <span style={{ color: "#f44336" }}>*</span>
-                    </label>
-                    <select
-                      id="topup-account"
-                      className={styles.formSelect}
-                      value={topupForm.account_id}
-                      onChange={(e) => setTopupForm((prev) => ({ ...prev, account_id: e.target.value }))}
-                      required={topupForm.create_transaction}
-                    >
-                      {accounts.length === 0 && <option value="">Нет счетов</option>}
-                      {accounts.map((account) => (
-                        <option key={account.id} value={account.id}>
-                          {account.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel} htmlFor="topup-category">
-                      Категория
-                    </label>
-                    <select
-                      id="topup-category"
-                      className={styles.formSelect}
-                      value={topupForm.category_id}
-                      onChange={(e) => setTopupForm((prev) => ({ ...prev, category_id: e.target.value }))}
-                    >
-                      <option value="">Без категории</option>
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className={styles.modalFooter}>
-              <button type="button" className={styles.btnSecondary} onClick={closeTopupModal}>
-                Отмена
-              </button>
-              <button type="submit" className={styles.btnPrimary} disabled={isSaving}>
-                {isSaving ? "Сохранение..." : "Добавить"}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
-  };
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={closeTopupModal}>Отмена</Button>
+            <Button type="submit" disabled={isSaving}>
+              {isSaving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Сохранение...</> : "Добавить"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
 
   if (plans.length === 0) {
     return (
-      <div className={styles.container}>
-        <header className={styles.headerCard}>
-          <div className={styles.titleGroup}>
-            <h1 className={styles.title}>Финансовые планы</h1>
-            <p className={styles.subtitle}>Создавайте цели и следите за прогрессом накоплений</p>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Финансовые планы</h1>
+            <p className="text-sm text-muted-foreground">Создавайте цели и следите за прогрессом накоплений</p>
           </div>
-          <div className={styles.actions}>
-            <button type="button" className={styles.addButton} onClick={openCreateModal}>
-              <span className="material-icons" aria-hidden>
-                add
-              </span>
-              Новый план
-            </button>
-          </div>
-        </header>
-
-        <section className={styles.statsGrid}>
-          {stats.summaryCards.map((card) => (
-            <article key={card.id} className={styles.statCard}>
-              <div className={styles.statHeader}>
-                <span className={styles.statIcon}>
-                  <span className="material-icons" aria-hidden>
-                    {card.icon}
-                  </span>
-                </span>
-                <div className={styles.statTitle}>{card.title}</div>
-              </div>
-              <div className={styles.statValue}>{card.value}</div>
-              <div
-                className={`${styles.statChange} ${
-                  card.changeTone === "positive" ? styles.statChangePositive : styles.statChangeNeutral
-                }`}
-              >
-                <span className="material-icons" aria-hidden>
-                  {card.changeIcon}
-                </span>
-                <span>{card.changeLabel}</span>
-              </div>
-              <div className={styles.statMeta}>Добавьте цели, чтобы видеть детальную аналитику</div>
-            </article>
-          ))}
-        </section>
-
-        <div className={styles.detailCard}>
-          У вас пока нет активных планов. Нажмите «Новый план», чтобы создать первую цель и настроить напоминания.
+          <Button onClick={openCreateModal}>
+            <Plus className="h-4 w-4 mr-2" /> Новый план
+          </Button>
         </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {stats.summaryCards.map((card) => (
+            <Card key={card.id}>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                    <Target className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">{card.title}</p>
+                    <p className="text-lg font-bold">{card.value}</p>
+                    <p className="text-xs text-muted-foreground">{card.changeLabel}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <Card>
+          <CardContent className="pt-6 text-center text-muted-foreground">
+            У вас пока нет активных планов. Нажмите «Новый план», чтобы создать первую цель.
+          </CardContent>
+        </Card>
 
         {renderCreateModal()}
       </div>
@@ -949,273 +846,171 @@ export default function PlansPageClient({ plans }: PlansPageClientProps) {
   const amountLeft = Math.max(0, activePlan.goalAmount - activePlan.currentAmount);
 
   return (
-    <div className={styles.container}>
-      <header className={styles.headerCard}>
-        <div className={styles.titleGroup}>
-          <h1 className={styles.title}>Финансовые планы</h1>
-          <p className={styles.subtitle}>Следите за ходом накоплений и сроками достижения целей</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Финансовые планы</h1>
+          <p className="text-sm text-muted-foreground">Следите за ходом накоплений и сроками достижения целей</p>
         </div>
-        <div className={styles.actions}>
-          <button type="button" className={styles.addButton} onClick={openCreateModal}>
-            <span className="material-icons" aria-hidden>
-              add
-            </span>
-            Новый план
-          </button>
-          <button type="button" className={styles.secondaryButton}>
-            <span className="material-icons" aria-hidden>
-              upload
-            </span>
-            Импорт целей
-          </button>
+        <div className="flex gap-2">
+          <Button onClick={openCreateModal}>
+            <Plus className="h-4 w-4 mr-2" /> Новый план
+          </Button>
         </div>
-      </header>
+      </div>
 
-      <section className={styles.statsGrid}>
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
         {stats.summaryCards.map((card) => (
-          <article key={card.id} className={styles.statCard}>
-            <div className={styles.statHeader}>
-              <span className={styles.statIcon}>
-                <span className="material-icons" aria-hidden>
-                  {card.icon}
-                </span>
-              </span>
-              <div className={styles.statTitle}>{card.title}</div>
-            </div>
-            <div className={styles.statValue}>{card.value}</div>
-            <div
-              className={`${styles.statChange} ${
-                card.changeTone === "positive" ? styles.statChangePositive : styles.statChangeNeutral
-              }`}
-            >
-              <span className="material-icons" aria-hidden>
-                {card.changeIcon}
-              </span>
-              <span>{card.changeLabel}</span>
-            </div>
-            {card.id === "total" ? (
-              <div className={styles.statMeta}>Распределите накопления по приоритетам</div>
-            ) : card.id === "progress" ? (
-              <div className={styles.statMeta}>Рост за последние 30 дней</div>
-            ) : (
-              <div className={styles.statMeta}>Контролируйте сроки достижения цели</div>
-            )}
-          </article>
+          <Card key={card.id}>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${
+                  card.id === "total" ? "bg-purple-100 text-purple-600" :
+                  card.id === "progress" ? "bg-green-100 text-green-600" : "bg-blue-100 text-blue-600"
+                }`}>
+                  {card.id === "total" ? <Target className="h-5 w-5" /> :
+                   card.id === "progress" ? <TrendingUp className="h-5 w-5" /> : <Calendar className="h-5 w-5" />}
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">{card.title}</p>
+                  <p className="text-lg font-bold">{card.value}</p>
+                  <p className={`text-xs ${card.changeTone === "positive" ? "text-green-600" : "text-muted-foreground"}`}>
+                    {card.changeLabel}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         ))}
-      </section>
+      </div>
 
-      <div className={styles.contentGrid}>
-        <section className={styles.plansColumn}>
-          <div className={styles.sectionTitle}>Мои цели</div>
-          <div className={styles.planList}>
+      {/* Main Content Grid */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Plans List */}
+        <div className="lg:col-span-1 space-y-3">
+          <h3 className="text-lg font-semibold">Мои цели</h3>
+          <div className="space-y-3">
             {plans.map((plan) => {
               const planProgress = Math.min(100, Math.round((plan.currentAmount / plan.goalAmount) * 100));
               const isActive = plan.id === activePlan.id;
-              const badgeClass = statusBadgeClass(
-                plan.status,
-                styles.planBadge,
-                styles.planBadgeAhead,
-                styles.planBadgeBehind,
-              );
 
               return (
-                <article
+                <Card
                   key={plan.id}
-                  className={`${styles.planCard} ${isActive ? styles.planCardActive : ""}`}
+                  className={`cursor-pointer transition-all ${isActive ? "ring-2 ring-primary" : "hover:shadow-md"}`}
                   onClick={() => setSelectedPlanId(plan.id)}
-                  aria-pressed={isActive}
-                  role="button"
                 >
-                  <div className={styles.planHeader}>
-                    <div className={styles.planName}>{plan.name}</div>
-                    <span className={badgeClass}>{statusLabel[plan.status]}</span>
-                  </div>
-
-                  <div className={styles.planDetails}>
-                    <div>
-                      <div className={styles.planDetailLabel}>Цель</div>
-                      <div className={styles.planDetailValue}>
-                        {formatAmount(plan.goalAmount, plan.currency ?? defaultCurrency)}
-                      </div>
+                  <CardContent className="pt-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{plan.name}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        plan.status === "ahead" ? "bg-green-100 text-green-700" :
+                        plan.status === "behind" ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"
+                      }`}>
+                        {statusLabel[plan.status]}
+                      </span>
                     </div>
-                    <div>
-                      <div className={styles.planDetailLabel}>Ежемес. взнос</div>
-                      <div className={styles.planDetailValue}>
-                        {formatAmount(plan.monthlyContribution, plan.currency ?? defaultCurrency)}
-                      </div>
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <div><span className="text-muted-foreground">Цель</span><br /><strong>{formatAmount(plan.goalAmount, plan.currency ?? defaultCurrency)}</strong></div>
+                      <div><span className="text-muted-foreground">Взнос</span><br /><strong>{formatAmount(plan.monthlyContribution, plan.currency ?? defaultCurrency)}</strong></div>
+                      <div><span className="text-muted-foreground">Прогресс</span><br /><strong>{planProgress}%</strong></div>
                     </div>
-                    <div>
-                      <div className={styles.planDetailLabel}>Прогресс</div>
-                      <div className={styles.planDetailValue}>{planProgress}%</div>
-                    </div>
-                  </div>
-
-                  <div className={styles.planMeta}>
-                    {plan.targetDate ? (
-                      <span>
-                        <span className="material-icons" aria-hidden>
-                          event
+                    <Progress value={planProgress} className="h-1.5" />
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      {plan.targetDate && (
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {MONTH_FORMATTER.format(new Date(plan.targetDate))}
                         </span>
-                        {MONTH_FORMATTER.format(new Date(plan.targetDate))}
-                      </span>
-                    ) : (
-                      <span className={styles.badgeMuted}>Без дедлайна</span>
-                    )}
-                    {plan.account && plan.account !== "—" && (
-                      <span>
-                        <span className="material-icons" aria-hidden>
-                          account_balance_wallet
-                        </span>
-                        {plan.account}
-                      </span>
-                    )}
-                    <span>
-                      <span className="material-icons" aria-hidden>
-                        category
-                      </span>
-                      {plan.category}
-                    </span>
-                  </div>
-
-                  <div className={styles.planAmount}>
-                    <strong>{formatAmount(plan.currentAmount, plan.currency ?? defaultCurrency)}</strong>
-                    <span className={styles.planProgressLabel}>
-                      из {formatAmount(plan.goalAmount, plan.currency ?? defaultCurrency)}
-                    </span>
-                    <div className={styles.planProgress}>
-                      <div className={styles.planProgressBar} style={{ width: `${planProgress}%` }} />
+                      )}
+                      {plan.category && <span>{plan.category}</span>}
                     </div>
-                  </div>
-                </article>
+                  </CardContent>
+                </Card>
               );
             })}
           </div>
-        </section>
+        </div>
 
-        <aside className={styles.detailColumn}>
-          <section className={styles.detailCard}>
-            <div className={styles.detailHeader}>
+        {/* Plan Details */}
+        <div className="lg:col-span-2 space-y-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>{activePlan.name}</CardTitle>
+                  {activePlan.description && <p className="text-sm text-muted-foreground mt-1">{activePlan.description}</p>}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${
+                    activePlan.status === "ahead" ? "bg-green-100 text-green-700" :
+                    activePlan.status === "behind" ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"
+                  }`}>
+                    {activePlan.status === "ahead" ? <TrendingUp className="h-3 w-3" /> :
+                     activePlan.status === "behind" ? <ArrowDownCircle className="h-3 w-3" /> : <Calendar className="h-3 w-3" />}
+                    {statusLabel[activePlan.status]}
+                  </span>
+                  <Button variant="ghost" size="icon" onClick={() => openEditModal(activePlan)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleDeletePlan(activePlan.id)}>
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div>
-                <div className={styles.sectionTitle}>{activePlan.name}</div>
-                <p style={{ fontSize: "14px", color: "var(--text-secondary)" }}>{activePlan.description}</p>
+                <Progress value={progressPercent} className="h-2" />
+                <p className="text-xs text-muted-foreground mt-1">Прогресс {progressPercent}%</p>
               </div>
-              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                <span
-                  className={statusBadgeClass(
-                    activePlan.status,
-                    styles.statusBadge,
-                    styles.statusAhead,
-                    styles.statusBehind,
-                  )}
-                >
-                  <span className="material-icons" aria-hidden>
-                    {activePlan.status === "ahead"
-                      ? "trending_up"
-                      : activePlan.status === "behind"
-                      ? "trending_down"
-                      : "schedule"}
-                  </span>
-                  {statusLabel[activePlan.status]}
-                </span>
-                <button
-                  type="button"
-                  className={styles.secondaryButton}
-                  onClick={() => openEditModal(activePlan)}
-                  title="Редактировать план"
-                >
-                  <span className="material-icons" aria-hidden>
-                    edit
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  className={styles.dangerButton}
-                  onClick={() => handleDeletePlan(activePlan.id)}
-                  title="Удалить план"
-                >
-                  <span className="material-icons" aria-hidden>
-                    delete
-                  </span>
-                </button>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                <div><span className="text-muted-foreground">Цель</span><br /><strong>{formatAmount(activePlan.goalAmount, activePlan.currency ?? defaultCurrency)}</strong></div>
+                <div><span className="text-muted-foreground">Накоплено</span><br /><strong>{formatAmount(activePlan.currentAmount, activePlan.currency ?? defaultCurrency)}</strong></div>
+                <div><span className="text-muted-foreground">Осталось</span><br /><strong>{formatAmount(amountLeft, activePlan.currency ?? defaultCurrency)}</strong></div>
+                <div><span className="text-muted-foreground">Ежемесячный взнос</span><br /><strong>{formatAmount(activePlan.monthlyContribution, activePlan.currency ?? defaultCurrency)}</strong></div>
+                <div><span className="text-muted-foreground">Дата завершения</span><br /><strong>{activePlan.targetDate ? FULL_DATE_FORMATTER.format(new Date(activePlan.targetDate)) : "—"}</strong></div>
+                {activePlan.account && activePlan.account !== "—" && (
+                  <div><span className="text-muted-foreground">Счёт</span><br /><strong>{activePlan.account}</strong></div>
+                )}
               </div>
-            </div>
-            <div className={styles.planProgress}>
-              <div className={styles.planProgressBar} style={{ width: `${progressPercent}%` }} />
-            </div>
-            <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>Прогресс {progressPercent}%</div>
+            </CardContent>
+          </Card>
 
-            <div className={styles.detailStats}>
-              <div className={styles.detailStat}>
-                <span>Цель</span>
-                <strong>{formatAmount(activePlan.goalAmount, activePlan.currency ?? defaultCurrency)}</strong>
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">История взносов</CardTitle>
+                <Button variant="outline" size="sm" onClick={openTopupModal}>
+                  <Plus className="h-4 w-4 mr-1" /> Добавить взнос
+                </Button>
               </div>
-              <div className={styles.detailStat}>
-                <span>Накоплено</span>
-                <strong>{formatAmount(activePlan.currentAmount, activePlan.currency ?? defaultCurrency)}</strong>
-              </div>
-              <div className={styles.detailStat}>
-                <span>Осталось накопить</span>
-                <strong>{formatAmount(amountLeft, activePlan.currency ?? defaultCurrency)}</strong>
-              </div>
-              <div className={styles.detailStat}>
-                <span>Ежемесячный взнос</span>
-                <strong>{formatAmount(activePlan.monthlyContribution, activePlan.currency ?? defaultCurrency)}</strong>
-              </div>
-              <div className={styles.detailStat}>
-                <span>Дата завершения</span>
-                <strong>
-                  {activePlan.targetDate
-                    ? FULL_DATE_FORMATTER.format(new Date(activePlan.targetDate))
-                    : "—"}
-                </strong>
-              </div>
-              {activePlan.account && activePlan.account !== "—" && (
-                <div className={styles.detailStat}>
-                  <span>Счёт</span>
-                  <strong>{activePlan.account}</strong>
-                </div>
-              )}
-            </div>
-          </section>
-
-          <section className={styles.detailCard}>
-            <div className={styles.detailHeader}>
-              <div className={styles.sectionTitle}>История взносов</div>
-              <button type="button" className={styles.secondaryButton} onClick={openTopupModal}>
-                <span className="material-icons" aria-hidden>
-                  add_circle
-                </span>
-                Добавить взнос
-              </button>
-            </div>
-            <div className={styles.activityList}>
+            </CardHeader>
+            <CardContent>
               {activePlan.activity.length === 0 ? (
-                <div style={{ fontSize: "14px", color: "var(--text-secondary)" }}>
+                <p className="text-sm text-muted-foreground text-center py-4">
                   Ещё не было взносов. Добавьте первый, чтобы увидеть динамику.
-                </div>
+                </p>
               ) : (
-                activePlan.activity.map((item) => (
-                  <div key={item.id} className={styles.activityItem}>
-                    <div>
-                      <div style={{ fontWeight: 600 }}>{item.description}</div>
-                      <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
-                        {FULL_DATE_FORMATTER.format(new Date(item.date))}
+                <div className="space-y-2">
+                  {activePlan.activity.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                      <div>
+                        <div className="font-medium text-sm">{item.description}</div>
+                        <div className="text-xs text-muted-foreground">{FULL_DATE_FORMATTER.format(new Date(item.date))}</div>
+                      </div>
+                      <div className={`font-semibold ${item.type === "topup" ? "text-green-600" : "text-red-600"}`}>
+                        {item.type === "topup" ? "+" : "-"}{formatAmount(item.amount, activePlan.currency ?? defaultCurrency)}
                       </div>
                     </div>
-                    <div
-                      className={
-                        item.type === "topup" ? styles.activityAmountPositive : styles.activityAmountNegative
-                      }
-                    >
-                      {item.type === "topup" ? "+" : "-"}
-                      {formatAmount(item.amount, activePlan.currency ?? defaultCurrency)}
-                    </div>
-                  </div>
-                ))
+                  ))}
+                </div>
               )}
-            </div>
-          </section>
-        </aside>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {renderCreateModal()}

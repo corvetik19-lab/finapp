@@ -4,7 +4,12 @@ import { useState, useRef } from 'react';
 import type { Tender, TenderStage, TenderType } from '@/lib/tenders/types';
 import { formatCurrency, daysUntilDeadline } from '@/lib/tenders/types';
 import { TenderViewModal } from './TenderViewModal';
-import styles from './TendersRegistry.module.css';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Eye, Trash2, ChevronUp, ChevronDown, FileText, AlertTriangle, Trophy, ListTodo, X } from 'lucide-react';
 
 interface TendersRegistryProps {
   tenders: Tender[];
@@ -168,432 +173,156 @@ export function TendersRegistry({ tenders, stages, types = [], onDelete }: Tende
   const sortedWonTenders = sortTenders(wonTenders);
   const sortedActiveTenders = sortTenders(activeTenders);
 
+  // Функция рендера строки тендера
+  const renderTenderRow = (tender: Tender, index: number) => {
+    const daysLeft = tender.submission_deadline ? daysUntilDeadline(tender.submission_deadline) : null;
+    const isOverdue = daysLeft !== null && daysLeft < 0;
+    const isUrgent = daysLeft !== null && daysLeft >= 0 && daysLeft <= 3;
+    const isWarning = daysLeft !== null && daysLeft > 3 && daysLeft <= 7;
+
+    return (
+      <TableRow key={tender.id} className={selectedIds.has(tender.id) ? 'bg-blue-50' : ''}>
+        <TableCell className="w-10">
+          <Checkbox checked={selectedIds.has(tender.id)} onCheckedChange={() => toggleSelect(tender.id)} />
+        </TableCell>
+        <TableCell className="w-10">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewTenderId(tender.id)}>
+            <Eye className="h-4 w-4" />
+          </Button>
+        </TableCell>
+        <TableCell className="text-gray-500">{index + 1}</TableCell>
+        <TableCell className="max-w-40 truncate">{tender.customer}</TableCell>
+        <TableCell className="max-w-60 truncate font-medium">{tender.subject}</TableCell>
+        <TableCell className="text-blue-600 font-medium">{formatCurrency(tender.nmck / 100)}</TableCell>
+        <TableCell>
+          {tender.submission_deadline && tender.status !== 'won' ? (
+            <div className="space-y-1">
+              <div className="text-sm">{formatDate(tender.submission_deadline)}</div>
+              {isOverdue ? (
+                <Badge variant="destructive" className="text-xs">Срок прошел</Badge>
+              ) : daysLeft !== null && daysLeft >= 0 && (
+                <Badge variant="outline" className={`text-xs ${isUrgent ? 'bg-red-100 text-red-700' : isWarning ? 'bg-yellow-100 text-yellow-700' : ''}`}>
+                  {daysLeft === 0 ? 'Сегодня' : `${daysLeft}д`}
+                </Badge>
+              )}
+            </div>
+          ) : '-'}
+        </TableCell>
+        <TableCell>{getTypeName(tender)}</TableCell>
+        <TableCell>{getStageName(tender)}</TableCell>
+        <TableCell>{isOverdue ? 'Просрочен' : getStatusLabel(tender.status)}</TableCell>
+        <TableCell>
+          {onDelete && (
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onDelete(tender.id)}>
+              <Trash2 className="h-4 w-4 text-red-500" />
+            </Button>
+          )}
+        </TableCell>
+      </TableRow>
+    );
+  };
+
   if (tenders.length === 0) {
     return (
-      <div className={styles.emptyState}>
-        <div className={styles.emptyIcon}>📋</div>
-        <h3>Нет тендеров</h3>
-        <p>Добавьте первый тендер для начала работы</p>
+      <div className="text-center py-12">
+        <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Нет тендеров</h3>
+        <p className="text-gray-500">Добавьте первый тендер для начала работы</p>
       </div>
     );
   }
 
   return (
-    <div className={styles.registry}>
-      {/* Toolbar */}
+    <div className="space-y-4">
       {selectedIds.size > 0 && (
-        <div className={styles.toolbar}>
-          <span className={styles.toolbarText}>
-            Выбрано: {selectedIds.size} из {tenders.length}
-          </span>
-          <button
-            className={styles.toolbarButton}
-            onClick={() => setSelectedIds(new Set())}
-          >
-            Отменить выбор
-          </button>
-        </div>
+        <Card>
+          <CardContent className="p-3 flex items-center gap-4">
+            <span className="text-sm text-gray-600">Выбрано: {selectedIds.size} из {tenders.length}</span>
+            <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+              <X className="h-4 w-4 mr-1" />
+              Отменить выбор
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Table */}
-      <div 
-        className={styles.tableWrapper}
-        ref={tableWrapperRef}
-        onMouseDown={handleMouseDown}
-        onMouseLeave={handleMouseLeave}
-        onMouseUp={handleMouseUp}
-        onMouseMove={handleMouseMove}
-      >
-        <table className={styles.table}>
-          <thead className={styles.thead}>
-            <tr>
-              <th className={styles.thCheckbox}>
-                <input
-                  type="checkbox"
-                  checked={selectedIds.size === tenders.length && tenders.length > 0}
-                  onChange={toggleSelectAll}
-                  className={styles.checkbox}
-                />
-              </th>
-              <th className={styles.th} style={{ width: '40px' }}></th>
-              <th className={styles.th}>№</th>
-              <th className={styles.th}>Заказчик</th>
-              <th className={styles.th}>Предмет</th>
-              <th 
-                className={`${styles.th} ${styles.thSortable}`}
-                onClick={() => handleSort('nmck')}
-              >
-                <div className={styles.thContent}>
-                  НМЦК
-                  {sortBy === 'nmck' && (
-                    <span className={styles.sortIcon}>
-                      {sortDirection === 'asc' ? '↑' : '↓'}
-                    </span>
-                  )}
-                </div>
-              </th>
-              <th 
-                className={`${styles.th} ${styles.thSortable}`}
-                onClick={() => handleSort('deadline')}
-              >
-                <div className={styles.thContent}>
-                  Дедлайн
-                  {sortBy === 'deadline' && (
-                    <span className={styles.sortIcon}>
-                      {sortDirection === 'asc' ? '↑' : '↓'}
-                    </span>
-                  )}
-                </div>
-              </th>
-              <th className={styles.th}>Тип закупки</th>
-              <th className={styles.th}>Этап</th>
-              <th className={styles.th}>Статус</th>
-              <th className={styles.th}>Действия</th>
-            </tr>
-          </thead>
-          <tbody className={styles.tbody}>
-            {/* Просроченные тендеры */}
-            {sortedOverdueTenders.length > 0 && (
-              <>
-                <tr className={styles.groupHeader}>
-                  <td colSpan={11} className={styles.groupHeaderCell}>
-                    <div className={styles.groupHeaderContent}>
-                      <span className={styles.groupHeaderIcon}>⚠️</span>
-                      <span className={styles.groupHeaderTitle}>Просроченные</span>
-                      <span className={styles.groupHeaderCount}>({sortedOverdueTenders.length})</span>
-                    </div>
-                  </td>
-                </tr>
-                {sortedOverdueTenders.map((tender, index) => {
-              const daysLeft = tender.submission_deadline 
-                ? daysUntilDeadline(tender.submission_deadline)
-                : null;
-              const isOverdue = daysLeft !== null && daysLeft < 0;
-              const isUrgent = daysLeft !== null && daysLeft >= 0 && daysLeft <= 3;
-              const isWarning = daysLeft !== null && daysLeft > 3 && daysLeft <= 7;
-
-              return (
-                <tr
-                  key={tender.id}
-                  className={`${styles.tr} ${selectedIds.has(tender.id) ? styles.trSelected : ''}`}
-                >
-                  <td className={styles.tdCheckbox}>
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(tender.id)}
-                      onChange={() => toggleSelect(tender.id)}
-                      className={styles.checkbox}
-                    />
-                  </td>
-                  <td className={styles.td}>
-                    <button
-                      onClick={() => setViewTenderId(tender.id)}
-                      className={styles.actionButton}
-                      title="Просмотр"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                        <circle cx="12" cy="12" r="3"/>
-                      </svg>
-                    </button>
-                  </td>
-                  <td className={styles.td}>
-                    <span className={styles.index}>{index + 1}</span>
-                  </td>
-                  <td className={styles.td}>
-                    <div className={styles.customer}>{tender.customer}</div>
-                  </td>
-                  <td className={styles.td}>
-                    <div className={styles.subject}>{tender.subject}</div>
-                  </td>
-                  <td className={styles.td}>
-                    <div className={styles.amount}>{formatCurrency(tender.nmck / 100)}</div>
-                  </td>
-                  <td className={styles.td}>
-                    {tender.submission_deadline && tender.status !== 'won' ? (
-                      <div className={styles.deadline}>
-                        <div className={styles.deadlineDate}>
-                          {formatDate(tender.submission_deadline)}
+      <Card>
+        <CardContent className="p-0">
+          <div ref={tableWrapperRef} onMouseDown={handleMouseDown} onMouseLeave={handleMouseLeave} onMouseUp={handleMouseUp} onMouseMove={handleMouseMove} className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox checked={selectedIds.size === tenders.length && tenders.length > 0} onCheckedChange={toggleSelectAll} />
+                  </TableHead>
+                  <TableHead className="w-10"></TableHead>
+                  <TableHead>№</TableHead>
+                  <TableHead>Заказчик</TableHead>
+                  <TableHead>Предмет</TableHead>
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('nmck')}>
+                    <div className="flex items-center gap-1">НМЦК {sortBy === 'nmck' && (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}</div>
+                  </TableHead>
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('deadline')}>
+                    <div className="flex items-center gap-1">Дедлайн {sortBy === 'deadline' && (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}</div>
+                  </TableHead>
+                  <TableHead>Тип закупки</TableHead>
+                  <TableHead>Этап</TableHead>
+                  <TableHead>Статус</TableHead>
+                  <TableHead>Действия</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedOverdueTenders.length > 0 && (
+                  <>
+                    <TableRow className="bg-red-50 hover:bg-red-50">
+                      <TableCell colSpan={11} className="py-2">
+                        <div className="flex items-center gap-2 font-medium text-red-700">
+                          <AlertTriangle className="h-4 w-4" />
+                          <span>Просроченные</span>
+                          <Badge variant="destructive">{sortedOverdueTenders.length}</Badge>
                         </div>
-                        {isOverdue ? (
-                          <div className={`${styles.deadlineDays} ${styles.overdue}`}>
-                            Срок прошел
-                          </div>
-                        ) : daysLeft !== null && daysLeft >= 0 && (
-                          <div className={`${styles.deadlineDays} ${isUrgent ? styles.urgent : isWarning ? styles.warning : ''}`}>
-                            {daysLeft === 0 ? 'Сегодня' : `${daysLeft}д`}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <span className={styles.empty}>-</span>
-                    )}
-                  </td>
-                  <td className={styles.td}>
-                    <div className={styles.type}>{getTypeName(tender)}</div>
-                  </td>
-                  <td className={styles.td}>
-                    <div className={styles.stage}>{getStageName(tender)}</div>
-                  </td>
-                  <td className={styles.td}>
-                    <div className={styles.status}>
-                      {isOverdue ? 'Просрочен' : getStatusLabel(tender.status)}
-                    </div>
-                  </td>
-                  <td className={styles.td}>
-                    <div className={styles.actions}>
-                      {onDelete && (
-                        <button
-                          onClick={() => onDelete(tender.id)}
-                          className={styles.actionButton}
-                          title="Удалить"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                          </svg>
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-              </>
-            )}
-
-            {/* Выигранные тендеры */}
-            {sortedWonTenders.length > 0 && (
-              <>
-                <tr className={styles.groupHeader}>
-                  <td colSpan={11} className={styles.groupHeaderCell}>
-                    <div className={styles.groupHeaderContent}>
-                      <span className={styles.groupHeaderIcon}>🏆</span>
-                      <span className={styles.groupHeaderTitle}>Выигранные</span>
-                      <span className={styles.groupHeaderCount}>({sortedWonTenders.length})</span>
-                    </div>
-                  </td>
-                </tr>
-                {sortedWonTenders.map((tender, index) => {
-              const daysLeft = tender.submission_deadline 
-                ? daysUntilDeadline(tender.submission_deadline)
-                : null;
-              const isOverdue = daysLeft !== null && daysLeft < 0;
-              const isUrgent = daysLeft !== null && daysLeft >= 0 && daysLeft <= 3;
-              const isWarning = daysLeft !== null && daysLeft > 3 && daysLeft <= 7;
-
-              return (
-                <tr
-                  key={tender.id}
-                  className={`${styles.tr} ${selectedIds.has(tender.id) ? styles.trSelected : ''}`}
-                >
-                  <td className={styles.tdCheckbox}>
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(tender.id)}
-                      onChange={() => toggleSelect(tender.id)}
-                      className={styles.checkbox}
-                    />
-                  </td>
-                  <td className={styles.td}>
-                    <button
-                      onClick={() => setViewTenderId(tender.id)}
-                      className={styles.actionButton}
-                      title="Просмотр"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                        <circle cx="12" cy="12" r="3"/>
-                      </svg>
-                    </button>
-                  </td>
-                  <td className={styles.td}>
-                    <span className={styles.index}>{index + 1}</span>
-                  </td>
-                  <td className={styles.td}>
-                    <div className={styles.customer}>{tender.customer}</div>
-                  </td>
-                  <td className={styles.td}>
-                    <div className={styles.subject}>{tender.subject}</div>
-                  </td>
-                  <td className={styles.td}>
-                    <div className={styles.amount}>{formatCurrency(tender.nmck / 100)}</div>
-                  </td>
-                  <td className={styles.td}>
-                    {tender.submission_deadline && tender.status !== 'won' ? (
-                      <div className={styles.deadline}>
-                        <div className={styles.deadlineDate}>
-                          {formatDate(tender.submission_deadline)}
-                        </div>
-                        {isOverdue ? (
-                          <div className={`${styles.deadlineDays} ${styles.overdue}`}>
-                            Срок прошел
-                          </div>
-                        ) : daysLeft !== null && daysLeft >= 0 && (
-                          <div className={`${styles.deadlineDays} ${isUrgent ? styles.urgent : isWarning ? styles.warning : ''}`}>
-                            {daysLeft === 0 ? 'Сегодня' : `${daysLeft}д`}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <span className={styles.empty}>-</span>
-                    )}
-                  </td>
-                  <td className={styles.td}>
-                    <div className={styles.type}>{getTypeName(tender)}</div>
-                  </td>
-                  <td className={styles.td}>
-                    <div className={styles.stage}>{getStageName(tender)}</div>
-                  </td>
-                  <td className={styles.td}>
-                    <div className={styles.status}>
-                      {isOverdue ? 'Просрочен' : getStatusLabel(tender.status)}
-                    </div>
-                  </td>
-                  <td className={styles.td}>
-                    <div className={styles.actions}>
-                      {onDelete && (
-                        <button
-                          onClick={() => onDelete(tender.id)}
-                          className={styles.actionButton}
-                          title="Удалить"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                          </svg>
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-              </>
-            )}
-
-            {/* Активные тендеры */}
-            {sortedActiveTenders.length > 0 && (
-              <>
-                {(sortedOverdueTenders.length > 0 || sortedWonTenders.length > 0) && (
-                  <tr className={styles.groupHeader}>
-                    <td colSpan={11} className={styles.groupHeaderCell}>
-                      <div className={styles.groupHeaderContent}>
-                        <span className={styles.groupHeaderIcon}>📋</span>
-                        <span className={styles.groupHeaderTitle}>Активные</span>
-                        <span className={styles.groupHeaderCount}>({sortedActiveTenders.length})</span>
-                      </div>
-                    </td>
-                  </tr>
+                      </TableCell>
+                    </TableRow>
+                    {sortedOverdueTenders.map(renderTenderRow)}
+                  </>
                 )}
-                {sortedActiveTenders.map((tender, index) => {
-              const daysLeft = tender.submission_deadline 
-                ? daysUntilDeadline(tender.submission_deadline)
-                : null;
-              const isOverdue = daysLeft !== null && daysLeft < 0;
-              const isUrgent = daysLeft !== null && daysLeft >= 0 && daysLeft <= 3;
-              const isWarning = daysLeft !== null && daysLeft > 3 && daysLeft <= 7;
-
-              return (
-                <tr
-                  key={tender.id}
-                  className={`${styles.tr} ${selectedIds.has(tender.id) ? styles.trSelected : ''}`}
-                >
-                  <td className={styles.tdCheckbox}>
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(tender.id)}
-                      onChange={() => toggleSelect(tender.id)}
-                      className={styles.checkbox}
-                    />
-                  </td>
-                  <td className={styles.td}>
-                    <button
-                      onClick={() => setViewTenderId(tender.id)}
-                      className={styles.actionButton}
-                      title="Просмотр"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                        <circle cx="12" cy="12" r="3"/>
-                      </svg>
-                    </button>
-                  </td>
-                  <td className={styles.td}>
-                    <span className={styles.index}>{index + 1}</span>
-                  </td>
-                  <td className={styles.td}>
-                    <div className={styles.customer}>{tender.customer}</div>
-                  </td>
-                  <td className={styles.td}>
-                    <div className={styles.subject}>{tender.subject}</div>
-                  </td>
-                  <td className={styles.td}>
-                    <div className={styles.amount}>{formatCurrency(tender.nmck / 100)}</div>
-                  </td>
-                  <td className={styles.td}>
-                    {tender.submission_deadline && tender.status !== 'won' ? (
-                      <div className={styles.deadline}>
-                        <div className={styles.deadlineDate}>
-                          {formatDate(tender.submission_deadline)}
+                {sortedWonTenders.length > 0 && (
+                  <>
+                    <TableRow className="bg-green-50 hover:bg-green-50">
+                      <TableCell colSpan={11} className="py-2">
+                        <div className="flex items-center gap-2 font-medium text-green-700">
+                          <Trophy className="h-4 w-4" />
+                          <span>Выигранные</span>
+                          <Badge className="bg-green-600">{sortedWonTenders.length}</Badge>
                         </div>
-                        {isOverdue ? (
-                          <div className={`${styles.deadlineDays} ${styles.overdue}`}>
-                            Срок прошел
+                      </TableCell>
+                    </TableRow>
+                    {sortedWonTenders.map(renderTenderRow)}
+                  </>
+                )}
+                {sortedActiveTenders.length > 0 && (
+                  <>
+                    {(sortedOverdueTenders.length > 0 || sortedWonTenders.length > 0) && (
+                      <TableRow className="bg-gray-50 hover:bg-gray-50">
+                        <TableCell colSpan={11} className="py-2">
+                          <div className="flex items-center gap-2 font-medium text-gray-700">
+                            <ListTodo className="h-4 w-4" />
+                            <span>Активные</span>
+                            <Badge variant="secondary">{sortedActiveTenders.length}</Badge>
                           </div>
-                        ) : daysLeft !== null && daysLeft >= 0 && (
-                          <div className={`${styles.deadlineDays} ${isUrgent ? styles.urgent : isWarning ? styles.warning : ''}`}>
-                            {daysLeft === 0 ? 'Сегодня' : `${daysLeft}д`}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <span className={styles.empty}>-</span>
+                        </TableCell>
+                      </TableRow>
                     )}
-                  </td>
-                  <td className={styles.td}>
-                    <div className={styles.type}>{getTypeName(tender)}</div>
-                  </td>
-                  <td className={styles.td}>
-                    <div className={styles.stage}>{getStageName(tender)}</div>
-                  </td>
-                  <td className={styles.td}>
-                    <div className={styles.status}>
-                      {isOverdue ? 'Просрочен' : getStatusLabel(tender.status)}
-                    </div>
-                  </td>
-                  <td className={styles.td}>
-                    <div className={styles.actions}>
-                      {onDelete && (
-                        <button
-                          onClick={() => onDelete(tender.id)}
-                          className={styles.actionButton}
-                          title="Удалить"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                          </svg>
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-              </>
-            )}
-          </tbody>
-        </table>
-      </div>
+                    {sortedActiveTenders.map(renderTenderRow)}
+                  </>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Модалка просмотра тендера */}
-      {viewTenderId && (
-        <TenderViewModal
-          tenderId={viewTenderId}
-          onClose={() => setViewTenderId(null)}
-        />
-      )}
+      {viewTenderId && <TenderViewModal tenderId={viewTenderId} onClose={() => setViewTenderId(null)} />}
     </div>
   );
 }

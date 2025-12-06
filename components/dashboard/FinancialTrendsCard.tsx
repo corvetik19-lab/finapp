@@ -2,8 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import IncomeExpenseChart from "@/components/dashboard/IncomeExpenseChart";
-import styles from "@/components/dashboard/Dashboard.module.css";
 import { loadTrendsAction } from "@/app/(protected)/finance/dashboard/actions";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { X, Loader2 } from "lucide-react";
 
 export type FinancialTrendsCardProps = {
   labels: string[];
@@ -82,19 +87,6 @@ export default function FinancialTrendsCard({
     fetchTrends({ type: "months", months });
   };
 
-  const handlePeriodChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = event.target.value;
-    if (value === "custom") {
-      setMode("custom");
-      setError(null);
-    } else {
-      const preset = PRESET_OPTIONS.find((option) => option.id === value);
-      if (preset && typeof preset.months === "number") {
-        handlePresetChange(preset.months);
-      }
-    }
-  };
-
   const customRangeValid = useMemo(() => {
     const fromDate = new Date(customRange.from);
     const toDate = new Date(customRange.to);
@@ -115,67 +107,75 @@ export default function FinancialTrendsCard({
   }, [mode, customRangeValid, customRange.from, customRange.to, fetchTrends]);
 
   return (
-    <section className={styles.chartCard}>
-      <header className={styles.chartHeader}>
-        <div>
-          <div className={styles.chartTitle}>Финансовые тенденции</div>
-          <div className={styles.chartSubtitle}>Динамика доходов и расходов</div>
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-base">Финансовые тенденции</CardTitle>
+            <p className="text-xs text-muted-foreground">Динамика доходов и расходов</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Select value={selectValue} onValueChange={(value) => {
+              if (value === "custom") {
+                setMode("custom");
+                setError(null);
+              } else {
+                const preset = PRESET_OPTIONS.find((option) => option.id === value);
+                if (preset && typeof preset.months === "number") {
+                  handlePresetChange(preset.months);
+                }
+              }
+            }} disabled={isPending}>
+              <SelectTrigger className="w-[150px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PRESET_OPTIONS.map((option) => (
+                  <SelectItem key={option.id} value={option.id}>{option.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleRemove} disabled={isPending}>
+              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
-        <div className={styles.chartActions}>
-          <label className={styles.chartFilter}>
-            Период
-            <select value={selectValue} onChange={handlePeriodChange} disabled={isPending}>
-              {PRESET_OPTIONS.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            type="button"
-            className={styles.chartIconButton}
-            onClick={handleRemove}
-            aria-label="Скрыть виджет"
-            disabled={isPending}
-          >
-            <span className="material-icons" aria-hidden>
-              {isPending ? "hourglass_top" : "close"}
-            </span>
-          </button>
+      </CardHeader>
+      <CardContent>
+        {mode === "custom" && (
+          <div className="flex gap-4 mb-4">
+            <div className="flex-1">
+              <Label className="text-xs">От</Label>
+              <Input
+                type="date"
+                value={customRange.from}
+                onChange={(event) => setCustomRange((prev) => ({ ...prev, from: event.target.value }))}
+                disabled={isPending}
+                className="h-8"
+              />
+            </div>
+            <div className="flex-1">
+              <Label className="text-xs">До</Label>
+              <Input
+                type="date"
+                value={customRange.to}
+                onChange={(event) => setCustomRange((prev) => ({ ...prev, to: event.target.value }))}
+                disabled={isPending}
+                className="h-8"
+              />
+            </div>
+          </div>
+        )}
+        {error && <div className="text-sm text-red-500 mb-2">{error}</div>}
+        <div className="h-[250px]">
+          <IncomeExpenseChart
+            labels={chartData.labels}
+            income={chartData.income}
+            expense={chartData.expense}
+            currency={currency}
+          />
         </div>
-      </header>
-      {mode === "custom" && (
-        <div className={styles.chartCustomRange}>
-          <label className={styles.chartCustomField}>
-            От
-            <input
-              type="date"
-              value={customRange.from}
-              onChange={(event) => setCustomRange((prev) => ({ ...prev, from: event.target.value }))}
-              disabled={isPending}
-            />
-          </label>
-          <label className={styles.chartCustomField}>
-            До
-            <input
-              type="date"
-              value={customRange.to}
-              onChange={(event) => setCustomRange((prev) => ({ ...prev, to: event.target.value }))}
-              disabled={isPending}
-            />
-          </label>
-        </div>
-      )}
-      {error && <div className={styles.chartError}>{error}</div>}
-      <div className={styles.chartBody}>
-        <IncomeExpenseChart
-          labels={chartData.labels}
-          income={chartData.income}
-          expense={chartData.expense}
-          currency={currency}
-        />
-      </div>
-    </section>
+      </CardContent>
+    </Card>
   );
 }

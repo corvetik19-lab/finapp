@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-
-import styles from "@/components/dashboard/Dashboard.module.css";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
 import { formatMoney } from "@/lib/utils/format";
+import { cn } from "@/lib/utils";
 import type { CategoryTransactionItem } from "@/lib/dashboard/category-management";
 
 export type CategoryTransactionsModalProps = {
@@ -25,94 +26,29 @@ export default function CategoryTransactionsModal({
   loading,
   error,
 }: CategoryTransactionsModalProps) {
-  const dialogRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-
-    const handleEsc = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-
-    document.addEventListener("keydown", handleEsc);
-    return () => document.removeEventListener("keydown", handleEsc);
-  }, [open, onClose]);
-
-  useEffect(() => {
-    if (open && dialogRef.current) {
-      dialogRef.current.focus();
-    }
-  }, [open]);
-
-  if (!open) return null;
-
   return (
-    <div className={styles.modalRoot} role="presentation" onClick={onClose}>
-      <div
-        className={styles.modal}
-        role="dialog"
-        aria-modal
-        aria-labelledby="category-transactions-title"
-        tabIndex={-1}
-        ref={dialogRef}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <header className={styles.modalHeader}>
-          <div>
-            <div id="category-transactions-title" className={styles.modalTitle}>
-              Транзакции категории
-            </div>
-            {categoryName && <div className={styles.modalSubtitle}>{categoryName}</div>}
-          </div>
-          <button type="button" className={styles.modalClose} onClick={onClose} aria-label="Закрыть">
-            <span className="material-icons" aria-hidden>
-              close
-            </span>
-          </button>
-        </header>
-
-        <div className={styles.modalContent}>
-          {loading && <div className={styles.modalStatus}>Загрузка транзакций…</div>}
-          {error && <div className={styles.modalError}>{error}</div>}
-          {!loading && !error && transactions.length === 0 && (
-            <div className={styles.modalStatus}>Нет транзакций за выбранный период.</div>
-          )}
-
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader><DialogTitle>Транзакции категории{categoryName && <Badge variant="secondary" className="ml-2">{categoryName}</Badge>}</DialogTitle></DialogHeader>
+        <div className="max-h-96 overflow-y-auto">
+          {loading && <div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /><span className="ml-2">Загрузка...</span></div>}
+          {error && <div className="text-destructive text-sm p-3 bg-destructive/10 rounded">{error}</div>}
+          {!loading && !error && transactions.length === 0 && <div className="text-center text-muted-foreground py-8">Нет транзакций за выбранный период.</div>}
           {!loading && !error && transactions.length > 0 && (
-            <div className={styles.modalTransactionsScroll}>
-              <ul className={styles.modalTransactionList}>
-                {transactions.map((item) => (
-                  <li key={item.id} className={styles.modalTransactionItem}>
-                    <div className={styles.modalTransactionHeader}>
-                      <span className={styles.modalTransactionDate}>
-                        {new Date(item.occurredAt).toLocaleString("ru-RU")}
-                      </span>
-                      <span
-                        className={`${styles.modalTransactionAmount} ${
-                          item.direction === "income"
-                            ? styles.modalTransactionIncome
-                            : item.direction === "expense"
-                            ? styles.modalTransactionExpense
-                            : ""
-                        }`}
-                      >
-                        {item.direction === "income" ? "+" : item.direction === "expense" ? "-" : ""}
-                        {formatMoney(item.amountMinor, item.currency || currency)}
-                      </span>
-                    </div>
-                    <div className={styles.modalTransactionMeta}>
-                      <span>{item.counterparty || item.note || "Без описания"}</span>
-                      {item.accountName && <span className={styles.modalTransactionAccount}>{item.accountName}</span>}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <ul className="space-y-2">
+              {transactions.map((item) => (
+                <li key={item.id} className="p-3 rounded-lg border">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">{new Date(item.occurredAt).toLocaleString("ru-RU")}</span>
+                    <span className={cn("font-semibold", item.direction === "income" ? "text-green-600" : item.direction === "expense" ? "text-red-600" : "")}>{item.direction === "income" ? "+" : item.direction === "expense" ? "−" : ""}{formatMoney(item.amountMinor, item.currency || currency)}</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-1 text-sm"><span>{item.counterparty || item.note || "Без описания"}</span>{item.accountName && <Badge variant="outline" className="text-xs">{item.accountName}</Badge>}</div>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

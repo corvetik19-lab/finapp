@@ -18,7 +18,9 @@ import {
 } from "@dnd-kit/sortable";
 import { SortableWidget } from "./SortableWidget";
 import { WidgetLibrary } from "./WidgetLibrary";
-import styles from "./DashboardCustomizer.module.css";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 export interface Widget {
   id: string;
@@ -224,93 +226,62 @@ export function DashboardCustomizer({ onClose }: DashboardCustomizerProps) {
     setWidgets((items) => items.filter((item) => item.id !== id));
   };
 
-  if (loading) {
-    return (
-      <div className={styles.overlay}>
-        <div className={styles.modal}>
-          <div className={styles.loading}>Загрузка настроек...</div>
-        </div>
-      </div>
-    );
-  }
-
   const availableToAdd = AVAILABLE_WIDGETS.filter(
     (aw) => !widgets.some((w) => w.id === aw.id)
   );
 
   return (
-    <div className={styles.overlay}>
-      <div className={styles.modal}>
-        <header className={styles.header}>
-          <div>
-            <h2 className={styles.title}>Настройка дашборда</h2>
-            <p className={styles.subtitle}>Выберите, какие виджеты показывать на главной странице</p>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Настройка дашборда</DialogTitle>
+          <DialogDescription>Выберите, какие виджеты показывать на главной странице</DialogDescription>
+        </DialogHeader>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin mr-2" />
+            Загрузка настроек...
           </div>
-          <button type="button" className={styles.closeButton} onClick={onClose}>
-            ✕
-          </button>
-        </header>
+        ) : (
+          <div className="flex-1 overflow-y-auto space-y-6 py-4">
+            <section>
+              <h3 className="font-semibold mb-2">Активные виджеты</h3>
+              <p className="text-sm text-muted-foreground mb-3">Перетаскивайте виджеты для изменения порядка</p>
 
-        <div className={styles.columns}>
-          <section className={styles.column}>
-            <h3>Активные виджеты</h3>
-            <p className={styles.sectionHint}>
-              Перетаскивайте виджеты для изменения порядка
-            </p>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={widgets.map((w) => w.id)} strategy={verticalListSortingStrategy}>
+                  <div className="space-y-2">
+                    {widgets.map((widget) => (
+                      <SortableWidget key={widget.id} widget={widget} onToggle={toggleWidget} onRemove={removeWidget} />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
 
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={widgets.map((w) => w.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className={styles.widgetList}>
-                  {widgets.map((widget) => (
-                    <SortableWidget
-                      key={widget.id}
-                      widget={widget}
-                      onToggle={toggleWidget}
-                      onRemove={removeWidget}
-                    />
-                  ))}
+              {widgets.length === 0 && (
+                <div className="text-center text-muted-foreground py-6">
+                  Нет виджетов. Добавьте из библиотеки ниже.
                 </div>
-              </SortableContext>
-            </DndContext>
+              )}
+            </section>
 
-            {widgets.length === 0 && (
-              <div className={styles.emptyState}>
-                <p>Нет виджетов. Добавьте из библиотеки ниже.</p>
-              </div>
+            {availableToAdd.length > 0 && (
+              <section>
+                <h3 className="font-semibold mb-2">➕ Добавить виджеты ({availableToAdd.length})</h3>
+                <WidgetLibrary widgets={availableToAdd} onAdd={addWidget} />
+              </section>
             )}
-          </section>
+          </div>
+        )}
 
-          {/* Библиотека виджетов */}
-          {availableToAdd.length > 0 && (
-            <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>
-                ➕ Добавить виджеты ({availableToAdd.length})
-              </h3>
-              <WidgetLibrary widgets={availableToAdd} onAdd={addWidget} />
-            </div>
-          )}
-        </div>
-
-        <div className={styles.footer}>
-          <button className={styles.cancelButton} onClick={onClose}>
-            Отмена
-          </button>
-          <button
-            className={styles.saveButton}
-            onClick={saveSettings}
-            disabled={saving}
-          >
-            {saving ? "Сохранение..." : "Сохранить и применить"}
-          </button>
-        </div>
-      </div>
-    </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Отмена</Button>
+          <Button onClick={saveSettings} disabled={saving}>
+            {saving ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Сохранение...</> : "Сохранить и применить"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

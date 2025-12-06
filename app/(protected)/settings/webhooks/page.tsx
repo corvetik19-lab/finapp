@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import styles from "./webhooks.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Webhook as WebhookIcon, Plus, Loader2, TestTube, Edit, Trash2, Link2 } from "lucide-react";
 
 interface Webhook {
   id: string;
@@ -168,207 +176,57 @@ export default function WebhooksPage() {
   }
 
   if (isLoading) {
-    return <div className={styles.loading}>Загрузка...</div>;
+    return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h1>Webhooks</h1>
-          <p>Получайте уведомления о событиях в реальном времени</p>
-        </div>
-        <button className={styles.addBtn} onClick={() => setShowForm(true)}>
-          + Добавить Webhook
-        </button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div><h1 className="text-2xl font-bold flex items-center gap-2"><WebhookIcon className="h-6 w-6" />Webhooks</h1><p className="text-muted-foreground">Уведомления о событиях в реальном времени</p></div>
+        <Button onClick={() => setShowForm(true)}><Plus className="h-4 w-4 mr-1" />Добавить</Button>
       </div>
 
-      {showForm && (
-        <div className={styles.modal} onClick={resetForm}>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <h2>{editingId ? "Редактировать Webhook" : "Новый Webhook"}</h2>
-            <form onSubmit={handleSubmit}>
-              <div className={styles.formGroup}>
-                <label>Название</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  placeholder="Мой сервер"
-                  required
-                />
-              </div>
+      <Dialog open={showForm} onOpenChange={(open) => !open && resetForm()}>
+        <DialogContent><DialogHeader><DialogTitle>{editingId ? "Редактировать" : "Новый"} Webhook</DialogTitle></DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2"><Label>Название</Label><Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="Мой сервер" required /></div>
+            <div className="space-y-2"><Label>URL</Label><Input type="url" value={formData.url} onChange={(e) => setFormData({...formData, url: e.target.value})} placeholder="https://example.com/webhook" required /></div>
+            <div className="space-y-2"><Label>События</Label><div className="grid grid-cols-2 gap-2">{AVAILABLE_EVENTS.map((event) => (<div key={event.value} className="flex items-center gap-2"><Checkbox checked={formData.events.includes(event.value)} onCheckedChange={() => toggleEvent(event.value)} /><span className="text-sm">{event.icon} {event.label}</span></div>))}</div></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label>Повторы</Label><Input type="number" min={0} max={5} value={formData.retry_count} onChange={(e) => setFormData({...formData, retry_count: parseInt(e.target.value)})} /></div>
+              <div className="space-y-2"><Label>Таймаут (сек)</Label><Input type="number" min={5} max={30} value={formData.timeout_seconds} onChange={(e) => setFormData({...formData, timeout_seconds: parseInt(e.target.value)})} /></div>
+            </div>
+            <DialogFooter><Button type="button" variant="outline" onClick={resetForm}>Отмена</Button><Button type="submit">{editingId ? "Сохранить" : "Создать"}</Button></DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-              <div className={styles.formGroup}>
-                <label>URL</label>
-                <input
-                  type="url"
-                  value={formData.url}
-                  onChange={(e) =>
-                    setFormData({ ...formData, url: e.target.value })
-                  }
-                  placeholder="https://example.com/webhook"
-                  required
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label>События (выберите хотя бы одно)</label>
-                <div className={styles.eventsList}>
-                  {AVAILABLE_EVENTS.map((event) => (
-                    <label key={event.value} className={styles.eventItem}>
-                      <input
-                        type="checkbox"
-                        checked={formData.events.includes(event.value)}
-                        onChange={() => toggleEvent(event.value)}
-                      />
-                      <span>
-                        {event.icon} {event.label}
-                      </span>
-                    </label>
-                  ))}
+      {webhooks.length === 0 ? (
+        <Card className="text-center py-12"><CardContent><Link2 className="h-12 w-12 mx-auto text-muted-foreground mb-2" /><h3 className="text-lg font-semibold">Нет webhooks</h3><p className="text-muted-foreground">Создайте первый</p></CardContent></Card>
+      ) : (
+        <div className="space-y-4">
+          {webhooks.map((webhook) => (
+            <Card key={webhook.id}>
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between">
+                  <div><CardTitle>{webhook.name}</CardTitle><p className="text-sm text-muted-foreground truncate max-w-md">{webhook.url}</p></div>
+                  <Badge variant={webhook.is_active ? "default" : "secondary"}>{webhook.is_active ? "Активен" : "Неактивен"}</Badge>
                 </div>
-              </div>
-
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label>Повторы при ошибке</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="5"
-                    value={formData.retry_count}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        retry_count: parseInt(e.target.value),
-                      })
-                    }
-                  />
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex flex-wrap gap-1">{webhook.events.map((event) => { const e = AVAILABLE_EVENTS.find((ev) => ev.value === event); return <Badge key={event} variant="outline">{e?.icon} {e?.label || event}</Badge>; })}</div>
+                {webhook.stats && <div className="flex gap-4 text-sm"><span>Вызовов: {webhook.stats.total_calls}</span><span>Успешных: {webhook.stats.successful_calls}</span><span>{webhook.stats.success_rate.toFixed(1)}%</span></div>}
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => handleTest(webhook.id)} disabled={testingId === webhook.id}>{testingId === webhook.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <><TestTube className="h-4 w-4 mr-1" />Тест</>}</Button>
+                  <Button size="sm" variant="ghost" onClick={() => handleEdit(webhook)}><Edit className="h-4 w-4" /></Button>
+                  <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleDelete(webhook.id)}><Trash2 className="h-4 w-4" /></Button>
                 </div>
-
-                <div className={styles.formGroup}>
-                  <label>Таймаут (сек)</label>
-                  <input
-                    type="number"
-                    min="5"
-                    max="30"
-                    value={formData.timeout_seconds}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        timeout_seconds: parseInt(e.target.value),
-                      })
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className={styles.formActions}>
-                <button type="button" onClick={resetForm}>
-                  Отмена
-                </button>
-                <button type="submit" className={styles.primary}>
-                  {editingId ? "Сохранить" : "Создать"}
-                </button>
-              </div>
-            </form>
-          </div>
+                {testResult && <Alert variant={testResult.success ? "default" : "destructive"}><AlertDescription>{testResult.message}{testResult.error && `: ${testResult.error}`}</AlertDescription></Alert>}
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
-
-      <div className={styles.webhooksList}>
-        {webhooks.length === 0 ? (
-          <div className={styles.empty}>
-            <div className={styles.emptyIcon}>🔗</div>
-            <h3>Нет webhooks</h3>
-            <p>Создайте первый webhook для получения уведомлений</p>
-          </div>
-        ) : (
-          webhooks.map((webhook) => (
-            <div key={webhook.id} className={styles.webhookCard}>
-              <div className={styles.webhookHeader}>
-                <div>
-                  <h3>{webhook.name}</h3>
-                  <p className={styles.url}>{webhook.url}</p>
-                </div>
-                <div className={styles.statusBadge}>
-                  {webhook.is_active ? (
-                    <span className={styles.active}>Активен</span>
-                  ) : (
-                    <span className={styles.inactive}>Неактивен</span>
-                  )}
-                </div>
-              </div>
-
-              <div className={styles.webhookEvents}>
-                {webhook.events.map((event) => {
-                  const eventInfo = AVAILABLE_EVENTS.find(
-                    (e) => e.value === event
-                  );
-                  return (
-                    <span key={event} className={styles.eventBadge}>
-                      {eventInfo?.icon} {eventInfo?.label || event}
-                    </span>
-                  );
-                })}
-              </div>
-
-              {webhook.stats && (
-                <div className={styles.stats}>
-                  <div className={styles.statItem}>
-                    <span className={styles.statLabel}>Всего вызовов</span>
-                    <span className={styles.statValue}>
-                      {webhook.stats.total_calls}
-                    </span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statLabel}>Успешных</span>
-                    <span className={styles.statValue}>
-                      {webhook.stats.successful_calls}
-                    </span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statLabel}>Success Rate</span>
-                    <span className={styles.statValue}>
-                      {webhook.stats.success_rate.toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              <div className={styles.webhookActions}>
-                <button
-                  onClick={() => handleTest(webhook.id)}
-                  disabled={testingId === webhook.id}
-                >
-                  {testingId === webhook.id ? "Отправка..." : "🧪 Тест"}
-                </button>
-                <button onClick={() => handleEdit(webhook)}>✏️ Изменить</button>
-                <button
-                  onClick={() => handleDelete(webhook.id)}
-                  className={styles.danger}
-                >
-                  🗑️ Удалить
-                </button>
-              </div>
-
-              {testResult && testingId === null && (
-                <div
-                  className={`${styles.testResult} ${
-                    testResult.success ? styles.success : styles.error
-                  }`}
-                >
-                  {testResult.success ? "✅" : "❌"} {testResult.message}
-                  {testResult.error && <p>Ошибка: {testResult.error}</p>}
-                </div>
-              )}
-            </div>
-          ))
-        )}
-      </div>
     </div>
   );
 }

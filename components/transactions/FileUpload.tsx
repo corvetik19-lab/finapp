@@ -2,7 +2,9 @@
 
 import { useState, useRef } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
-import styles from './FileUpload.module.css';
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Upload, Loader2, AlertCircle, FileText, Eye, Trash2 } from "lucide-react";
 
 interface FileUploadProps {
   transactionId?: string;
@@ -171,86 +173,21 @@ export function FileUpload({
   };
 
   return (
-    <div className={`${styles.fileUpload} ${className}`}>
-      <div className={styles.uploadArea}>
-        <input
-          ref={fileInputRef}
-          type="file"
-          id="file-upload"
-          className={styles.fileInput}
-          accept={accept}
-          onChange={handleFileSelect}
-          disabled={uploading}
-        />
-        
-        <label htmlFor="file-upload" className={styles.uploadLabel}>
-          {uploading ? (
-            <div className={styles.uploadingState}>
-              <div className={styles.spinner} />
-              <span>Загрузка... {progress}%</span>
-            </div>
-          ) : (
-            <>
-              <svg className={styles.uploadIcon} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              <span className={styles.uploadText}>
-                Нажмите для выбора файла
-              </span>
-              <span className={styles.uploadHint}>
-                Максимальный размер: {maxSizeMB}MB
-              </span>
-            </>
-          )}
+    <div className={cn("space-y-3", className)}>
+      <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+        <input ref={fileInputRef} type="file" id="file-upload" className="hidden" accept={accept} onChange={handleFileSelect} disabled={uploading} />
+        <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center gap-2">
+          {uploading ? (<><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /><span className="text-sm">Загрузка... {progress}%</span></>) : (<><Upload className="h-8 w-8 text-muted-foreground" /><span className="text-sm font-medium">Нажмите для выбора файла</span><span className="text-xs text-muted-foreground">Максимальный размер: {maxSizeMB}MB</span></>)}
         </label>
       </div>
-
-      {error && (
-        <div className={styles.error}>
-          <svg className={styles.errorIcon} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          {error}
-        </div>
-      )}
-
+      {error && <div className="flex items-center gap-2 text-sm text-destructive"><AlertCircle className="h-4 w-4" />{error}</div>}
       {uploadedFiles.length > 0 && (
-        <div className={styles.fileList}>
-          <h4>Загруженные файлы:</h4>
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium">Загруженные файлы:</h4>
           {uploadedFiles.map(file => (
-            <div key={file.id} className={styles.fileItem}>
-              <div className={styles.fileInfo}>
-                <svg className={styles.fileIcon} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <div>
-                  <div className={styles.fileName}>{file.name}</div>
-                  <div className={styles.fileSize}>{formatFileSize(file.size)}</div>
-                </div>
-              </div>
-              <div className={styles.fileActions}>
-                <a
-                  href={file.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={styles.viewButton}
-                  title="Просмотреть"
-                >
-                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                </a>
-                <button
-                  onClick={() => handleDelete(file)}
-                  className={styles.deleteButton}
-                  title="Удалить"
-                >
-                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              </div>
+            <div key={file.id} className="flex items-center justify-between p-2 border rounded-lg">
+              <div className="flex items-center gap-2"><FileText className="h-5 w-5 text-muted-foreground" /><div><div className="text-sm font-medium truncate max-w-[200px]">{file.name}</div><div className="text-xs text-muted-foreground">{formatFileSize(file.size)}</div></div></div>
+              <div className="flex gap-1"><Button variant="ghost" size="sm" asChild><a href={file.url} target="_blank" rel="noopener noreferrer" title="Просмотр"><Eye className="h-4 w-4" /></a></Button><Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDelete(file)} title="Удалить"><Trash2 className="h-4 w-4" /></Button></div>
             </div>
           ))}
         </div>

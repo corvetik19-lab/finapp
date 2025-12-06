@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import BudgetStatusWidget from "@/components/dashboard/BudgetStatusWidget";
-import styles from "@/components/dashboard/Dashboard.module.css";
 import { BudgetWithUsage } from "@/lib/budgets/service";
 import BudgetQuickAddForm from "@/components/dashboard/BudgetQuickAddForm";
 import { CategoryRecord } from "@/lib/categories/service";
 import { deleteBudgetAction } from "@/app/(protected)/finance/dashboard/actions";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Plus, X, Wallet } from "lucide-react";
 
 export type BudgetSectionProps = {
   budgets: BudgetWithUsage[];
@@ -48,43 +50,35 @@ export default function BudgetSection({ budgets, categories, currency }: BudgetS
   };
 
   return (
-    <section className={styles.budgetSection}>
-      <div className={styles.sectionHeader}>
-        <div className={styles.sectionTitle}>
-          <span className="material-icons" aria-hidden>
-            account_balance_wallet
-          </span>
-          Бюджет на месяц
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Wallet className="h-4 w-4" />
+            Бюджет на месяц
+          </CardTitle>
+          <Button variant="outline" size="sm" onClick={() => setIsFormOpen((prev) => !prev)}>
+            {isFormOpen ? <X className="h-4 w-4 mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+            {isFormOpen ? "Отмена" : "Добавить"}
+          </Button>
         </div>
-        <div className={styles.sectionActions}>
-          <button
-            type="button"
-            className={styles.secondaryButton}
-            onClick={() => setIsFormOpen((prev) => !prev)}
-          >
-            <span className="material-icons" aria-hidden>
-              {isFormOpen ? "close" : "add"}
-            </span>
-            {isFormOpen ? "Отмена" : "Добавить бюджет"}
-          </button>
-        </div>
-      </div>
-
-      {isFormOpen && (
-        <BudgetQuickAddForm
+      </CardHeader>
+      <CardContent>
+        {isFormOpen && (
+          <BudgetQuickAddForm
+            currency={currency}
+            categories={categories}
+            onSuccess={handleSuccess}
+            onCancel={() => setIsFormOpen(false)}
+          />
+        )}
+        <BudgetStatusWidget
+          budgets={localBudgets}
           currency={currency}
-          categories={categories}
-          onSuccess={handleSuccess}
-          onCancel={() => setIsFormOpen(false)}
+          onDelete={handleDelete}
+          deletingId={deletingId}
         />
-      )}
-
-      <BudgetStatusWidget
-        budgets={localBudgets}
-        currency={currency}
-        onDelete={handleDelete}
-        deletingId={deletingId}
-      />
-    </section>
+      </CardContent>
+    </Card>
   );
 }

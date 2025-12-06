@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import type { TenderComment } from '@/lib/tenders/types';
+import { User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface TenderCommentsProps {
   tenderId: string;
@@ -111,13 +113,12 @@ export function TenderComments({ tenderId }: TenderCommentsProps) {
           disabled={submitting}
         />
         <div className="flex justify-end mt-3">
-          <button
+          <Button
             type="submit"
             disabled={submitting || !newComment.trim()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
           >
             {submitting ? 'Отправка...' : 'Отправить'}
-          </button>
+          </Button>
         </div>
       </form>
 
@@ -142,7 +143,7 @@ export function TenderComments({ tenderId }: TenderCommentsProps) {
               <div className="flex items-start gap-3">
                 {/* Avatar */}
                 <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                  <span className="material-icons text-blue-600">person</span>
+                  <User className="h-5 w-5 text-blue-600" />
                 </div>
 
                 {/* Content */}

@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import { UserProfile } from '@/lib/auth/types';
 import { Organization } from '@/lib/organizations/types';
 import { loginAsEmployee } from '@/lib/admin/organizations';
-import styles from './OrganizationDetails.module.css';
+import { Eye, Loader2, LogIn } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 interface OrganizationEmployeesProps {
     organization: Organization;
@@ -86,44 +88,42 @@ export function OrganizationEmployees({ organization }: OrganizationEmployeesPro
 
     if (loading) {
         return (
-            <div className={styles.employeesCard}>
-                <div className={styles.loading}>
-                    <div className={styles.spinner}></div>
-                    <p style={{ marginTop: '1rem' }}>Загрузка...</p>
+            <div className="bg-card rounded-xl border p-6">
+                <div className="flex flex-col items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    <p className="mt-4 text-muted-foreground">Загрузка...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className={styles.employeesCard}>
-            <div className={styles.employeesHeader}>
-                <div>
-                    <h2 className={styles.employeesTitle}>Сотрудники организации</h2>
-                    <p className={styles.employeesCount}>
-                        Всего сотрудников: {employees.length}
-                    </p>
-                </div>
+        <div className="bg-card rounded-xl border p-6">
+            <div className="mb-4">
+                <h2 className="text-lg font-semibold">Сотрудники организации</h2>
+                <p className="text-sm text-muted-foreground">
+                    Всего сотрудников: {employees.length}
+                </p>
             </div>
 
             {employees.length === 0 ? (
-                <div className={styles.emptyState}>
-                    <div className={styles.emptyStateIcon}>👥</div>
-                    <h3 className={styles.emptyStateTitle}>Нет сотрудников</h3>
-                    <p className={styles.emptyStateDescription}>
+                <div className="flex flex-col items-center py-12 text-center">
+                    <div className="text-4xl mb-4">👥</div>
+                    <h3 className="text-lg font-semibold mb-2">Нет сотрудников</h3>
+                    <p className="text-muted-foreground">
                         В этой организации пока нет сотрудников.
                     </p>
                 </div>
             ) : (
-                <table className={styles.table}>
+                <table className="w-full text-sm">
                     <thead>
-                        <tr>
-                            <th>Сотрудник</th>
-                            <th>Должность</th>
-                            <th>Роль</th>
-                            <th>Создан</th>
-                            <th>Последний вход</th>
-                            <th style={{ textAlign: 'right' }}>Действия</th>
+                        <tr className="border-b">
+                            <th className="text-left py-3 px-2 font-medium">Сотрудник</th>
+                            <th className="text-left py-3 px-2 font-medium">Должность</th>
+                            <th className="text-left py-3 px-2 font-medium">Роль</th>
+                            <th className="text-left py-3 px-2 font-medium">Создан</th>
+                            <th className="text-left py-3 px-2 font-medium">Последний вход</th>
+                            <th className="text-right py-3 px-2 font-medium">Действия</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -131,75 +131,70 @@ export function OrganizationEmployees({ organization }: OrganizationEmployeesPro
                             const isAdminRole = employee.role === 'admin';
 
                             return (
-                            <tr key={employee.id}>
-                                <td>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                        <div className={styles.employeeAvatar}>
+                            <tr key={employee.id} className="border-b last:border-0 hover:bg-muted/50">
+                                <td className="py-3 px-2">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-primary">
                                             {employee.full_name.charAt(0).toUpperCase()}
                                         </div>
                                         <div>
-                                            <div className={styles.employeeName}>{employee.full_name}</div>
-                                            <div className={styles.employeeEmail}>{employee.email}</div>
+                                            <div className="font-medium">{employee.full_name}</div>
+                                            <div className="text-xs text-muted-foreground">{employee.email}</div>
                                         </div>
                                     </div>
                                 </td>
-                                <td>
+                                <td className="py-3 px-2">
                                     <div>{employee.position || '—'}</div>
                                     {employee.department && (
-                                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.25rem' }}>
+                                        <div className="text-xs text-muted-foreground mt-0.5">
                                             {employee.department}
                                         </div>
                                     )}
                                 </td>
-                                <td>
+                                <td className="py-3 px-2">
                                     {employee.role_name ? (
                                         <span 
-                                            className={styles.roleBadge}
+                                            className="px-2 py-1 rounded-full text-xs font-medium text-white"
                                             style={{ backgroundColor: employee.role_color || '#667eea' }}
                                         >
                                             {employee.role_name}
                                         </span>
                                     ) : isAdminRole ? (
-                                        <span className={styles.roleBadge} style={{ backgroundColor: '#fbbf24' }}>
+                                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-400 text-yellow-900">
                                             Полный доступ
                                         </span>
                                     ) : (
-                                        <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Без роли</span>
+                                        <span className="text-xs text-muted-foreground">Без роли</span>
                                     )}
                                 </td>
-                                <td>{formatDate(employee.created_at)}</td>
-                                <td>{formatDate(employee.last_sign_in_at)}</td>
-                                <td style={{ textAlign: 'right' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                                        <button
+                                <td className="py-3 px-2">{formatDate(employee.created_at)}</td>
+                                <td className="py-3 px-2">{formatDate(employee.last_sign_in_at)}</td>
+                                <td className="py-3 px-2 text-right">
+                                    <div className="flex justify-end gap-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
                                             onClick={() => openViewModal(employee)}
-                                            className={styles.actionButton}
                                             title="Просмотр информации"
                                         >
-                                            <span className="material-icons" style={{ fontSize: '1.25rem' }}>visibility</span>
-                                        </button>
-                                        <button
+                                            <Eye className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
                                             onClick={() => handleLoginAsEmployee(employee)}
-                                            className={styles.button}
                                             disabled={loggingIn === employee.id}
                                             title="Войти под этим пользователем"
-                                            style={{
-                                                background: '#dbeafe',
-                                                color: '#1d4ed8',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '0.25rem'
-                                            }}
                                         >
                                             {loggingIn === employee.id ? (
                                                 <>
-                                                    <span className="material-icons" style={{ fontSize: '1rem' }}>hourglass_empty</span>
+                                                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
                                                     Работаю...
                                                 </>
                                             ) : (
                                                 'Войти'
                                             )}
-                                        </button>
+                                        </Button>
                                     </div>
                                 </td>
                             </tr>
@@ -209,94 +204,79 @@ export function OrganizationEmployees({ organization }: OrganizationEmployeesPro
             )}
 
             {/* View Employee Modal */}
-            {showViewModal && selectedEmployee && (
-                <div className={styles.modal}>
-                    <div className={styles.modalContent}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                            <h3 className={styles.modalTitle} style={{ margin: 0 }}>
-                                Информация о сотруднике
-                            </h3>
-                            <button
-                                onClick={() => { setShowViewModal(false); setSelectedEmployee(null); }}
-                                style={{
-                                    background: 'transparent',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    padding: '0.5rem'
-                                }}
-                            >
-                                <span className="material-icons">close</span>
-                            </button>
-                        </div>
-                        
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                            <div className={styles.employeeAvatar} style={{ width: '64px', height: '64px', fontSize: '1.5rem' }}>
-                                {selectedEmployee.full_name.charAt(0).toUpperCase()}
+            <Dialog open={showViewModal} onOpenChange={(open) => { if (!open) { setShowViewModal(false); setSelectedEmployee(null); } }}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Информация о сотруднике</DialogTitle>
+                    </DialogHeader>
+                    
+                    {selectedEmployee && (
+                        <>
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-primary text-xl">
+                                    {selectedEmployee.full_name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <div className="text-xl font-semibold">{selectedEmployee.full_name}</div>
+                                    <div className="text-muted-foreground">{selectedEmployee.email}</div>
+                                </div>
                             </div>
-                            <div>
-                                <div style={{ fontSize: '1.25rem', fontWeight: 600 }}>{selectedEmployee.full_name}</div>
-                                <div style={{ color: '#64748b' }}>{selectedEmployee.email}</div>
-                            </div>
-                        </div>
 
-                        <div style={{ display: 'grid', gap: '1rem' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.5rem', padding: '0.75rem', background: '#f8fafc', borderRadius: '0.5rem' }}>
-                                <span style={{ color: '#64748b' }}>Должность:</span>
-                                <span style={{ fontWeight: 500 }}>{selectedEmployee.position || '—'}</span>
+                            <div className="space-y-3">
+                                <div className="grid grid-cols-3 gap-2 p-3 bg-muted rounded-lg">
+                                    <span className="text-muted-foreground">Должность:</span>
+                                    <span className="col-span-2 font-medium">{selectedEmployee.position || '—'}</span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 p-3 bg-muted rounded-lg">
+                                    <span className="text-muted-foreground">Отдел:</span>
+                                    <span className="col-span-2 font-medium">{selectedEmployee.department || '—'}</span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 p-3 bg-muted rounded-lg">
+                                    <span className="text-muted-foreground">Роль:</span>
+                                    <span className="col-span-2">
+                                        {selectedEmployee.role_name ? (
+                                            <span 
+                                                className="px-2 py-1 rounded-full text-xs font-medium text-white"
+                                                style={{ backgroundColor: selectedEmployee.role_color || '#667eea' }}
+                                            >
+                                                {selectedEmployee.role_name}
+                                            </span>
+                                        ) : selectedEmployee.role === 'admin' ? (
+                                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-400 text-yellow-900">
+                                                Полный доступ
+                                            </span>
+                                        ) : (
+                                            <span className="text-muted-foreground">Без роли</span>
+                                        )}
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 p-3 bg-muted rounded-lg">
+                                    <span className="text-muted-foreground">Статус:</span>
+                                    <span className="col-span-2 font-medium">{selectedEmployee.status || 'Активен'}</span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 p-3 bg-muted rounded-lg">
+                                    <span className="text-muted-foreground">Создан:</span>
+                                    <span className="col-span-2 font-medium">{formatDate(selectedEmployee.created_at)}</span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 p-3 bg-muted rounded-lg">
+                                    <span className="text-muted-foreground">Последний вход:</span>
+                                    <span className="col-span-2 font-medium">{formatDate(selectedEmployee.last_sign_in_at)}</span>
+                                </div>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.5rem', padding: '0.75rem', background: '#f8fafc', borderRadius: '0.5rem' }}>
-                                <span style={{ color: '#64748b' }}>Отдел:</span>
-                                <span style={{ fontWeight: 500 }}>{selectedEmployee.department || '—'}</span>
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.5rem', padding: '0.75rem', background: '#f8fafc', borderRadius: '0.5rem' }}>
-                                <span style={{ color: '#64748b' }}>Роль:</span>
-                                <span>
-                                    {selectedEmployee.role_name ? (
-                                        <span 
-                                            className={styles.roleBadge}
-                                            style={{ backgroundColor: selectedEmployee.role_color || '#667eea' }}
-                                        >
-                                            {selectedEmployee.role_name}
-                                        </span>
-                                    ) : selectedEmployee.role === 'admin' ? (
-                                        <span className={styles.roleBadge} style={{ backgroundColor: '#fbbf24' }}>
-                                            Полный доступ
-                                        </span>
-                                    ) : (
-                                        <span style={{ color: '#94a3b8' }}>Без роли</span>
-                                    )}
-                                </span>
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.5rem', padding: '0.75rem', background: '#f8fafc', borderRadius: '0.5rem' }}>
-                                <span style={{ color: '#64748b' }}>Статус:</span>
-                                <span style={{ fontWeight: 500 }}>{selectedEmployee.status || 'Активен'}</span>
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.5rem', padding: '0.75rem', background: '#f8fafc', borderRadius: '0.5rem' }}>
-                                <span style={{ color: '#64748b' }}>Создан:</span>
-                                <span style={{ fontWeight: 500 }}>{formatDate(selectedEmployee.created_at)}</span>
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.5rem', padding: '0.75rem', background: '#f8fafc', borderRadius: '0.5rem' }}>
-                                <span style={{ color: '#64748b' }}>Последний вход:</span>
-                                <span style={{ fontWeight: 500 }}>{formatDate(selectedEmployee.last_sign_in_at)}</span>
-                            </div>
-                        </div>
 
-                        <div className={styles.modalFooter} style={{ marginTop: '1.5rem' }}>
-                            <button
-                                onClick={() => handleLoginAsEmployee(selectedEmployee)}
-                                className={styles.btnPrimary}
-                                disabled={loggingIn === selectedEmployee.id}
-                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                            >
-                                <span className="material-icons" style={{ fontSize: '1.25rem' }}>
-                                    {loggingIn === selectedEmployee.id ? 'hourglass_empty' : 'login'}
-                                </span>
-                                {loggingIn === selectedEmployee.id ? 'Вход...' : 'Войти под этим пользователем'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                            <DialogFooter className="mt-4">
+                                <Button
+                                    onClick={() => handleLoginAsEmployee(selectedEmployee)}
+                                    disabled={loggingIn === selectedEmployee.id}
+                                >
+                                    {loggingIn === selectedEmployee.id ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <LogIn className="h-4 w-4 mr-2" />}
+                                    {loggingIn === selectedEmployee.id ? 'Вход...' : 'Войти под этим пользователем'}
+                                </Button>
+                            </DialogFooter>
+                        </>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

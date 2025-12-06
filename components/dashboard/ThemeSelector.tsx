@@ -1,6 +1,8 @@
 "use client";
 
-import styles from "./ThemeSelector.module.css";
+import { cn } from "@/lib/utils";
+import { Check, Sun, Moon, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ThemeSelectorProps {
   value: "light" | "dark" | "auto";
@@ -8,46 +10,31 @@ interface ThemeSelectorProps {
 }
 
 const THEMES = [
-  {
-    value: "light" as const,
-    name: "Светлая",
-    icon: "☀️",
-    description: "Классическая светлая тема",
-  },
-  {
-    value: "dark" as const,
-    name: "Тёмная",
-    icon: "🌙",
-    description: "Тёмная тема для работы ночью",
-  },
-  {
-    value: "auto" as const,
-    name: "Авто",
-    icon: "🔄",
-    description: "Следует системным настройкам",
-  },
+  { value: "light" as const, name: "Светлая", icon: Sun, description: "Классическая светлая тема" },
+  { value: "dark" as const, name: "Тёмная", icon: Moon, description: "Тёмная тема для работы ночью" },
+  { value: "auto" as const, name: "Авто", icon: RefreshCw, description: "Следует системным настройкам" },
 ];
 
 export function ThemeSelector({ value, onChange }: ThemeSelectorProps) {
   return (
-    <div className={styles.themeSelector}>
+    <div className="grid grid-cols-3 gap-3">
       {THEMES.map((theme) => (
-        <button
+        <Button
           key={theme.value}
-          className={`${styles.themeCard} ${
-            value === theme.value ? styles.active : ""
-          }`}
+          variant="outline"
+          className={cn(
+            "flex flex-col items-center gap-2 p-4 h-auto transition-all",
+            value === theme.value ? "border-primary border-2 bg-primary/5" : "border-muted"
+          )}
           onClick={() => onChange(theme.value)}
         >
-          <div className={styles.icon}>{theme.icon}</div>
-          <div className={styles.info}>
-            <div className={styles.name}>{theme.name}</div>
-            <div className={styles.description}>{theme.description}</div>
+          <theme.icon className="h-6 w-6" />
+          <div className="text-center">
+            <div className="font-medium text-sm">{theme.name}</div>
+            <div className="text-xs text-muted-foreground">{theme.description}</div>
           </div>
-          {value === theme.value && (
-            <div className={styles.checkmark}>✓</div>
-          )}
-        </button>
+          {value === theme.value && <Check className="h-4 w-4 text-primary" />}
+        </Button>
       ))}
     </div>
   );

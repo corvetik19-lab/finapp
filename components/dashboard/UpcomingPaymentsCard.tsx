@@ -2,13 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-
-import styles from "@/components/dashboard/Dashboard.module.css";
 import UpcomingPaymentFormModal from "@/components/dashboard/UpcomingPaymentFormModal";
 import { deleteUpcomingPaymentAction } from "@/app/(protected)/finance/dashboard/upcoming-actions";
 import { useToast } from "@/components/toast/ToastContext";
 import { formatMoney } from "@/lib/utils/format";
 import type { UpcomingPaymentFormData, UpcomingPaymentFormInput } from "@/lib/dashboard/upcoming-payments/schema";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Plus, Pencil, Trash2, CheckCheck, Calendar, Loader2 } from "lucide-react";
 
 type UpcomingPaymentDirection = "income" | "expense";
 
@@ -134,62 +139,20 @@ export default function UpcomingPaymentsCard({
     return Array.from(years).sort((a, b) => b - a);
   }, [payments]);
 
-  const monthsByYear = useMemo(() => {
-    const map = new Map<number, number[]>();
-    payments.forEach((payment) => {
-      const date = new Date(payment.dueDate);
-      if (Number.isNaN(date.getTime())) {
-        return;
-      }
-      const year = date.getFullYear();
-      const month = date.getMonth();
-      const existing = map.get(year) ?? [];
-      if (!existing.includes(month)) {
-        map.set(year, [...existing, month].sort((a, b) => a - b));
-      }
-    });
-    return map;
-  }, [payments]);
-
   const yearOptions = useMemo(() => (availableYears.length > 0 ? availableYears : [defaultYear]), [availableYears, defaultYear]);
 
   const [filterYear, setFilterYear] = useState<number>(yearOptions[0]);
   const [filterMonth, setFilterMonth] = useState<number>(defaultMonth);
 
-  const availableMonths = useMemo(() => monthsByYear.get(filterYear) ?? [], [monthsByYear, filterYear]);
-  const monthOptions = availableMonths.length > 0 ? availableMonths : MONTH_OPTIONS.map((option) => option.value);
+  // Показываем все месяцы, чтобы можно было выбрать любой
+  const monthOptions = MONTH_OPTIONS.map((option) => option.value);
 
   useEffect(() => {
-    if (yearOptions.length === 0) {
-      if (filterYear !== defaultYear) {
-        setFilterYear(defaultYear);
-      }
-      if (filterMonth !== defaultMonth) {
-        setFilterMonth(defaultMonth);
-      }
-      return;
-    }
-
-    if (!yearOptions.includes(filterYear)) {
+    // Если выбранный год не в списке доступных — переключаем на первый доступный
+    if (yearOptions.length > 0 && !yearOptions.includes(filterYear)) {
       setFilterYear(yearOptions[0]);
-      return;
     }
-
-    const months = monthsByYear.get(filterYear) ?? [];
-    if (months.length === 0) {
-      if (filterMonth !== defaultMonth) {
-        setFilterMonth(defaultMonth);
-      }
-      return;
-    }
-
-    if (!months.includes(filterMonth)) {
-      const preferredMonth = months.includes(defaultMonth) ? defaultMonth : months[0];
-      if (preferredMonth !== filterMonth) {
-        setFilterMonth(preferredMonth);
-      }
-    }
-  }, [yearOptions, monthsByYear, filterYear, filterMonth, defaultMonth, defaultYear]);
+  }, [yearOptions, filterYear]);
 
   const filteredPayments = useMemo(() => {
     return sortedPayments.filter((payment) => {
@@ -201,9 +164,13 @@ export default function UpcomingPaymentsCard({
       if (!showStatusBadges && payment.status === "paid") {
         return false;
       }
+      // Если фильтры скрыты — не фильтруем по дате (данные уже отфильтрованы снаружи)
+      if (!showFilters) {
+        return true;
+      }
       return date.getFullYear() === filterYear && date.getMonth() === filterMonth;
     });
-  }, [sortedPayments, filterYear, filterMonth, showStatusBadges]);
+  }, [sortedPayments, filterYear, filterMonth, showStatusBadges, showFilters]);
 
   const handleOpenAll = () => {
     if (onOpenAll) {
@@ -489,152 +456,113 @@ export default function UpcomingPaymentsCard({
   const hasPayments = filteredPayments.length > 0;
 
   return (
-    <section className={styles.upcomingCard}>
-      <header className={styles.upcomingHeader}>
-        <div className={styles.upcomingTitleGroup}>
-          <div>
-            <div className={styles.upcomingTitle}>{title}</div>
-            <div className={styles.upcomingSubtitle}>{subtitle}</div>
-          </div>
-        </div>
-        <div className={styles.upcomingControls}>
-          {showFilters && (
-            <div className={styles.upcomingFilters}>
-              <label className={styles.upcomingFilter}>
-                <span className={styles.upcomingFilterLabel}>Год</span>
-                <select
-                  className={styles.upcomingFilterSelect}
-                  value={filterYear}
-                  onChange={(event) => setFilterYear(Number(event.target.value))}
-                >
-                  {yearOptions.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className={styles.upcomingFilter}>
-                <span className={styles.upcomingFilterLabel}>Месяц</span>
-                <select
-                  className={styles.upcomingFilterSelect}
-                  value={filterMonth}
-                  onChange={(event) => setFilterMonth(Number(event.target.value))}
-                >
-                  {monthOptions.map((month) => (
-                    <option key={month} value={month}>
-                      {MONTH_OPTIONS[month]?.label ?? month + 1}
-                    </option>
-                  ))}
-                </select>
-              </label>
+    <>
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                {title}
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">{subtitle}</p>
             </div>
-          )}
-          {showActions && (
-            <div className={styles.upcomingActions}>
-              {showOpenAllButton && (
-                <button type="button" className={styles.upcomingActionButton} onClick={handleOpenAll} disabled={isSaving}>
-                  Все платежи
-                </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              {showFilters && (
+                <div className="flex items-center gap-2">
+                  <Select value={String(filterYear)} onValueChange={(v) => setFilterYear(Number(v))}>
+                    <SelectTrigger className="w-24 h-8"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {yearOptions.map((year) => (
+                        <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={String(filterMonth)} onValueChange={(v) => setFilterMonth(Number(v))}>
+                    <SelectTrigger className="w-28 h-8"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {monthOptions.map((month) => (
+                        <SelectItem key={month} value={String(month)}>{MONTH_OPTIONS[month]?.label ?? month + 1}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
-              <button
-                type="button"
-                className={`${styles.upcomingIconButton} ${styles.upcomingAddButton}`}
-                onClick={handleAddPayment}
-                aria-label="Создать напоминание о платеже"
-                disabled={isSaving}
-              >
-                <span className="material-icons" aria-hidden>
-                  add
-                </span>
-              </button>
+              {showActions && (
+                <div className="flex items-center gap-1">
+                  {showOpenAllButton && (
+                    <Button variant="ghost" size="sm" onClick={handleOpenAll} disabled={isSaving}>Все платежи</Button>
+                  )}
+                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleAddPayment} disabled={isSaving}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </header>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {actionError && !formOpen && <div className="text-sm text-destructive">{actionError}</div>}
 
-      {actionError && !formOpen && <div className={styles.upcomingError}>{actionError}</div>}
+          {hasPayments ? (
+            <div className="space-y-2">
+              {filteredPayments.map((payment) => {
+                const amountDirection = payment.direction ?? "expense";
+                const daysLeftLabel = formatDaysLeft(payment.dueDate);
+                const currency = payment.currency ?? defaultCurrency ?? "RUB";
+                const paymentName = payment.name?.trim() || "Без названия";
+                const isPaid = payment.status === "paid";
 
-      {hasPayments ? (
-        <div className={styles.upcomingList}>
-          {filteredPayments.map((payment) => {
-            const amountDirection = payment.direction ?? "expense";
-            const amountClass =
-              amountDirection === "income" ? styles.upcomingAmountIncome : styles.upcomingAmountExpense;
-            const daysLeftLabel = formatDaysLeft(payment.dueDate);
-            const currency = payment.currency ?? defaultCurrency ?? "RUB";
-            const paymentName = payment.name?.trim() || "Без названия";
-            const isPaid = payment.status === "paid";
-
-            return (
-              <article key={payment.id} className={`${styles.upcomingItem} ${!showStatusBadges && (isPaid ? styles.upcomingItemPaid : styles.upcomingItemPending)}`}>
-                <div className={styles.upcomingDetails}>
-                  <div className={styles.upcomingNameRow}>
-                    <div className={styles.upcomingName}>{paymentName}</div>
-                    {showStatusBadges && (
-                      isPaid ? (
-                        <span className={`${styles.upcomingStatusChip} ${styles.upcomingStatusPaid}`}>Оплачено</span>
-                      ) : (
-                        <span className={`${styles.upcomingStatusChip} ${styles.upcomingStatusPending}`}>В ожидании</span>
-                      )
-                    )}
-                  </div>
-                  <div className={styles.upcomingMeta}>
-                    <span>{formatDueDate(payment.dueDate)}</span>
-                    {payment.accountName && <span>· {payment.accountName}</span>}
-                  </div>
-                </div>
-                <div className={styles.upcomingAmountGroup}>
-                  {!isPaid && daysLeftLabel && <span className={styles.upcomingChip}>{daysLeftLabel}</span>}
-                  <div className={`${styles.upcomingAmount} ${amountClass}`}>
-                    {amountDirection === "income" ? "+" : "-"}
-                    {formatMoney(Math.abs(payment.amountMinor), currency)}
-                  </div>
-                  <div className={styles.upcomingItemActions}>
-                    <button
-                      type="button"
-                      className={styles.upcomingItemButton}
-                      onClick={() => handleEditPayment(payment)}
-                      aria-label="Редактировать платёж"
-                      disabled={isSaving}
-                    >
-                      <span className="material-icons" aria-hidden>
-                        edit
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      className={`${styles.upcomingItemButton} ${styles.upcomingItemDeleteButton}`}
-                      onClick={() => handleDeletePayment(payment)}
-                      aria-label="Удалить платёж"
-                      disabled={isSaving || deletingId === payment.id}
-                    >
-                      <span className="material-icons" aria-hidden>
-                        delete
-                      </span>
-                    </button>
-                    {!isPaid && (
-                      <button
-                        type="button"
-                        className={`${styles.upcomingItemButton} ${styles.upcomingMarkPaidButton}`}
-                        onClick={() => handleOpenTransactionPicker(payment)}
-                        aria-label="Отметить как оплаченный"
-                        disabled={isSaving}
-                      >
-                        <span className="material-icons" aria-hidden>
-                          done_all
+                return (
+                  <div key={payment.id} className={`flex items-center justify-between gap-3 p-3 rounded-lg border transition-colors ${isPaid ? "bg-muted/50 opacity-60" : "hover:bg-muted/50"}`}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm truncate">{paymentName}</span>
+                        {showStatusBadges && (
+                          isPaid ? (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">Оплачено</span>
+                          ) : (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">В ожидании</span>
+                          )
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {formatDueDate(payment.dueDate)}
+                        {payment.accountName && ` · ${payment.accountName}`}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {!isPaid && daysLeftLabel && (
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${daysLeftLabel.includes("Просрочено") ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"}`}>
+                          {daysLeftLabel}
                         </span>
-                      </button>
-                    )}
+                      )}
+                      <span className={`font-medium text-sm ${amountDirection === "income" ? "text-green-600" : "text-red-600"}`}>
+                        {amountDirection === "income" ? "+" : "-"}{formatMoney(Math.abs(payment.amountMinor), currency)}
+                      </span>
+                      <div className="flex items-center">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditPayment(payment)} disabled={isSaving}>
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDeletePayment(payment)} disabled={isSaving || deletingId === payment.id}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                        {!isPaid && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-green-600 hover:text-green-700" onClick={() => handleOpenTransactionPicker(payment)} disabled={isSaving}>
+                            <CheckCheck className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      ) : (
-        <div className={styles.upcomingEmpty}>{emptyMessage}</div>
-      )}
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-6 text-muted-foreground">{emptyMessage}</div>
+          )}
+        </CardContent>
+      </Card>
 
       <UpcomingPaymentFormModal
         open={formOpen}
@@ -651,87 +579,42 @@ export default function UpcomingPaymentsCard({
         unlinkPending={isEditUnlinking}
       />
 
-      {selectingPayment && (
-        <div className={styles.modalRoot} role="presentation" onClick={closeTransactionPicker}>
-          <div className={styles.modal} role="dialog" aria-modal onClick={(e) => e.stopPropagation()}>
-            <header className={styles.modalHeader}>
-              <div>
-                <div className={styles.modalTitle}>Отметить платёж как оплаченный</div>
-                <div className={styles.modalSubtitle}>{`Выберите транзакцию для «${selectingPayment.name}»`}</div>
-              </div>
-              <button type="button" className={styles.modalClose} onClick={closeTransactionPicker} aria-label="Закрыть">
-                <span className="material-icons" aria-hidden>
-                  close
-                </span>
-              </button>
-            </header>
-
-            <div className={styles.modalContent}>
-              <div className={styles.modalForm}>
-                <div className={styles.formGroup}>
-                  <span className={styles.formLabel}>Поиск транзакции</span>
-                  <form onSubmit={handleSearchTransactions} style={{ display: "flex", gap: "10px" }}>
-                    <input
-                      type="text"
-                      className={styles.formInput}
-                      placeholder="Введите название, заметку или сумму"
-                      value={transactionSearch}
-                      onChange={(event) => setTransactionSearch(event.target.value)}
-                      disabled={transactionsLoading || isMarkingPaid}
-                      style={{ flex: 1 }}
-                    />
-                    <button type="submit" className={styles.btnPrimary} disabled={transactionsLoading || isMarkingPaid}>
-                      Найти
-                    </button>
-                  </form>
-                </div>
-
-                {transactionsError && <div className={styles.modalError}>{transactionsError}</div>}
-
-                <div className={styles.formGroup}>
-                  <span className={styles.formLabel}>Транзакция</span>
-                  <select
-                    className={styles.formSelect}
-                    value={selectedTransactionId}
-                    onChange={(event) => {
-                      const txnId = event.target.value;
-                      setSelectedTransactionId(txnId);
-                    }}
-                    disabled={transactionsLoading || isMarkingPaid}
-                  >
-                    <option value="">— Выберите транзакцию —</option>
-                    {transactionsOptions.map((option) => (
-                      <option key={option.id} value={option.id} data-account-id={option.account_id}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className={styles.modalFooter}>
-                <button
-                  type="button"
-                  className={styles.btnSecondary}
-                  onClick={closeTransactionPicker}
-                  disabled={isMarkingPaid}
-                >
-                  Отмена
-                </button>
-                <button
-                  type="button"
-                  className={styles.btnPrimary}
-                  onClick={handleMarkPaid}
-                  disabled={isMarkingPaid || transactionsLoading}
-                >
-                  {isMarkingPaid ? "Отмечаем…" : "Отметить как оплаченный"}
-                </button>
-              </div>
+      <Dialog open={!!selectingPayment} onOpenChange={(open) => !open && closeTransactionPicker()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Отметить платёж как оплаченный</DialogTitle>
+            {selectingPayment && <p className="text-sm text-muted-foreground">Выберите транзакцию для «{selectingPayment.name}»</p>}
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Поиск транзакции</Label>
+              <form onSubmit={handleSearchTransactions} className="flex gap-2">
+                <Input placeholder="Введите название, заметку или сумму" value={transactionSearch} onChange={(e) => setTransactionSearch(e.target.value)} disabled={transactionsLoading || isMarkingPaid} className="flex-1" />
+                <Button type="submit" disabled={transactionsLoading || isMarkingPaid}>Найти</Button>
+              </form>
+            </div>
+            {transactionsError && <div className="text-sm text-destructive">{transactionsError}</div>}
+            <div className="space-y-2">
+              <Label>Транзакция</Label>
+              <Select value={selectedTransactionId} onValueChange={setSelectedTransactionId} disabled={transactionsLoading || isMarkingPaid}>
+                <SelectTrigger><SelectValue placeholder="— Выберите транзакцию —" /></SelectTrigger>
+                <SelectContent>
+                  {transactionsOptions.map((option) => (
+                    <SelectItem key={option.id} value={option.id}>{option.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        </div>
-      )}
-    </section>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeTransactionPicker} disabled={isMarkingPaid}>Отмена</Button>
+            <Button onClick={handleMarkPaid} disabled={isMarkingPaid || transactionsLoading}>
+              {isMarkingPaid ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Отмечаем…</> : "Отметить как оплаченный"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

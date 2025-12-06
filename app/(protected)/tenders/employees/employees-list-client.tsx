@@ -5,7 +5,10 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import type { Employee, EmployeeFilters, EmployeeStats } from '@/lib/employees/types';
 import { EMPLOYEE_ROLE_LABELS, EMPLOYEE_STATUS_LABELS, EMPLOYEE_STATUS_COLORS } from '@/lib/employees/types';
 import { EmployeeFormModal } from '@/components/employees/employee-form-modal';
-import styles from '../tenders.module.css';
+// Reusable styles
+const cardStyle = "bg-white rounded-xl border shadow-sm";
+const btnPrimary = "px-4 py-2 rounded-lg font-semibold text-sm bg-blue-600 text-white hover:bg-blue-700 transition-colors inline-flex items-center gap-2";
+const btnSecondary = "px-4 py-2 rounded-lg font-semibold text-sm bg-white text-blue-600 border-2 border-blue-600 hover:bg-blue-50 transition-colors inline-flex items-center gap-2";
 
 // Тип представления
 type ViewMode = 'table' | 'cards';
@@ -524,21 +527,21 @@ export function EmployeesListClient({ companyId }: EmployeesListClientProps) {
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <button
             onClick={() => setShowExportModal(true)}
-            className={`${styles.btn} ${styles.btnSecondary}`}
+            className={`${btnSecondary}`}
             title="Экспорт данных"
           >
             📥 Экспорт
           </button>
           <button
             onClick={() => setShowInviteModal(true)}
-            className={`${styles.btn} ${styles.btnSecondary}`}
+            className={`${btnSecondary}`}
             title="Пригласить по email"
           >
             ✉️ Пригласить
           </button>
           <button
             onClick={handleAddEmployee}
-            className={`${styles.btn} ${styles.btnPrimary}`}
+            className={`${btnPrimary}`}
           >
             ➕ Добавить
           </button>
@@ -548,19 +551,19 @@ export function EmployeesListClient({ companyId }: EmployeesListClientProps) {
       {/* Статистика */}
       {stats && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-          <div className={styles.card} style={{ padding: '1rem', textAlign: 'center' }}>
+          <div className={cardStyle} style={{ padding: '1rem', textAlign: 'center' }}>
             <div style={{ fontSize: '2rem', fontWeight: 700, color: '#3b82f6' }}>{stats.total}</div>
             <div style={{ fontSize: '0.875rem', color: '#64748b' }}>Всего сотрудников</div>
           </div>
-          <div className={styles.card} style={{ padding: '1rem', textAlign: 'center' }}>
+          <div className={cardStyle} style={{ padding: '1rem', textAlign: 'center' }}>
             <div style={{ fontSize: '2rem', fontWeight: 700, color: '#22c55e' }}>{stats.by_status?.active || 0}</div>
             <div style={{ fontSize: '0.875rem', color: '#64748b' }}>Активных</div>
           </div>
-          <div className={styles.card} style={{ padding: '1rem', textAlign: 'center' }}>
+          <div className={cardStyle} style={{ padding: '1rem', textAlign: 'center' }}>
             <div style={{ fontSize: '2rem', fontWeight: 700, color: '#f59e0b' }}>{stats.by_status?.vacation || 0}</div>
             <div style={{ fontSize: '0.875rem', color: '#64748b' }}>В отпуске</div>
           </div>
-          <div className={styles.card} style={{ padding: '1rem', textAlign: 'center' }}>
+          <div className={cardStyle} style={{ padding: '1rem', textAlign: 'center' }}>
             <div style={{ fontSize: '2rem', fontWeight: 700, color: '#8b5cf6' }}>{Object.keys(stats.by_department || {}).length}</div>
             <div style={{ fontSize: '0.875rem', color: '#64748b' }}>Отделов</div>
           </div>
@@ -568,7 +571,7 @@ export function EmployeesListClient({ companyId }: EmployeesListClientProps) {
       )}
 
       {/* Панель управления: вид, сортировка, фильтры */}
-      <div className={styles.card} style={{ marginBottom: '1.5rem', padding: '1rem' }}>
+      <div className={cardStyle} style={{ marginBottom: '1.5rem', padding: '1rem' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
           {/* Переключатель вида */}
           <div style={{ display: 'flex', gap: '0.25rem', background: '#f1f5f9', borderRadius: '0.5rem', padding: '0.25rem' }}>
@@ -737,7 +740,7 @@ export function EmployeesListClient({ companyId }: EmployeesListClientProps) {
 
       {/* Панель массовых действий */}
       {selectedIds.size > 0 && (
-        <div className={styles.card} style={{ 
+        <div className={cardStyle} style={{ 
           marginBottom: '1rem', 
           padding: '1rem', 
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -907,7 +910,7 @@ export function EmployeesListClient({ companyId }: EmployeesListClientProps) {
       )}
 
       {/* Контент */}
-      <div className={styles.card}>
+      <div className={cardStyle}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '3rem 0' }}>
             <div style={{ fontSize: '2rem' }}>⏳ Загрузка...</div>
@@ -918,7 +921,7 @@ export function EmployeesListClient({ companyId }: EmployeesListClientProps) {
             <p style={{ color: '#64748b' }}>{error}</p>
             <button
               onClick={loadEmployees}
-              className={`${styles.btn} ${styles.btnPrimary}`}
+              className={`${btnPrimary}`}
               style={{ marginTop: '1rem' }}
             >
               Попробовать снова
@@ -935,7 +938,7 @@ export function EmployeesListClient({ companyId }: EmployeesListClientProps) {
             </p>
             <button
               onClick={handleAddEmployee}
-              className={`${styles.btn} ${styles.btnPrimary}`}
+              className={`${btnPrimary}`}
             >
               ➕ Добавить сотрудника
             </button>
@@ -946,7 +949,7 @@ export function EmployeesListClient({ companyId }: EmployeesListClientProps) {
             {employees.map((employee) => (
               <div
                 key={employee.id}
-                className={styles.card}
+                className={cardStyle}
                 style={{
                   padding: '1.25rem',
                   border: '1px solid #e2e8f0',
@@ -1043,14 +1046,14 @@ export function EmployeesListClient({ companyId }: EmployeesListClientProps) {
                 <div style={{ display: 'flex', gap: '0.5rem', borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
                   <a
                     href={`/tenders/employees/${employee.id}`}
-                    className={`${styles.btn} ${styles.btnSecondary}`}
+                    className={`${btnSecondary}`}
                     style={{ flex: 1, textAlign: 'center', fontSize: '0.875rem', padding: '0.5rem' }}
                   >
                     👁️ Профиль
                   </a>
                   <button
                     onClick={() => handleEditEmployee(employee)}
-                    className={`${styles.btn} ${styles.btnPrimary}`}
+                    className={`${btnPrimary}`}
                     style={{ flex: 1, fontSize: '0.875rem', padding: '0.5rem' }}
                   >
                     ✏️ Изменить
@@ -1201,7 +1204,7 @@ export function EmployeesListClient({ companyId }: EmployeesListClientProps) {
                     <td style={{ padding: '1rem', textAlign: 'right' }}>
                       <button
                         onClick={() => handleEditEmployee(employee)}
-                        className={`${styles.btn} ${styles.btnSecondary}`}
+                        className={`${btnSecondary}`}
                         style={{ fontSize: '0.875rem', padding: '0.375rem 0.75rem' }}
                       >
                         ✏️ Редактировать
@@ -1243,7 +1246,7 @@ export function EmployeesListClient({ companyId }: EmployeesListClientProps) {
           onClick={() => setShowInviteModal(false)}
         >
           <div 
-            className={styles.card}
+            className={cardStyle}
             style={{
               width: '100%',
               maxWidth: '450px',
@@ -1332,14 +1335,14 @@ export function EmployeesListClient({ companyId }: EmployeesListClientProps) {
               <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
                 <button
                   onClick={() => setShowInviteModal(false)}
-                  className={`${styles.btn} ${styles.btnSecondary}`}
+                  className={`${btnSecondary}`}
                   disabled={inviteSending}
                 >
                   Отмена
                 </button>
                 <button
                   onClick={handleSendInvite}
-                  className={`${styles.btn} ${styles.btnPrimary}`}
+                  className={`${btnPrimary}`}
                   disabled={inviteSending || !inviteEmail || !inviteRole}
                 >
                   {inviteSending ? '⏳ Отправка...' : '📧 Отправить приглашение'}
@@ -1462,13 +1465,13 @@ export function EmployeesListClient({ companyId }: EmployeesListClientProps) {
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
               <button
                 onClick={() => setShowExportModal(false)}
-                className={`${styles.btn} ${styles.btnSecondary}`}
+                className={`${btnSecondary}`}
               >
                 Отмена
               </button>
               <button
                 onClick={handleExportWithFields}
-                className={`${styles.btn} ${styles.btnPrimary}`}
+                className={`${btnPrimary}`}
                 disabled={!Object.values(exportFields).some(Boolean)}
               >
                 📥 Экспортировать ({employees.length})

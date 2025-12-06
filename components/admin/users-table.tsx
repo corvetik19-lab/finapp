@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { UserProfile, GlobalRole, AppModule } from '@/lib/auth/types';
 import { updateUserGlobalRole, updateUserApps } from '@/lib/admin/users';
 import { useRouter } from 'next/navigation';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 interface UsersTableProps {
     users: UserProfile[];
@@ -89,31 +91,32 @@ export function UsersTable({ users, currentUserId, currentUserRole }: UsersTable
                                 </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                                <select
+                                <Select
                                     disabled={currentUserRole !== 'super_admin' || user.id === currentUserId}
                                     value={user.global_role}
-                                    onChange={(e) => handleRoleChange(user.id, e.target.value as GlobalRole)}
-                                    className="block w-full rounded-md border-slate-300 py-1.5 text-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-slate-100 disabled:text-slate-500"
+                                    onValueChange={(val) => handleRoleChange(user.id, val as GlobalRole)}
                                 >
-                                    <option value="user">User</option>
-                                    <option value="admin">Admin</option>
-                                    <option value="super_admin">Super Admin</option>
-                                </select>
+                                    <SelectTrigger className="w-[140px]">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="user">User</SelectItem>
+                                        <SelectItem value="admin">Admin</SelectItem>
+                                        <SelectItem value="super_admin">Super Admin</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="flex gap-2 flex-wrap max-w-xs">
                                     {(Object.keys(APP_LABELS) as AppModule[]).map((app) => (
-                                        <button
+                                        <Badge
                                             key={app}
-                                            onClick={() => handleAppToggle(user.id, app, user.allowed_apps || [])}
-                                            disabled={user.id === currentUserId}
-                                            className={`px-2 py-1 text-xs font-medium rounded border ${user.allowed_apps?.includes(app)
-                                                    ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                                    : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
-                                                }`}
+                                            variant={user.allowed_apps?.includes(app) ? "default" : "outline"}
+                                            className="cursor-pointer"
+                                            onClick={() => user.id !== currentUserId && handleAppToggle(user.id, app, user.allowed_apps || [])}
                                         >
                                             {APP_LABELS[app]}
-                                        </button>
+                                        </Badge>
                                     ))}
                                 </div>
                             </td>

@@ -1,7 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import styles from './tender-quick-filters.module.css';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { ChevronDown, ChevronUp, X, Filter, Users, DollarSign, TrendingUp } from 'lucide-react';
 
 interface Manager {
   id: string;
@@ -51,12 +57,10 @@ export function TenderQuickFilters({
 
   const hasActiveFilters = responsibleIds.length > 0;
 
-  // Фильтруем менеджеров по поисковому запросу
   const filteredManagers = managers.filter(manager =>
     manager.full_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Закрываем dropdown при клике вне его
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -71,7 +75,6 @@ export function TenderQuickFilters({
     }
   }, [isDropdownOpen]);
 
-  // Фокусируемся на поле поиска при открытии dropdown
   useEffect(() => {
     if (isDropdownOpen && searchInputRef.current) {
       searchInputRef.current.focus();
@@ -79,66 +82,68 @@ export function TenderQuickFilters({
   }, [isDropdownOpen]);
 
   return (
-    <div className={styles.quickFilters}>
-      <div className={styles.filtersHeader}>
-        <h3 className={styles.filtersTitle}>Быстрые фильтры</h3>
-        {hasActiveFilters && (
-          <button onClick={handleReset} className={styles.resetButton}>
-            Сбросить
-          </button>
-        )}
-      </div>
+    <Card className="flex-shrink-0 mb-3 overflow-hidden">
+      <CardContent className="p-3 overflow-hidden">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            Быстрые фильтры
+          </h3>
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={handleReset}>
+              <X className="h-4 w-4 mr-1" />
+              Сбросить
+            </Button>
+          )}
+        </div>
 
-      <div className={styles.filtersRow}>
-        {/* Фильтры */}
-        <div className={styles.filterControls}>
-          <div className={styles.filterGroup}>
-            <label>Ответственные</label>
-            <div className={styles.multiSelectContainer} ref={dropdownRef}>
-              <button
-                type="button"
-                className={styles.multiSelectButton}
+        <div className="flex flex-col md:flex-row gap-3 justify-between min-w-0">
+          {/* Фильтр по ответственным */}
+          <div className="space-y-2 min-w-0 flex-shrink-0">
+            <Label className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Ответственные
+            </Label>
+            <div className="relative" ref={dropdownRef}>
+              <Button
+                variant="outline"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="w-full md:w-64 justify-between"
               >
                 {responsibleIds.length === 0 ? (
                   'Все ответственные'
                 ) : (
-                  `Выбрано: ${responsibleIds.length}`
+                  <span className="flex items-center gap-2">
+                    Выбрано: <Badge variant="secondary">{responsibleIds.length}</Badge>
+                  </span>
                 )}
-                <span className={styles.dropdownArrow}>{isDropdownOpen ? '▲' : '▼'}</span>
-              </button>
+                {isDropdownOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
               
               {isDropdownOpen && (
-                <div className={styles.multiSelectDropdown}>
-                  {/* Поле поиска */}
-                  <div className={styles.searchContainer}>
-                    <input
+                <div className="absolute z-50 mt-1 w-full bg-white border rounded-lg shadow-lg">
+                  <div className="p-2 border-b">
+                    <Input
                       ref={searchInputRef}
-                      type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Поиск ответственных..."
-                      className={styles.searchInput}
                       onClick={(e) => e.stopPropagation()}
                     />
                   </div>
-                  
-                  {/* Список ответственных */}
-                  <div className={styles.optionsList}>
+                  <div className="max-h-48 overflow-y-auto p-2">
                     {managers.length === 0 ? (
-                      <div className={styles.emptyMessage}>Нет ответственных</div>
+                      <div className="text-center text-gray-500 py-2">Нет ответственных</div>
                     ) : filteredManagers.length === 0 ? (
-                      <div className={styles.emptyMessage}>Ничего не найдено</div>
+                      <div className="text-center text-gray-500 py-2">Ничего не найдено</div>
                     ) : (
                       filteredManagers.map((manager) => (
-                        <label key={manager.id} className={styles.checkboxLabel}>
-                          <input
-                            type="checkbox"
+                        <label key={manager.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                          <Checkbox
                             checked={responsibleIds.includes(manager.id)}
-                            onChange={() => handleResponsibleToggle(manager.id)}
-                            className={styles.checkbox}
+                            onCheckedChange={() => handleResponsibleToggle(manager.id)}
                           />
-                          <span>{manager.full_name}</span>
+                          <span className="text-sm">{manager.full_name}</span>
                         </label>
                       ))
                     )}
@@ -147,36 +152,36 @@ export function TenderQuickFilters({
               )}
             </div>
           </div>
-        </div>
 
-        {/* Статистика */}
-        <div className={styles.statsContainer}>
-          <div className={styles.statItem}>
-            <span className={styles.statLabel}>Тендеров всего:</span>
-            <strong className={styles.statValue}>{stats.totalCount}</strong>
-          </div>
-          <div className={styles.statItem}>
-            <span className={styles.statLabel}>На сумму:</span>
-            <strong className={styles.statValue}>
-              {new Intl.NumberFormat('ru-RU', {
-                style: 'currency',
-                currency: 'RUB',
-              }).format(stats.totalSum / 100)}
-            </strong>
-          </div>
-          <div className={styles.statItem}>
-            <span className={styles.statLabel}>Чистая прибыль:</span>
-            <strong className={styles.statValue}>
-              {stats.totalProfit !== null
-                ? new Intl.NumberFormat('ru-RU', {
-                    style: 'currency',
-                    currency: 'RUB',
-                  }).format(stats.totalProfit / 100)
-                : '—'}
-            </strong>
+          {/* Статистика */}
+          <div className="flex flex-wrap items-center gap-3 md:gap-4 min-w-0">
+            <div className="text-center min-w-[60px]">
+              <div className="text-xs md:text-sm text-gray-500">Тендеров</div>
+              <div className="text-lg md:text-xl font-bold">{stats.totalCount}</div>
+            </div>
+            <div className="text-center min-w-[80px]">
+              <div className="text-xs md:text-sm text-gray-500 flex items-center justify-center gap-1">
+                <DollarSign className="h-3 w-3" />
+                На сумму
+              </div>
+              <div className="text-lg md:text-xl font-bold text-blue-600">
+                {new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(stats.totalSum / 100)}
+              </div>
+            </div>
+            <div className="text-center min-w-[80px]">
+              <div className="text-xs md:text-sm text-gray-500 flex items-center justify-center gap-1">
+                <TrendingUp className="h-3 w-3" />
+                Прибыль
+              </div>
+              <div className="text-lg md:text-xl font-bold text-green-600">
+                {stats.totalProfit !== null
+                  ? new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(stats.totalProfit / 100)
+                  : '—'}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

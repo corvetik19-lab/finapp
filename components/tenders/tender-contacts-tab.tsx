@@ -2,7 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { Tender } from '@/lib/tenders/types';
-import styles from './tender-contacts-tab.module.css';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Plus, Pencil, Trash2, Users, Briefcase, Phone, Mail, FileText, Loader2 } from 'lucide-react';
 
 interface TenderContact {
   id: string;
@@ -136,162 +142,125 @@ export function TenderContactsTab({ tender, onUpdate }: TenderContactsTabProps) 
   };
 
   if (loading) {
-    return <div className={styles.container}>Загрузка контактов...</div>;
+    return (
+      <div className="p-6 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600 mr-2" />
+        <span className="text-gray-500">Загрузка контактов...</span>
+      </div>
+    );
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h3>Контакты контрагентов ({contacts.length})</h3>
-        <button className={styles.addButton} onClick={() => setShowModal(true)}>
-          <span className={styles.buttonIcon}>+</span>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold flex items-center gap-2">
+          <Users className="h-5 w-5" />
+          Контакты контрагентов ({contacts.length})
+        </h3>
+        <Button onClick={() => setShowModal(true)}>
+          <Plus className="h-4 w-4 mr-2" />
           Добавить контакт
-        </button>
+        </Button>
       </div>
 
       {contacts.length === 0 ? (
-        <div className={styles.emptyState}>
-          <p>👥 Контактов пока нет</p>
-          <p>Добавьте первый контакт для этого тендера</p>
+        <div className="text-center py-12">
+          <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+          <p className="text-gray-900 font-medium mb-1">Контактов пока нет</p>
+          <p className="text-gray-500">Добавьте первый контакт для этого тендера</p>
         </div>
       ) : (
-        <div className={styles.contactsList}>
+        <div className="grid gap-4 md:grid-cols-2">
           {contacts.map((contact) => (
-            <div key={contact.id} className={styles.contactCard}>
-              <div className={styles.contactHeader}>
-                <div>
-                  <h4 className={styles.contactName}>{contact.name}</h4>
-                  {contact.company && (
-                    <span className={styles.contactCompany}>{contact.company}</span>
+            <Card key={contact.id}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h4 className="font-medium text-gray-900">{contact.name}</h4>
+                    {contact.company && <span className="text-sm text-gray-500">{contact.company}</span>}
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-sm">
+                  {contact.position && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Briefcase className="h-4 w-4 text-gray-400" />
+                      <span>{contact.position}</span>
+                    </div>
+                  )}
+                  {contact.phone && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Phone className="h-4 w-4 text-gray-400" />
+                      <a href={`tel:${contact.phone}`} className="text-blue-600 hover:underline">{contact.phone}</a>
+                    </div>
+                  )}
+                  {contact.email && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Mail className="h-4 w-4 text-gray-400" />
+                      <a href={`mailto:${contact.email}`} className="text-blue-600 hover:underline">{contact.email}</a>
+                    </div>
+                  )}
+                  {contact.notes && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <FileText className="h-4 w-4 text-gray-400" />
+                      <span>{contact.notes}</span>
+                    </div>
                   )}
                 </div>
-              </div>
 
-              <div className={styles.contactInfo}>
-                {contact.position && (
-                  <div className={styles.contactInfoItem}>
-                    <span>💼</span>
-                    <span>{contact.position}</span>
-                  </div>
-                )}
-
-                {contact.phone && (
-                  <div className={styles.contactInfoItem}>
-                    <span>📞</span>
-                    <a href={`tel:${contact.phone}`}>{contact.phone}</a>
-                  </div>
-                )}
-
-                {contact.email && (
-                  <div className={styles.contactInfoItem}>
-                    <span>📧</span>
-                    <a href={`mailto:${contact.email}`}>{contact.email}</a>
-                  </div>
-                )}
-
-                {contact.notes && (
-                  <div className={styles.contactInfoItem}>
-                    <span>📝</span>
-                    <span>{contact.notes}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className={styles.contactActions}>
-                <button className={styles.button} onClick={() => handleEdit(contact)}>
-                  ✏️ Редактировать
-                </button>
-                <button className={styles.button} onClick={() => handleDelete(contact.id)}>
-                  🗑️ Удалить
-                </button>
-              </div>
-            </div>
+                <div className="flex gap-2 mt-4 pt-3 border-t">
+                  <Button variant="ghost" size="sm" onClick={() => handleEdit(contact)}>
+                    <Pencil className="h-4 w-4 mr-1" />Редактировать
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleDelete(contact.id)}>
+                    <Trash2 className="h-4 w-4 mr-1 text-red-500" />Удалить
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
 
-      {showModal && (
-        <div className={styles.formModal} onClick={resetForm}>
-          <div className={styles.formContent} onClick={(e) => e.stopPropagation()}>
-            <h3 className={styles.formTitle}>
-              {editingId ? 'Редактировать контакт' : 'Добавить контакт'}
-            </h3>
-
-            <form onSubmit={handleSubmit}>
-              <div className={styles.formGrid}>
-                <div className={styles.formField}>
-                  <label>ФИО контакта *</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                    placeholder="Иванов Иван Иванович"
-                  />
-                </div>
-
-                <div className={styles.formField}>
-                  <label>Компания</label>
-                  <input
-                    type="text"
-                    value={formData.company}
-                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                    placeholder="ООО «Компания»"
-                  />
-                </div>
-
-                <div className={styles.formField}>
-                  <label>Должность</label>
-                  <input
-                    type="text"
-                    value={formData.position}
-                    onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                    placeholder="Директор"
-                  />
-                </div>
-
-                <div className={styles.formField}>
-                  <label>Телефон</label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="+7 (900) 123-45-67"
-                  />
-                </div>
-
-                <div className={styles.formField}>
-                  <label>Email</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="email@company.com"
-                  />
-                </div>
-
-                <div className={styles.formField}>
-                  <label>Примечания</label>
-                  <textarea
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    placeholder="Дополнительная информация"
-                  />
-                </div>
+      <Dialog open={showModal} onOpenChange={(open) => !open && resetForm()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingId ? 'Редактировать контакт' : 'Добавить контакт'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>ФИО контакта *</Label>
+                <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required placeholder="Иванов Иван Иванович" />
               </div>
-
-              <div className={styles.formActions}>
-                <button type="button" onClick={resetForm} className={styles.button}>
-                  Отмена
-                </button>
-                <button type="submit" className={styles.addButton}>
-                  {editingId ? '✓ Сохранить' : '✓ Добавить'}
-                </button>
+              <div className="space-y-2">
+                <Label>Компания</Label>
+                <Input value={formData.company} onChange={(e) => setFormData({ ...formData, company: e.target.value })} placeholder="ООО «Компания»" />
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+              <div className="space-y-2">
+                <Label>Должность</Label>
+                <Input value={formData.position} onChange={(e) => setFormData({ ...formData, position: e.target.value })} placeholder="Директор" />
+              </div>
+              <div className="space-y-2">
+                <Label>Телефон</Label>
+                <Input type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+7 (900) 123-45-67" />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="email@company.com" />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label>Примечания</Label>
+                <Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} placeholder="Дополнительная информация" />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={resetForm}>Отмена</Button>
+              <Button type="submit">{editingId ? 'Сохранить' : 'Добавить'}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,7 +1,13 @@
 "use client";
-import styles from "@/components/transactions/Transactions.module.css";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
+import { Filter, Save, X, Search } from "lucide-react";
 
 // Amount input mask helpers (module scope for stable references)
 function normalizeAmountRaw(s: string): string {
@@ -203,195 +209,108 @@ export default function FiltersAndSearch({
   }, [visibleCats, categoriesSel, updateUrl]);
 
   return (
-    <section className={styles.filtersCard}>
-      <div className={styles.filtersHeader}>
-        <div className={styles.filtersTitle}>Фильтры и поиск в транзакциях</div>
-      </div>
-
-      {/* Presets */}
-      <div className={styles.filterPresets}>
-        <input
-          type="text"
-          className={styles.input}
-          placeholder="Название пресета"
-          value={presetName}
-          onChange={(e) => setPresetName(e.target.value)}
-          style={{ width: "auto", minWidth: 200 }}
-        />
-        <button type="button" className={styles.lightBtn} onClick={addPreset}>
-          Сохранить пресет
-        </button>
-        <div className={styles.presetsList}>
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Filter className="h-4 w-4" />
+          Фильтры и поиск
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Presets */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Input placeholder="Название пресета" value={presetName} onChange={(e) => setPresetName(e.target.value)} className="w-48 h-8" />
+          <Button variant="outline" size="sm" onClick={addPreset}>
+            <Save className="h-4 w-4 mr-1" />
+            Сохранить
+          </Button>
           {presets.map((p) => (
-            <span key={p.id} className={styles.presetChip} onClick={() => applyPreset(p)} title="Применить пресет">
+            <Button key={p.id} variant="secondary" size="sm" className="gap-1" onClick={() => applyPreset(p)}>
               {p.name}
-              <span
-                className={styles.del}
-                onClick={(e) => { e.stopPropagation(); removePreset(p.name); }}
-                title="Удалить"
-              >
-                ×
-              </span>
-            </span>
+              <X className="h-3 w-3 ml-1 hover:text-destructive" onClick={(e) => { e.stopPropagation(); removePreset(p.name); }} />
+            </Button>
           ))}
         </div>
-      </div>
 
-      {/* Filters grid */}
-      <div className={styles.filtersGrid}>
-        <div className={styles.filterGroup}>
-          <label className={styles.label}>Поиск по названию</label>
-          <input
-            type="text"
-            className={styles.input}
-            placeholder="Введите название транзакции..."
-            value={q}
-            onChange={(e) => {
-              setQ(e.target.value);
-              updateUrl({ q: e.target.value });
-            }}
-          />
-        </div>
-
-        <div className={styles.filterGroup}>
-          <label className={styles.label}>Период</label>
-          <select
-            className={styles.select}
-            value={period}
-            onChange={(e) => {
-              setPeriod(e.target.value);
-              updateUrl({ period: e.target.value });
-            }}
-          >
-            <option value="current-month">Этот месяц</option>
-            <option value="prev-month">Прошлый месяц</option>
-            <option value="current-year">Этот год</option>
-            <option value="custom">Произвольный период</option>
-          </select>
-          {period === "custom" && (
-            <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-              <input
-                type="date"
-                className={styles.input}
-                value={from}
-                onChange={(e) => { setFrom(e.target.value); updateUrl({ from: e.target.value }); }}
-                placeholder="От"
-              />
-              <input
-                type="date"
-                className={styles.input}
-                value={to}
-                onChange={(e) => { setTo(e.target.value); updateUrl({ to: e.target.value }); }}
-                placeholder="До"
-              />
+        {/* Filters grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          <div className="space-y-2">
+            <Label>Поиск</Label>
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Название транзакции..." value={q} onChange={(e) => { setQ(e.target.value); updateUrl({ q: e.target.value }); }} className="pl-8 h-9" />
             </div>
-          )}
-        </div>
+          </div>
 
-        <div className={styles.filterGroup}>
-          <label className={styles.label}>Тип транзакции</label>
-          <select
-            className={styles.select}
-            value={type}
-            onChange={(e) => {
-              setType(e.target.value);
-              updateUrl({ type: e.target.value });
-            }}
-          >
-            <option value="all">Все</option>
-            <option value="income">Доход</option>
-            <option value="expense">Расход</option>
-          </select>
-        </div>
+          <div className="space-y-2">
+            <Label>Период</Label>
+            <Select value={period} onValueChange={(v) => { setPeriod(v); updateUrl({ period: v }); }}>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="current-month">Этот месяц</SelectItem>
+                <SelectItem value="prev-month">Прошлый месяц</SelectItem>
+                <SelectItem value="current-year">Этот год</SelectItem>
+                <SelectItem value="custom">Произвольный</SelectItem>
+              </SelectContent>
+            </Select>
+            {period === "custom" && (
+              <div className="flex gap-2 mt-2">
+                <Input type="date" value={from} onChange={(e) => { setFrom(e.target.value); updateUrl({ from: e.target.value }); }} className="h-8" />
+                <Input type="date" value={to} onChange={(e) => { setTo(e.target.value); updateUrl({ to: e.target.value }); }} className="h-8" />
+              </div>
+            )}
+          </div>
 
-        <div className={styles.filterGroup}>
-          <label className={styles.label}>Категория</label>
-          {visibleCats.length === 0 ? (
-            <select className={styles.select} disabled>
-              <option>Нет категорий</option>
-            </select>
-          ) : (
-            <select
-              className={styles.select}
-              value={categoriesSel[0] || "all"}
-              onChange={(e) => {
-                const v = e.currentTarget.value;
-                const values = v === "all" ? [] : [v];
-                setCategoriesSel(values);
-                updateUrl({ categories: values.length ? values.join(",") : "" });
-              }}
-            >
-              <option value="all">Все категории</option>
-              {type === "all" ? (
-                [{ label: "Доход", list: incomeCats }, { label: "Расход", list: expenseCats }].map((g) => (
-                  <optgroup key={g.label} label={g.label}>
-                    {g.list.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </optgroup>
-                ))
-              ) : (
-                visibleCats.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))
-              )}
-            </select>
-          )}
-        </div>
+          <div className="space-y-2">
+            <Label>Тип</Label>
+            <Select value={type} onValueChange={(v) => { setType(v); updateUrl({ type: v }); }}>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все</SelectItem>
+                <SelectItem value="income">Доход</SelectItem>
+                <SelectItem value="expense">Расход</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div className={styles.filterGroup}>
-          <label className={styles.label}>Счет/Карта</label>
-          {accounts.length === 0 ? (
-            <select className={styles.select} disabled>
-              <option>Нет счетов</option>
-            </select>
-          ) : (
-            <select
-              className={styles.select}
-              value={accountsSel[0] || "all"}
-              onChange={(e) => {
-                const v = e.currentTarget.value;
-                const values = v === "all" ? [] : [v];
-                setAccountsSel(values);
-                updateUrl({ accounts: values.length ? values.join(",") : "" });
-              }}
-            >
-              <option value="all">Все счета</option>
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>{a.name}</option>
-              ))}
-            </select>
-          )}
-        </div>
+          <div className="space-y-2">
+            <Label>Категория</Label>
+            <Select value={categoriesSel[0] || "all"} onValueChange={(v) => { const values = v === "all" ? [] : [v]; setCategoriesSel(values); updateUrl({ categories: values.length ? values.join(",") : "" }); }} disabled={visibleCats.length === 0}>
+              <SelectTrigger className="h-9"><SelectValue placeholder="Все категории" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все категории</SelectItem>
+                {type === "all" ? (
+                  <>
+                    <SelectGroup><SelectLabel>Доход</SelectLabel>{incomeCats.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectGroup>
+                    <SelectGroup><SelectLabel>Расход</SelectLabel>{expenseCats.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectGroup>
+                  </>
+                ) : (
+                  visibleCats.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)
+                )}
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div className={styles.filterGroup}>
-          <label className={styles.label}>Сумма</label>
-          <div className={styles.amountRow}>
-            <div className={styles.amountField}>
-              <span className={styles.amountLabel}>От</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                className={`${styles.noSpin} ${styles.amountInput}`}
-                placeholder="0"
-                value={min}
-                onChange={(e) => handleMinChange(e.target.value)}
-              />
-            </div>
-            <div className={styles.amountField}>
-              <span className={styles.amountLabel}>До</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                className={`${styles.noSpin} ${styles.amountInput}`}
-                placeholder="0"
-                value={max}
-                onChange={(e) => handleMaxChange(e.target.value)}
-              />
+          <div className="space-y-2">
+            <Label>Счет</Label>
+            <Select value={accountsSel[0] || "all"} onValueChange={(v) => { const values = v === "all" ? [] : [v]; setAccountsSel(values); updateUrl({ accounts: values.length ? values.join(",") : "" }); }} disabled={accounts.length === 0}>
+              <SelectTrigger className="h-9"><SelectValue placeholder="Все счета" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все счета</SelectItem>
+                {accounts.map((a) => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Сумма</Label>
+            <div className="flex gap-2">
+              <Input type="text" inputMode="decimal" placeholder="От" value={min} onChange={(e) => handleMinChange(e.target.value)} className="h-9" />
+              <Input type="text" inputMode="decimal" placeholder="До" value={max} onChange={(e) => handleMaxChange(e.target.value)} className="h-9" />
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </CardContent>
+    </Card>
   );
 }

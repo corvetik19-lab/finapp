@@ -2,7 +2,9 @@
 
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import styles from './invite.module.css';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Loader2 } from 'lucide-react';
 
 interface InvitationInfo {
   id: string;
@@ -97,11 +99,10 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
 
   if (loading) {
     return (
-      <div className={styles.container}>
-        <div className={styles.card}>
-          <div className={styles.loading}>
-            <span>⏳</span> Загрузка приглашения...
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-muted/50 p-4">
+        <div className="bg-card rounded-xl border p-8 max-w-md w-full text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">Загрузка приглашения...</p>
         </div>
       </div>
     );
@@ -109,16 +110,14 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
 
   if (error && !invitation) {
     return (
-      <div className={styles.container}>
-        <div className={styles.card}>
-          <div className={styles.errorState}>
-            <span className={styles.errorIcon}>❌</span>
-            <h2>Ошибка</h2>
-            <p>{error}</p>
-            <a href="/login" className={styles.link}>
-              Войти в систему
-            </a>
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-muted/50 p-4">
+        <div className="bg-card rounded-xl border p-8 max-w-md w-full text-center">
+          <div className="text-4xl mb-4">❌</div>
+          <h2 className="text-xl font-semibold mb-2">Ошибка</h2>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <a href="/login" className="text-primary hover:underline">
+            Войти в систему
+          </a>
         </div>
       </div>
     );
@@ -129,56 +128,56 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.card}>
-        <div className={styles.header}>
-          <span className={styles.icon}>🎉</span>
-          <h1>Приглашение в команду</h1>
+    <div className="min-h-screen flex items-center justify-center bg-muted/50 p-4">
+      <div className="bg-card rounded-xl border p-8 max-w-md w-full">
+        <div className="text-center mb-6">
+          <span className="text-4xl">🎉</span>
+          <h1 className="text-2xl font-bold mt-2">Приглашение в команду</h1>
         </div>
 
-        <div className={styles.companyInfo}>
-          <p>Вас приглашают присоединиться к компании</p>
-          <h2 className={styles.companyName}>{invitation.company.name}</h2>
+        <div className="text-center mb-6">
+          <p className="text-muted-foreground">Вас приглашают присоединиться к компании</p>
+          <h2 className="text-xl font-semibold text-primary">{invitation.company.name}</h2>
         </div>
 
-        <div className={styles.details}>
+        <div className="space-y-2 mb-6 bg-muted rounded-lg p-4">
           {invitation.position && (
-            <div className={styles.detailItem}>
-              <span className={styles.detailLabel}>Должность:</span>
-              <span className={styles.detailValue}>{invitation.position}</span>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Должность:</span>
+              <span className="font-medium">{invitation.position}</span>
             </div>
           )}
           {invitation.department && (
-            <div className={styles.detailItem}>
-              <span className={styles.detailLabel}>Отдел:</span>
-              <span className={styles.detailValue}>{invitation.department}</span>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Отдел:</span>
+              <span className="font-medium">{invitation.department}</span>
             </div>
           )}
           {invitation.role && (
-            <div className={styles.detailItem}>
-              <span className={styles.detailLabel}>Роль:</span>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Роль:</span>
               <span 
-                className={styles.roleBadge}
+                className="px-2 py-1 rounded-full text-xs font-medium text-white"
                 style={{ background: invitation.role.color }}
               >
                 {invitation.role.name}
               </span>
             </div>
           )}
-          <div className={styles.detailItem}>
-            <span className={styles.detailLabel}>Email:</span>
-            <span className={styles.detailValue}>{invitation.email}</span>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Email:</span>
+            <span className="font-medium">{invitation.email}</span>
           </div>
         </div>
 
         {error && (
-          <div className={styles.error}>{error}</div>
+          <div className="bg-destructive/10 text-destructive p-3 rounded-lg mb-4 text-sm">{error}</div>
         )}
 
-        <form onSubmit={handleAccept} className={styles.form}>
-          <div className={styles.formGroup}>
-            <label>Ваше имя *</label>
-            <input
+        <form onSubmit={handleAccept} className="space-y-4">
+          <div>
+            <label className="text-sm font-medium mb-1 block">Ваше имя *</label>
+            <Input
               type="text"
               value={formData.full_name}
               onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
@@ -187,9 +186,9 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
             />
           </div>
 
-          <div className={styles.formGroup}>
-            <label>Телефон</label>
-            <input
+          <div>
+            <label className="text-sm font-medium mb-1 block">Телефон</label>
+            <Input
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -197,16 +196,16 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={accepting}
-            className={styles.acceptButton}
-          >
-            {accepting ? '⏳ Принятие...' : '✅ Принять приглашение'}
-          </button>
+          <Button type="submit" disabled={accepting} className="w-full">
+            {accepting ? (
+              <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Принятие...</>
+            ) : (
+              '✅ Принять приглашение'
+            )}
+          </Button>
         </form>
 
-        <p className={styles.note}>
+        <p className="text-center text-sm text-muted-foreground mt-4">
           Приглашение действительно до {new Date(invitation.expires_at).toLocaleDateString('ru-RU')}
         </p>
       </div>

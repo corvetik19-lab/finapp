@@ -1,103 +1,85 @@
 import { redirect } from "next/navigation";
 import { createRSCClient } from "@/lib/supabase/helpers";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Plus, Lightbulb, Construction, Wallet, Briefcase, Palette, BookOpen } from "lucide-react";
 
 export default async function PersonalPromptsPage() {
   const supabase = await createRSCClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
     redirect("/login");
   }
 
+  const categories = [
+    { icon: Wallet, name: "Финансы", count: 0 },
+    { icon: Briefcase, name: "Работа", count: 0 },
+    { icon: Palette, name: "Творчество", count: 0 },
+    { icon: BookOpen, name: "Обучение", count: 0 },
+  ];
+
   return (
-    <div style={{ padding: "2rem" }}>
-      <div style={{ marginBottom: "2rem" }}>
-        <h1>💡 Промпты</h1>
-        <p style={{ color: "#6b7280" }}>Сохранённые промпты для AI</p>
+    <div className="p-8 space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold flex items-center gap-2">
+          <Lightbulb className="h-6 w-6" /> Промпты
+        </h1>
+        <p className="text-muted-foreground">Сохранённые промпты для AI</p>
       </div>
       
-      <div style={{ marginBottom: "1rem", display: "flex", gap: "1rem", alignItems: "center" }}>
-        <button style={{ padding: "0.75rem 1.5rem", background: "#3b82f6", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" }}>
-          ➕ Новый промпт
-        </button>
+      <div className="flex gap-4 items-center">
+        <Button><Plus className="h-4 w-4 mr-2" /> Новый промпт</Button>
         
-        <select style={{ padding: "0.75rem", border: "1px solid #d1d5db", borderRadius: "6px" }}>
-          <option>Все категории</option>
-          <option>Финансы</option>
-          <option>Работа</option>
-          <option>Творчество</option>
-          <option>Обучение</option>
-        </select>
+        <Select defaultValue="all">
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Категория" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Все категории</SelectItem>
+            <SelectItem value="finance">Финансы</SelectItem>
+            <SelectItem value="work">Работа</SelectItem>
+            <SelectItem value="creative">Творчество</SelectItem>
+            <SelectItem value="learning">Обучение</SelectItem>
+          </SelectContent>
+        </Select>
         
-        <input 
-          type="search" 
-          placeholder="Поиск промптов..." 
-          style={{ padding: "0.75rem", border: "1px solid #d1d5db", borderRadius: "6px", flex: 1 }}
-        />
+        <Input type="search" placeholder="Поиск промптов..." className="flex-1" />
       </div>
       
-      <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fill, minmax(400px, 1fr))" }}>
-        <div style={{ 
-          padding: "3rem", 
-          textAlign: "center", 
-          background: "white", 
-          border: "2px dashed #d1d5db", 
-          borderRadius: "8px",
-          gridColumn: "1 / -1"
-        }}>
-          <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>💡</div>
-          <p style={{ fontSize: "1.125rem", fontWeight: "500", marginBottom: "0.5rem", color: "#374151" }}>
-            Нет промптов
-          </p>
-          <p style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "1.5rem" }}>
-            Создайте первый промпт для AI
-          </p>
-          <button style={{ 
-            padding: "0.75rem 1.5rem", 
-            background: "#3b82f6", 
-            color: "white", 
-            border: "none", 
-            borderRadius: "6px", 
-            cursor: "pointer" 
-          }}>
-            ➕ Создать промпт
-          </button>
+      <Card className="border-2 border-dashed">
+        <CardContent className="p-12 text-center">
+          <Lightbulb className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <p className="text-lg font-medium mb-2">Нет промптов</p>
+          <p className="text-sm text-muted-foreground mb-6">Создайте первый промпт для AI</p>
+          <Button><Plus className="h-4 w-4 mr-2" /> Создать промпт</Button>
+        </CardContent>
+      </Card>
+      
+      <div>
+        <h3 className="text-lg font-medium mb-4">📚 Популярные категории промптов</h3>
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
+          {categories.map((cat) => (
+            <Card key={cat.name} className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <CardContent className="p-4">
+                <cat.icon className="h-8 w-8 mb-2 text-muted-foreground" />
+                <p className="font-medium">{cat.name}</p>
+                <p className="text-sm text-muted-foreground">{cat.count} промптов</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
       
-      <div style={{ marginTop: "2rem" }}>
-        <h3>📚 Популярные категории промптов</h3>
-        <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", marginTop: "1rem" }}>
-          <div style={{ padding: "1rem", background: "#f3f4f6", borderRadius: "6px", cursor: "pointer" }}>
-            <p style={{ fontSize: "1.5rem", margin: "0 0 0.5rem 0" }}>💰</p>
-            <p style={{ fontWeight: "500", margin: 0 }}>Финансы</p>
-            <p style={{ fontSize: "0.875rem", color: "#6b7280", margin: "0.25rem 0 0 0" }}>0 промптов</p>
-          </div>
-          <div style={{ padding: "1rem", background: "#f3f4f6", borderRadius: "6px", cursor: "pointer" }}>
-            <p style={{ fontSize: "1.5rem", margin: "0 0 0.5rem 0" }}>💼</p>
-            <p style={{ fontWeight: "500", margin: 0 }}>Работа</p>
-            <p style={{ fontSize: "0.875rem", color: "#6b7280", margin: "0.25rem 0 0 0" }}>0 промптов</p>
-          </div>
-          <div style={{ padding: "1rem", background: "#f3f4f6", borderRadius: "6px", cursor: "pointer" }}>
-            <p style={{ fontSize: "1.5rem", margin: "0 0 0.5rem 0" }}>🎨</p>
-            <p style={{ fontWeight: "500", margin: 0 }}>Творчество</p>
-            <p style={{ fontSize: "0.875rem", color: "#6b7280", margin: "0.25rem 0 0 0" }}>0 промптов</p>
-          </div>
-          <div style={{ padding: "1rem", background: "#f3f4f6", borderRadius: "6px", cursor: "pointer" }}>
-            <p style={{ fontSize: "1.5rem", margin: "0 0 0.5rem 0" }}>📖</p>
-            <p style={{ fontWeight: "500", margin: 0 }}>Обучение</p>
-            <p style={{ fontSize: "0.875rem", color: "#6b7280", margin: "0.25rem 0 0 0" }}>0 промптов</p>
-          </div>
-        </div>
-      </div>
-      
-      <div style={{ marginTop: "2rem", padding: "1.5rem", background: "#fef3c7", borderRadius: "8px", border: "1px solid #fbbf24" }}>
-        <p style={{ margin: 0 }}>
-          <strong>🚧 В разработке:</strong> Функционал промптов находится в стадии разработки.
-        </p>
-      </div>
+      <Alert className="bg-amber-50 border-amber-300">
+        <Construction className="h-4 w-4" />
+        <AlertDescription>
+          <strong>В разработке:</strong> Функционал промптов находится в стадии разработки.
+        </AlertDescription>
+      </Alert>
     </div>
   );
 }

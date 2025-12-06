@@ -6,7 +6,10 @@ import { AddContractModal } from '@/components/tenders/AddContractModal';
 import type { Tender, TenderStage } from '@/lib/tenders/types';
 import { subscribeToStagesUpdates } from '@/lib/tenders/events';
 import { useToast } from '@/components/toast/ToastContext';
-import styles from '../tenders.module.css';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Plus, RefreshCw, AlertCircle, Package } from 'lucide-react';
 
 interface TenderRealizationClientProps {
   stages: TenderStage[];
@@ -194,126 +197,65 @@ export function TenderRealizationClient({ stages: initialStages, companyId }: Te
   ).length;
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div className="h-full flex flex-col min-w-0 max-w-full overflow-x-hidden">
       {/* Header */}
-      <div className={styles.pageHeader}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-          <div>
-            <h1 className={styles.pageTitle}>
-              Реализация (контракты)
-            </h1>
-            <p className={styles.pageDescription}>
-              Управление постконтрактной работой и заявками
-            </p>
+      <Card className="mb-3 flex-shrink-0">
+        <CardContent className="p-3 md:p-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+            <div className="min-w-0">
+              <h1 className="text-lg md:text-xl font-bold text-gray-900">Реализация (контракты)</h1>
+              <p className="text-gray-500 text-xs md:text-sm mt-0.5">Управление постконтрактной работой</p>
+            </div>
+            <Button size="sm" onClick={() => setShowAddModal(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Добавить</span>
+            </Button>
           </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className={`${styles.btn} ${styles.btnPrimary}`}
-          >
-            <span style={{ fontSize: '1.25rem', marginRight: '0.25rem' }}>+</span>
-            Добавить контракт
-          </button>
-        </div>
 
-        {/* Статистика */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '1rem',
-          marginBottom: '1rem'
-        }}>
-          <div style={{
-            background: '#fff',
-            padding: '1.25rem',
-            borderRadius: '0.75rem',
-            border: '1px solid #eceff3',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
-          }}>
-            <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem', fontWeight: 500 }}>
-              Всего контрактов
+          {/* Статистика */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="bg-white p-2 md:p-3 rounded-lg border shadow-sm">
+              <div className="text-xs text-gray-500 font-medium mb-0.5">Всего</div>
+              <div className="text-lg md:text-xl font-bold text-gray-900">{tenders.length}</div>
             </div>
-            <div style={{ fontSize: '2rem', fontWeight: 700, color: '#1e293b' }}>
-              {tenders.length}
+            <div className="bg-white p-2 md:p-3 rounded-lg border shadow-sm">
+              <div className="text-xs text-gray-500 font-medium mb-0.5">В работе</div>
+              <div className="text-lg md:text-xl font-bold text-gray-900">{tenders.length - completedCount}</div>
+            </div>
+            <div className="bg-white p-2 md:p-3 rounded-lg border shadow-sm">
+              <div className="text-xs text-gray-500 font-medium mb-0.5">Завершено</div>
+              <div className="text-lg md:text-xl font-bold text-gray-900">{completedCount}</div>
+            </div>
+            <div className="bg-white p-2 md:p-3 rounded-lg border shadow-sm">
+              <div className="text-xs text-gray-500 font-medium mb-0.5">Сумма</div>
+              <div className="text-lg md:text-xl font-bold text-gray-900">{(totalContractPrice / 100).toLocaleString('ru-RU')} ₽</div>
             </div>
           </div>
-          
-          <div style={{
-            background: '#fff',
-            padding: '1.25rem',
-            borderRadius: '0.75rem',
-            border: '1px solid #eceff3',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
-          }}>
-            <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem', fontWeight: 500 }}>
-              В работе
-            </div>
-            <div style={{ fontSize: '2rem', fontWeight: 700, color: '#1e293b' }}>
-              {tenders.length - completedCount}
-            </div>
-          </div>
-          
-          <div style={{
-            background: '#fff',
-            padding: '1.25rem',
-            borderRadius: '0.75rem',
-            border: '1px solid #eceff3',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
-          }}>
-            <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem', fontWeight: 500 }}>
-              Завершено
-            </div>
-            <div style={{ fontSize: '2rem', fontWeight: 700, color: '#1e293b' }}>
-              {completedCount}
-            </div>
-          </div>
-          
-          <div style={{
-            background: '#fff',
-            padding: '1.25rem',
-            borderRadius: '0.75rem',
-            border: '1px solid #eceff3',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
-          }}>
-            <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem', fontWeight: 500 }}>
-              Сумма контрактов
-            </div>
-            <div style={{ fontSize: '2rem', fontWeight: 700, color: '#1e293b' }}>
-              {(totalContractPrice / 100).toLocaleString('ru-RU')} ₽
-            </div>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Kanban */}
-      <div style={{ flex: 1, overflowX: 'auto', padding: '1.5rem' }}>
+      <div className="flex-1 min-h-0 overflow-hidden">
         {loading ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-            <div style={{ fontSize: '2rem' }}>⏳ Загрузка...</div>
+          <div className="flex flex-col items-center justify-center h-64 gap-4">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-64 w-full" />
           </div>
         ) : error ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ color: '#ef4444', fontSize: '1.125rem', marginBottom: '0.5rem' }}>⚠️ Ошибка</div>
-              <p style={{ color: '#64748b', marginBottom: '1rem' }}>{error}</p>
-              <button
-                onClick={loadTenders}
-                className={`${styles.btn} ${styles.btnPrimary}`}
-              >
-                Попробовать снова
-              </button>
-            </div>
+          <div className="flex flex-col items-center justify-center h-64 text-center">
+            <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+            <p className="text-lg font-medium mb-2">Ошибка загрузки</p>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={loadTenders}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Попробовать снова
+            </Button>
           </div>
         ) : tenders.length === 0 ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>📦</div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1e293b', marginBottom: '0.5rem' }}>
-                Нет контрактов в реализации
-              </h3>
-              <p style={{ color: '#64748b' }}>
-                Выигранные тендеры появятся здесь автоматически
-              </p>
-            </div>
+          <div className="flex flex-col items-center justify-center h-64 text-center">
+            <Package className="h-16 w-16 text-gray-300 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Нет контрактов в реализации</h3>
+            <p className="text-gray-500">Выигранные тендеры появятся здесь автоматически</p>
           </div>
         ) : (
           <TenderKanban

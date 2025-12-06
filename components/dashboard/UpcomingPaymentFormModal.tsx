@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
-import styles from "@/components/dashboard/Dashboard.module.css";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Info } from "lucide-react";
 import {
   upcomingPaymentFormSchema,
   type UpcomingPaymentFormInput,
@@ -137,135 +140,29 @@ export default function UpcomingPaymentFormModal({
     onClose();
   };
 
-  if (!open) {
-    return null;
-  }
-
-  const modalContent = (
-    <div className={styles.modalRoot} role="presentation" onClick={handleClose}>
-      <div className={styles.modal} role="dialog" aria-modal onClick={(e) => e.stopPropagation()}>
-        <header className={styles.modalHeader}>
-          <div>
-            <div className={styles.modalTitle}>{title}</div>
-            <div className={styles.modalSubtitle}>{subtitle}</div>
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>{subtitle}</DialogDescription></DialogHeader>
+        {error && <div className="text-sm text-destructive p-3 bg-destructive/10 rounded">{error}</div>}
+        <form id="upcomingPaymentForm" className="space-y-4" onSubmit={handleFormSubmit} noValidate>
+          <input type="hidden" {...form.register("id")} />
+          <div className="space-y-2"><Label>Название</Label><Input type="text" placeholder="Например, аренда" {...form.register("name")} autoFocus disabled={pending} />{form.formState.errors.name && <span className="text-sm text-destructive">{form.formState.errors.name.message}</span>}</div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2"><Label>Дата</Label><Input type="date" {...form.register("dueDate")} disabled={pending} />{form.formState.errors.dueDate && <span className="text-sm text-destructive">{form.formState.errors.dueDate.message}</span>}</div>
+            <div className="space-y-2"><Label>Сумма</Label><Input type="number" step="0.01" min="0.01" placeholder="Введите сумму" {...form.register("amountMajor")} disabled={pending} />{form.formState.errors.amountMajor && <span className="text-sm text-destructive">{form.formState.errors.amountMajor.message}</span>}</div>
           </div>
-          <button type="button" className={styles.modalClose} onClick={handleClose} aria-label="Закрыть">
-            <span className="material-icons" aria-hidden>
-              close
-            </span>
-          </button>
-        </header>
-        <div className={styles.modalContent}>
-          {error && <div className={styles.modalError}>{error}</div>}
-          <form id="upcomingPaymentForm" className={styles.modalForm} onSubmit={handleFormSubmit} noValidate>
-            <input type="hidden" {...form.register("id")} />
-            <div className={styles.modalFormGrid}>
-              <label className={styles.formGroup}>
-                <span className={styles.formLabel}>Название</span>
-                <input
-                  type="text"
-                  className={styles.formInput}
-                  placeholder="Например, аренда"
-                  {...form.register("name")}
-                  autoFocus
-                  disabled={pending}
-                />
-                {form.formState.errors.name && (
-                  <span className={styles.fieldError}>{form.formState.errors.name.message}</span>
-                )}
-              </label>
-              <label className={styles.formGroup}>
-                <span className={styles.formLabel}>Дата</span>
-                <input
-                  type="date"
-                  className={styles.formInput}
-                  {...form.register("dueDate")}
-                  disabled={pending}
-                />
-                {form.formState.errors.dueDate && (
-                  <span className={styles.fieldError}>{form.formState.errors.dueDate.message}</span>
-                )}
-                <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>Формат: ГГГГ-ММ-ДД</span>
-              </label>
-              <label className={styles.formGroup}>
-                <span className={styles.formLabel}>Сумма</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  className={styles.formInput}
-                  placeholder="Введите сумму"
-                  {...form.register("amountMajor")}
-                  disabled={pending}
-                  required
-                />
-                {form.formState.errors.amountMajor && (
-                  <span className={styles.fieldError}>{form.formState.errors.amountMajor.message}</span>
-                )}
-              </label>
-              <label className={styles.formGroup}>
-                <span className={styles.formLabel}>Тип</span>
-                <select className={styles.formSelect} {...form.register("direction")} disabled={pending}>
-                  <option value="expense">Расход</option>
-                  <option value="income">Доход</option>
-                </select>
-                {form.formState.errors.direction && (
-                  <span className={styles.fieldError}>{form.formState.errors.direction.message}</span>
-                )}
-              </label>
-              {isPaid && hasLinkedTransaction && (
-                <label className={styles.formGroupFull}>
-                  <span className={styles.formLabel}>Счёт</span>
-                  <select
-                    className={styles.formSelect}
-                    {...form.register("accountName")}
-                    disabled={true}
-                  >
-                    <option value="">Не выбран</option>
-                    {accounts.map((account) => (
-                      <option key={account.id} value={account.name}>
-                        {getAccountTypeLabel(account)} — {account.name}
-                      </option>
-                    ))}
-                  </select>
-                  {form.formState.errors.accountName && (
-                    <span className={styles.fieldError}>{form.formState.errors.accountName.message}</span>
-                  )}
-                  <span style={{ fontSize: 12, color: "var(--primary-color)", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span className="material-icons" style={{ fontSize: 16 }}>info</span>
-                    Счёт указан из связанной транзакции
-                  </span>
-                </label>
-              )}
-            </div>
-            <div className={styles.modalFooter}>
-              <button type="button" className={styles.btnSecondary} onClick={handleClose} disabled={pending}>
-                Отмена
-              </button>
-              {isPaid && (
-                <button
-                  type="button"
-                  className={styles.btnDanger}
-                  onClick={() => onUnlinkTransaction?.()}
-                  disabled={pending || unlinkPending || !onUnlinkTransaction || !hasLinkedTransaction}
-                >
-                  {unlinkPending ? "Отменяем связь…" : "Убрать связь с транзакцией"}
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={handleSubmitClick}
-                className={styles.btnPrimary}
-                disabled={pending || unlinkPending}
-              >
-                {pending ? "Сохраняем…" : "Сохранить"}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+          <div className="space-y-2"><Label>Тип</Label><Select onValueChange={(v) => form.setValue("direction", v as "income" | "expense")} defaultValue={form.getValues("direction")} disabled={pending}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="expense">Расход</SelectItem><SelectItem value="income">Доход</SelectItem></SelectContent></Select>{form.formState.errors.direction && <span className="text-sm text-destructive">{form.formState.errors.direction.message}</span>}</div>
+          {isPaid && hasLinkedTransaction && (
+            <div className="space-y-2"><Label>Счёт</Label><Select value={form.watch("accountName") || ""} disabled><SelectTrigger><SelectValue placeholder="Не выбран" /></SelectTrigger><SelectContent>{accounts.map((account) => <SelectItem key={account.id} value={account.name}>{getAccountTypeLabel(account)} — {account.name}</SelectItem>)}</SelectContent></Select><span className="flex items-center gap-1 text-xs text-primary"><Info className="h-3 w-3" />Счёт указан из связанной транзакции</span></div>
+          )}
+        </form>
+        <DialogFooter className="gap-2">
+          <Button type="button" variant="outline" onClick={handleClose} disabled={pending}>Отмена</Button>
+          {isPaid && <Button type="button" variant="destructive" onClick={() => onUnlinkTransaction?.()} disabled={pending || unlinkPending || !onUnlinkTransaction || !hasLinkedTransaction}>{unlinkPending ? "Отменяем..." : "Убрать связь"}</Button>}
+          <Button type="button" onClick={handleSubmitClick} disabled={pending || unlinkPending}>{pending ? "Сохраняем..." : "Сохранить"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
-
-  return createPortal(modalContent, document.body);
 }

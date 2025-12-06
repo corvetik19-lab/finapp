@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import type { TenderAttachment } from '@/lib/tenders/types';
+import { FileText, Table, Image, FolderArchive, File, CloudUpload, Download, Trash2, type LucideIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface TenderAttachmentsProps {
   tenderId: string;
@@ -131,27 +133,27 @@ export function TenderAttachments({ tenderId }: TenderAttachmentsProps) {
     });
   };
 
-  const getFileIcon = (fileName: string) => {
+  const getFileIcon = (fileName: string): LucideIcon => {
     const ext = fileName.split('.').pop()?.toLowerCase();
     switch (ext) {
       case 'pdf':
-        return 'picture_as_pdf';
+        return FileText;
       case 'doc':
       case 'docx':
-        return 'description';
+        return FileText;
       case 'xls':
       case 'xlsx':
-        return 'table_chart';
+        return Table;
       case 'jpg':
       case 'jpeg':
       case 'png':
       case 'gif':
-        return 'image';
+        return Image;
       case 'zip':
       case 'rar':
-        return 'folder_zip';
+        return FolderArchive;
       default:
-        return 'insert_drive_file';
+        return File;
     }
   };
 
@@ -181,9 +183,7 @@ export function TenderAttachments({ tenderId }: TenderAttachmentsProps) {
           className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors"
         >
           <div className="flex flex-col items-center justify-center pt-5 pb-6">
-            <span className="material-icons text-4xl text-gray-400 mb-2">
-              cloud_upload
-            </span>
+            <CloudUpload className="h-10 w-10 text-gray-400 mb-2" />
             <p className="mb-2 text-sm text-gray-600">
               <span className="font-semibold">Нажмите для загрузки</span> или
               перетащите файлы
@@ -229,9 +229,7 @@ export function TenderAttachments({ tenderId }: TenderAttachmentsProps) {
               <div className="flex items-center gap-4">
                 {/* Icon */}
                 <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                  <span className="material-icons text-blue-600 text-2xl">
-                    {getFileIcon(attachment.file_name)}
-                  </span>
+                  {(() => { const Icon = getFileIcon(attachment.file_name); return <Icon className="h-6 w-6 text-blue-600" />; })()}
                 </div>
 
                 {/* Info */}
@@ -256,22 +254,12 @@ export function TenderAttachments({ tenderId }: TenderAttachmentsProps) {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleDownload(attachment)}
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    title="Скачать"
-                  >
-                    <span className="material-icons">download</span>
-                  </button>
-                  <button
-                    onClick={() =>
-                      handleDelete(attachment.id, attachment.file_name)
-                    }
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Удалить"
-                  >
-                    <span className="material-icons">delete</span>
-                  </button>
+                  <Button variant="ghost" size="icon" onClick={() => handleDownload(attachment)} title="Скачать" className="text-blue-600 hover:bg-blue-50">
+                    <Download className="h-5 w-5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleDelete(attachment.id, attachment.file_name)} title="Удалить" className="text-red-600 hover:bg-red-50">
+                    <Trash2 className="h-5 w-5" />
+                  </Button>
                 </div>
               </div>
             </div>

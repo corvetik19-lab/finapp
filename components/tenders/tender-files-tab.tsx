@@ -3,7 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Tender } from '@/lib/tenders/types';
 import { useToast } from '@/components/toast/ToastContext';
-import styles from './tender-files-tab.module.css';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Upload, Download, Eye, Trash2, Check, X, FileText, FileSpreadsheet, FileImage, FileArchive, Paperclip, Loader2, FolderOpen, User } from 'lucide-react';
 
 type FileCategory = 'tender' | 'calculation' | 'submission' | 'contract';
 
@@ -171,200 +176,144 @@ export function TenderFilesTab({ tender }: TenderFilesTabProps) {
     return parts.length > 1 ? `.${parts[parts.length - 1]}` : '';
   };
 
-  const getFileIcon = (fileName: string) => {
+  const getFileIconComponent = (fileName: string) => {
     const ext = getFileExtension(fileName).toLowerCase();
-    if (['.doc', '.docx'].includes(ext)) return '📝';
-    if (['.xls', '.xlsx'].includes(ext)) return '📊';
-    if (['.pdf'].includes(ext)) return '📄';
-    if (['.jpg', '.jpeg', '.png', '.gif'].includes(ext)) return '🖼️';
-    if (['.zip', '.rar', '.7z'].includes(ext)) return '📦';
-    return '📎';
+    if (['.doc', '.docx', '.pdf'].includes(ext)) return <FileText className="h-4 w-4 text-blue-600" />;
+    if (['.xls', '.xlsx'].includes(ext)) return <FileSpreadsheet className="h-4 w-4 text-green-600" />;
+    if (['.jpg', '.jpeg', '.png', '.gif'].includes(ext)) return <FileImage className="h-4 w-4 text-purple-600" />;
+    if (['.zip', '.rar', '.7z'].includes(ext)) return <FileArchive className="h-4 w-4 text-orange-600" />;
+    return <Paperclip className="h-4 w-4 text-gray-600" />;
   };
 
   if (loading) {
-    return <div className={styles.container}>Загрузка файлов...</div>;
+    return (
+      <div className="p-6 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600 mr-2" />
+        <span className="text-gray-500">Загрузка файлов...</span>
+      </div>
+    );
   }
 
   return (
-    <div className={styles.container}>
+    <div className="p-6 space-y-6">
       {/* Вкладки категорий */}
-      <div className={styles.categoryTabs}>
+      <div className="flex gap-2 flex-wrap">
         {(Object.keys(categoryLabels) as FileCategory[]).map((category) => (
-          <button
+          <Button
             key={category}
-            className={`${styles.categoryTab} ${selectedCategory === category ? styles.categoryTabActive : ''}`}
+            variant={selectedCategory === category ? 'default' : 'outline'}
+            size="sm"
             onClick={() => setSelectedCategory(category)}
           >
             {categoryLabels[category]}
-          </button>
+          </Button>
         ))}
       </div>
 
       {/* Кнопка загрузки */}
-      <div className={styles.toolbar}>
-        <button 
-          className={styles.uploadButton} 
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
-        >
-          {uploading ? 'Загрузка...' : 'Загрузить файл'}
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          onChange={handleFileSelect}
-          style={{ display: 'none' }}
-        />
+      <div className="flex justify-end">
+        <Button onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+          {uploading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Загрузка...</> : <><Upload className="h-4 w-4 mr-2" />Загрузить файл</>}
+        </Button>
+        <input ref={fileInputRef} type="file" multiple onChange={handleFileSelect} style={{ display: 'none' }} />
       </div>
 
       {/* Таблица файлов */}
       {filteredFiles.length === 0 ? (
-        <div className={styles.emptyState}>
-          <p>📂 Файлов в этой категории пока нет</p>
+        <div className="text-center py-12">
+          <FolderOpen className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+          <p className="text-gray-500">Файлов в этой категории пока нет</p>
         </div>
       ) : (
-        <div className={styles.tableWrapper}>
-          <table className={styles.filesTable}>
-            <thead>
-              <tr>
-                <th>Файл</th>
-                <th>Расширение</th>
-                <th>Дата и время прикрепления</th>
-                {selectedCategory !== 'tender' && <th>Кто прикрепил</th>}
-                <th>Комментарий</th>
-                <th>Действие</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredFiles.map((file) => (
-                <tr key={file.id}>
-                  <td className={styles.fileNameCell}>{file.file_name}</td>
-                  <td className={styles.extensionCell}>
-                    <span className={styles.fileIcon}>{getFileIcon(file.file_name)}</span>
-                    <span>{getFileExtension(file.file_name)}</span>
-                  </td>
-                  <td>{new Date(file.created_at).toLocaleString('ru-RU', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}</td>
-                  {selectedCategory !== 'tender' && (
-                    <td>
-                      {file.uploader_name ? (
-                        <div className={styles.uploaderCell}>
-                          <span className={styles.uploaderIcon}>👤</span>
-                          <span>{file.uploader_name}</span>
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Файл</TableHead>
+                  <TableHead>Тип</TableHead>
+                  <TableHead>Дата</TableHead>
+                  {selectedCategory !== 'tender' && <TableHead>Кто прикрепил</TableHead>}
+                  <TableHead>Комментарий</TableHead>
+                  <TableHead className="text-right">Действия</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredFiles.map((file) => (
+                  <TableRow key={file.id}>
+                    <TableCell className="font-medium">{file.file_name}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {getFileIconComponent(file.file_name)}
+                        <span className="text-sm text-gray-500">{getFileExtension(file.file_name)}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-gray-500">
+                      {new Date(file.created_at).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </TableCell>
+                    {selectedCategory !== 'tender' && (
+                      <TableCell>
+                        {file.uploader_name ? (
+                          <div className="flex items-center gap-1 text-sm">
+                            <User className="h-4 w-4 text-gray-400" />
+                            {file.uploader_name}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-sm">Неизвестно</span>
+                        )}
+                      </TableCell>
+                    )}
+                    <TableCell>
+                      {commentingFileId === file.id ? (
+                        <div className="flex gap-1">
+                          <Input value={commentText} onChange={(e) => setCommentText(e.target.value)} placeholder="Комментарий..." className="h-8 text-sm" autoFocus />
+                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleAddComment(file.id)}><Check className="h-4 w-4 text-green-600" /></Button>
+                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { setCommentingFileId(null); setCommentText(''); }}><X className="h-4 w-4 text-red-500" /></Button>
                         </div>
                       ) : (
-                        <span className={styles.systemUpload}>Неизвестный сотрудник</span>
+                        <Button variant="ghost" size="sm" className="text-gray-500 h-8" onClick={() => { setCommentingFileId(file.id); setCommentText(file.comment || ''); }}>
+                          {file.comment || 'Добавить комментарий'}
+                        </Button>
                       )}
-                    </td>
-                  )}
-                  <td>
-                    {commentingFileId === file.id ? (
-                      <div className={styles.commentForm}>
-                        <input
-                          type="text"
-                          value={commentText}
-                          onChange={(e) => setCommentText(e.target.value)}
-                          placeholder="Введите комментарий..."
-                          className={styles.commentInput}
-                          autoFocus
-                        />
-                        <button
-                          onClick={() => handleAddComment(file.id)}
-                          className={styles.commentSaveButton}
-                        >
-                          ✓
-                        </button>
-                        <button
-                          onClick={() => {
-                            setCommentingFileId(null);
-                            setCommentText('');
-                          }}
-                          className={styles.commentCancelButton}
-                        >
-                          ✕
-                        </button>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => setViewingFile(file)} title="Просмотр"><Eye className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDownload(file)} title="Скачать"><Download className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(file.id)} title="Удалить"><Trash2 className="h-4 w-4 text-red-500" /></Button>
                       </div>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          setCommentingFileId(file.id);
-                          setCommentText(file.comment || '');
-                        }}
-                        className={styles.addCommentButton}
-                      >
-                        {file.comment || 'Добавить комментарий'}
-                      </button>
-                    )}
-                  </td>
-                  <td>
-                    <div className={styles.actionButtons}>
-                      <button
-                        onClick={() => setViewingFile(file)}
-                        className={styles.viewButton}
-                        title="Просмотр"
-                      >
-                        👁️
-                      </button>
-                      <button
-                        onClick={() => handleDownload(file)}
-                        className={styles.downloadButton}
-                        title="Скачать"
-                      >
-                        ⬇️
-                      </button>
-                      <button
-                        onClick={() => handleDelete(file.id)}
-                        className={styles.deleteButton}
-                        title="Удалить"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       )}
 
       {/* Модалка просмотра файла */}
-      {viewingFile && (
-        <div className={styles.modal} onClick={() => setViewingFile(null)}>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h3>{viewingFile.file_name}</h3>
-              <button
-                onClick={() => setViewingFile(null)}
-                className={styles.modalCloseButton}
-              >
-                ✕
-              </button>
-            </div>
-            <div className={styles.modalBody}>
+      <Dialog open={!!viewingFile} onOpenChange={() => setViewingFile(null)}>
+        <DialogContent className="max-w-4xl h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>{viewingFile?.file_name}</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 min-h-0">
+            {viewingFile && (
               <iframe
                 src={`/api/tenders/${tender.id}/files/${viewingFile.id}/view`}
-                className={styles.fileViewer}
+                className="w-full h-full border rounded"
                 title={viewingFile.file_name}
               />
-            </div>
-            <div className={styles.modalFooter}>
-              <button
-                onClick={() => handleDownload(viewingFile)}
-                className={styles.modalDownloadButton}
-              >
-                ⬇️ Скачать
-              </button>
-            </div>
+            )}
           </div>
-        </div>
-      )}
+          <DialogFooter>
+            <Button onClick={() => viewingFile && handleDownload(viewingFile)}>
+              <Download className="h-4 w-4 mr-2" />
+              Скачать
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

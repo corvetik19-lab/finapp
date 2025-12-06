@@ -3,7 +3,20 @@
 import { useState, useMemo, useId, useCallback, useEffect } from "react";
 import { useFormStatus } from "react-dom";
 import { transferStashAction } from "./actions";
-import styles from "./cards.module.css";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 
 type Mode = "to_stash" | "from_stash";
 
@@ -24,45 +37,29 @@ type TransferModalLauncherProps = {
   options: StashOption[];
 };
 
-type CurrencyFormatterConfig = {
-  value: number;
-  currency: string;
-};
-
-function formatMoney({ value, currency }: CurrencyFormatterConfig) {
+function formatMoney(value: number, currency: string) {
   const major = value / 100;
-  
-  // Для рублей не показываем код валюты
   if (currency === "RUB") {
-    return `${major.toLocaleString("ru-RU", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })} ₽`;
+    return `${major.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽`;
   }
-  
-  return new Intl.NumberFormat("ru-RU", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 2,
-  }).format(major);
+  return new Intl.NumberFormat("ru-RU", { style: "currency", currency, maximumFractionDigits: 2 }).format(major);
 }
 
 function SubmitButton({ mode }: { mode: Mode }) {
   const { pending } = useFormStatus();
   const text = mode === "to_stash" ? "Перевести в Кубышку" : "Перевести из Кубышки";
   return (
-    <button className={styles.primaryBtn} type="submit" disabled={pending}>
+    <Button type="submit" disabled={pending}>
       {pending ? "Выполняем..." : text}
-    </button>
+    </Button>
   );
 }
 
-export default function TransferModalLauncher({ mode, icon, label, options }: TransferModalLauncherProps) {
+export default function TransferModalLauncher({ mode, label, options }: TransferModalLauncherProps) {
   const [open, setOpen] = useState(false);
   const [selection, setSelection] = useState(0);
   const [amount, setAmount] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const titleId = useId();
 
   const hasOptions = options.length > 0;
@@ -71,10 +68,9 @@ export default function TransferModalLauncher({ mode, icon, label, options }: Tr
   const dialogTitle = mode === "to_stash" ? "Перевод в Кубышку" : "Перевод из Кубышки";
   const balanceHint = useMemo(() => {
     if (!current) return null;
-    const { cardBalance, cardCurrency, stashBalance, stashCurrency } = current;
     return {
-      card: formatMoney({ value: cardBalance, currency: cardCurrency }),
-      stash: formatMoney({ value: stashBalance, currency: stashCurrency }),
+      card: formatMoney(current.cardBalance, current.cardCurrency),
+      stash: formatMoney(current.stashBalance, current.stashCurrency),
     };
   }, [current]);
 
@@ -84,161 +80,115 @@ export default function TransferModalLauncher({ mode, icon, label, options }: Tr
   }, []);
 
   useEffect(() => {
-    if (!success) return;
-    const timer = window.setTimeout(() => setSuccess(null), 3500);
-    return () => window.clearTimeout(timer);
-  }, [success]);
+    if (open) {
+      setSelection(0);
+      resetFormState();
+    }
+  }, [open, resetFormState]);
 
-  const onOpen = useCallback(() => {
-    if (!hasOptions) return;
-    setSelection(0);
-    resetFormState();
-    setOpen(true);
-  }, [hasOptions, resetFormState]);
-
-  const onClose = useCallback(() => {
-    setOpen(false);
-    resetFormState();
-  }, [resetFormState]);
+  const Icon = mode === "to_stash" ? ArrowUpCircle : ArrowDownCircle;
 
   return (
-    <div className={styles.actionWrapper}>
-      <button
-        type="button"
-        className={styles.actionCard}
-        onClick={onOpen}
-        disabled={!hasOptions}
-      >
-        <div className={styles.actionIcon}>
-          <i className="material-icons">{icon}</i>
-        </div>
-        <div className={styles.actionTitle}>{label}</div>
-        {!hasOptions && <div className={styles.actionHint}>Нет доступной Кубышки</div>}
-      </button>
-
-      {success && <div className={`${styles.toast} ${styles.toastSuccess}`}>{success}</div>}
-
-      {open && current && (
-        <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-labelledby={titleId}>
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <div className={styles.modalTitle} id={titleId}>
-                {dialogTitle}
-              </div>
-              <button className={styles.modalClose} type="button" onClick={onClose} aria-label="Закрыть">
-                ×
-              </button>
-            </div>
-
-            <form
-              action={async (formData) => {
-                const rawAmount = formData.get("amount_major");
-                const normalized = typeof rawAmount === "string" ? rawAmount.trim().replace(/\s+/g, "").replace(",", ".") : "";
-                const parsed = Number(normalized);
-
-                if (!normalized || Number.isNaN(parsed) || parsed <= 0) {
-                  setError("Введите сумму больше 0");
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" disabled={!hasOptions}>
+          <Icon className="mr-2 h-4 w-4" />
+          {label}
+        </Button>
+      </DialogTrigger>
+      {current && (
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{dialogTitle}</DialogTitle>
+            <DialogDescription>
+              {mode === "to_stash" ? "Переведите средства с карты в Кубышку" : "Переведите средства из Кубышки на карту"}
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            action={async (formData) => {
+              const rawAmount = formData.get("amount_major");
+              const normalized = typeof rawAmount === "string" ? rawAmount.trim().replace(/\s+/g, "").replace(",", ".") : "";
+              const parsed = Number(normalized);
+              if (!normalized || Number.isNaN(parsed) || parsed <= 0) {
+                setError("Введите сумму больше 0");
+                return;
+              }
+              if (current) {
+                const minor = Math.round(parsed * 100);
+                if (mode === "to_stash" && minor > current.cardBalance) {
+                  setError("Недостаточно средств на карте");
                   return;
                 }
-
-                if (current) {
-                  const minor = Math.round(parsed * 100);
-                  if (mode === "to_stash" && minor > current.cardBalance) {
-                    setError("Недостаточно средств на карте");
-                    return;
-                  }
-                  if (mode === "from_stash" && minor > current.stashBalance) {
-                    setError("Недостаточно средств в Кубышке");
-                    return;
-                  }
+                if (mode === "from_stash" && minor > current.stashBalance) {
+                  setError("Недостаточно средств в Кубышке");
+                  return;
                 }
-
-                setError(null);
-                formData.set("amount_major", normalized);
-
-                await transferStashAction(formData);
-                setSuccess(mode === "to_stash" ? "Перевод в Кубышку выполнен" : "Перевод из Кубышки выполнен");
-                onClose();
-              }}
-            >
-              <div className={styles.modalBody}>
-                {options.length > 1 && (
-                  <div className={styles.formField}>
-                    <label htmlFor={`${titleId}-account`}>Карта</label>
-                    <select
-                      id={`${titleId}-account`}
-                      name="__account_select"
-                      value={current.accountId}
-                      onChange={(event) => {
-                        const nextIndex = options.findIndex((opt) => opt.accountId === event.target.value);
-                        setSelection(nextIndex >= 0 ? nextIndex : 0);
-                      }}
-                    >
+              }
+              setError(null);
+              formData.set("amount_major", normalized);
+              await transferStashAction(formData);
+              setOpen(false);
+            }}
+          >
+            <div className="grid gap-4 py-4">
+              {options.length > 1 && (
+                <div className="grid gap-2">
+                  <Label htmlFor={`${titleId}-account`}>Карта</Label>
+                  <Select value={current.accountId} onValueChange={(val) => {
+                    const idx = options.findIndex((o) => o.accountId === val);
+                    setSelection(idx >= 0 ? idx : 0);
+                  }}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
                       {options.map((opt) => (
-                        <option key={opt.accountId} value={opt.accountId}>
-                          {opt.accountName}
-                        </option>
+                        <SelectItem key={opt.accountId} value={opt.accountId}>{opt.accountName}</SelectItem>
                       ))}
-                    </select>
-                  </div>
-                )}
-
-                <input type="hidden" name="direction" value={mode} />
-                <input type="hidden" name="account_id" value={current.accountId} />
-                <input type="hidden" name="stash_id" value={current.stashId} />
-                <input type="hidden" name="currency" value={current.stashCurrency} />
-
-                <div className={styles.formField}>
-                  <label htmlFor={`${titleId}-amount`}>Сумма (₽)</label>
-                  <input
-                    id={`${titleId}-amount`}
-                    name="amount_major"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    required
-                    value={amount}
-                    onChange={(event) => {
-                      setAmount(event.target.value);
-                      if (error) setError(null);
-                    }}
-                  />
-                  {error && <div className={styles.fieldError}>{error}</div>}
+                    </SelectContent>
+                  </Select>
                 </div>
-
-                {balanceHint && (
-                  <div className={styles.balanceSummary}>
-                    <div>
-                      <div className={styles.balanceLabel}>Баланс карты</div>
-                      <div className={styles.balanceValue}>{balanceHint.card}</div>
-                    </div>
-                    <div>
-                      <div className={styles.balanceLabel}>Баланс Кубышки</div>
-                      <div className={styles.balanceValue}>{balanceHint.stash}</div>
-                    </div>
-                  </div>
-                )}
-
-                <div className={styles.modalHint}>
-                  {mode === "to_stash"
-                    ? "Средства спишутся с карты и будут зачислены в Кубышку"
-                    : "Средства поступят на карту и уменьшат баланс Кубышки"}
-                </div>
+              )}
+              <input type="hidden" name="direction" value={mode} />
+              <input type="hidden" name="account_id" value={current.accountId} />
+              <input type="hidden" name="stash_id" value={current.stashId} />
+              <input type="hidden" name="currency" value={current.stashCurrency} />
+              <div className="grid gap-2">
+                <Label htmlFor={`${titleId}-amount`}>Сумма (₽)</Label>
+                <Input
+                  id={`${titleId}-amount`}
+                  name="amount_major"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  required
+                  value={amount}
+                  onChange={(e) => { setAmount(e.target.value); if (error) setError(null); }}
+                />
+                {error && <p className="text-sm text-red-500">{error}</p>}
               </div>
-
-              <div className={styles.modalFooter}>
-                <div className={styles.modalActions}>
-                  <button className={styles.secondaryBtn} type="button" onClick={onClose}>
-                    Отмена
-                  </button>
-                  <SubmitButton mode={mode} />
+              {balanceHint && (
+                <div className="grid grid-cols-2 gap-4 bg-muted rounded-lg p-3">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Баланс карты</p>
+                    <p className="font-bold">{balanceHint.card}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Баланс Кубышки</p>
+                    <p className="font-bold">{balanceHint.stash}</p>
+                  </div>
                 </div>
-              </div>
-            </form>
-          </div>
-        </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {mode === "to_stash" ? "Средства спишутся с карты и будут зачислены в Кубышку" : "Средства поступят на карту и уменьшат баланс Кубышки"}
+              </p>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Отмена</Button>
+              <SubmitButton mode={mode} />
+            </DialogFooter>
+          </form>
+        </DialogContent>
       )}
-    </div>
+    </Dialog>
   );
 }

@@ -2,7 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { AttachmentPreviewModal } from './AttachmentPreviewModal';
-import styles from './TenderCommentsSection.module.css';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Loader2, Paperclip, Reply, Pencil, Trash2, X, Send, MessageSquare } from 'lucide-react';
 
 interface CommentAttachment {
   id: string;
@@ -58,7 +62,7 @@ export function TenderCommentsSection({ tenderId, onCountChange }: TenderComment
     fileName: string;
     mimeType: string;
   } | null>(null);
-  const newCommentFormRef = useRef<HTMLFormElement>(null);
+  const newCommentFormRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadComments();
@@ -261,8 +265,8 @@ export function TenderCommentsSection({ tenderId, onCountChange }: TenderComment
 
   if (loading) {
     return (
-      <div className={styles.loading}>
-        <div className={styles.spinner}></div>
+      <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+        <Loader2 className="h-8 w-8 animate-spin mb-3 text-blue-500" />
         <p>Загрузка комментариев...</p>
       </div>
     );
@@ -277,205 +281,168 @@ export function TenderCommentsSection({ tenderId, onCountChange }: TenderComment
     return comments.filter(c => c.parent_comment_id === commentId);
   };
 
-  return (
-    <div className={styles.container}>
-      {/* Причины проигрыша */}
-      {lossReasonComments.length > 0 && (
-        <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>Причины проигрыша</h3>
-          {lossReasonComments.map((comment) => (
-            <div key={comment.id} className={`${styles.comment} ${styles.lossReasonComment}`}>
-              <div className={styles.commentHeader}>
-                {comment.author && (
-                  <span className={styles.authorName}>
-                    {comment.author.full_name}
+  // Хелпер для рендеринга комментария
+  const renderComment = (comment: TenderComment, isReply = false, isLossReason = false) => (
+    <Card key={comment.id} className={`mb-3 ${isReply ? 'ml-8 border-l-2 border-l-blue-500' : ''} ${isLossReason ? 'bg-red-50' : ''}`}>
+      <CardContent className="p-4">
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
+          {comment.author && (
+            <span className="font-semibold text-gray-900">
+              {comment.author.full_name}
+            </span>
+          )}
+          {isLossReason && (
+            <Badge variant="destructive" className="text-xs">
+              {getCommentTypeLabel(comment.comment_type)}
+            </Badge>
+          )}
+          {isReply && (
+            <Badge variant="secondary" className="text-xs">Ответ</Badge>
+          )}
+          {comment.stage_name && (
+            <span className="text-sm text-gray-500">{comment.stage_name}</span>
+          )}
+          <span className="text-xs text-gray-400 ml-auto">{formatDate(comment.created_at)}</span>
+        </div>
+
+        {editingId === comment.id ? (
+          <div className="space-y-3">
+            <Textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              rows={4}
+            />
+            <div className="space-y-2">
+              <label className="text-sm text-gray-600">Прикрепить файл (необязательно)</label>
+              <input
+                type="file"
+                onChange={handleAttachmentChange}
+                disabled={isSaving}
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                className="text-sm"
+              />
+              {attachmentDraft && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span>{attachmentDraft.name}</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setAttachmentDraft(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => handleSaveEdit(comment.id)}
+                disabled={isSaving}
+                size="sm"
+              >
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                {isSaving ? 'Сохранение...' : 'Сохранить'}
+              </Button>
+              <Button onClick={handleCancelEdit} variant="outline" size="sm">
+                Отмена
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Цитата родительского комментария */}
+            {isReply && comment.parent_comment && (
+              <div className="mb-3 pl-3 border-l-2 border-gray-200">
+                {comment.parent_comment.author && (
+                  <span className="text-xs font-semibold text-blue-600">
+                    {comment.parent_comment.author.full_name}
                   </span>
                 )}
-                <span className={styles.commentType}>{getCommentTypeLabel(comment.comment_type)}</span>
-                {comment.stage_name && (
-                  <span className={styles.stageName}>{comment.stage_name}</span>
-                )}
-                <span className={styles.commentDate}>{formatDate(comment.created_at)}</span>
+                <p className="text-sm text-gray-500 line-clamp-2">{comment.parent_comment.content}</p>
               </div>
-
-              {editingId === comment.id ? (
-                <div className={styles.editForm}>
-                  <textarea
-                    value={editContent}
-                    onChange={(e) => setEditContent(e.target.value)}
-                    className={styles.editTextarea}
-                    rows={4}
-                  />
-                  <div className={styles.newAttachmentField}>
-                    <label>Прикрепить новый файл (необязательно)</label>
-                    <input
-                      type="file"
-                      onChange={handleAttachmentChange}
-                      className={styles.fileInput}
-                      disabled={isSaving}
-                      accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                    />
-                    {attachmentDraft && (
-                      <div className={styles.selectedFileInfo}>
-                        <span>{attachmentDraft.name}</span>
-                        <button
-                          type="button"
-                          className={styles.removeSelectedFile}
-                          onClick={() => setAttachmentDraft(null)}
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <div className={styles.editActions}>
-                    <button
-                      onClick={() => handleSaveEdit(comment.id)}
-                      className={styles.saveButton}
-                      disabled={isSaving}
+            )}
+            
+            <p className="text-gray-700 whitespace-pre-wrap mb-3">{comment.content}</p>
+            
+            {comment.attachments && comment.attachments.length > 0 && (
+              <div className="flex flex-col gap-2 mb-3">
+                {comment.attachments.map((attachment) => (
+                  <div key={attachment.id} className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => downloadAttachment(comment.id, attachment)}
+                      className="h-auto py-1.5"
                     >
-                      {isSaving ? 'Сохранение...' : 'Сохранить'}
-                    </button>
-                    <button
-                      onClick={handleCancelEdit}
-                      className={styles.cancelButton}
-                    >
-                      Отмена
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <p className={styles.commentContent}>{comment.content}</p>
-                  
-                  {comment.attachments && comment.attachments.length > 0 && (
-                    <div className={styles.attachments}>
-                      {comment.attachments.map((attachment) => (
-                        <div key={attachment.id} className={styles.attachmentRow}>
-                          <button
-                            onClick={() => downloadAttachment(comment.id, attachment)}
-                            className={styles.attachmentButton}
-                          >
-                            <span className={styles.attachmentIcon}>📎</span>
-                            <span className={styles.attachmentName}>{attachment.file_name}</span>
-                            <span className={styles.attachmentSize}>
-                              ({(attachment.file_size / 1024).toFixed(1)} КБ)
-                            </span>
-                          </button>
-                          <button
-                            type="button"
-                            className={styles.attachmentDeleteButton}
-                            onClick={() => handleAttachmentDelete(comment.id, attachment.id)}
-                            title="Удалить файл"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className={styles.commentActions}>
-                    <button
-                      onClick={() => {
-                        setReplyingTo(comment);
-                        setTimeout(() => {
-                          newCommentFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                          newCommentFormRef.current?.querySelector('textarea')?.focus();
-                        }, 100);
-                      }}
-                      className={styles.replyButton}
-                    >
-                      Ответить
-                    </button>
-                    <button
-                      onClick={() => handleEdit(comment)}
-                      className={styles.editButton}
-                    >
-                      Редактировать
-                    </button>
-                    <button
-                      onClick={() => handleDelete(comment.id)}
-                      className={styles.deleteButton}
-                    >
-                      Удалить
-                    </button>
-                  </div>
-                </>
-              )}
-
-              {/* Ответы на этот комментарий */}
-              {getReplies(comment.id).map((reply) => (
-                <div key={reply.id} className={`${styles.comment} ${styles.replyComment}`}>
-                  <div className={styles.commentHeader}>
-                    {reply.author && (
-                      <span className={styles.authorName}>
-                        {reply.author.full_name}
+                      <Paperclip className="h-4 w-4 mr-2" />
+                      <span className="truncate max-w-[200px]">{attachment.file_name}</span>
+                      <span className="text-gray-400 ml-2">
+                        ({(attachment.file_size / 1024).toFixed(1)} КБ)
                       </span>
-                    )}
-                    <span className={styles.replyBadge}>Ответ</span>
-                    <span className={styles.commentDate}>{formatDate(reply.created_at)}</span>
-                  </div>
-
-                  {reply.parent_comment && (
-                    <div className={styles.parentCommentQuote}>
-                      <div className={styles.quoteHeader}>
-                        <span className={styles.quoteIcon}>↩️</span>
-                        {reply.parent_comment.author && (
-                          <span className={styles.quoteAuthor}>
-                            {reply.parent_comment.author.full_name}
-                          </span>
-                        )}
-                      </div>
-                      <p className={styles.quoteContent}>{reply.parent_comment.content}</p>
-                    </div>
-                  )}
-
-                  <p className={styles.commentContent}>{reply.content}</p>
-
-                  {reply.attachments && reply.attachments.length > 0 && (
-                    <div className={styles.attachments}>
-                      {reply.attachments.map((attachment) => (
-                        <div key={attachment.id} className={styles.attachmentRow}>
-                          <button
-                            onClick={() => downloadAttachment(reply.id, attachment)}
-                            className={styles.attachmentButton}
-                          >
-                            <span className={styles.attachmentIcon}>📎</span>
-                            <span className={styles.attachmentName}>{attachment.file_name}</span>
-                            <span className={styles.attachmentSize}>
-                              ({(attachment.file_size / 1024).toFixed(1)} КБ)
-                            </span>
-                          </button>
-                          <button
-                            type="button"
-                            className={styles.attachmentDeleteButton}
-                            onClick={() => handleAttachmentDelete(reply.id, attachment.id)}
-                            title="Удалить файл"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className={styles.commentActions}>
-                    <button
-                      onClick={() => handleEdit(reply)}
-                      className={styles.editButton}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleAttachmentDelete(comment.id, attachment.id)}
+                      className="text-gray-400 hover:text-red-500"
                     >
-                      Редактировать
-                    </button>
-                    <button
-                      onClick={() => handleDelete(reply.id)}
-                      className={styles.deleteButton}
-                    >
-                      Удалить
-                    </button>
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              {!isReply && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setReplyingTo(comment);
+                    setTimeout(() => {
+                      newCommentFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      newCommentFormRef.current?.querySelector('textarea')?.focus();
+                    }, 100);
+                  }}
+                >
+                  <Reply className="h-4 w-4 mr-1" />
+                  Ответить
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={() => handleEdit(comment)}>
+                <Pencil className="h-4 w-4 mr-1" />
+                Редактировать
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleDelete(comment.id)}
+                className="text-red-500 hover:text-red-600 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Удалить
+              </Button>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Причины проигрыша */}
+      {lossReasonComments.length > 0 && (
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">
+            Причины проигрыша
+          </h3>
+          {lossReasonComments.map((comment) => (
+            <div key={comment.id}>
+              {renderComment(comment, false, true)}
+              {getReplies(comment.id).map((reply) => renderComment(reply, true))}
             </div>
           ))}
         </div>
@@ -483,264 +450,98 @@ export function TenderCommentsSection({ tenderId, onCountChange }: TenderComment
 
       {/* Остальные комментарии */}
       {otherComments.length > 0 && (
-        <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>Комментарии</h3>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">
+            Комментарии
+          </h3>
           {otherComments.map((comment) => (
-            <div key={comment.id} className={styles.comment}>
-              <div className={styles.commentHeader}>
-                {comment.author && (
-                  <span className={styles.authorName}>
-                    {comment.author.full_name}
-                  </span>
-                )}
-                <span className={styles.commentDate}>{formatDate(comment.created_at)}</span>
-              </div>
-
-              {editingId === comment.id ? (
-                <div className={styles.editForm}>
-                  <textarea
-                    value={editContent}
-                    onChange={(e) => setEditContent(e.target.value)}
-                    className={styles.editTextarea}
-                    rows={4}
-                  />
-                  <div className={styles.newAttachmentField}>
-                    <label>Прикрепить новый файл (необязательно)</label>
-                    <input
-                      type="file"
-                      onChange={handleAttachmentChange}
-                      className={styles.fileInput}
-                      disabled={isSaving}
-                      accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                    />
-                    {attachmentDraft && (
-                      <div className={styles.selectedFileInfo}>
-                        <span>{attachmentDraft.name}</span>
-                        <button
-                          type="button"
-                          className={styles.removeSelectedFile}
-                          onClick={() => setAttachmentDraft(null)}
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <div className={styles.editActions}>
-                    <button
-                      onClick={() => handleSaveEdit(comment.id)}
-                      className={styles.saveButton}
-                    >
-                      Сохранить
-                    </button>
-                    <button
-                      onClick={handleCancelEdit}
-                      className={styles.cancelButton}
-                    >
-                      Отмена
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <p className={styles.commentContent}>{comment.content}</p>
-
-                  {comment.attachments && comment.attachments.length > 0 && (
-                    <div className={styles.attachments}>
-                      {comment.attachments.map((attachment) => (
-                        <div key={attachment.id} className={styles.attachmentRow}>
-                          <button
-                            onClick={() => downloadAttachment(comment.id, attachment)}
-                            className={styles.attachmentButton}
-                          >
-                            <span className={styles.attachmentIcon}>📎</span>
-                            <span className={styles.attachmentName}>{attachment.file_name}</span>
-                            <span className={styles.attachmentSize}>
-                              ({(attachment.file_size / 1024).toFixed(1)} КБ)
-                            </span>
-                          </button>
-                          <button
-                            type="button"
-                            className={styles.attachmentDeleteButton}
-                            onClick={() => handleAttachmentDelete(comment.id, attachment.id)}
-                            title="Удалить файл"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className={styles.commentActions}>
-                    <button
-                      onClick={() => {
-                        setReplyingTo(comment);
-                        setTimeout(() => {
-                          newCommentFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                          newCommentFormRef.current?.querySelector('textarea')?.focus();
-                        }, 100);
-                      }}
-                      className={styles.replyButton}
-                    >
-                      Ответить
-                    </button>
-                    <button
-                      onClick={() => handleEdit(comment)}
-                      className={styles.editButton}
-                    >
-                      Редактировать
-                    </button>
-                    <button
-                      onClick={() => handleDelete(comment.id)}
-                      className={styles.deleteButton}
-                    >
-                      Удалить
-                    </button>
-                  </div>
-                </>
-              )}
-
-              {/* Ответы на этот комментарий */}
-              {getReplies(comment.id).map((reply) => (
-                <div key={reply.id} className={`${styles.comment} ${styles.replyComment}`}>
-                  <div className={styles.commentHeader}>
-                    {reply.author && (
-                      <span className={styles.authorName}>
-                        {reply.author.full_name}
-                      </span>
-                    )}
-                    <span className={styles.replyBadge}>Ответ</span>
-                    <span className={styles.commentDate}>{formatDate(reply.created_at)}</span>
-                  </div>
-
-                  {reply.parent_comment && (
-                    <div className={styles.parentCommentQuote}>
-                      <div className={styles.quoteHeader}>
-                        <span className={styles.quoteIcon}>↩️</span>
-                        {reply.parent_comment.author && (
-                          <span className={styles.quoteAuthor}>
-                            {reply.parent_comment.author.full_name}
-                          </span>
-                        )}
-                      </div>
-                      <p className={styles.quoteContent}>{reply.parent_comment.content}</p>
-                    </div>
-                  )}
-
-                  <p className={styles.commentContent}>{reply.content}</p>
-
-                  {reply.attachments && reply.attachments.length > 0 && (
-                    <div className={styles.attachments}>
-                      {reply.attachments.map((attachment) => (
-                        <div key={attachment.id} className={styles.attachmentRow}>
-                          <button
-                            onClick={() => downloadAttachment(reply.id, attachment)}
-                            className={styles.attachmentButton}
-                          >
-                            <span className={styles.attachmentIcon}>📎</span>
-                            <span className={styles.attachmentName}>{attachment.file_name}</span>
-                            <span className={styles.attachmentSize}>
-                              ({(attachment.file_size / 1024).toFixed(1)} КБ)
-                            </span>
-                          </button>
-                          <button
-                            type="button"
-                            className={styles.attachmentDeleteButton}
-                            onClick={() => handleAttachmentDelete(reply.id, attachment.id)}
-                            title="Удалить файл"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className={styles.commentActions}>
-                    <button
-                      onClick={() => handleEdit(reply)}
-                      className={styles.editButton}
-                    >
-                      Редактировать
-                    </button>
-                    <button
-                      onClick={() => handleDelete(reply.id)}
-                      className={styles.deleteButton}
-                    >
-                      Удалить
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div key={comment.id}>
+              {renderComment(comment)}
+              {getReplies(comment.id).map((reply) => renderComment(reply, true))}
             </div>
           ))}
         </div>
       )}
 
       {comments.length === 0 && (
-        <div className={styles.empty}>
+        <div className="text-center py-12 text-gray-400">
+          <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-50" />
           <p>Комментариев пока нет</p>
         </div>
       )}
 
-      <form ref={newCommentFormRef} className={styles.newCommentForm} onSubmit={handleCreateComment}>
-        <h4 className={styles.newCommentTitle}>Добавить комментарий</h4>
-        {replyingTo && (
-          <div className={styles.replyingToBox}>
-            <div className={styles.replyingToHeader}>
-              <span className={styles.replyingToIcon}>↩️</span>
-              <span className={styles.replyingToText}>Ответ на комментарий</span>
-              <button
-                type="button"
-                className={styles.cancelReplyButton}
-                onClick={() => setReplyingTo(null)}
-              >
-                ✕
-              </button>
-            </div>
-            <p className={styles.replyingToContent}>{replyingTo.content}</p>
-          </div>
-        )}
-        <textarea
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          className={styles.newCommentTextarea}
-          rows={4}
-          placeholder={replyingTo ? "Напишите ответ..." : "Напишите комментарий..."}
-          disabled={isCreating}
-        />
-        <div className={styles.newAttachmentControls}>
-          <label className={styles.fileInputLabel}>
-            <span className={styles.fileIcon}>📎</span>
-            <span>{newAttachment ? newAttachment.name : 'Прикрепить файл'}</span>
-            <input
-              type="file"
-              className={styles.fileInput}
-              onChange={handleNewAttachmentChange}
+      {/* Форма добавления комментария */}
+      <Card ref={newCommentFormRef}>
+        <CardContent className="p-4">
+          <form onSubmit={handleCreateComment} className="space-y-4">
+            <h4 className="font-semibold text-gray-900">Добавить комментарий</h4>
+            
+            {replyingTo && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-blue-600">
+                    Ответ на комментарий
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setReplyingTo(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-sm text-gray-600 line-clamp-2">{replyingTo.content}</p>
+              </div>
+            )}
+            
+            <Textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              rows={4}
+              placeholder={replyingTo ? "Напишите ответ..." : "Напишите комментарий..."}
               disabled={isCreating}
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
             />
-          </label>
-          {newAttachment && (
-            <button
-              type="button"
-              className={styles.removeSelectedFile}
-              onClick={() => setNewAttachment(null)}
-              disabled={isCreating}
+            
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900">
+                <Paperclip className="h-4 w-4" />
+                <span>{newAttachment ? newAttachment.name : 'Прикрепить файл'}</span>
+                <input
+                  type="file"
+                  className="hidden"
+                  onChange={handleNewAttachmentChange}
+                  disabled={isCreating}
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                />
+              </label>
+              {newAttachment && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setNewAttachment(null)}
+                  disabled={isCreating}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            
+            <Button
+              type="submit"
+              disabled={isCreating || !newComment.trim()}
             >
-              ✕
-            </button>
-          )}
-        </div>
-        <button
-          type="submit"
-          className={styles.submitButton}
-          disabled={isCreating || !newComment.trim()}
-        >
-          {isCreating ? 'Сохранение...' : 'Добавить комментарий'}
-        </button>
-      </form>
+              {isCreating ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Send className="h-4 w-4 mr-2" />
+              )}
+              {isCreating ? 'Сохранение...' : 'Добавить комментарий'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
       {/* Модалка предпросмотра вложений */}
       {previewAttachment && (

@@ -6,6 +6,12 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
 
 const schema = z
   .object({
@@ -31,7 +37,6 @@ function ResetPasswordPageContent() {
   const router = useRouter();
   const sp = useSearchParams();
 
-  // Try to exchange a code (OAuth-style) if present to obtain a session
   useEffect(() => {
     const run = async () => {
       try {
@@ -40,15 +45,12 @@ function ResetPasswordPageContent() {
         if (hasCode) {
           await supabase.auth.exchangeCodeForSession(window.location.search);
         }
-        // If link came with hash (#access_token=...&type=recovery), supabase-js will initialize the session internally on first call.
-        // Probe current session
         const { data } = await supabase.auth.getSession();
         if (!data.session) {
-          // Wait a tick and retry (hash parsing is async)
           await new Promise((r) => setTimeout(r, 200));
         }
       } catch {
-        // Ignore; user can still see the form, updateUser will fail if нет сессии
+        // Ignore
       } finally {
         setReady(true);
       }
@@ -82,72 +84,56 @@ function ResetPasswordPageContent() {
   });
 
   return (
-    <main className="login-layout">
-      <div className="login-card">
-        <div className="login-header">
-          <h1>Сброс пароля</h1>
-          <p>Введите новый пароль для вашей учётной записи.</p>
-        </div>
+    <main className="min-h-screen grid place-items-center p-6 bg-gray-100">
+      <Card className="w-full max-w-[420px] shadow-xl">
+        <CardHeader>
+          <CardTitle className="text-2xl">Сброс пароля</CardTitle>
+          <CardDescription>Введите новый пароль для вашей учётной записи.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {!ready && <p className="text-muted-foreground">Готовим форму…</p>}
 
-        {!ready && <div>Готовим форму…</div>}
+          {ready && (
+            <form onSubmit={onSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="password">Новый пароль</Label>
+                <Input id="password" type="password" placeholder="Новый пароль" {...register("password")} />
+                {errors.password && <p className="text-sm text-red-600">{errors.password.message}</p>}
+              </div>
 
-        {ready && (
-          <form onSubmit={onSubmit} className="login-form">
-            <label>
-              Новый пароль
-              <input type="password" placeholder="Новый пароль" {...register("password")} />
-            </label>
-            {errors.password && <div className="login-error">{errors.password.message}</div>}
+              <div className="space-y-2">
+                <Label htmlFor="confirm">Подтверждение пароля</Label>
+                <Input id="confirm" type="password" placeholder="Повторите пароль" {...register("confirm")} />
+                {errors.confirm && <p className="text-sm text-red-600">{errors.confirm.message}</p>}
+              </div>
 
-            <label>
-              Подтверждение пароля
-              <input type="password" placeholder="Повторите пароль" {...register("confirm")} />
-            </label>
-            {errors.confirm && <div className="login-error">{errors.confirm.message}</div>}
+              <Button type="submit" disabled={isSubmitting} className="w-full">
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSubmitting ? "Обновляем…" : "Обновить пароль"}
+              </Button>
+            </form>
+          )}
 
-            <button type="submit" disabled={isSubmitting} className="login-submit">
-              {isSubmitting ? "Обновляем…" : "Обновить пароль"}
-            </button>
-          </form>
-        )}
-
-        {success && <div className="login-success">{success}</div>}
-        {error && <div className="login-error">{error}</div>}
-      </div>
-      <style jsx>{`
-        .login-layout { display: grid; place-items: center; min-height: 100dvh; padding: 24px; background: #f3f4f6; }
-        .login-card { width: min(420px, 100%); background: #fff; padding: 32px; border-radius: 16px; box-shadow: 0 20px 40px rgba(15,23,42,.12); display: flex; flex-direction: column; gap: 18px; }
-        .login-header h1 { margin: 0 0 8px; font-size: 26px; font-weight: 600; color: #0f172a; }
-        .login-header p { margin: 0; color: #475569; font-size: 14px; }
-        .login-form { display: flex; flex-direction: column; gap: 14px; }
-        .login-form label { display: grid; gap: 6px; font-size: 14px; color: #0f172a; }
-        .login-form input { border-radius: 10px; border: 1px solid #d0d8e3; padding: 10px 12px; font-size: 14px; }
-        .login-form input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.18); }
-        .login-submit { margin-top: 4px; background: linear-gradient(135deg,#2563eb,#1d4ed8); border: 0; color: #fff; padding: 12px 16px; border-radius: 12px; cursor: pointer; font-weight: 600; }
-        .login-submit:disabled { opacity: .6; cursor: not-allowed; }
-        .login-error { color: #c62828; font-size: 13px; }
-        .login-success { color: #2e7d32; font-size: 13px; }
-      `}</style>
+          {success && <Alert className="mt-4 border-green-200 bg-green-50"><AlertDescription className="text-green-700">{success}</AlertDescription></Alert>}
+          {error && <Alert variant="destructive" className="mt-4"><AlertDescription>{error}</AlertDescription></Alert>}
+        </CardContent>
+      </Card>
     </main>
   );
 }
 
 function ResetPasswordSuspenseFallback() {
   return (
-    <main className="login-layout">
-      <div className="login-card">
-        <div className="login-header">
-          <h1>Сброс пароля</h1>
-          <p>Загружаем форму…</p>
-        </div>
-        <div>Пожалуйста, подождите.</div>
-      </div>
-      <style jsx>{`
-        .login-layout { display: grid; place-items: center; min-height: 100dvh; padding: 24px; background: #f3f4f6; }
-        .login-card { width: min(420px, 100%); background: #fff; padding: 32px; border-radius: 16px; box-shadow: 0 20px 40px rgba(15,23,42,.12); display: flex; flex-direction: column; gap: 18px; }
-        .login-header h1 { margin: 0 0 8px; font-size: 26px; font-weight: 600; color: #0f172a; }
-        .login-header p { margin: 0; color: #475569; font-size: 14px; }
-      `}</style>
+    <main className="min-h-screen grid place-items-center p-6 bg-gray-100">
+      <Card className="w-full max-w-[420px] shadow-xl">
+        <CardHeader>
+          <CardTitle className="text-2xl">Сброс пароля</CardTitle>
+          <CardDescription>Загружаем форму…</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">Пожалуйста, подождите.</p>
+        </CardContent>
+      </Card>
     </main>
   );
 }

@@ -2,7 +2,6 @@ import { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { getCachedUser, createRouteClient } from "@/lib/supabase/server";
 import SettingsNav from "@/components/settings/SettingsNav";
-import styles from "./settings-layout.module.css";
 
 export default async function SettingsLayout({ children }: { children: ReactNode }) {
   const { data: { user } } = await getCachedUser();
@@ -19,23 +18,17 @@ export default async function SettingsLayout({ children }: { children: ReactNode
     .eq('id', user.id)
     .single();
 
-  // Супер-админ перенаправляется на админские настройки
   if (profile?.global_role === 'super_admin') {
     redirect("/admin/settings");
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.sidebar}>
-        <div className={styles.header}>
-          <h1 className={styles.title}>Настройки</h1>
-          <p className={styles.subtitle}>Управление приложением и организацией</p>
-        </div>
+    <div className="flex min-h-screen">
+      <aside className="w-64 border-r p-6 space-y-6">
+        <div><h1 className="text-xl font-bold">Настройки</h1><p className="text-sm text-muted-foreground">Управление приложением</p></div>
         <SettingsNav />
-      </div>
-      <div className={styles.content}>
-        {children}
-      </div>
+      </aside>
+      <main className="flex-1 p-6">{children}</main>
     </div>
   );
 }

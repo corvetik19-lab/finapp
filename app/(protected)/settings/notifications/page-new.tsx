@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useNotifications } from "@/contexts/NotificationContext";
-import styles from "./NotificationSettings.module.css";
+import { AlertCircle, CheckCircle, Send, Clock, Bell, Trash2, Loader2, Save, Info } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 interface NotificationSettings {
   overspend_alerts: boolean;
@@ -115,149 +119,146 @@ export default function NotificationSettingsPage() {
 
   if (isLoading) {
     return (
-      <div className={styles.page}>
-        <div className={styles.loading}>Загрузка...</div>
+      <div className="p-6">
+        <div className="flex items-center justify-center py-12 text-muted-foreground">Загрузка...</div>
       </div>
     );
   }
 
   if (!settings) {
     return (
-      <div className={styles.page}>
-        <div className={styles.error}>{error || "Не удалось загрузить настройки"}</div>
+      <div className="p-6">
+        <div className="text-destructive">{error || "Не удалось загрузить настройки"}</div>
       </div>
     );
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
+    <div className="p-6 space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className={styles.title}>Настройки уведомлений</h1>
-          <p className={styles.subtitle}>
+          <h1 className="text-2xl font-bold">Настройки уведомлений</h1>
+          <p className="text-muted-foreground">
             Настройте типы уведомлений, время и канал доставки
           </p>
         </div>
-        <div className={styles.stats}>
-          <div className={styles.stat}>
-            <span className={styles.statValue}>{notifications.length}</span>
-            <span className={styles.statLabel}>Всего уведомлений</span>
+        <div className="flex gap-4">
+          <div className="text-center">
+            <span className="text-2xl font-bold">{notifications.length}</span>
+            <span className="block text-sm text-muted-foreground">Всего уведомлений</span>
           </div>
-          <div className={styles.stat}>
-            <span className={styles.statValue}>
+          <div className="text-center">
+            <span className="text-2xl font-bold">
               {notifications.filter((n) => !n.read).length}
             </span>
-            <span className={styles.statLabel}>Непрочитанных</span>
+            <span className="block text-sm text-muted-foreground">Непрочитанных</span>
           </div>
         </div>
       </div>
 
       {error && (
-        <div className={styles.errorBanner}>
-          <span className="material-icons">error</span>
+        <div className="flex items-center gap-2 p-4 rounded-lg bg-destructive/10 text-destructive">
+          <AlertCircle className="h-5 w-5" />
           {error}
         </div>
       )}
 
       {success && (
-        <div className={styles.successBanner}>
-          <span className="material-icons">check_circle</span>
+        <div className="flex items-center gap-2 p-4 rounded-lg bg-green-100 text-green-700">
+          <CheckCircle className="h-5 w-5" />
           Настройки успешно сохранены
         </div>
       )}
 
       {/* Telegram интеграция */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>
-          <span className="material-icons">telegram</span>
+      <div className="bg-card rounded-xl border p-6 space-y-4">
+        <h2 className="flex items-center gap-2 text-lg font-semibold">
+          <Send className="h-5 w-5" />
           Telegram уведомления
         </h2>
         
-        <div className={styles.telegramStatus}>
+        <div className="mb-4">
           {settings.telegram_chat_id ? (
-            <div className={styles.telegramConnected}>
-              <span className="material-icons">check_circle</span>
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-green-50 text-green-700">
+              <CheckCircle className="h-5 w-5" />
               <div>
                 <strong>Telegram подключен</strong>
-                {settings.telegram_username && <p>@{settings.telegram_username}</p>}
+                {settings.telegram_username && <p className="text-sm">@{settings.telegram_username}</p>}
               </div>
             </div>
           ) : (
-            <div className={styles.telegramDisconnected}>
-              <span className="material-icons">info</span>
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted">
+              <Info className="h-5 w-5 text-muted-foreground" />
               <div>
                 <strong>Telegram не подключен</strong>
-                <p>Перейдите в настройки Telegram для привязки бота</p>
+                <p className="text-sm text-muted-foreground">Перейдите в настройки Telegram для привязки бота</p>
               </div>
             </div>
           )}
         </div>
 
-        <div className={styles.settingRow}>
-          <div className={styles.settingInfo}>
-            <h3>Отправлять в Telegram</h3>
-            <p>Получать уведомления в Telegram бот</p>
+        <div className="flex items-center justify-between py-3">
+          <div>
+            <h3 className="font-medium">Отправлять в Telegram</h3>
+            <p className="text-sm text-muted-foreground">Получать уведомления в Telegram бот</p>
           </div>
-          <button
-            type="button"
-            className={`${styles.toggle} ${settings.telegram_enabled ? styles.toggleActive : ""}`}
-            onClick={() => toggleSetting("telegram_enabled")}
+          <Switch
+            checked={settings.telegram_enabled}
+            onCheckedChange={() => toggleSetting("telegram_enabled")}
             disabled={!settings.telegram_chat_id}
-          >
-            <span className={styles.toggleSwitch} />
-          </button>
+          />
         </div>
       </div>
 
       {/* Расписание */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>
-          <span className="material-icons">schedule</span>
+      <div className="bg-card rounded-xl border p-6 space-y-4">
+        <h2 className="flex items-center gap-2 text-lg font-semibold">
+          <Clock className="h-5 w-5" />
           Расписание уведомлений
         </h2>
 
-        <div className={styles.settingRow}>
-          <div className={styles.settingInfo}>
-            <h3>Использовать расписание</h3>
-            <p>Отправлять уведомления в определённое время</p>
+        <div className="flex items-center justify-between py-3">
+          <div>
+            <h3 className="font-medium">Использовать расписание</h3>
+            <p className="text-sm text-muted-foreground">Отправлять уведомления в определённое время</p>
           </div>
-          <button
-            type="button"
-            className={`${styles.toggle} ${settings.schedule_enabled ? styles.toggleActive : ""}`}
-            onClick={() => toggleSetting("schedule_enabled")}
-          >
-            <span className={styles.toggleSwitch} />
-          </button>
+          <Switch
+            checked={settings.schedule_enabled}
+            onCheckedChange={() => toggleSetting("schedule_enabled")}
+          />
         </div>
 
         {settings.schedule_enabled && (
           <>
-            <div className={styles.settingRow}>
-              <div className={styles.settingInfo}>
-                <h3>Время отправки</h3>
-                <p>Выберите время для получения уведомлений</p>
+            <div className="flex items-center justify-between py-3">
+              <div>
+                <h3 className="font-medium">Время отправки</h3>
+                <p className="text-sm text-muted-foreground">Выберите время для получения уведомлений</p>
               </div>
-              <input
+              <Input
                 type="time"
-                className={styles.timeInput}
+                className="w-32"
                 value={settings.schedule_time}
                 onChange={(e) => updateSetting("schedule_time", e.target.value)}
               />
             </div>
 
-            <div className={styles.settingRow}>
-              <div className={styles.settingInfo}>
-                <h3>Дни недели</h3>
-                <p>Выберите дни для получения уведомлений</p>
+            <div className="flex items-center justify-between py-3">
+              <div>
+                <h3 className="font-medium">Дни недели</h3>
+                <p className="text-sm text-muted-foreground">Выберите дни для получения уведомлений</p>
               </div>
-              <div className={styles.daysSelector}>
+              <div className="flex gap-1">
                 {DAYS_OF_WEEK.map((day) => (
                   <button
                     key={day.value}
                     type="button"
-                    className={`${styles.dayButton} ${
-                      settings.schedule_days?.includes(day.value) ? styles.dayActive : ""
-                    }`}
+                    className={cn(
+                      "w-9 h-9 rounded-lg text-sm font-medium transition-colors",
+                      settings.schedule_days?.includes(day.value)
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted hover:bg-muted/80"
+                    )}
                     onClick={() => toggleDay(day.value)}
                   >
                     {day.label}
@@ -268,27 +269,27 @@ export default function NotificationSettingsPage() {
           </>
         )}
 
-        <div className={styles.settingRow}>
-          <div className={styles.settingInfo}>
-            <h3>Тихие часы (начало)</h3>
-            <p>Не отправлять уведомления с этого времени</p>
+        <div className="flex items-center justify-between py-3">
+          <div>
+            <h3 className="font-medium">Тихие часы (начало)</h3>
+            <p className="text-sm text-muted-foreground">Не отправлять уведомления с этого времени</p>
           </div>
-          <input
+          <Input
             type="time"
-            className={styles.timeInput}
+            className="w-32"
             value={settings.quiet_hours_start || ""}
             onChange={(e) => updateSetting("quiet_hours_start", e.target.value || null)}
           />
         </div>
 
-        <div className={styles.settingRow}>
-          <div className={styles.settingInfo}>
-            <h3>Тихие часы (конец)</h3>
-            <p>Возобновить отправку с этого времени</p>
+        <div className="flex items-center justify-between py-3">
+          <div>
+            <h3 className="font-medium">Тихие часы (конец)</h3>
+            <p className="text-sm text-muted-foreground">Возобновить отправку с этого времени</p>
           </div>
-          <input
+          <Input
             type="time"
-            className={styles.timeInput}
+            className="w-32"
             value={settings.quiet_hours_end || ""}
             onChange={(e) => updateSetting("quiet_hours_end", e.target.value || null)}
           />
@@ -296,127 +297,98 @@ export default function NotificationSettingsPage() {
       </div>
 
       {/* Типы уведомлений */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>
-          <span className="material-icons">notifications_active</span>
+      <div className="bg-card rounded-xl border p-6 space-y-4">
+        <h2 className="flex items-center gap-2 text-lg font-semibold">
+          <Bell className="h-5 w-5" />
           Типы уведомлений
         </h2>
 
-        <div className={styles.settingRow}>
-          <div className={styles.settingInfo}>
-            <h3>Превышение трат</h3>
-            <p>Уведомления об аномальных тратах</p>
+        <div className="flex items-center justify-between py-3">
+          <div>
+            <h3 className="font-medium">Превышение трат</h3>
+            <p className="text-sm text-muted-foreground">Уведомления об аномальных тратах</p>
           </div>
-          <button
-            type="button"
-            className={`${styles.toggle} ${settings.overspend_alerts ? styles.toggleActive : ""}`}
-            onClick={() => toggleSetting("overspend_alerts")}
-          >
-            <span className={styles.toggleSwitch} />
-          </button>
+          <Switch
+            checked={settings.overspend_alerts}
+            onCheckedChange={() => toggleSetting("overspend_alerts")}
+          />
         </div>
 
-        <div className={styles.settingRow}>
-          <div className={styles.settingInfo}>
-            <h3>Бюджетные предупреждения</h3>
-            <p>Уведомления о превышении бюджетов</p>
+        <div className="flex items-center justify-between py-3">
+          <div>
+            <h3 className="font-medium">Бюджетные предупреждения</h3>
+            <p className="text-sm text-muted-foreground">Уведомления о превышении бюджетов</p>
           </div>
-          <button
-            type="button"
-            className={`${styles.toggle} ${settings.budget_warnings ? styles.toggleActive : ""}`}
-            onClick={() => toggleSetting("budget_warnings")}
-          >
-            <span className={styles.toggleSwitch} />
-          </button>
+          <Switch
+            checked={settings.budget_warnings}
+            onCheckedChange={() => toggleSetting("budget_warnings")}
+          />
         </div>
 
-        <div className={styles.settingRow}>
-          <div className={styles.settingInfo}>
-            <h3>Напоминания о транзакциях</h3>
-            <p>Напоминания о пропущенных днях</p>
+        <div className="flex items-center justify-between py-3">
+          <div>
+            <h3 className="font-medium">Напоминания о транзакциях</h3>
+            <p className="text-sm text-muted-foreground">Напоминания о пропущенных днях</p>
           </div>
-          <button
-            type="button"
-            className={`${styles.toggle} ${settings.missing_transaction_reminders ? styles.toggleActive : ""}`}
-            onClick={() => toggleSetting("missing_transaction_reminders")}
-          >
-            <span className={styles.toggleSwitch} />
-          </button>
+          <Switch
+            checked={settings.missing_transaction_reminders}
+            onCheckedChange={() => toggleSetting("missing_transaction_reminders")}
+          />
         </div>
 
-        <div className={styles.settingRow}>
-          <div className={styles.settingInfo}>
-            <h3>Предстоящие платежи</h3>
-            <p>Напоминания о платежах</p>
+        <div className="flex items-center justify-between py-3">
+          <div>
+            <h3 className="font-medium">Предстоящие платежи</h3>
+            <p className="text-sm text-muted-foreground">Напоминания о платежах</p>
           </div>
-          <button
-            type="button"
-            className={`${styles.toggle} ${settings.upcoming_payment_reminders ? styles.toggleActive : ""}`}
-            onClick={() => toggleSetting("upcoming_payment_reminders")}
-          >
-            <span className={styles.toggleSwitch} />
-          </button>
+          <Switch
+            checked={settings.upcoming_payment_reminders}
+            onCheckedChange={() => toggleSetting("upcoming_payment_reminders")}
+          />
         </div>
 
-        <div className={styles.settingRow}>
-          <div className={styles.settingInfo}>
-            <h3>AI инсайты</h3>
-            <p>Финансовые инсайты на основе AI</p>
+        <div className="flex items-center justify-between py-3">
+          <div>
+            <h3 className="font-medium">AI инсайты</h3>
+            <p className="text-sm text-muted-foreground">Финансовые инсайты на основе AI</p>
           </div>
-          <button
-            type="button"
-            className={`${styles.toggle} ${settings.ai_insights ? styles.toggleActive : ""}`}
-            onClick={() => toggleSetting("ai_insights")}
-          >
-            <span className={styles.toggleSwitch} />
-          </button>
+          <Switch
+            checked={settings.ai_insights}
+            onCheckedChange={() => toggleSetting("ai_insights")}
+          />
         </div>
 
-        <div className={styles.settingRow}>
-          <div className={styles.settingInfo}>
-            <h3>AI рекомендации</h3>
-            <p>Персональные рекомендации</p>
+        <div className="flex items-center justify-between py-3">
+          <div>
+            <h3 className="font-medium">AI рекомендации</h3>
+            <p className="text-sm text-muted-foreground">Персональные рекомендации</p>
           </div>
-          <button
-            type="button"
-            className={`${styles.toggle} ${settings.ai_recommendations ? styles.toggleActive : ""}`}
-            onClick={() => toggleSetting("ai_recommendations")}
-          >
-            <span className={styles.toggleSwitch} />
-          </button>
+          <Switch
+            checked={settings.ai_recommendations}
+            onCheckedChange={() => toggleSetting("ai_recommendations")}
+          />
         </div>
       </div>
 
-      <div className={styles.actions}>
-        <button
-          type="button"
-          className={`${styles.actionButton} ${styles.danger}`}
-          onClick={clearAll}
-        >
-          <span className="material-icons">delete_sweep</span>
+      <div className="flex items-center justify-between pt-4">
+        <Button variant="destructive" onClick={clearAll}>
+          <Trash2 className="h-5 w-5 mr-2" />
           Очистить все
-        </button>
-      </div>
+        </Button>
 
-      <div className={styles.footer}>
-        <button
-          type="button"
-          className={styles.saveButton}
-          onClick={handleSave}
-          disabled={isSaving}
-        >
+        <Button onClick={handleSave} disabled={isSaving}>
           {isSaving ? (
             <>
-              <span className="material-icons rotating">hourglass_top</span>
+              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
               Сохранение...
             </>
           ) : (
             <>
-              <span className="material-icons">save</span>
+              <Save className="h-5 w-5 mr-2" />
               Сохранить настройки
             </>
           )}
-        </button>
+        </Button>
       </div>
     </div>
   );

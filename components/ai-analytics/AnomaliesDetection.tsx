@@ -1,105 +1,40 @@
 "use client";
 
-import styles from "./AnomaliesDetection.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { Search, CheckCircle } from "lucide-react";
 
-type Anomaly = {
-  id: string;
-  type: "expense" | "income";
-  category: string;
-  amount: number;
-  averageAmount: number;
-  percentageChange: number;
-  description: string;
-  severity: "low" | "medium" | "high";
-};
-
-type Props = {
-  anomalies: Anomaly[];
-};
+type Anomaly = { id: string; type: "expense" | "income"; category: string; amount: number; averageAmount: number; percentageChange: number; description: string; severity: "low" | "medium" | "high"; };
+type Props = { anomalies: Anomaly[]; };
 
 export default function AnomaliesDetection({ anomalies }: Props) {
   if (!anomalies || anomalies.length === 0) {
     return (
-      <div className={styles.card}>
-        <div className={styles.header}>
-          <h3 className={styles.title}>
-            <span className={styles.icon}>🔍</span>
-            Детекция аномалий
-          </h3>
-        </div>
-        <div className={styles.emptyState}>
-          <span className={styles.checkIcon}>✅</span>
-          <p>Необычных трат не обнаружено</p>
-          <span className={styles.subtext}>AI постоянно мониторит ваши финансы</span>
-        </div>
-      </div>
+      <Card>
+        <CardHeader><CardTitle className="flex items-center gap-2"><Search className="h-5 w-5" />Детекция аномалий</CardTitle></CardHeader>
+        <CardContent className="text-center py-8"><CheckCircle className="h-12 w-12 mx-auto text-green-500 mb-2" /><p className="font-medium">Необычных трат не обнаружено</p><p className="text-sm text-muted-foreground">AI постоянно мониторит ваши финансы</p></CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className={styles.card}>
-      <div className={styles.header}>
-        <h3 className={styles.title}>
-          <span className={styles.icon}>🔍</span>
-          Обнаружены аномалии
-        </h3>
-        <span className={styles.badge}>
-          {anomalies.length} {getAnomalyWord(anomalies.length)}
-        </span>
-      </div>
-
-      <div className={styles.anomaliesList}>
+    <Card>
+      <CardHeader className="flex-row items-center justify-between"><CardTitle className="flex items-center gap-2"><Search className="h-5 w-5" />Обнаружены аномалии</CardTitle><Badge variant="secondary">{anomalies.length} {getAnomalyWord(anomalies.length)}</Badge></CardHeader>
+      <CardContent className="space-y-4">
         {anomalies.map((anomaly) => (
-          <div 
-            key={anomaly.id} 
-            className={`${styles.anomalyCard} ${styles[`severity-${anomaly.severity}`]}`}
-          >
-            <div className={styles.anomalyHeader}>
-              <div className={styles.anomalyIcon}>
-                {getSeverityIcon(anomaly.severity)}
-              </div>
-              <div className={styles.anomalyTitle}>
-                <h4>{anomaly.category}</h4>
-                <span className={styles.anomalyType}>
-                  {anomaly.type === "expense" ? "Расход" : "Доход"}
-                </span>
-              </div>
-              <div className={styles.changePercentage}>
-                <span className={styles.changeValue}>
-                  {anomaly.percentageChange > 0 ? "+" : ""}
-                  {anomaly.percentageChange.toFixed(0)}%
-                </span>
-              </div>
+          <div key={anomaly.id} className={cn("p-4 rounded-lg border", anomaly.severity === "high" ? "border-red-500 bg-red-50" : anomaly.severity === "medium" ? "border-yellow-500 bg-yellow-50" : "border-blue-300 bg-blue-50")}>
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-center gap-2"><span className="text-xl">{getSeverityIcon(anomaly.severity)}</span><div><div className="font-medium">{anomaly.category}</div><div className="text-xs text-muted-foreground">{anomaly.type === "expense" ? "Расход" : "Доход"}</div></div></div>
+              <div className="text-lg font-bold">{anomaly.percentageChange > 0 ? "+" : ""}{anomaly.percentageChange.toFixed(0)}%</div>
             </div>
-
-            <div className={styles.anomalyBody}>
-              <p className={styles.description}>{anomaly.description}</p>
-              
-              <div className={styles.stats}>
-                <div className={styles.statItem}>
-                  <span className={styles.statLabel}>Текущая сумма:</span>
-                  <span className={styles.statValue}>
-                    {anomaly.amount.toLocaleString('ru-RU')}₽
-                  </span>
-                </div>
-                <div className={styles.statItem}>
-                  <span className={styles.statLabel}>Средняя сумма:</span>
-                  <span className={styles.statValue}>
-                    {anomaly.averageAmount.toLocaleString('ru-RU')}₽
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.anomalyFooter}>
-              <span className={`${styles.severityBadge} ${styles[`badge-${anomaly.severity}`]}`}>
-                {getSeverityText(anomaly.severity)}
-              </span>
-            </div>
+            <p className="text-sm mb-3">{anomaly.description}</p>
+            <div className="flex gap-4 text-sm"><div><span className="text-muted-foreground">Текущая:</span> <span className="font-medium">{anomaly.amount.toLocaleString('ru-RU')}₽</span></div><div><span className="text-muted-foreground">Средняя:</span> <span className="font-medium">{anomaly.averageAmount.toLocaleString('ru-RU')}₽</span></div></div>
+            <div className="mt-2"><Badge variant={anomaly.severity === "high" ? "destructive" : anomaly.severity === "medium" ? "default" : "secondary"}>{getSeverityText(anomaly.severity)}</Badge></div>
           </div>
         ))}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 

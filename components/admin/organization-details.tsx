@@ -1,65 +1,45 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { UserProfile } from '@/lib/auth/types';
 import { Organization } from '@/lib/organizations/types';
 import { OrganizationOverview } from './organization-overview';
 import { OrganizationModes } from './organization-modes';
 import { OrganizationEmployees } from './organization-employees';
-import styles from './OrganizationDetails.module.css';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { BarChart3, Target, Users, ArrowLeft } from 'lucide-react';
 
 interface OrganizationDetailsProps {
     organization: Organization;
     profile: UserProfile;
 }
 
-type TabType = 'overview' | 'modes' | 'employees';
-
 export function OrganizationDetails({ organization, profile }: OrganizationDetailsProps) {
-    const [activeTab, setActiveTab] = useState<TabType>('overview');
-
-    const tabs = [
-        { id: 'overview' as TabType, label: 'Обзор', icon: '📊' },
-        { id: 'modes' as TabType, label: 'Режимы', icon: '🎯' },
-        { id: 'employees' as TabType, label: 'Сотрудники', icon: '👥' },
-    ];
-
     return (
-        <div className={styles.container}>
+        <div className="space-y-6">
             {/* Header */}
-            <div className={styles.header}>
-                <div className={styles.headerContent}>
-                    <h1>{organization.name}</h1>
-                    <p>Управление организацией</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold">{organization.name}</h1>
+                    <p className="text-muted-foreground">Управление организацией</p>
                 </div>
-                <Link href="/admin/settings/organization" className={styles.backLink}>
-                    ← Назад к списку
-                </Link>
+                <Button variant="ghost" asChild>
+                    <Link href="/admin/settings/organization"><ArrowLeft className="h-4 w-4 mr-2" />Назад к списку</Link>
+                </Button>
             </div>
 
             {/* Tabs */}
-            <div className={styles.tabs}>
-                <nav className={styles.tabsNav}>
-                    {tabs.map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`${styles.tab} ${activeTab === tab.id ? styles.tabActive : ''}`}
-                        >
-                            <span className={styles.tabIcon}>{tab.icon}</span>
-                            {tab.label}
-                        </button>
-                    ))}
-                </nav>
-            </div>
-
-            {/* Tab Content */}
-            <div className={styles.content}>
-                {activeTab === 'overview' && <OrganizationOverview organization={organization} />}
-                {activeTab === 'modes' && <OrganizationModes organization={organization} profile={profile} />}
-                {activeTab === 'employees' && <OrganizationEmployees organization={organization} profile={profile} />}
-            </div>
+            <Tabs defaultValue="overview">
+                <TabsList>
+                    <TabsTrigger value="overview"><BarChart3 className="h-4 w-4 mr-2" />Обзор</TabsTrigger>
+                    <TabsTrigger value="modes"><Target className="h-4 w-4 mr-2" />Режимы</TabsTrigger>
+                    <TabsTrigger value="employees"><Users className="h-4 w-4 mr-2" />Сотрудники</TabsTrigger>
+                </TabsList>
+                <TabsContent value="overview" className="mt-6"><OrganizationOverview organization={organization} /></TabsContent>
+                <TabsContent value="modes" className="mt-6"><OrganizationModes organization={organization} profile={profile} /></TabsContent>
+                <TabsContent value="employees" className="mt-6"><OrganizationEmployees organization={organization} profile={profile} /></TabsContent>
+            </Tabs>
         </div>
     );
 }

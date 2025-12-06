@@ -1,5 +1,5 @@
 import { getShipments } from "@/lib/logistics/service";
-import { ShipmentsManager } from "@/components/logistics/ShipmentsManager";
+import { LogisticsList } from "@/components/logistics/logistics-list";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -11,9 +11,5 @@ export const dynamic = "force-dynamic";
 export default async function TenderLogisticsPage() {
   const shipments = await getShipments();
 
-  return (
-    <div className="container mx-auto py-6 space-y-6">
-      <ShipmentsManager initialShipments={shipments} />
-    </div>
-  );
+  return <LogisticsList initialShipments={shipments} />;
 }

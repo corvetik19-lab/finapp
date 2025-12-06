@@ -3,7 +3,12 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import styles from "./ProfileManager.module.css";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { LogOut, Pencil, Lock, Camera } from "lucide-react";
 
 type ProfileData = {
   email: string;
@@ -167,222 +172,49 @@ export default function ProfileManager({ profile: initialProfile }: ProfileManag
   };
 
   return (
-    <div className={styles.container}>
-      {/* Шапка профиля */}
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <h1 className={styles.title}>Мой профиль</h1>
-          <button className={styles.signOutBtn} onClick={handleSignOut}>
-            <span className="material-icons">logout</span>
-            Выйти
-          </button>
-        </div>
-      </div>
-
-      {/* Карточка профиля */}
-      <div className={styles.profileCard}>
-        <div className={styles.avatarSection}>
-          <div className={styles.avatarWrapper}>
-            {profile.avatar ? (
-              <Image 
-                src={profile.avatar} 
-                alt="Avatar" 
-                className={styles.avatar} 
-                width={120} 
-                height={120}
-                unoptimized={profile.avatar.startsWith('data:')}
-              />
-            ) : (
-              <div className={styles.avatarPlaceholder}>
-                {getInitials(profile.fullName || profile.email)}
+    <div className="space-y-6">
+      <div className="flex items-center justify-between"><h1 className="text-2xl font-bold">Мой профиль</h1><Button variant="outline" onClick={handleSignOut}><LogOut className="h-4 w-4 mr-2" />Выйти</Button></div>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col md:flex-row gap-6 mb-6">
+            <div className="relative w-28 h-28 flex-shrink-0">
+              {profile.avatar ? <Image src={profile.avatar} alt="Avatar" className="w-28 h-28 rounded-full object-cover" width={112} height={112} unoptimized={profile.avatar.startsWith('data:')} /> : <div className="w-28 h-28 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-3xl font-bold">{getInitials(profile.fullName || profile.email)}</div>}
+              <Button size="icon" variant="secondary" className="absolute bottom-0 right-0 rounded-full h-8 w-8" onClick={() => fileInputRef.current?.click()} disabled={isSaving}><Camera className="h-4 w-4" /></Button>
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
+            </div>
+            <div><h2 className="text-xl font-semibold">{profile.fullName || "Не указано"}</h2><p className="text-muted-foreground">{profile.email}</p><p className="text-sm text-muted-foreground">На платформе с {formatDate(profile.createdAt)}</p></div>
+          </div>
+          {!isEditing ? (
+            <div className="space-y-4">
+              <div className="grid md:grid-cols-3 gap-4">
+                <div><Label className="text-muted-foreground">Полное имя</Label><p className="font-medium">{profile.fullName || "—"}</p></div>
+                <div><Label className="text-muted-foreground">Email</Label><p className="font-medium">{profile.email}</p></div>
+                <div><Label className="text-muted-foreground">Телефон</Label><p className="font-medium">{profile.phone || "—"}</p></div>
               </div>
-            )}
-            <button
-              className={styles.avatarEditBtn}
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isSaving}
-            >
-              <span className="material-icons">photo_camera</span>
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarUpload}
-              style={{ display: "none" }}
-            />
-          </div>
-          
-          <div className={styles.profileMeta}>
-            <h2 className={styles.profileName}>
-              {profile.fullName || "Не указано"}
-            </h2>
-            <p className={styles.profileEmail}>{profile.email}</p>
-            <p className={styles.profileDate}>
-              На платформе с {formatDate(profile.createdAt)}
-            </p>
-          </div>
-        </div>
-
-        {!isEditing ? (
-          <div className={styles.infoSection}>
-            <div className={styles.infoGroup}>
-              <label className={styles.infoLabel}>Полное имя</label>
-              <p className={styles.infoValue}>{profile.fullName || "—"}</p>
-            </div>
-
-            <div className={styles.infoGroup}>
-              <label className={styles.infoLabel}>Email</label>
-              <p className={styles.infoValue}>{profile.email}</p>
-            </div>
-
-            <div className={styles.infoGroup}>
-              <label className={styles.infoLabel}>Телефон</label>
-              <p className={styles.infoValue}>{profile.phone || "—"}</p>
-            </div>
-
-            <div className={styles.actions}>
-              <button
-                className={styles.btnPrimary}
-                onClick={() => {
-                  setEditForm({
-                    fullName: profile.fullName || "",
-                    phone: profile.phone || "",
-                  });
-                  setIsEditing(true);
-                }}
-              >
-                <span className="material-icons">edit</span>
-                Редактировать профиль
-              </button>
-
-              <button
-                className={styles.btnSecondary}
-                onClick={() => setShowPasswordModal(true)}
-              >
-                <span className="material-icons">lock</span>
-                Сменить пароль
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className={styles.editSection}>
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>Полное имя</label>
-              <input
-                type="text"
-                className={styles.formInput}
-                value={editForm.fullName}
-                onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
-                placeholder="Введите ваше имя"
-              />
-            </div>
-
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>Телефон</label>
-              <input
-                type="tel"
-                className={styles.formInput}
-                value={editForm.phone}
-                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                placeholder="+7 (999) 123-45-67"
-              />
-            </div>
-
-            <div className={styles.actions}>
-              <button
-                className={styles.btnPrimary}
-                onClick={handleSaveProfile}
-                disabled={isSaving}
-              >
-                {isSaving ? "Сохранение..." : "Сохранить"}
-              </button>
-              <button
-                className={styles.btnSecondary}
-                onClick={() => setIsEditing(false)}
-                disabled={isSaving}
-              >
-                Отмена
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Модальное окно смены пароля */}
-      {showPasswordModal && (
-        <div className={styles.modalOverlay} onClick={() => setShowPasswordModal(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h3>Смена пароля</h3>
-              <button
-                className={styles.closeBtn}
-                onClick={() => setShowPasswordModal(false)}
-              >
-                <span className="material-icons">close</span>
-              </button>
-            </div>
-
-            <div className={styles.modalBody}>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Текущий пароль</label>
-                <input
-                  type="password"
-                  className={styles.formInput}
-                  value={passwordForm.currentPassword}
-                  onChange={(e) =>
-                    setPasswordForm({ ...passwordForm, currentPassword: e.target.value })
-                  }
-                  placeholder="Введите текущий пароль"
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Новый пароль</label>
-                <input
-                  type="password"
-                  className={styles.formInput}
-                  value={passwordForm.newPassword}
-                  onChange={(e) =>
-                    setPasswordForm({ ...passwordForm, newPassword: e.target.value })
-                  }
-                  placeholder="Минимум 6 символов"
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Подтвердите пароль</label>
-                <input
-                  type="password"
-                  className={styles.formInput}
-                  value={passwordForm.confirmPassword}
-                  onChange={(e) =>
-                    setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })
-                  }
-                  placeholder="Повторите новый пароль"
-                />
+              <div className="flex gap-2 pt-4">
+                <Button onClick={() => { setEditForm({ fullName: profile.fullName || "", phone: profile.phone || "" }); setIsEditing(true); }}><Pencil className="h-4 w-4 mr-2" />Редактировать</Button>
+                <Button variant="outline" onClick={() => setShowPasswordModal(true)}><Lock className="h-4 w-4 mr-2" />Сменить пароль</Button>
               </div>
             </div>
-
-            <div className={styles.modalFooter}>
-              <button
-                className={styles.btnSecondary}
-                onClick={() => setShowPasswordModal(false)}
-                disabled={isSaving}
-              >
-                Отмена
-              </button>
-              <button
-                className={styles.btnPrimary}
-                onClick={handleChangePassword}
-                disabled={isSaving}
-              >
-                {isSaving ? "Изменение..." : "Изменить пароль"}
-              </button>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-2"><Label>Полное имя</Label><Input value={editForm.fullName} onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })} placeholder="Введите ваше имя" /></div>
+              <div className="space-y-2"><Label>Телефон</Label><Input type="tel" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} placeholder="+7 (999) 123-45-67" /></div>
+              <div className="flex gap-2"><Button onClick={handleSaveProfile} disabled={isSaving}>{isSaving ? "Сохранение..." : "Сохранить"}</Button><Button variant="outline" onClick={() => setIsEditing(false)} disabled={isSaving}>Отмена</Button></div>
             </div>
+          )}
+        </CardContent>
+      </Card>
+      <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
+        <DialogContent><DialogHeader><DialogTitle>Смена пароля</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2"><Label>Текущий пароль</Label><Input type="password" value={passwordForm.currentPassword} onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })} placeholder="Введите текущий пароль" /></div>
+            <div className="space-y-2"><Label>Новый пароль</Label><Input type="password" value={passwordForm.newPassword} onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })} placeholder="Минимум 6 символов" /></div>
+            <div className="space-y-2"><Label>Подтвердите пароль</Label><Input type="password" value={passwordForm.confirmPassword} onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })} placeholder="Повторите новый пароль" /></div>
           </div>
-        </div>
-      )}
+          <DialogFooter><Button variant="outline" onClick={() => setShowPasswordModal(false)} disabled={isSaving}>Отмена</Button><Button onClick={handleChangePassword} disabled={isSaving}>{isSaving ? "Изменение..." : "Изменить"}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

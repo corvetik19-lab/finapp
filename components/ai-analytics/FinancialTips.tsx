@@ -1,43 +1,21 @@
-import styles from "./FinancialTips.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Zap } from "lucide-react";
 
-export type Tip = {
-  id: string;
-  icon: string;
-  title: string;
-  text: string;
-};
-
-export type FinancialTipsProps = {
-  tips: Tip[];
-};
+export type Tip = { id: string; icon: string; title: string; text: string; };
+export type FinancialTipsProps = { tips: Tip[]; };
 
 export default function FinancialTips({ tips }: FinancialTipsProps) {
   return (
-    <div className={styles.card}>
-      <div className={styles.cardHeader}>
-        <div className={styles.cardTitle}>
-          <span className="material-icons" aria-hidden>
-            tips_and_updates
-          </span>
-          Финансовые советы
-        </div>
-      </div>
-
-      <div className={styles.tipsList}>
+    <Card>
+      <CardHeader><CardTitle className="flex items-center gap-2"><Zap className="h-5 w-5" />Финансовые советы</CardTitle></CardHeader>
+      <CardContent className="space-y-3">
         {tips.map((tip) => (
-          <div key={tip.id} className={styles.tipItem}>
-            <div className={styles.tipIcon}>
-              <span className="material-icons" aria-hidden>
-                {tip.icon}
-              </span>
-            </div>
-            <div className={styles.tipContent}>
-              <div className={styles.tipTitle}>{tip.title}</div>
-              <div className={styles.tipText}>{tip.text}</div>
-            </div>
+          <div key={tip.id} className="flex gap-3 p-3 rounded-lg border">
+            <div className="text-2xl">{tip.icon}</div>
+            <div><div className="font-medium">{tip.title}</div><div className="text-sm text-muted-foreground">{tip.text}</div></div>
           </div>
         ))}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -6,7 +6,11 @@ import type { SubscriptionPlan } from '@/types/billing';
 import { PlanModal } from './PlanModal';
 import { ConfirmModal } from './ConfirmModal';
 import { togglePlanActive, updateAllPlansModes } from '@/app/(protected)/superadmin/actions';
-import styles from '@/app/(protected)/superadmin/superadmin.module.css';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Gavel, Plus, Pencil, Eye, EyeOff } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface PlansManagerProps {
   plans: SubscriptionPlan[];
@@ -49,143 +53,118 @@ export function PlansManager({ plans }: PlansManagerProps) {
 
   return (
     <>
-      <div className={styles.tableContainer}>
-        <div className={styles.tableHeader}>
-          <h3 className={styles.tableTitle}>Все тарифы ({plans.length})</h3>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button 
-              className={`${styles.button} ${styles.secondary}`}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardTitle className="text-lg">Все тарифы ({plans.length})</CardTitle>
+          <div className="flex gap-3">
+            <Button 
+              variant="outline"
               onClick={handleSetTendersOnly}
               disabled={updatingModes}
               title="Установить только режим Тендеры для всех тарифов"
             >
-              <span className="material-icons">gavel</span>
+              <Gavel className="h-4 w-4 mr-2" />
               {updatingModes ? 'Обновление...' : 'Только Тендеры'}
-            </button>
-            <button 
-              className={`${styles.button} ${styles.primary}`}
-              onClick={() => setShowCreateModal(true)}
-            >
-              <span className="material-icons">add</span>
+            </Button>
+            <Button onClick={() => setShowCreateModal(true)}>
+              <Plus className="h-4 w-4 mr-2" />
               Создать тариф
-            </button>
+            </Button>
           </div>
-        </div>
-
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Название</th>
-              <th>Описание</th>
-              <th>Цена (месяц)</th>
-              <th>Цена (год)</th>
-              <th>За пользователя</th>
-              <th>Включено польз.</th>
-              <th>Макс. польз.</th>
-              <th>Режимы</th>
-              <th>Статус</th>
-              <th>Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            {plans.map((plan) => (
-              <tr key={plan.id} style={{ opacity: plan.is_active ? 1 : 0.5 }}>
-                <td>
-                  <strong>{plan.name}</strong>
-                  {plan.is_default && (
-                    <span style={{ 
-                      display: 'block',
-                      fontSize: '10px', 
-                      background: '#dbeafe', 
-                      color: '#1e40af',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      marginTop: '4px',
-                      width: 'fit-content'
-                    }}>
-                      По умолчанию
-                    </span>
-                  )}
-                </td>
-                <td style={{ maxWidth: '200px', fontSize: '13px', color: '#64748b' }}>
-                  {plan.description || '—'}
-                </td>
-                <td>
-                  <span className={styles.amount}>
-                    {plan.base_price_monthly > 0 ? formatMoney(plan.base_price_monthly) : 'Бесплатно'}
-                  </span>
-                </td>
-                <td>
-                  <span className={styles.amount}>
-                    {plan.base_price_yearly > 0 ? formatMoney(plan.base_price_yearly) : 'Бесплатно'}
-                  </span>
-                  {plan.base_price_yearly > 0 && plan.base_price_monthly > 0 && (
-                    <div style={{ fontSize: '11px', color: '#10b981' }}>
-                      −{Math.round((1 - plan.base_price_yearly / (plan.base_price_monthly * 12)) * 100)}%
-                    </div>
-                  )}
-                </td>
-                <td>
-                  {plan.price_per_user_monthly > 0 ? (
-                    <>
-                      <span className={styles.amount}>{formatMoney(plan.price_per_user_monthly)}</span>
-                      <div style={{ fontSize: '11px', color: '#64748b' }}>/мес</div>
-                    </>
-                  ) : (
-                    '—'
-                  )}
-                </td>
-                <td>{plan.users_included}</td>
-                <td>{plan.max_users || '∞'}</td>
-                <td>
-                  <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                    {plan.allowed_modes.map((mode) => (
-                      <span 
-                        key={mode}
-                        style={{
-                          fontSize: '10px',
-                          background: '#f1f5f9',
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                        }}
-                      >
-                        {mode}
-                      </span>
-                    ))}
-                  </div>
-                </td>
-                <td>
-                  <span className={`${styles.statusBadge} ${plan.is_active ? styles.active : styles.cancelled}`}>
-                    {plan.is_active ? 'Активен' : 'Неактивен'}
-                  </span>
-                </td>
-                <td>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button 
-                      className={`${styles.button} ${styles.secondary}`}
-                      style={{ padding: '6px 12px' }}
-                      title="Редактировать"
-                      onClick={() => setEditingPlan(plan)}
-                    >
-                      <span className="material-icons" style={{ fontSize: '16px' }}>edit</span>
-                    </button>
-                    <button 
-                      className={`${styles.button} ${styles.secondary}`}
-                      style={{ padding: '6px 12px' }}
-                      title={plan.is_active ? 'Деактивировать' : 'Активировать'}
-                      onClick={() => setTogglingPlan(plan)}
-                    >
-                      <span className="material-icons" style={{ fontSize: '16px' }}>
-                        {plan.is_active ? 'visibility_off' : 'visibility'}
-                      </span>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Название</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Описание</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Цена (месяц)</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Цена (год)</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">За пользователя</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Включено</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Макс.</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Режимы</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Статус</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Действия</th>
+                </tr>
+              </thead>
+              <tbody>
+                {plans.map((plan) => (
+                  <tr key={plan.id} className={cn("border-b last:border-0 hover:bg-gray-50", !plan.is_active && "opacity-50")}>
+                    <td className="py-3 px-4">
+                      <div className="font-semibold">{plan.name}</div>
+                      {plan.is_default && (
+                        <Badge variant="secondary" className="mt-1 text-xs">По умолчанию</Badge>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 max-w-[200px] text-sm text-gray-500">
+                      {plan.description || '—'}
+                    </td>
+                    <td className="py-3 px-4 font-semibold tabular-nums">
+                      {plan.base_price_monthly > 0 ? formatMoney(plan.base_price_monthly) : 'Бесплатно'}
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="font-semibold tabular-nums">
+                        {plan.base_price_yearly > 0 ? formatMoney(plan.base_price_yearly) : 'Бесплатно'}
+                      </div>
+                      {plan.base_price_yearly > 0 && plan.base_price_monthly > 0 && (
+                        <div className="text-xs text-green-600">
+                          −{Math.round((1 - plan.base_price_yearly / (plan.base_price_monthly * 12)) * 100)}%
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-3 px-4">
+                      {plan.price_per_user_monthly > 0 ? (
+                        <>
+                          <div className="font-semibold tabular-nums">{formatMoney(plan.price_per_user_monthly)}</div>
+                          <div className="text-xs text-gray-500">/мес</div>
+                        </>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td className="py-3 px-4">{plan.users_included}</td>
+                    <td className="py-3 px-4">{plan.max_users || '∞'}</td>
+                    <td className="py-3 px-4">
+                      <div className="flex flex-wrap gap-1">
+                        {plan.allowed_modes.map((mode) => (
+                          <Badge key={mode} variant="outline" className="text-xs">{mode}</Badge>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <Badge variant={plan.is_active ? 'default' : 'secondary'}>
+                        {plan.is_active ? 'Активен' : 'Неактивен'}
+                      </Badge>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="icon"
+                          title="Редактировать"
+                          onClick={() => setEditingPlan(plan)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          size="icon"
+                          title={plan.is_active ? 'Деактивировать' : 'Активировать'}
+                          onClick={() => setTogglingPlan(plan)}
+                        >
+                          {plan.is_active ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Модалка создания */}
       <PlanModal

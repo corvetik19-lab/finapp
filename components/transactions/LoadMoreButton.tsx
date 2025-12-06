@@ -2,7 +2,8 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
-import styles from "./LoadMoreButton.module.css";
+import { Button } from "@/components/ui/button";
+import { Loader2, ChevronDown } from "lucide-react";
 
 interface LoadMoreButtonProps {
   currentCount: number;
@@ -15,16 +16,13 @@ export default function LoadMoreButton({ currentCount, totalCount, limit }: Load
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   
-  // Максимальный лимит 150 транзакций чтобы избежать timeout
   const MAX_LIMIT = 150;
   const hasMore = (totalCount === null || currentCount < totalCount) && limit < MAX_LIMIT;
   
   const handleLoadMore = () => {
     const params = new URLSearchParams(searchParams.toString());
-    const increment = 25; // Уменьшили до 25 для стабильности
-    const newLimit = Math.min(limit + increment, MAX_LIMIT); // Не больше 150
+    const newLimit = Math.min(limit + 25, MAX_LIMIT);
     params.set("limit", newLimit.toString());
-    
     startTransition(() => {
       router.push(`/finance/transactions?${params.toString()}`, { scroll: false });
     });
@@ -32,7 +30,7 @@ export default function LoadMoreButton({ currentCount, totalCount, limit }: Load
 
   if (!hasMore) {
     return (
-      <div className={styles.info}>
+      <div className="text-center text-sm text-muted-foreground py-4">
         {limit >= MAX_LIMIT 
           ? `Показано максимум ${currentCount} транзакций. Используйте фильтры для уточнения.`
           : `Показаны все транзакции (${currentCount})`}
@@ -41,17 +39,12 @@ export default function LoadMoreButton({ currentCount, totalCount, limit }: Load
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.info}>
-        Показано {currentCount} из {totalCount ?? "?"} транзакций
-      </div>
-      <button 
-        onClick={handleLoadMore} 
-        className={styles.button}
-        disabled={isPending}
-      >
-        {isPending ? "Загрузка..." : "Загрузить ещё 25 транзакций"}
-      </button>
+    <div className="flex flex-col items-center gap-2 py-4">
+      <div className="text-sm text-muted-foreground">Показано {currentCount} из {totalCount ?? "?"} транзакций</div>
+      <Button variant="outline" onClick={handleLoadMore} disabled={isPending}>
+        {isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <ChevronDown className="h-4 w-4 mr-1" />}
+        {isPending ? "Загрузка..." : "Загрузить ещё 25"}
+      </Button>
     </div>
   );
 }

@@ -2,9 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
-
 import CategoryTransactionsModal from "@/components/dashboard/CategoryTransactionsModal";
-import styles from "@/components/dashboard/Dashboard.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Tag, Plus, Settings, Trash2, EyeOff, Loader2, Eye } from "lucide-react";
 import {
   loadCategorySummaryAction,
   loadCategoryTransactionsAction,
@@ -25,7 +28,6 @@ const PERIODS: { id: CategorySummaryPeriod; label: string }[] = [
   { id: "custom", label: "Произвольно" },
 ];
 
-const ICON_FALLBACK = "category";
 const INITIAL_VISIBLE_COUNT = 6;
 const LOCAL_STORAGE_KEY = "dashboard:categories:visible";
 
@@ -287,225 +289,120 @@ export default function CategoryManagementCard({
 
   return (
     <>
-      <section className={styles.categoryCardContainer}>
-        <header className={styles.categoryCardHeader}>
-          <div className={styles.categoryTitleGroup}>
-            <span className="material-icons" aria-hidden>
-              category
-            </span>
-            <div>
-              <div className={styles.categoryTitle}>Управление категориями</div>
-            </div>
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Tag className="h-4 w-4" />
+              Управление категориями
+            </CardTitle>
+            <Button variant="outline" size="sm" onClick={() => router.push("/finance/settings")}>
+              <Plus className="h-4 w-4 mr-1" />
+              Добавить
+            </Button>
           </div>
-          <button type="button" className={styles.categoryAddButton} onClick={() => router.push("/settings")}>
-            <span className="material-icons" aria-hidden>
-              add
-            </span>
-            Добавить
-          </button>
-        </header>
-
-        <div className={styles.categoryToolbar}>
-          <div className={styles.categoryPeriodTabs}>
-            {PERIODS.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                className={`${styles.categoryPeriodTab} ${
-                  period === option.id ? styles.categoryPeriodTabActive : ""
-                }`}
-                onClick={() => handlePeriodClick(option.id)}
-                disabled={isPending && period !== option.id}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-
-          {hiddenItems.length > 0 && (
-            <div className={styles.categoryManageControls}>
-              <select
-                value={selectedHiddenId ?? ""}
-                onChange={(event) => setSelectedHiddenId(event.target.value || null)}
-                className={styles.categorySelect}
-                disabled={isPending || saving}
-              >
-                {hiddenItems.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                className={styles.categoryAddHiddenButton}
-                onClick={handleAddHidden}
-                disabled={isPending || saving || !selectedHiddenId}
-              >
-                Добавить в виджет
-              </button>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex gap-1">
+              {PERIODS.map((option) => (
+                <Button key={option.id} variant={period === option.id ? "default" : "outline"} size="sm" onClick={() => handlePeriodClick(option.id)} disabled={isPending && period !== option.id}>
+                  {option.label}
+                </Button>
+              ))}
             </div>
-          )}
 
-          {hiddenItems.length > 0 && hasVisible && (
-            <button
-              type="button"
-              className={styles.categoryResetButton}
-              onClick={handleShowAll}
-              disabled={isPending || saving}
-            >
-              Показать все
-            </button>
-          )}
+            {hiddenItems.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Select value={selectedHiddenId ?? ""} onValueChange={(v) => setSelectedHiddenId(v || null)} disabled={isPending || saving}>
+                  <SelectTrigger className="w-40 h-8"><SelectValue placeholder="Скрытые" /></SelectTrigger>
+                  <SelectContent>
+                    {hiddenItems.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" size="sm" onClick={handleAddHidden} disabled={isPending || saving || !selectedHiddenId}>
+                  <Eye className="h-4 w-4 mr-1" />
+                  Показать
+                </Button>
+              </div>
+            )}
+
+            {hiddenItems.length > 0 && hasVisible && (
+              <Button variant="ghost" size="sm" onClick={handleShowAll} disabled={isPending || saving}>Показать все</Button>
+            )}
+          </div>
 
           {period === "custom" && (
-            <div className={styles.categoryCustomRange}>
-              <label className={styles.categoryCustomField}>
-                От
-                <input
-                  type="date"
-                  value={customRange.from}
-                  onChange={(event) => handleCustomChange("from", event.target.value)}
-                  disabled={isPending}
-                />
-              </label>
-              <label className={styles.categoryCustomField}>
-                До
-                <input
-                  type="date"
-                  value={customRange.to}
-                  onChange={(event) => handleCustomChange("to", event.target.value)}
-                  disabled={isPending}
-                />
-              </label>
-              <button
-                type="button"
-                className={styles.categoryApplyButton}
-                onClick={handleApplyCustom}
-                disabled={isPending}
-              >
-                Применить
-              </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Input type="date" value={customRange.from} onChange={(e) => handleCustomChange("from", e.target.value)} disabled={isPending} className="w-36 h-8" />
+              <span className="text-muted-foreground">—</span>
+              <Input type="date" value={customRange.to} onChange={(e) => handleCustomChange("to", e.target.value)} disabled={isPending} className="w-36 h-8" />
+              <Button size="sm" onClick={handleApplyCustom} disabled={isPending}>Применить</Button>
             </div>
           )}
-        </div>
 
-        {error && <div className={styles.categoryError}>{error}</div>}
-        {syncError && <div className={styles.categoryError}>{syncError}</div>}
-        {saving && !syncError && (
-          <div className={styles.categorySavingIndicator} role="status" aria-live="polite">
-            <span className="material-icons" aria-hidden>
-              sync
-            </span>
-            Сохраняем настройки…
-          </div>
-        )}
-
-        {hasData ? (
-          hasVisible ? (
-            <>
-              <div className={styles.categorySummaryRow}>
-                <div className={styles.categorySummaryLabel}>Сумма выбранных</div>
-                <div className={styles.categorySummaryValue}>{formatMoney(totalMinor, data.currency)}</div>
-                <div className={styles.categorySummaryPeriod}>
-                  Период: {data.from.slice(0, 10)} — {data.to.slice(0, 10)}
-                </div>
-                {hiddenItems.length > 0 && (
-                  <div className={styles.categorySummaryHidden}>Скрыто: {hiddenItems.length}</div>
-                )}
-              </div>
-
-              <div className={styles.categoryGrid}>
-                {visibleItems.map((item) => (
-                  <article
-                    key={item.id}
-                    className={`${styles.categoryCard} ${
-                      item.totalMinor >= 0 ? styles.categoryCardIncome : styles.categoryCardExpense
-                    }`}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => void handleOpenModal(item.id, item.name)}
-                    onKeyDown={(event) => onCardKeyDown(event, item.id, item.name)}
-                  >
-                    <div className={styles.categoryCardHeaderRow}>
-                      <div className={styles.categoryIconWrapper}>
-                        <span className="material-icons" aria-hidden>
-                          {ICON_FALLBACK}
-                        </span>
-                      </div>
-                      <div className={styles.categoryCardActions}>
-                        <button
-                          type="button"
-                          className={styles.categoryIconButton}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            router.push(`/settings?category=${encodeURIComponent(item.id)}`);
-                          }}
-                          title="Редактировать категорию"
-                        >
-                          <span className="material-icons" aria-hidden>
-                            edit
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.categoryIconButton}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            router.push(`/settings?category=${encodeURIComponent(item.id)}#delete`);
-                          }}
-                          title="Удалить категорию"
-                        >
-                          <span className="material-icons" aria-hidden>
-                            delete
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.categoryIconButton}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            handleHide(item.id);
-                          }}
-                          title="Скрыть из виджета"
-                        >
-                          <span className="material-icons" aria-hidden>
-                            visibility_off
-                          </span>
-                        </button>
-                      </div>
-                    </div>
-                    <div className={styles.categoryName}>{item.name}</div>
-                    <div className={styles.categoryStats}>
-                      <div className={styles.categoryAmount}>
-                        {formatMoney(item.totalMinor, data.currency)}
-                      </div>
-                      <div className={styles.categoryMeta}>
-                        {item.transactionCount} {pluralizeTransactions(item.transactionCount)}
-                      </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </>
-          ) : (
-            <div className={styles.categoryEmpty}>
-              Все категории скрыты. Выберите категорию в списке, чтобы добавить её в виджет.
+          {error && <div className="text-sm text-destructive">{error}</div>}
+          {syncError && <div className="text-sm text-destructive">{syncError}</div>}
+          {saving && !syncError && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Сохраняем настройки…
             </div>
-          )
-        ) : (
-          <div className={styles.categoryEmpty}>Нет транзакций по категориям за выбранный период</div>
-        )}
-      </section>
-      <CategoryTransactionsModal
-        open={modalOpen}
-        onClose={handleCloseModal}
-        categoryName={modalCategory?.name ?? null}
-        currency={data.currency}
-        transactions={modalTransactions}
-        loading={modalLoading}
-        error={modalError}
-      />
+          )}
+
+          {hasData ? (
+            hasVisible ? (
+              <>
+                <div className="flex flex-wrap items-center gap-4 text-sm">
+                  <div><span className="text-muted-foreground">Сумма:</span> <span className="font-medium">{formatMoney(totalMinor, data.currency)}</span></div>
+                  <div className="text-muted-foreground">Период: {data.from.slice(0, 10)} — {data.to.slice(0, 10)}</div>
+                  {hiddenItems.length > 0 && <div className="text-muted-foreground">Скрыто: {hiddenItems.length}</div>}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {visibleItems.map((item) => (
+                    <div key={item.id} role="button" tabIndex={0} onClick={() => void handleOpenModal(item.id, item.name)} onKeyDown={(event) => onCardKeyDown(event, item.id, item.name)}
+                      className={`p-3 rounded-lg border cursor-pointer transition-colors hover:bg-muted/50 ${item.totalMinor >= 0 ? "border-l-4 border-l-green-500" : "border-l-4 border-l-red-500"}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${item.totalMinor >= 0 ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"}`}>
+                          <Tag className="h-4 w-4" />
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); router.push(`/finance/settings?category=${encodeURIComponent(item.id)}`); }}>
+                            <Settings className="h-3 w-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); router.push(`/finance/settings?category=${encodeURIComponent(item.id)}#delete`); }}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); handleHide(item.id); }}>
+                            <EyeOff className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="font-medium text-sm truncate">{item.name}</div>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className={`font-bold ${item.totalMinor >= 0 ? "text-green-600" : "text-red-600"}`}>
+                          {formatMoney(item.totalMinor, data.currency)}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{item.transactionCount} {pluralizeTransactions(item.transactionCount)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-6 text-muted-foreground">
+                Все категории скрыты. Выберите категорию в списке, чтобы добавить её в виджет.
+              </div>
+            )
+          ) : (
+            <div className="text-center py-6 text-muted-foreground">Нет транзакций по категориям за выбранный период</div>
+          )}
+        </CardContent>
+      </Card>
+      <CategoryTransactionsModal open={modalOpen} onClose={handleCloseModal} categoryName={modalCategory?.name ?? null} currency={data.currency} transactions={modalTransactions} loading={modalLoading} error={modalError} />
     </>
   );
 }

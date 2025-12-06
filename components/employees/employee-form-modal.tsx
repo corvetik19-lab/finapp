@@ -6,7 +6,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { createEmployeeSchema, type CreateEmployeeFormData } from '@/lib/employees/validation';
 import type { Employee } from '@/lib/employees/types';
 import { EMPLOYEE_STATUS_LABELS } from '@/lib/employees/types';
-import styles from './employee-form-modal.module.css';
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, User, Eye, EyeOff, AlertTriangle } from "lucide-react";
 
 // Тип роли из API
 interface CompanyRole {
@@ -182,301 +189,41 @@ export function EmployeeFormModal({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div className={styles.header}>
-          <h2 className={styles.title}>
-            {mode === 'edit' ? '✏️ Редактировать сотрудника' : '➕ Добавить сотрудника'}
-          </h2>
-          <button onClick={onClose} className={styles.closeButton}>
-            ✕
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={onClose}><DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto"><DialogHeader><DialogTitle>{mode === 'edit' ? 'Редактировать сотрудника' : 'Добавить сотрудника'}</DialogTitle></DialogHeader>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {error && <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
-          <div className={styles.content}>
-            {error && (
-              <div className={styles.errorAlert}>
-                <span className={styles.errorIcon}>⚠️</span>
-                {error}
-              </div>
-            )}
+        {/* Аватар */}
+        <div className="flex items-center gap-4"><div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center"><User className="h-8 w-8 text-muted-foreground" /></div><Button type="button" variant="outline" size="sm">Изменить фото</Button></div>
 
-            {/* Аватар */}
-            <div className={styles.avatarSection}>
-              <div className={styles.avatarPlaceholder}>
-                <span className={styles.avatarIcon}>👤</span>
-              </div>
-              <button type="button" className={styles.avatarButton}>
-                📷 Изменить фото
-              </button>
-            </div>
+        {/* Персональные данные */}
+        <div className="space-y-4"><h3 className="font-semibold">Персональные данные</h3><div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="md:col-span-2 space-y-1"><Label>ФИО *</Label><Input {...register('full_name')} placeholder="Иванов Иван Иванович" />{errors.full_name && <p className="text-destructive text-xs">{errors.full_name.message}</p>}</div>
+          <div className="space-y-1"><Label>Email *</Label><Input type="email" {...register('email')} placeholder="ivan@company.com" />{errors.email && <p className="text-destructive text-xs">{errors.email.message}</p>}</div>
+          <div className="space-y-1"><Label>Телефон</Label><Input type="tel" {...register('phone')} placeholder="+7 (900) 123-45-67" /></div>
+          <div className="space-y-1"><Label>Telegram</Label><Input {...register('telegram')} placeholder="@username" /></div>
+          <div className="space-y-1"><Label>Дата рождения</Label><Input type="date" {...register('birth_date')} /></div>
+        </div></div>
 
-            {/* Персональные данные */}
-            <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>Персональные данные</h3>
-              <div className={styles.grid}>
-                {/* ФИО */}
-                <div className={styles.fieldFull}>
-                  <label className={styles.label}>
-                    ФИО <span className={styles.required}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    {...register('full_name')}
-                    className={styles.input}
-                    placeholder="Иванов Иван Иванович"
-                  />
-                  {errors.full_name && (
-                    <p className={styles.errorText}>{errors.full_name.message}</p>
-                  )}
-                </div>
+        {/* Рабочие данные */}
+        <div className="space-y-4"><h3 className="font-semibold">Рабочие данные</h3><div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1"><Label>Должность</Label><Input {...register('position')} placeholder="Менеджер по тендерам" /></div>
+          <div className="space-y-1"><Label>Отдел</Label><select {...register('department_id')} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"><option value="">Не назначен</option>{departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}</select></div>
+          <div className="space-y-1"><Label>Роль *</Label><select {...register('role')} disabled={loadingRoles} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm">{loadingRoles ? <option>Загрузка...</option> : companyRoles.length > 0 ? companyRoles.map(r => <option key={r.id} value={r.id}>{r.name}</option>) : <option value="viewer">Наблюдатель</option>}</select>{errors.role && <p className="text-destructive text-xs">{errors.role.message}</p>}{companyRoles.length > 0 && <p className="text-xs text-muted-foreground">{companyRoles.find(r => r.id === watch('role'))?.description || 'Роль определяет права'}</p>}</div>
+          <div className="space-y-1"><Label>Статус</Label><select {...register('status')} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm">{Object.entries(EMPLOYEE_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
+          <div className="space-y-1"><Label>Дата приёма</Label><Input type="date" {...register('hire_date')} /></div>
+          <div className="space-y-1"><Label>График</Label><Input {...register('work_schedule')} placeholder="5/2, 9:00-18:00" /></div>
+        </div></div>
 
-                {/* Email */}
-                <div className={styles.field}>
-                  <label className={styles.label}>
-                    Email <span className={styles.required}>*</span>
-                  </label>
-                  <input
-                    type="email"
-                    {...register('email')}
-                    className={styles.input}
-                    placeholder="ivan@company.com"
-                  />
-                  {errors.email && (
-                    <p className={styles.errorText}>{errors.email.message}</p>
-                  )}
-                </div>
+        {/* Учётная запись */}
+        {mode === 'create' && <div className="space-y-4"><h3 className="font-semibold">Учётная запись</h3><div className="flex items-center gap-2"><Checkbox id="create_account" checked={createAccount} onCheckedChange={v => setCreateAccount(!!v)} /><Label htmlFor="create_account" className="cursor-pointer">Создать учётную запись</Label></div>{createAccount && <div className="space-y-1"><Label>Пароль *</Label><div className="relative"><Input type={showPassword ? 'text' : 'password'} {...register('password')} placeholder="Минимум 8 символов" /><button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div>{errors.password && <p className="text-destructive text-xs">{errors.password.message}</p>}</div>}</div>}
 
-                {/* Телефон */}
-                <div className={styles.field}>
-                  <label className={styles.label}>Телефон</label>
-                  <input
-                    type="tel"
-                    {...register('phone')}
-                    className={styles.input}
-                    placeholder="+7 (900) 123-45-67"
-                  />
-                </div>
+        {/* Заметки */}
+        <div className="space-y-1"><Label>Заметки</Label><Textarea {...register('notes')} rows={3} placeholder="Дополнительная информация..." /></div>
 
-                {/* Telegram */}
-                <div className={styles.field}>
-                  <label className={styles.label}>Telegram</label>
-                  <input
-                    type="text"
-                    {...register('telegram')}
-                    className={styles.input}
-                    placeholder="@username"
-                  />
-                </div>
-
-                {/* Дата рождения */}
-                <div className={styles.field}>
-                  <label className={styles.label}>Дата рождения</label>
-                  <input
-                    type="date"
-                    {...register('birth_date')}
-                    className={styles.input}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Рабочие данные */}
-            <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>Рабочие данные</h3>
-              <div className={styles.grid}>
-                {/* Должность */}
-                <div className={styles.field}>
-                  <label className={styles.label}>Должность</label>
-                  <input
-                    type="text"
-                    {...register('position')}
-                    className={styles.input}
-                    placeholder="Менеджер по тендерам"
-                  />
-                </div>
-
-                {/* Отдел */}
-                <div className={styles.field}>
-                  <label className={styles.label}>Отдел</label>
-                  <select {...register('department_id')} className={styles.select}>
-                    <option value="">Не назначен</option>
-                    {departments.map((dept) => (
-                      <option key={dept.id} value={dept.id}>
-                        {dept.name}
-                      </option>
-                    ))}
-                  </select>
-                  {departments.length === 0 && (
-                    <p className={styles.hint}>
-                      💡 Создайте отделы в <a href="/admin/settings/departments" target="_blank">Настройках → Отделы</a>
-                    </p>
-                  )}
-                </div>
-
-                {/* Роль */}
-                <div className={styles.field}>
-                  <label className={styles.label}>
-                    Роль в системе <span className={styles.required}>*</span>
-                  </label>
-                  <select {...register('role')} className={styles.select} disabled={loadingRoles}>
-                    {loadingRoles ? (
-                      <option>Загрузка ролей...</option>
-                    ) : companyRoles.length > 0 ? (
-                      companyRoles.map((role) => (
-                        <option key={role.id} value={role.id}>
-                          {role.name}
-                        </option>
-                      ))
-                    ) : (
-                      <option value="viewer">Наблюдатель</option>
-                    )}
-                  </select>
-                  {errors.role && (
-                    <p className={styles.errorText}>{errors.role.message}</p>
-                  )}
-                  {/* Показываем описание выбранной роли */}
-                  {companyRoles.length > 0 && (() => {
-                    const selectedRoleId = watch('role');
-                    const selectedRole = companyRoles.find(r => r.id === selectedRoleId);
-                    return (
-                      <p className={styles.hint}>
-                        💡 {selectedRole?.description || 'Роль определяет права доступа в системе'}
-                      </p>
-                    );
-                  })()}
-                </div>
-
-                {/* Статус */}
-                <div className={styles.field}>
-                  <label className={styles.label}>Статус</label>
-                  <select {...register('status')} className={styles.select}>
-                    {Object.entries(EMPLOYEE_STATUS_LABELS).map(([key, label]) => (
-                      <option key={key} value={key}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Дата приема */}
-                <div className={styles.field}>
-                  <label className={styles.label}>Дата приема на работу</label>
-                  <input
-                    type="date"
-                    {...register('hire_date')}
-                    className={styles.input}
-                  />
-                </div>
-
-                {/* График работы */}
-                <div className={styles.field}>
-                  <label className={styles.label}>График работы</label>
-                  <input
-                    type="text"
-                    {...register('work_schedule')}
-                    className={styles.input}
-                    placeholder="5/2, 9:00-18:00"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Создание учетной записи */}
-            {mode === 'create' && (
-              <div className={styles.section}>
-                <h3 className={styles.sectionTitle}>Учетная запись</h3>
-                
-                <div className={styles.checkboxField}>
-                  <input
-                    type="checkbox"
-                    id="create_account"
-                    checked={createAccount}
-                    onChange={(e) => setCreateAccount(e.target.checked)}
-                    className={styles.checkbox}
-                  />
-                  <label htmlFor="create_account" className={styles.checkboxLabel}>
-                    Создать учетную запись для входа в систему
-                  </label>
-                </div>
-
-                {createAccount && (
-                  <div className={styles.grid}>
-                    <div className={styles.field}>
-                      <label className={styles.label}>
-                        Пароль <span className={styles.required}>*</span>
-                      </label>
-                      <div className={styles.passwordField}>
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          {...register('password')}
-                          className={styles.input}
-                          placeholder="Минимум 8 символов"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className={styles.passwordToggle}
-                        >
-                          {showPassword ? '👁️' : '👁️‍🗨️'}
-                        </button>
-                      </div>
-                      {errors.password && (
-                        <p className={styles.errorText}>{errors.password.message}</p>
-                      )}
-                      <p className={styles.hint}>
-                        💡 Сотрудник получит доступ к системе с этим паролем
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Заметки */}
-            <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>Дополнительно</h3>
-              <div className={styles.fieldFull}>
-                <label className={styles.label}>Заметки</label>
-                <textarea
-                  {...register('notes')}
-                  rows={3}
-                  className={styles.textarea}
-                  placeholder="Дополнительная информация о сотруднике..."
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className={styles.footer}>
-            <button
-              type="button"
-              onClick={onClose}
-              className={styles.cancelButton}
-              disabled={isSubmitting}
-            >
-              Отмена
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className={styles.submitButton}
-            >
-              {isSubmitting 
-                ? (mode === 'edit' ? 'Сохранение...' : 'Создание...') 
-                : (mode === 'edit' ? '✓ Сохранить' : '✓ Создать сотрудника')
-              }
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <DialogFooter><Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>Отмена</Button><Button type="submit" disabled={isSubmitting}>{isSubmitting ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />{mode === 'edit' ? 'Сохранение...' : 'Создание...'}</> : mode === 'edit' ? 'Сохранить' : 'Создать'}</Button></DialogFooter>
+      </form>
+    </DialogContent></Dialog>
   );
 }

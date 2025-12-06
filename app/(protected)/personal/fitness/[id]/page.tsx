@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import styles from "../Fitness.module.css";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ArrowLeft, Printer, Play, Pause, Flag, Calendar, Dumbbell, List, Plus, Edit, Trash2, Loader2 } from "lucide-react";
 import {
   getWorkoutPrograms,
   getProgramExercises,
@@ -134,247 +138,93 @@ export default function ProgramDetailPage() {
   }
 
   if (loading) {
-    return (
-      <div className={styles.container}>
-        <p>Загрузка...</p>
-      </div>
-    );
+    return <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   }
 
   if (!program) {
-    return (
-      <div className={styles.container}>
-        <p>Программа не найдена</p>
-      </div>
-    );
+    return <div className="p-6 text-center text-muted-foreground">Программа не найдена</div>;
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.toolbar}>
-        <div className={styles.toolbarLeft}>
-          <button className={styles.btnSecondary} onClick={() => router.back()}>
-            <span className="material-icons">arrow_back</span>
-            Назад
-          </button>
-        </div>
-        <div className={styles.toolbarRight}>
-          <button className={styles.btnPrimary} onClick={() => window.print()}>
-            <span className="material-icons">print</span>
-            Распечатать
-          </button>
-          <button className={styles.btnSecondary} onClick={handleToggleActive}>
-            <span className="material-icons">
-              {program.is_active ? "pause" : "play_arrow"}
-            </span>
-            {program.is_active ? "Деактивировать" : "Активировать"}
-          </button>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <Button variant="outline" onClick={() => router.back()}><ArrowLeft className="h-4 w-4 mr-2" />Назад</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4 mr-2" />Печать</Button>
+          <Button variant={program.is_active ? "secondary" : "default"} onClick={handleToggleActive}>{program.is_active ? <><Pause className="h-4 w-4 mr-2" />Деактивировать</> : <><Play className="h-4 w-4 mr-2" />Активировать</>}</Button>
         </div>
       </div>
 
-      <div className={styles.programSheet}>
-        <div className={styles.programHeader}>
-          <h1 className={styles.programTitle}>{program.name}</h1>
-          {program.description && (
-            <p className={styles.subtitle}>{program.description}</p>
-          )}
-          <div className={styles.programMeta}>
-            {program.goal && (
-              <div className={styles.programMetaItem}>
-                <span className="material-icons">flag</span>
-                <span>{program.goal}</span>
-              </div>
-            )}
-            <div className={styles.programMetaItem}>
-              <span className="material-icons">event</span>
-              <span>{program.duration_weeks} недель</span>
-            </div>
-            <div className={styles.programMetaItem}>
-              <span className="material-icons">fitness_center</span>
-              <span>{program.workouts_per_week} тренировок в неделю</span>
-            </div>
-            <div className={styles.programMetaItem}>
-              <span className="material-icons">list</span>
-              <span>{programExercises.length} упражнений</span>
-            </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>{program.name}</CardTitle>
+          {program.description && <p className="text-muted-foreground">{program.description}</p>}
+          <div className="flex flex-wrap gap-4 mt-2 text-sm">
+            {program.goal && <span className="flex items-center gap-1"><Flag className="h-4 w-4" />{program.goal}</span>}
+            <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{program.duration_weeks} недель</span>
+            <span className="flex items-center gap-1"><Dumbbell className="h-4 w-4" />{program.workouts_per_week} трен/нед</span>
+            <span className="flex items-center gap-1"><List className="h-4 w-4" />{programExercises.length} упражнений</span>
           </div>
-        </div>
+        </CardHeader>
+      </Card>
 
-        {Array.from({ length: days }, (_, i) => i + 1).map((day) => {
-          const dayExercises = exercisesByDay[day] || [];
-          
-          return (
-            <div key={day} className={styles.daySection}>
-              <div className={styles.dayHeader}>
-                <h2 className={styles.dayTitle}>День {day}</h2>
-                <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-                  <div className={styles.dayBadge}>
-                    {dayExercises.length} упражнений
-                  </div>
-                  <button
-                    className={styles.btnSecondary}
-                    onClick={() => {
-                      setSelectedExerciseDay(day);
-                      setShowAddExercise(true);
-                    }}
-                    style={{
-                      padding: "8px 16px",
-                      fontSize: "14px",
-                      background: "rgba(255, 255, 255, 0.2)",
-                      color: "white",
-                      border: "1px solid rgba(255, 255, 255, 0.3)",
-                    }}
-                  >
-                    <span className="material-icons" style={{ fontSize: "18px" }}>add</span>
-                  </button>
+      {Array.from({ length: days }, (_, i) => i + 1).map((day) => {
+        const dayExercises = exercisesByDay[day] || [];
+        return (
+          <Card key={day}>
+            <CardHeader className="bg-primary text-primary-foreground rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <CardTitle>День {day}</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">{dayExercises.length} упр.</Badge>
+                  <Button size="icon" variant="secondary" onClick={() => { setSelectedExerciseDay(day); setShowAddExercise(true); }}><Plus className="h-4 w-4" /></Button>
                 </div>
               </div>
-
+            </CardHeader>
+            <CardContent className="pt-4">
               {dayExercises.length === 0 ? (
-                <div className={styles.emptyDay}>
-                  <span className="material-icons">fitness_center</span>
-                  <p>Упражнений пока нет</p>
-                  <button
-                    className={styles.btnPrimary}
-                    onClick={() => {
-                      setSelectedExerciseDay(day);
-                      setShowAddExercise(true);
-                    }}
-                  >
-                    <span className="material-icons">add</span>
-                    Добавить упражнение
-                  </button>
-                </div>
+                <div className="text-center py-8 text-muted-foreground"><Dumbbell className="h-8 w-8 mx-auto mb-2" /><p>Упражнений пока нет</p><Button className="mt-4" onClick={() => { setSelectedExerciseDay(day); setShowAddExercise(true); }}><Plus className="h-4 w-4 mr-2" />Добавить</Button></div>
               ) : (
-                <ol className={styles.exerciseList}>
+                <ol className="space-y-3">
                   {dayExercises.map((programEx) => (
-                    <li key={programEx.id} className={styles.exerciseItem}>
-                      <div className={styles.exerciseNumber}>
-                        {programEx.order_index + 1}
+                    <li key={programEx.id} className="flex items-start gap-3 p-3 rounded-lg border">
+                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">{programEx.order_index + 1}</div>
+                      <div className="flex-1">
+                        <h3 className="font-medium">{programEx.exercise.name}</h3>
+                        <p className="text-sm text-muted-foreground"><strong>{programEx.sets}×{programEx.reps || "макс"}</strong> повторений</p>
+                        <div className="mt-2 space-y-1 print:block hidden">{Array.from({ length: programEx.sets }, (_, i) => (<div key={i} className="text-xs border-b pb-1">Подход {i + 1}: _____ кг</div>))}</div>
+                        {programEx.notes && <p className="text-sm text-muted-foreground mt-1">💡 {programEx.notes}</p>}
                       </div>
-                      <div className={styles.exerciseContent}>
-                        <h3 className={styles.exerciseName}>
-                          {programEx.exercise.name}
-                        </h3>
-                        <div className={styles.exerciseParams}>
-                          <div className={styles.exerciseParam}>
-                            <strong>{programEx.sets}×{programEx.reps || "макс"}</strong>
-                            {" повторений"}
-                          </div>
-                        </div>
-                        <div className={styles.printWeightLines}>
-                          {Array.from({ length: programEx.sets }, (_, i) => (
-                            <div key={i} className={styles.printWeightLine}>
-                              <span>Подход {i + 1}:</span>
-                            </div>
-                          ))}
-                        </div>
-                        {programEx.notes && (
-                          <p style={{ margin: "8px 0 0", fontSize: "14px", color: "#666" }}>
-                            💡 {programEx.notes}
-                          </p>
-                        )}
-                      </div>
-                      <div className={styles.exerciseActions}>
-                        <button
-                          className={styles.iconBtn}
-                          onClick={() => handleUpdateExercise(programEx.id)}
-                          title="Изменить"
-                        >
-                          <span className="material-icons">edit</span>
-                        </button>
-                        <button
-                          className={`${styles.iconBtn} ${styles.danger}`}
-                          onClick={() => handleDeleteExercise(programEx.id)}
-                          title="Удалить"
-                        >
-                          <span className="material-icons">delete</span>
-                        </button>
+                      <div className="flex gap-1">
+                        <Button size="icon" variant="ghost" onClick={() => handleUpdateExercise(programEx.id)}><Edit className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => handleDeleteExercise(programEx.id)}><Trash2 className="h-4 w-4" /></Button>
                       </div>
                     </li>
                   ))}
                 </ol>
               )}
+            </CardContent>
+          </Card>
+        );
+      })}
+
+      <Dialog open={showAddExercise} onOpenChange={setShowAddExercise}>
+        <DialogContent><DialogHeader><DialogTitle>Выберите упражнение (День {selectedExerciseDay})</DialogTitle></DialogHeader>
+          {allExercises.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">Сначала создайте упражнения в библиотеке</div>
+          ) : (
+            <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+              {allExercises.map((exercise) => (
+                <Button key={exercise.id} variant="outline" className="w-full justify-start h-auto py-3" onClick={() => handleAddExercise(exercise.id)}>
+                  <div className="text-left"><strong>{exercise.name}</strong>{exercise.category && <p className="text-xs text-muted-foreground">{exercise.category}{exercise.equipment && ` • ${exercise.equipment}`}</p>}</div>
+                </Button>
+              ))}
             </div>
-          );
-        })}
-      </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
-      {showAddExercise && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-          onClick={() => setShowAddExercise(false)}
-        >
-          <div
-            style={{
-              background: "white",
-              padding: "32px",
-              borderRadius: "12px",
-              maxWidth: "600px",
-              maxHeight: "80vh",
-              overflow: "auto",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 style={{ marginTop: 0 }}>Выберите упражнение (День {selectedExerciseDay})</h2>
-            {allExercises.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "32px", color: "#666" }}>
-                <p>Сначала создайте упражнения в библиотеке</p>
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                {allExercises.map((exercise) => (
-                  <button
-                    key={exercise.id}
-                    className={styles.btnSecondary}
-                    onClick={() => handleAddExercise(exercise.id)}
-                    style={{ textAlign: "left", padding: "16px" }}
-                  >
-                    <strong>{exercise.name}</strong>
-                    {exercise.category && (
-                      <p style={{ margin: "4px 0 0", fontSize: "14px", color: "#666" }}>
-                        {exercise.category}
-                        {exercise.equipment && ` • ${exercise.equipment}`}
-                      </p>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-            <button
-              className={styles.btnDanger}
-              onClick={() => setShowAddExercise(false)}
-              style={{ marginTop: "16px", width: "100%" }}
-            >
-              Закрыть
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className={styles.fabContainer}>
-        <button
-          className={styles.fab}
-          onClick={() => {
-            setSelectedExerciseDay(1);
-            setShowAddExercise(true);
-          }}
-          title="Добавить упражнение"
-        >
-          <span className="material-icons">add</span>
-        </button>
-      </div>
+      <Button className="fixed bottom-6 right-6 rounded-full h-14 w-14 shadow-lg" onClick={() => { setSelectedExerciseDay(1); setShowAddExercise(true); }}><Plus className="h-6 w-6" /></Button>
     </div>
   );
 }

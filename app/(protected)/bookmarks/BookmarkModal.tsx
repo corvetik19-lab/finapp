@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import styles from "./Bookmarks.module.css";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
 
 type Bookmark = {
   id: string;
@@ -106,117 +112,21 @@ export default function BookmarkModal({ bookmark, onClose, categories }: Props) 
   }
 
   return (
-    <div className={styles.modalOverlay} onClick={() => onClose()}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h2>{bookmark ? "Редактировать закладку" : "Добавить закладку"}</h2>
-          <button 
-            type="button"
-            onClick={() => onClose()} 
-            className={styles.closeBtn}
-            aria-label="Закрыть"
-          >
-            <span className="material-icons">close</span>
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className={styles.modalBody}>
-          <div className={styles.formGroup}>
-            <label htmlFor="title">
-              Название <span className={styles.required}>*</span>
-            </label>
-            <input
-              id="title"
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Например: Google Документы"
-              className={styles.input}
-              required
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="url">
-              URL <span className={styles.required}>*</span>
-            </label>
-            <input
-              id="url"
-              type="text"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="example.com или https://example.com"
-              className={styles.input}
-              required
-            />
-            <div className={styles.hint}>
-              Можно вводить с протоколом (https://) или без (добавится автоматически)
-            </div>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="description">Описание</label>
-            <textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Краткое описание ссылки..."
-              className={styles.textarea}
-              rows={3}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="category">Категория</label>
-            <select
-              id="category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className={styles.select}
-            >
-              <option value="">Не выбрано</option>
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="tags">Теги</label>
-            <input
-              id="tags"
-              type="text"
-              value={tagsInput}
-              onChange={(e) => setTagsInput(e.target.value)}
-              placeholder="Через запятую: работа, документы, облако"
-              className={styles.input}
-            />
-            <div className={styles.hint}>
-              Теги помогут быстрее найти закладку
-            </div>
-          </div>
-
-          <div className={styles.modalFooter}>
-            <button
-              type="button"
-              onClick={() => onClose()}
-              className={styles.cancelBtn}
-              disabled={isSaving}
-            >
-              Отмена
-            </button>
-            <button
-              type="submit"
-              className={styles.saveBtn}
-              disabled={isSaving}
-            >
-              {isSaving ? "Сохранение..." : bookmark ? "Сохранить" : "Добавить"}
-            </button>
-          </div>
+    <Dialog open onOpenChange={() => onClose()}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>{bookmark ? "Редактировать закладку" : "Добавить закладку"}</DialogTitle></DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2"><Label>Название *</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Google Документы" required /></div>
+          <div className="space-y-2"><Label>URL *</Label><Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="example.com" required /><p className="text-xs text-muted-foreground">https:// добавится автоматически</p></div>
+          <div className="space-y-2"><Label>Описание</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Краткое описание..." rows={3} /></div>
+          <div className="space-y-2"><Label>Категория</Label><Select value={category} onValueChange={setCategory}><SelectTrigger><SelectValue placeholder="Не выбрано" /></SelectTrigger><SelectContent>{categories.map((cat) => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select></div>
+          <div className="space-y-2"><Label>Теги</Label><Input value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} placeholder="работа, документы, облако" /></div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onClose()} disabled={isSaving}>Отмена</Button>
+            <Button type="submit" disabled={isSaving}>{isSaving ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Сохранение...</> : bookmark ? "Сохранить" : "Добавить"}</Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

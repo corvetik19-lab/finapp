@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatMoney } from "@/lib/utils/format";
-import styles from "./SavingsDistribution.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ChevronDown, ChevronUp, Save, Loader2, Trash2, Pencil, Eye, EyeOff, Send, CreditCard } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 type DebitCard = {
   id: string;
@@ -186,254 +191,189 @@ export default function SavingsDistribution({ totalSavings, debitCards, initialD
   };
 
   return (
-    <section className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h2 className={styles.title}>💰 Распределение экономии</h2>
-          <p className={styles.subtitle}>
-            Планируемая экономия: <strong>{formatMoney(totalSavings, "RUB")}</strong>
-          </p>
-        </div>
-        <button
-          type="button"
-          className={styles.toggleBtn}
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          <span className="material-icons">
-            {isExpanded ? "expand_less" : "expand_more"}
-          </span>
-          {isExpanded ? "Свернуть" : "Развернуть"}
-        </button>
-      </div>
+    <Card>
+      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">💰 Распределение экономии</CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Планируемая экономия: <strong>{formatMoney(totalSavings, "RUB")}</strong>
+              </p>
+            </div>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm">
+                {isExpanded ? <ChevronUp className="h-4 w-4 mr-1" /> : <ChevronDown className="h-4 w-4 mr-1" />}
+                {isExpanded ? "Свернуть" : "Развернуть"}
+              </Button>
+            </CollapsibleTrigger>
+          </div>
+        </CardHeader>
 
-      {isExpanded && (
-        <div className={styles.content}>
-          {/* Показываем сохраненный план если есть */}
-          {totalDistributed > 0 && (
-            <div className={styles.savedPlan}>
-              <div className={styles.savedPlanHeader}>
-                <div className={styles.savedPlanHeaderLeft}>
-                  <span className="material-icons">bookmark</span>
-                  <span>Сохраненный план распределения</span>
+        <CollapsibleContent>
+          <CardContent className="space-y-4">
+            {/* Сохраненный план */}
+            {totalDistributed > 0 && (
+              <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <CreditCard className="h-4 w-4" />
+                    Сохраненный план распределения
+                  </div>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleDelete} disabled={isSaving}>
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
                 </div>
-                <div className={styles.savedPlanHeaderActions}>
-                  <button
-                    type="button"
-                    className={styles.savedPlanActionBtn}
-                    onClick={() => {
-                      // Редактирование - просто скроллим вниз к форме
-                      document.querySelector(`.${styles.cards}`)?.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                    title="Редактировать"
-                  >
-                    <span className="material-icons">edit</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.savedPlanActionBtn}
-                    onClick={handleDelete}
-                    disabled={isSaving}
-                    title="Удалить"
-                  >
-                    <span className="material-icons">delete</span>
-                  </button>
-                </div>
-              </div>
-              <div className={styles.savedPlanCards}>
-                {distributions.filter(d => d.amount > 0).map(dist => {
-                  const card = debitCards.find(c => c.id === dist.accountId);
-                  if (!card) return null;
-                  const percentage = totalSavings > 0 ? (dist.amount / totalSavings) * 100 : 0;
-                  return (
-                    <div key={dist.accountId} className={styles.savedPlanCard}>
-                      <div className={styles.savedPlanCardIcon}>💳</div>
-                      <div className={styles.savedPlanCardInfo}>
-                        <div className={styles.savedPlanCardName}>{card.name}</div>
-                        <div className={styles.savedPlanCardAmount}>
-                          {formatMoney(dist.amount, "RUB")}
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {distributions.filter(d => d.amount > 0).map(dist => {
+                    const card = debitCards.find(c => c.id === dist.accountId);
+                    if (!card) return null;
+                    const percentage = totalSavings > 0 ? (dist.amount / totalSavings) * 100 : 0;
+                    return (
+                      <div key={dist.accountId} className="flex items-center gap-3 bg-background rounded p-2">
+                        <CreditCard className="h-4 w-4 text-muted-foreground" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate">{card.name}</div>
+                          <div className="text-xs text-muted-foreground">{formatMoney(dist.amount, "RUB")}</div>
                         </div>
+                        <div className="text-xs font-medium text-blue-600">{percentage.toFixed(1)}%</div>
                       </div>
-                      <div className={styles.savedPlanCardPercent}>
-                        {percentage.toFixed(1)}%
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <div className={styles.cards}>
-            {debitCards.length === 0 ? (
-              <div style={{ 
-                padding: '2rem', 
-                textAlign: 'center', 
-                color: '#6b7280',
-                gridColumn: '1 / -1'
-              }}>
-                Нет дебетовых карт для распределения экономии. 
-                <br />
-                Добавьте дебетовые карты в разделе &quot;Карты&quot;.
-              </div>
-            ) : (
-              visibleCards.map((card) => {
-              const distribution = distributions.find(d => d.accountId === card.id);
-              const amount = distribution?.amount || 0;
-              const percentage = totalSavings > 0 ? (amount / totalSavings) * 100 : 0;
-
-              return (
-                <div key={card.id} className={styles.card}>
-                  <div className={styles.cardHeader}>
-                    <div>
-                      <div className={styles.cardName}>💳 {card.name}</div>
-                      <div className={styles.cardBalance}>
-                        Текущий баланс: {formatMoney(card.balance, "RUB")}
-                      </div>
-                    </div>
-                    <div className={styles.percentage}>
-                      {percentage.toFixed(1)}%
-                    </div>
-                  </div>
-                  <div className={styles.cardInput}>
-                    <label>
-                      <span className={styles.label}>
-                        Сумма для распределения (₽)
-                        {remaining < totalSavings && (
-                          <span className={styles.labelHint}> • Осталось: {formatMoney(remaining, "RUB")}</span>
-                        )}
-                      </span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max={totalSavings / 100}
-                        className={styles.input}
-                        value={amount === 0 ? '' : amount / 100}
-                        onChange={(e) => handleAmountChange(card.id, e.target.value)}
-                        placeholder="0.00"
-                      />
-                    </label>
-                  </div>
-                  {amount > 0 && (
-                    <div className={styles.cardResult}>
-                      Новый баланс: <strong>{formatMoney(card.balance + amount, "RUB")}</strong>
-                    </div>
-                  )}
-                  
-                  <div className={styles.cardActions}>
-                    {amount > 0 && (
-                      <button
-                        type="button"
-                        className={styles.executeBtn}
-                        onClick={() => {
-                          // Переходим на страницу транзакций с параметрами для перевода
-                          const params = new URLSearchParams({
-                            type: 'transfer',
-                            to_account: card.id,
-                            amount: (amount / 100).toString(),
-                            note: `Распределение экономии на ${card.name}`
-                          });
-                          router.push(`/transactions?${params.toString()}`);
-                        }}
-                        title="Внести как транзакцию"
-                      >
-                        <span className="material-icons">send</span>
-                        Внести
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className={styles.hideCardBtn}
-                      onClick={() => toggleCardVisibility(card.id)}
-                      title="Скрыть карту"
-                    >
-                      <span className="material-icons">visibility_off</span>
-                      Скрыть
-                    </button>
-                  </div>
+                    );
+                  })}
                 </div>
-              );
-            })
-            )}
-          </div>
-
-          {/* Показываем скрытые карты */}
-          {hiddenCardsCount > 0 && (
-            <div className={styles.hiddenCardsSection}>
-              <div className={styles.hiddenCardsHeader}>
-                <span className="material-icons">visibility_off</span>
-                <span>Скрытые карты ({hiddenCardsCount})</span>
-              </div>
-              <div className={styles.hiddenCardsList}>
-                {debitCards.filter(card => hiddenCards.has(card.id)).map(card => (
-                  <div key={card.id} className={styles.hiddenCard}>
-                    <span>💳 {card.name}</span>
-                    <button
-                      type="button"
-                      className={styles.showCardBtn}
-                      onClick={() => toggleCardVisibility(card.id)}
-                      title="Показать карту"
-                    >
-                      <span className="material-icons">visibility</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className={styles.summary}>
-            <div className={styles.summaryRow}>
-              <span>Всего для распределения:</span>
-              <strong>{formatMoney(totalSavings, "RUB")}</strong>
-            </div>
-            <div className={styles.summaryRow}>
-              <span>Распределено:</span>
-              <strong className={totalDistributed > totalSavings ? styles.error : ""}>
-                {formatMoney(totalDistributed, "RUB")}
-              </strong>
-            </div>
-            <div className={styles.summaryRow}>
-              <span>Осталось:</span>
-              <strong className={remaining < 0 ? styles.error : styles.success}>
-                {formatMoney(remaining, "RUB")}
-              </strong>
-            </div>
-            {totalDistributed > totalSavings && (
-              <div className={styles.warning}>
-                ⚠️ Распределено больше чем запланировано!
               </div>
             )}
-          </div>
 
-          {saveMessage && (
-            <div className={styles.saveMessage}>
-              {saveMessage}
-            </div>
-          )}
-
-          <div className={styles.saveButtonContainer}>
-            <button
-              type="button"
-              className={styles.saveButton}
-              onClick={handleSave}
-              disabled={isSaving || totalDistributed === 0}
-            >
-              {isSaving ? (
-                <>
-                  <span className="material-icons">hourglass_empty</span>
-                  Сохранение...
-                </>
+            {/* Карты для распределения */}
+            <div className="grid gap-4 md:grid-cols-2">
+              {debitCards.length === 0 ? (
+                <div className="col-span-full text-center py-8 text-muted-foreground">
+                  Нет дебетовых карт для распределения экономии.<br />
+                  Добавьте дебетовые карты в разделе &quot;Карты&quot;.
+                </div>
               ) : (
-                <>
-                  <span className="material-icons">save</span>
-                  Сохранить распределение
-                </>
+                visibleCards.map((card) => {
+                  const distribution = distributions.find(d => d.accountId === card.id);
+                  const amount = distribution?.amount || 0;
+                  const percentage = totalSavings > 0 ? (amount / totalSavings) * 100 : 0;
+                  return (
+                    <Card key={card.id} className="border">
+                      <CardContent className="pt-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium flex items-center gap-2">
+                              <CreditCard className="h-4 w-4" /> {card.name}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Баланс: {formatMoney(card.balance, "RUB")}</div>
+                          </div>
+                          <div className="text-sm font-medium text-blue-600">{percentage.toFixed(1)}%</div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">
+                            Сумма для распределения (₽)
+                            {remaining < totalSavings && (
+                              <span className="text-muted-foreground ml-1">• Осталось: {formatMoney(remaining, "RUB")}</span>
+                            )}
+                          </Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max={totalSavings / 100}
+                            value={amount === 0 ? '' : amount / 100}
+                            onChange={(e) => handleAmountChange(card.id, e.target.value)}
+                            placeholder="0.00"
+                          />
+                        </div>
+                        {amount > 0 && (
+                          <div className="text-sm text-green-600">
+                            Новый баланс: <strong>{formatMoney(card.balance + amount, "RUB")}</strong>
+                          </div>
+                        )}
+                        <div className="flex gap-2">
+                          {amount > 0 && (
+                            <Button size="sm" variant="outline" onClick={() => {
+                              const params = new URLSearchParams({
+                                type: 'transfer', to_account: card.id,
+                                amount: (amount / 100).toString(),
+                                note: `Распределение экономии на ${card.name}`
+                              });
+                              router.push(`/transactions?${params.toString()}`);
+                            }}>
+                              <Send className="h-3 w-3 mr-1" /> Внести
+                            </Button>
+                          )}
+                          <Button size="sm" variant="ghost" onClick={() => toggleCardVisibility(card.id)}>
+                            <EyeOff className="h-3 w-3 mr-1" /> Скрыть
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
               )}
-            </button>
-          </div>
-        </div>
-      )}
-    </section>
+            </div>
+
+            {/* Скрытые карты */}
+            {hiddenCardsCount > 0 && (
+              <div className="bg-muted/30 rounded-lg p-3">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                  <EyeOff className="h-4 w-4" /> Скрытые карты ({hiddenCardsCount})
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {debitCards.filter(card => hiddenCards.has(card.id)).map(card => (
+                    <div key={card.id} className="flex items-center gap-2 bg-background rounded px-2 py-1 text-sm">
+                      <CreditCard className="h-3 w-3" /> {card.name}
+                      <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => toggleCardVisibility(card.id)}>
+                        <Eye className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Итоги */}
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>Всего для распределения:</span>
+                <strong>{formatMoney(totalSavings, "RUB")}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span>Распределено:</span>
+                <strong className={totalDistributed > totalSavings ? "text-red-600" : ""}>
+                  {formatMoney(totalDistributed, "RUB")}
+                </strong>
+              </div>
+              <div className="flex justify-between">
+                <span>Осталось:</span>
+                <strong className={remaining < 0 ? "text-red-600" : "text-green-600"}>
+                  {formatMoney(remaining, "RUB")}
+                </strong>
+              </div>
+              {totalDistributed > totalSavings && (
+                <div className="text-red-600 text-center pt-2">⚠️ Распределено больше чем запланировано!</div>
+              )}
+            </div>
+
+            {saveMessage && (
+              <div className="text-center py-2 text-sm">{saveMessage}</div>
+            )}
+
+            <div className="flex justify-end">
+              <Button onClick={handleSave} disabled={isSaving || totalDistributed === 0}>
+                {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                {isSaving ? "Сохранение..." : "Сохранить распределение"}
+              </Button>
+            </div>
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
   );
 }

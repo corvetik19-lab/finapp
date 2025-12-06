@@ -1,9 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import styles from "./Prompts.module.css";
 import PromptCard from "./PromptCard";
 import PromptModal from "./PromptModal";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { Plus, Search, Star, Loader2, Lightbulb } from "lucide-react";
 
 type Prompt = {
   id: string;
@@ -164,140 +168,36 @@ export default function PromptsContent() {
   }
 
   return (
-    <div className={styles.container}>
-      <header className={styles.header}>
-        <div className={styles.titleGroup}>
-          <h1 className={styles.title}>
-            <span className={styles.icon}>💡</span>
-            Промпты
-          </h1>
-          <p className={styles.subtitle}>
-            Библиотека промптов для нейросетей
-          </p>
-        </div>
-        <button onClick={handleCreate} className={styles.createBtn}>
-          <span className="material-icons">add</span>
-          Создать промпт
-        </button>
-      </header>
-
-      {/* Фильтры */}
-      <div className={styles.filters}>
-        <div className={styles.searchBox}>
-          <span className="material-icons">search</span>
-          <input
-            type="text"
-            placeholder="Поиск по названию, описанию, тегам..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={styles.searchInput}
-          />
-        </div>
-
-        <div className={styles.filterRow}>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className={styles.select}
-          >
-            <option value="all">Все категории</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={selectedAiModel}
-            onChange={(e) => setSelectedAiModel(e.target.value)}
-            className={styles.select}
-          >
-            <option value="all">Все модели</option>
-            {aiModels.map((model) => (
-              <option key={model} value={model}>
-                {model}
-              </option>
-            ))}
-          </select>
-
-          <button
-            onClick={() => setShowFavorites(!showFavorites)}
-            className={`${styles.filterBtn} ${showFavorites ? styles.active : ""}`}
-          >
-            <span className="material-icons">
-              {showFavorites ? "star" : "star_border"}
-            </span>
-            Избранное
-          </button>
-        </div>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div><h1 className="text-2xl font-bold flex items-center gap-2"><Lightbulb className="h-6 w-6" />Промпты</h1><p className="text-muted-foreground">Библиотека промптов для нейросетей</p></div>
+        <Button onClick={handleCreate}><Plus className="h-4 w-4 mr-1" />Создать</Button>
       </div>
 
-      {/* Статистика */}
-      <div className={styles.stats}>
-        <div className={styles.statCard}>
-          <span className={styles.statValue}>{prompts.length}</span>
-          <span className={styles.statLabel}>Всего промптов</span>
-        </div>
-        <div className={styles.statCard}>
-          <span className={styles.statValue}>
-            {prompts.filter((p) => p.is_favorite).length}
-          </span>
-          <span className={styles.statLabel}>Избранных</span>
-        </div>
-        <div className={styles.statCard}>
-          <span className={styles.statValue}>
-            {prompts.reduce((sum, p) => sum + p.usage_count, 0)}
-          </span>
-          <span className={styles.statLabel}>Использований</span>
-        </div>
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="Поиск..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" /></div>
+        <Select value={selectedCategory} onValueChange={setSelectedCategory}><SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Все категории</SelectItem>{categories.map((cat) => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select>
+        <Select value={selectedAiModel} onValueChange={setSelectedAiModel}><SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Все модели</SelectItem>{aiModels.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select>
+        <Button variant={showFavorites ? "default" : "outline"} onClick={() => setShowFavorites(!showFavorites)}><Star className={`h-4 w-4 mr-1 ${showFavorites ? "fill-current" : ""}`} />Избранное</Button>
       </div>
 
-      {/* Список промптов */}
+      <div className="grid grid-cols-3 gap-4">
+        <Card><CardContent className="pt-4 text-center"><p className="text-3xl font-bold">{prompts.length}</p><p className="text-sm text-muted-foreground">Всего</p></CardContent></Card>
+        <Card><CardContent className="pt-4 text-center"><p className="text-3xl font-bold">{prompts.filter((p) => p.is_favorite).length}</p><p className="text-sm text-muted-foreground">Избранных</p></CardContent></Card>
+        <Card><CardContent className="pt-4 text-center"><p className="text-3xl font-bold">{prompts.reduce((sum, p) => sum + p.usage_count, 0)}</p><p className="text-sm text-muted-foreground">Использований</p></CardContent></Card>
+      </div>
+
       {isLoading ? (
-        <div className={styles.loading}>
-          <div className={styles.spinner}></div>
-          <p>Загрузка промптов...</p>
-        </div>
+        <div className="flex flex-col items-center py-12"><Loader2 className="h-8 w-8 animate-spin" /><p className="text-muted-foreground mt-2">Загрузка...</p></div>
       ) : filteredPrompts.length === 0 ? (
-        <div className={styles.empty}>
-          <span className={styles.emptyIcon}>📝</span>
-          <h3>Промпты не найдены</h3>
-          <p>
-            {searchQuery || selectedCategory !== "all" || selectedAiModel !== "all" || showFavorites
-              ? "Попробуйте изменить фильтры"
-              : "Создайте свой первый промпт"}
-          </p>
-          {!searchQuery && selectedCategory === "all" && selectedAiModel === "all" && !showFavorites && (
-            <button onClick={handleCreate} className={styles.emptyBtn}>
-              Создать промпт
-            </button>
-          )}
-        </div>
+        <Card className="text-center py-12"><CardContent><Lightbulb className="h-16 w-16 mx-auto text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">Промпты не найдены</h3><p className="text-muted-foreground mb-4">{searchQuery || selectedCategory !== "all" || selectedAiModel !== "all" || showFavorites ? "Измените фильтры" : "Создайте первый промпт"}</p>{!searchQuery && selectedCategory === "all" && selectedAiModel === "all" && !showFavorites && <Button onClick={handleCreate}>Создать</Button>}</CardContent></Card>
       ) : (
-        <div className={styles.grid}>
-          {filteredPrompts.map((prompt) => (
-            <PromptCard
-              key={prompt.id}
-              prompt={prompt}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onToggleFavorite={handleToggleFavorite}
-              onCopy={handleCopy}
-            />
-          ))}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredPrompts.map((prompt) => <PromptCard key={prompt.id} prompt={prompt} onEdit={handleEdit} onDelete={handleDelete} onToggleFavorite={handleToggleFavorite} onCopy={handleCopy} />)}
         </div>
       )}
 
-      {/* Модальное окно */}
-      {isModalOpen && (
-        <PromptModal
-          prompt={editingPrompt}
-          onClose={handleModalClose}
-          categories={categories}
-          aiModels={aiModels}
-        />
-      )}
+      {isModalOpen && <PromptModal prompt={editingPrompt} onClose={handleModalClose} categories={categories} aiModels={aiModels} />}
     </div>
   );
 }

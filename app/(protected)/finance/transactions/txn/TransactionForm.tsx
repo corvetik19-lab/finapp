@@ -4,7 +4,7 @@ import { useFormStatus } from "react-dom";
 import { createTransactionAction, type TxnActionState } from "../actions";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/toast/ToastContext";
-import stylesTxn from "@/components/transactions/Transactions.module.css";
+import { Button } from "@/components/ui/button";
 
 export default function TransactionForm({
   accounts,
@@ -185,8 +185,8 @@ export default function TransactionForm({
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" disabled={pending} className={stylesTxn.primaryBtn}>
+    <Button type="submit" disabled={pending}>
       {pending ? "Сохраняем…" : "Добавить"}
-    </button>
+    </Button>
   );
 }

@@ -1,16 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import styles from './modals.module.css';
 import { TenderStage } from '@/lib/tenders/types';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle, Loader2, ChevronUp, ChevronDown } from 'lucide-react';
 
-interface TemplateData {
-  name: string;
-  description: string;
-  icon: string;
-  is_active: boolean;
-  stage_ids: string[];
-}
+interface TemplateData { name: string; description: string; icon: string; is_active: boolean; stage_ids: string[]; }
 
 interface TemplateModalProps {
   template?: Partial<TemplateData> & { id?: string; items?: { stage_id: string }[]; is_system?: boolean };
@@ -21,13 +22,7 @@ interface TemplateModalProps {
 }
 
 export function TemplateModal({ template, isOpen, onClose, onSave, stages }: TemplateModalProps) {
-  const [formData, setFormData] = useState<TemplateData>({
-    name: '',
-    description: '',
-    icon: '📋',
-    is_active: true,
-    stage_ids: [],
-  });
+  const [formData, setFormData] = useState<TemplateData>({ name: '', description: '', icon: '📋', is_active: true, stage_ids: [] });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -105,239 +100,73 @@ export function TemplateModal({ template, isOpen, onClose, onSave, stages }: Tem
     setFormData(prev => ({ ...prev, stage_ids: newIds }));
   };
 
-  const renderStageGroup = (groupStages: TenderStage[], title: string, icon: string) => {
-    if (groupStages.length === 0) return null;
-    
-    return (
-      <div key={title} style={{ marginBottom: '16px' }}>
-        <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px', color: '#64748b' }}>
-          {icon} {title}
-        </h4>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          {groupStages.map(stage => (
-            <label
-              key={stage.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '8px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                background: formData.stage_ids.includes(stage.id) ? '#eff6ff' : 'transparent',
-                border: formData.stage_ids.includes(stage.id) ? '1px solid #3b82f6' : '1px solid #e2e8f0',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={formData.stage_ids.includes(stage.id)}
-                onChange={() => toggleStage(stage.id)}
-                style={{ cursor: 'pointer' }}
-              />
-              <span style={{ fontSize: '14px', flex: 1 }}>{stage.name}</span>
-              <div
-                style={{
-                  width: '16px',
-                  height: '16px',
-                  borderRadius: '4px',
-                  backgroundColor: stage.color || '#3b82f6',
-                  border: '1px solid #e2e8f0',
-                }}
-              />
-            </label>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  if (!isOpen) return null;
-
-  const selectedStages = formData.stage_ids
-    .map(id => stages.find(s => s.id === id))
-    .filter(Boolean) as TenderStage[];
+  const selectedStages = formData.stage_ids.map(id => stages.find(s => s.id === id)).filter(Boolean) as TenderStage[];
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
-        <div className={styles.modalHeader}>
-          <h2 className={styles.modalTitle}>
-            {template ? 'Редактировать шаблон' : 'Создать шаблон этапов'}
-          </h2>
-          <button onClick={onClose} className={styles.closeButton}>
-            ✕
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className={styles.modalBody}>
-          {error && (
-            <div className={styles.errorMessage}>
-              ⚠️ {error}
-            </div>
-          )}
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              Название шаблона <span className={styles.required}>*</span>
-              {template?.is_system && (
-                <span style={{ marginLeft: '8px', fontSize: '12px', color: '#64748b', fontWeight: 'normal' }}>
-                  (системный шаблон)
-                </span>
-              )}
-            </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className={styles.input}
-              placeholder="Например: ФЗ-44, ЗМО, Коммерческие"
-              required
-              readOnly={template?.is_system}
-              disabled={template?.is_system}
-              style={template?.is_system ? { backgroundColor: '#f8fafc', cursor: 'not-allowed' } : {}}
-            />
-            <p className={styles.hint}>
-              {template?.is_system 
-                ? 'Название системного шаблона нельзя изменить' 
-                : 'Краткое название для быстрого выбора'
-              }
-            </p>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{template ? 'Редактировать шаблон' : 'Создать шаблон этапов'}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
+          <div className="space-y-2">
+            <Label>Название шаблона <span className="text-red-500">*</span>{template?.is_system && <span className="ml-2 text-xs text-gray-500">(системный)</span>}</Label>
+            <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Например: ФЗ-44, ЗМО" required readOnly={template?.is_system} disabled={template?.is_system} className={template?.is_system ? 'bg-gray-100' : ''} />
+            <p className="text-xs text-gray-500">{template?.is_system ? 'Название системного шаблона нельзя изменить' : 'Краткое название для быстрого выбора'}</p>
           </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Описание</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className={styles.input}
-              placeholder="Например: Этапы для тендеров по ФЗ-44"
-              rows={2}
-            />
+          <div className="space-y-2">
+            <Label>Описание</Label>
+            <Textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Этапы для тендеров по ФЗ-44" rows={2} />
           </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Иконка</label>
-            <input
-              type="text"
-              value={formData.icon}
-              onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-              className={styles.input}
-              placeholder="📋"
-              maxLength={2}
-            />
+          <div className="space-y-2">
+            <Label>Иконка</Label>
+            <Input value={formData.icon} onChange={(e) => setFormData({ ...formData, icon: e.target.value })} placeholder="📋" maxLength={2} className="w-20" />
           </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>
-                Доступные этапы <span className={styles.required}>*</span>
-              </label>
-              <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                {renderStageGroup(tenderDeptStages, 'Предконтрактные', '📋')}
-                {renderStageGroup(realizationStages, 'Реализация', '🚀')}
-                {renderStageGroup(archiveStages, 'Архивные', '📦')}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Доступные этапы <span className="text-red-500">*</span></Label>
+              <div className="max-h-64 overflow-y-auto space-y-3 border rounded-lg p-3">
+                {[{ stages: tenderDeptStages, title: 'Предконтрактные', icon: '📋' }, { stages: realizationStages, title: 'Реализация', icon: '🚀' }, { stages: archiveStages, title: 'Архивные', icon: '📦' }].map(group => group.stages.length > 0 && (
+                  <div key={group.title}>
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">{group.icon} {group.title}</h4>
+                    <div className="space-y-1">{group.stages.map(stage => (
+                      <label key={stage.id} className={`flex items-center gap-2 p-2 rounded cursor-pointer border ${formData.stage_ids.includes(stage.id) ? 'bg-blue-50 border-blue-500' : 'border-gray-200 hover:bg-gray-50'}`}>
+                        <Checkbox checked={formData.stage_ids.includes(stage.id)} onCheckedChange={() => toggleStage(stage.id)} />
+                        <span className="text-sm flex-1">{stage.name}</span>
+                        <div className="w-4 h-4 rounded" style={{ backgroundColor: stage.color || '#3b82f6' }} />
+                      </label>
+                    ))}</div>
+                  </div>
+                ))}
               </div>
             </div>
-
-            <div className={styles.formGroup}>
-              <label className={styles.label}>
-                Выбранные этапы ({selectedStages.length})
-              </label>
-              <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                {selectedStages.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '24px', color: '#94a3b8', fontSize: '14px' }}>
-                    Выберите этапы слева
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    {selectedStages.map((stage, index) => (
-                      <div
-                        key={stage.id}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          padding: '8px',
-                          borderRadius: '4px',
-                          background: '#f8fafc',
-                          border: '1px solid #e2e8f0',
-                        }}
-                      >
-                        <span style={{ fontSize: '14px', color: '#64748b', minWidth: '24px' }}>
-                          {index + 1}.
-                        </span>
-                        <span style={{ fontSize: '14px', flex: 1 }}>{stage.name}</span>
-                        <div style={{ display: 'flex', gap: '4px' }}>
-                          <button
-                            type="button"
-                            onClick={() => moveStageUp(index)}
-                            disabled={index === 0}
-                            style={{
-                              padding: '4px 8px',
-                              fontSize: '12px',
-                              border: 'none',
-                              background: 'none',
-                              cursor: index === 0 ? 'not-allowed' : 'pointer',
-                              opacity: index === 0 ? 0.3 : 1,
-                            }}
-                          >
-                            ⬆️
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => moveStageDown(index)}
-                            disabled={index === selectedStages.length - 1}
-                            style={{
-                              padding: '4px 8px',
-                              fontSize: '12px',
-                              border: 'none',
-                              background: 'none',
-                              cursor: index === selectedStages.length - 1 ? 'not-allowed' : 'pointer',
-                              opacity: index === selectedStages.length - 1 ? 0.3 : 1,
-                            }}
-                          >
-                            ⬇️
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+            <div className="space-y-2">
+              <Label>Выбранные этапы ({selectedStages.length})</Label>
+              <div className="max-h-64 overflow-y-auto border rounded-lg p-3">
+                {selectedStages.length === 0 ? <p className="text-center text-gray-400 py-6 text-sm">Выберите этапы слева</p> : (
+                  <div className="space-y-1">{selectedStages.map((stage, index) => (
+                    <div key={stage.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded border">
+                      <span className="text-sm text-gray-500 w-6">{index + 1}.</span>
+                      <span className="text-sm flex-1">{stage.name}</span>
+                      <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveStageUp(index)} disabled={index === 0}><ChevronUp className="h-4 w-4" /></Button>
+                      <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveStageDown(index)} disabled={index === selectedStages.length - 1}><ChevronDown className="h-4 w-4" /></Button>
+                    </div>
+                  ))}</div>
                 )}
               </div>
             </div>
           </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={formData.is_active}
-                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                className={styles.checkbox}
-              />
-              <span>Шаблон активен</span>
-            </label>
+          <div className="flex items-center space-x-2">
+            <Checkbox id="template_active" checked={formData.is_active} onCheckedChange={(c) => setFormData({ ...formData, is_active: !!c })} />
+            <label htmlFor="template_active" className="text-sm cursor-pointer">Шаблон активен</label>
           </div>
-
-          <div className={styles.modalFooter}>
-            <button
-              type="button"
-              onClick={onClose}
-              className={styles.secondaryButton}
-              disabled={loading}
-            >
-              Отмена
-            </button>
-            <button
-              type="submit"
-              className={styles.primaryButton}
-              disabled={loading}
-            >
-              {loading ? 'Сохранение...' : 'Сохранить'}
-            </button>
-          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>Отмена</Button>
+            <Button type="submit" disabled={loading}>{loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Сохранение...</> : 'Сохранить'}</Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

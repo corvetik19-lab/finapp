@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import Image from 'next/image';
 import { ImageCropper } from './ImageCropper';
-import styles from './AvatarUploader.module.css';
+import { Button } from "@/components/ui/button";
+import { X, Camera, Loader2 } from "lucide-react";
 
 interface AvatarUploaderProps {
   employeeId: string;
@@ -116,63 +118,20 @@ export function AvatarUploader({
   };
 
   return (
-    <div className={styles.container}>
+    <div className="relative inline-block">
       <div 
-        className={styles.avatar}
-        style={{ 
-          background: avatarUrl ? 'transparent' : roleColor,
-          cursor: uploading ? 'wait' : 'pointer'
-        }}
+        className="w-24 h-24 rounded-full flex items-center justify-center text-white text-2xl font-bold cursor-pointer overflow-hidden relative group"
+        style={{ background: avatarUrl ? 'transparent' : roleColor, cursor: uploading ? 'wait' : 'pointer' }}
         onClick={() => !uploading && fileInputRef.current?.click()}
       >
-        {avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatarUrl} alt={employeeName} className={styles.avatarImage} />
-        ) : (
-          <span className={styles.initials}>{initials}</span>
-        )}
-        
-        {uploading && (
-          <div className={styles.uploadingOverlay}>
-            <span>⏳</span>
-          </div>
-        )}
-
-        <div className={styles.hoverOverlay}>
-          <span>📷</span>
-        </div>
+        {avatarUrl ? <Image src={avatarUrl} alt={employeeName} fill className="object-cover" /> : <span>{initials}</span>}
+        {uploading && <div className="absolute inset-0 bg-black/50 flex items-center justify-center"><Loader2 className="h-6 w-6 text-white animate-spin" /></div>}
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Camera className="h-6 w-6 text-white" /></div>
       </div>
-
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileSelect}
-        className={styles.fileInput}
-      />
-
-      {avatarUrl && (
-        <button
-          onClick={handleRemove}
-          className={styles.removeButton}
-          disabled={uploading}
-          title="Удалить фото"
-        >
-          ✕
-        </button>
-      )}
-
-      {error && (
-        <div className={styles.error}>{error}</div>
-      )}
-
-      {cropperImage && (
-        <ImageCropper
-          imageSrc={cropperImage}
-          onCrop={handleCrop}
-          onCancel={() => setCropperImage(null)}
-        />
-      )}
+      <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
+      {avatarUrl && <Button variant="destructive" size="icon" className="absolute -top-1 -right-1 h-6 w-6 rounded-full" onClick={handleRemove} disabled={uploading} title="Удалить"><X className="h-3 w-3" /></Button>}
+      {error && <p className="text-destructive text-xs mt-1 text-center">{error}</p>}
+      {cropperImage && <ImageCropper imageSrc={cropperImage} onCrop={handleCrop} onCancel={() => setCropperImage(null)} />}
     </div>
   );
 }

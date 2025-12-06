@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import styles from "./FinanceModeSettings.module.css";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Settings2, CheckCircle2, AlertTriangle, FolderTree, Wallet, PiggyBank, Target, BarChart3, Sparkles, Loader2 } from "lucide-react";
 
 interface Category {
   id: string;
@@ -51,138 +57,38 @@ export default function FinanceModeSettings({ settings, categories }: FinanceMod
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>Настройки режима &quot;Финансы&quot;</h1>
-          <p className={styles.subtitle}>Параметры, касающиеся только финансового учёта</p>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <div><h1 className="text-2xl font-bold flex items-center gap-2"><Settings2 className="h-6 w-6" />Настройки режима Финансы</h1><p className="text-sm text-muted-foreground">Параметры финансового учёта</p></div>
 
-      <div className={styles.content}>
+      <div className="grid gap-6">
         {/* Основные настройки */}
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Основные настройки</h2>
-          
-          <form onSubmit={handleSubmit} className={styles.form}>
-            <div className={styles.formGroup}>
-              <label htmlFor="currency" className={styles.label}>
-                Валюта по умолчанию
-              </label>
-              <select
-                id="currency"
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                className={styles.select}
-              >
-                <option value="RUB">₽ Российский рубль (RUB)</option>
-                <option value="USD">$ Доллар США (USD)</option>
-                <option value="EUR">€ Евро (EUR)</option>
-                <option value="GBP">£ Фунт стерлингов (GBP)</option>
-                <option value="CNY">¥ Китайский юань (CNY)</option>
-              </select>
-            </div>
-
-            <div className={styles.formGroup}>
-              <label htmlFor="dateFormat" className={styles.label}>
-                Формат даты
-              </label>
-              <select
-                id="dateFormat"
-                value={dateFormat}
-                onChange={(e) => setDateFormat(e.target.value)}
-                className={styles.select}
-              >
-                <option value="DD.MM.YYYY">ДД.ММ.ГГГГ (31.12.2025)</option>
-                <option value="MM/DD/YYYY">ММ/ДД/ГГГГ (12/31/2025)</option>
-                <option value="YYYY-MM-DD">ГГГГ-ММ-ДД (2025-12-31)</option>
-              </select>
-            </div>
-
-            <div className={styles.formGroup}>
-              <label htmlFor="firstDayOfWeek" className={styles.label}>
-                Первый день недели
-              </label>
-              <select
-                id="firstDayOfWeek"
-                value={firstDayOfWeek}
-                onChange={(e) => setFirstDayOfWeek(Number(e.target.value))}
-                className={styles.select}
-              >
-                <option value="0">Воскресенье</option>
-                <option value="1">Понедельник</option>
-              </select>
-            </div>
-
-            {message && (
-              <div className={`${styles.message} ${styles[message.type]}`}>
-                <span className="material-icons">
-                  {message.type === "success" ? "check_circle" : "error"}
-                </span>
-                {message.text}
-              </div>
-            )}
-
-            <button type="submit" className={styles.button} disabled={isLoading}>
-              {isLoading ? "Сохранение..." : "Сохранить изменения"}
-            </button>
+        <Card><CardHeader><CardTitle>Основные настройки</CardTitle></CardHeader><CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1"><Label>Валюта по умолчанию</Label><Select value={currency} onValueChange={setCurrency}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="RUB">₽ Российский рубль (RUB)</SelectItem><SelectItem value="USD">$ Доллар США (USD)</SelectItem><SelectItem value="EUR">€ Евро (EUR)</SelectItem><SelectItem value="GBP">£ Фунт стерлингов (GBP)</SelectItem><SelectItem value="CNY">¥ Китайский юань (CNY)</SelectItem></SelectContent></Select></div>
+            <div className="space-y-1"><Label>Формат даты</Label><Select value={dateFormat} onValueChange={setDateFormat}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="DD.MM.YYYY">ДД.ММ.ГГГГ (31.12.2025)</SelectItem><SelectItem value="MM/DD/YYYY">ММ/ДД/ГГГГ (12/31/2025)</SelectItem><SelectItem value="YYYY-MM-DD">ГГГГ-ММ-ДД (2025-12-31)</SelectItem></SelectContent></Select></div>
+            <div className="space-y-1"><Label>Первый день недели</Label><Select value={String(firstDayOfWeek)} onValueChange={v => setFirstDayOfWeek(Number(v))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="0">Воскресенье</SelectItem><SelectItem value="1">Понедельник</SelectItem></SelectContent></Select></div>
+            {message && <Alert className={message.type === 'success' ? 'border-green-500' : 'border-destructive'}>{message.type === 'success' ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <AlertTriangle className="h-4 w-4" />}<AlertDescription>{message.text}</AlertDescription></Alert>}
+            <Button type="submit" disabled={isLoading}>{isLoading ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Сохранение...</> : 'Сохранить изменения'}</Button>
           </form>
-        </section>
+        </CardContent></Card>
 
         {/* Категории */}
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Категории</h2>
-          <p className={styles.sectionDesc}>
-            Всего категорий: {categories.length}
-          </p>
-          <div className={styles.categoryGrid}>
-            {categories.slice(0, 6).map((cat) => (
-              <div key={cat.id} className={styles.categoryCard}>
-                <span className="material-icons">category</span>
-                <span>{cat.name}</span>
-                <span className={styles.categoryKind}>
-                  {cat.kind === "income" && "Доход"}
-                  {cat.kind === "expense" && "Расход"}
-                  {cat.kind === "transfer" && "Перевод"}
-                </span>
-              </div>
-            ))}
-          </div>
-          {categories.length > 6 && (
-            <p className={styles.moreText}>И ещё {categories.length - 6} категорий...</p>
-          )}
-        </section>
+        <Card><CardHeader><CardTitle className="flex items-center gap-2"><FolderTree className="h-5 w-5" />Категории</CardTitle><CardDescription>Всего: {categories.length}</CardDescription></CardHeader><CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">{categories.slice(0, 6).map(cat => <div key={cat.id} className="flex items-center gap-2 p-2 border rounded"><FolderTree className="h-4 w-4 text-muted-foreground" /><span className="text-sm">{cat.name}</span><Badge variant="outline" className="ml-auto text-xs">{cat.kind === 'income' ? 'Доход' : cat.kind === 'expense' ? 'Расход' : 'Перевод'}</Badge></div>)}</div>
+          {categories.length > 6 && <p className="text-sm text-muted-foreground mt-2">И ещё {categories.length - 6} категорий...</p>}
+        </CardContent></Card>
 
         {/* Функции */}
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Доступные функции</h2>
-          <div className={styles.featureGrid}>
-            <div className={styles.featureCard}>
-              <span className="material-icons" style={{ color: "#10b981" }}>check_circle</span>
-              <span>Транзакции</span>
-            </div>
-            <div className={styles.featureCard}>
-              <span className="material-icons" style={{ color: "#10b981" }}>check_circle</span>
-              <span>Счета</span>
-            </div>
-            <div className={styles.featureCard}>
-              <span className="material-icons" style={{ color: "#10b981" }}>check_circle</span>
-              <span>Бюджеты</span>
-            </div>
-            <div className={styles.featureCard}>
-              <span className="material-icons" style={{ color: "#10b981" }}>check_circle</span>
-              <span>Планы</span>
-            </div>
-            <div className={styles.featureCard}>
-              <span className="material-icons" style={{ color: "#10b981" }}>check_circle</span>
-              <span>Отчёты</span>
-            </div>
-            <div className={styles.featureCard}>
-              <span className="material-icons" style={{ color: "#10b981" }}>check_circle</span>
-              <span>AI Аналитика</span>
-            </div>
+        <Card><CardHeader><CardTitle>Доступные функции</CardTitle></CardHeader><CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            <div className="flex items-center gap-2 p-2 border rounded"><Wallet className="h-4 w-4 text-green-500" /><span className="text-sm">Транзакции</span></div>
+            <div className="flex items-center gap-2 p-2 border rounded"><PiggyBank className="h-4 w-4 text-green-500" /><span className="text-sm">Счета</span></div>
+            <div className="flex items-center gap-2 p-2 border rounded"><Target className="h-4 w-4 text-green-500" /><span className="text-sm">Бюджеты</span></div>
+            <div className="flex items-center gap-2 p-2 border rounded"><Target className="h-4 w-4 text-green-500" /><span className="text-sm">Планы</span></div>
+            <div className="flex items-center gap-2 p-2 border rounded"><BarChart3 className="h-4 w-4 text-green-500" /><span className="text-sm">Отчёты</span></div>
+            <div className="flex items-center gap-2 p-2 border rounded"><Sparkles className="h-4 w-4 text-green-500" /><span className="text-sm">AI Аналитика</span></div>
           </div>
-        </section>
+        </CardContent></Card>
       </div>
     </div>
   );

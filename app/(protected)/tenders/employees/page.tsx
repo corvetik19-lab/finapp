@@ -1,12 +1,10 @@
-import { EmployeesListClient } from './employees-list-client';
+import { EmployeesList } from '@/components/employees/employees-list';
 import { getCurrentCompanyId } from '@/lib/platform/organization';
 
 export default async function TenderEmployeesPage() {
   const companyId = await getCurrentCompanyId();
 
   if (!companyId) {
-    // Теоретически не должно происходить, так как доступ к разделу ограничен,
-    // но на всякий случай покажем понятное сообщение.
     return (
       <div className="p-6">
         <h1 className="text-2xl font-bold text-red-600">Компания не найдена</h1>
@@ -17,5 +15,5 @@ export default async function TenderEmployeesPage() {
     );
   }
 
-  return <EmployeesListClient companyId={companyId} />;
+  return <EmployeesList companyId={companyId} />;
 }

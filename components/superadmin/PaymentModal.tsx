@@ -3,7 +3,20 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { addPayment } from '@/app/(protected)/superadmin/actions';
-import styles from './SuperadminModals.module.css';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Building2 } from 'lucide-react';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -71,30 +84,31 @@ export function PaymentModal({
     onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={e => e.stopPropagation()}>
-        <div className={styles.header}>
-          <h2>Добавить платёж</h2>
-          <button className={styles.closeBtn} onClick={onClose}>
-            <span className="material-icons">close</span>
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Добавить платёж</DialogTitle>
+        </DialogHeader>
 
         <form onSubmit={handleSubmit}>
-          <div className={styles.body}>
-            <div className={styles.orgInfo}>
-              <span className="material-icons">business</span>
-              <span>{organizationName}</span>
+          <div className="space-y-4 py-4">
+            <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+              <Building2 className="h-5 w-5 text-gray-500" />
+              <span className="font-medium">{organizationName}</span>
             </div>
 
-            {error && <div className={styles.error}>{error}</div>}
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-            <div className={styles.field}>
-              <label>Сумма (₽)</label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="amount">Сумма (₽)</Label>
+              <Input
+                id="amount"
                 type="number"
                 step="0.01"
                 min="0"
@@ -104,33 +118,41 @@ export function PaymentModal({
                 autoFocus
               />
               {suggestedAmount > 0 && (
-                <small>
+                <p className="text-sm text-gray-500">
                   Рекомендуемая сумма: {formatMoney(suggestedAmount)}
-                  <button
+                  <Button
                     type="button"
-                    className={styles.linkBtn}
+                    variant="link"
+                    size="sm"
+                    className="ml-2 h-auto p-0"
                     onClick={() => setAmountRubles((suggestedAmount / 100).toString())}
                   >
                     Применить
-                  </button>
-                </small>
+                  </Button>
+                </p>
               )}
             </div>
 
-            <div className={styles.field}>
-              <label>Способ оплаты</label>
-              <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
-                <option value="bank_transfer">Банковский перевод</option>
-                <option value="card">Банковская карта</option>
-                <option value="cash">Наличные</option>
-                <option value="crypto">Криптовалюта</option>
-                <option value="other">Другое</option>
-              </select>
+            <div className="space-y-2">
+              <Label>Способ оплаты</Label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bank_transfer">Банковский перевод</SelectItem>
+                  <SelectItem value="card">Банковская карта</SelectItem>
+                  <SelectItem value="cash">Наличные</SelectItem>
+                  <SelectItem value="crypto">Криптовалюта</SelectItem>
+                  <SelectItem value="other">Другое</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className={styles.field}>
-              <label>Описание</label>
-              <textarea
+            <div className="space-y-2">
+              <Label htmlFor="description">Описание</Label>
+              <Textarea
+                id="description"
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 placeholder="Комментарий к платежу..."
@@ -139,16 +161,16 @@ export function PaymentModal({
             </div>
           </div>
 
-          <div className={styles.footer}>
-            <button type="button" className={styles.cancelBtn} onClick={onClose} disabled={loading}>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
               Отмена
-            </button>
-            <button type="submit" className={styles.submitBtn} disabled={loading}>
+            </Button>
+            <Button type="submit" disabled={loading}>
               {loading ? 'Сохранение...' : 'Добавить платёж'}
-            </button>
-          </div>
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

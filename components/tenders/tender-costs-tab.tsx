@@ -3,7 +3,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Tender } from '@/lib/tenders/types';
 import { formatCurrency } from '@/lib/tenders/types';
-import styles from './tender-costs-tab.module.css';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, X, Pencil, Trash2, Receipt, Loader2 } from 'lucide-react';
 
 interface TenderCost {
   id: string;
@@ -183,191 +188,192 @@ export function TenderCostsTab({ tender, onUpdate }: TenderCostsTabProps) {
   ];
 
   if (loading) {
-    return <div className={styles.container}>Загрузка затрат...</div>;
+    return (
+      <div className="flex items-center justify-center py-12 text-gray-500">
+        <Loader2 className="h-6 w-6 animate-spin mr-2" />
+        Загрузка затрат...
+      </div>
+    );
   }
 
   const totalAmount = costs.reduce((sum, cost) => sum + cost.amount, 0);
 
   return (
-    <div className={styles.container}>
+    <div className="space-y-6">
       {/* Статистика */}
-      <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>Всего затрат</div>
-          <div className={styles.statValue}>{formatCurrency(totalAmount, tender.currency)}</div>
-          <div className={styles.statSubtext}>{costs.length} записей</div>
-        </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-sm text-gray-500">Всего затрат</div>
+            <div className="text-xl font-bold">{formatCurrency(totalAmount, tender.currency)}</div>
+            <div className="text-xs text-gray-400">{costs.length} записей</div>
+          </CardContent>
+        </Card>
 
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>НМЦК</div>
-          <div className={styles.statValue}>{formatCurrency(tender.nmck, tender.currency)}</div>
-          <div className={styles.statSubtext}>Начальная цена</div>
-        </div>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-sm text-gray-500">НМЦК</div>
+            <div className="text-xl font-bold">{formatCurrency(tender.nmck, tender.currency)}</div>
+            <div className="text-xs text-gray-400">Начальная цена</div>
+          </CardContent>
+        </Card>
 
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>Остаток</div>
-          <div className={styles.statValue} style={{ 
-            color: (tender.nmck - totalAmount) > 0 ? '#059669' : '#dc2626' 
-          }}>
-            {formatCurrency(tender.nmck - totalAmount, tender.currency)}
-          </div>
-          <div className={styles.statSubtext}>
-            {((1 - totalAmount / tender.nmck) * 100).toFixed(1)}% от НМЦК
-          </div>
-        </div>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-sm text-gray-500">Остаток</div>
+            <div className={`text-xl font-bold ${(tender.nmck - totalAmount) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {formatCurrency(tender.nmck - totalAmount, tender.currency)}
+            </div>
+            <div className="text-xs text-gray-400">
+              {((1 - totalAmount / tender.nmck) * 100).toFixed(1)}% от НМЦК
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>Категорий</div>
-          <div className={styles.statValue}>{categoryStats.length}</div>
-          <div className={styles.statSubtext}>Типов затрат</div>
-        </div>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-sm text-gray-500">Категорий</div>
+            <div className="text-xl font-bold">{categoryStats.length}</div>
+            <div className="text-xs text-gray-400">Типов затрат</div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Заголовок с кнопкой */}
-      <div className={styles.header}>
-        <h3>Детализация затрат</h3>
-        <button 
-          className={styles.addButton}
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Детализация затрат</h3>
+        <Button 
+          variant={showAddForm ? "outline" : "default"}
           onClick={() => setShowAddForm(!showAddForm)}
         >
           {showAddForm ? (
             <>
-              <span className={styles.buttonIcon}>✕</span>
+              <X className="h-4 w-4 mr-2" />
               Отмена
             </>
           ) : (
             <>
-              <span className={styles.buttonIcon}>+</span>
+              <Plus className="h-4 w-4 mr-2" />
               Добавить затрату
             </>
           )}
-        </button>
+        </Button>
       </div>
 
       {showAddForm && (
-        <form onSubmit={handleSubmit} style={{ 
-          background: '#f9fafb', 
-          padding: '1rem', 
-          borderRadius: '0.5rem', 
-          marginBottom: '1rem',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '1rem'
-        }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>
-              Категория *
-            </label>
-            <select
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              required
-              style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
-            >
-              <option value="">Выберите категорию</option>
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-          </div>
+        <Card>
+          <CardContent className="p-4">
+            <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Категория *</Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) => setFormData({ ...formData, category: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Выберите категорию" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>
-              Сумма (руб.) *
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              value={formData.amount}
-              onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-              required
-              placeholder="0.00"
-              style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
-            />
-          </div>
+              <div className="space-y-2">
+                <Label>Сумма (руб.) *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={formData.amount}
+                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                  required
+                  placeholder="0.00"
+                />
+              </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>
-              Дата
-            </label>
-            <input
-              type="date"
-              value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
-            />
-          </div>
+              <div className="space-y-2">
+                <Label>Дата</Label>
+                <Input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                />
+              </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>
-              Описание
-            </label>
-            <input
-              type="text"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Дополнительная информация"
-              style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
-            />
-          </div>
+              <div className="space-y-2">
+                <Label>Описание</Label>
+                <Input
+                  type="text"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Дополнительная информация"
+                />
+              </div>
 
-          <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-            <button type="button" onClick={handleCancel} className={styles.button}>
-              Отмена
-            </button>
-            <button type="submit" className={styles.addButton}>
-              {editingId ? '✓ Сохранить' : '✓ Добавить'}
-            </button>
-          </div>
-        </form>
+              <div className="col-span-2 flex gap-2 justify-end">
+                <Button type="button" variant="outline" onClick={handleCancel}>
+                  Отмена
+                </Button>
+                <Button type="submit">
+                  {editingId ? 'Сохранить' : 'Добавить'}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       )}
 
       {/* Фильтры и сортировка */}
       {costs.length > 0 && (
-        <div className={styles.filters}>
-          <div className={styles.filterGroup}>
-            <label>Категория:</label>
-            <select 
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-              className={styles.filterSelect}
-            >
-              <option value="all">Все категории</option>
-              {categoryStats.map(stat => (
-                <option key={stat.category} value={stat.category}>
-                  {stat.category} ({stat.count})
-                </option>
-              ))}
-            </select>
+        <div className="flex flex-wrap items-center gap-4 p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-2">
+            <Label className="text-sm">Категория:</Label>
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все категории</SelectItem>
+                {categoryStats.map(stat => (
+                  <SelectItem key={stat.category} value={stat.category}>
+                    {stat.category} ({stat.count})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          <div className={styles.filterGroup}>
-            <label>Сортировка:</label>
-            <select 
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'date' | 'amount' | 'category')}
-              className={styles.filterSelect}
-            >
-              <option value="date">По дате</option>
-              <option value="amount">По сумме</option>
-              <option value="category">По категории</option>
-            </select>
+          <div className="flex items-center gap-2">
+            <Label className="text-sm">Сортировка:</Label>
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'date' | 'amount' | 'category')}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date">По дате</SelectItem>
+                <SelectItem value="amount">По сумме</SelectItem>
+                <SelectItem value="category">По категории</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          <div className={styles.filterGroup}>
-            <label>Порядок:</label>
-            <select 
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
-              className={styles.filterSelect}
-            >
-              <option value="desc">↓ По убыванию</option>
-              <option value="asc">↑ По возрастанию</option>
-            </select>
+          <div className="flex items-center gap-2">
+            <Label className="text-sm">Порядок:</Label>
+            <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as 'asc' | 'desc')}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="desc">По убыванию</SelectItem>
+                <SelectItem value="asc">По возрастанию</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {filterCategory !== 'all' && (
-            <div className={styles.filterInfo}>
+            <div className="ml-auto text-sm text-gray-500">
               Показано {filteredCosts.length} из {costs.length} • 
               Сумма: {formatCurrency(calculateTotal(), tender.currency)}
             </div>
@@ -376,57 +382,63 @@ export function TenderCostsTab({ tender, onUpdate }: TenderCostsTabProps) {
       )}
 
       {costs.length === 0 ? (
-        <div className={styles.emptyState}>
-          <p>💰 Затрат пока нет</p>
-          <p>Добавьте первую затрату для этого тендера</p>
+        <div className="text-center py-12 text-gray-400">
+          <Receipt className="h-12 w-12 mx-auto mb-3 opacity-50" />
+          <p className="font-medium">Затрат пока нет</p>
+          <p className="text-sm">Добавьте первую затрату для этого тендера</p>
         </div>
       ) : (
         <>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Дата</th>
-                <th>Категория</th>
-                <th>Описание</th>
-                <th style={{ textAlign: 'right' }}>Сумма</th>
-                <th style={{ width: '120px' }}>Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredCosts.map((cost) => (
-                <tr key={cost.id}>
-                  <td>{new Date(cost.date).toLocaleDateString('ru-RU')}</td>
-                  <td>{cost.category}</td>
-                  <td>{cost.description || '—'}</td>
-                  <td style={{ textAlign: 'right', fontWeight: 500 }}>
-                    {formatCurrency(cost.amount, tender.currency)}
-                  </td>
-                  <td>
-                    <div className={styles.actions}>
-                      <button 
-                        className={styles.button}
-                        onClick={() => handleEdit(cost)}
-                      >
-                        ✏️
-                      </button>
-                      <button 
-                        className={styles.button}
-                        onClick={() => handleDelete(cost.id)}
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </td>
+          <div className="border rounded-lg overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Дата</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Категория</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Описание</th>
+                  <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">Сумма</th>
+                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-600 w-[100px]">Действия</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y">
+                {filteredCosts.map((cost) => (
+                  <tr key={cost.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm">{new Date(cost.date).toLocaleDateString('ru-RU')}</td>
+                    <td className="px-4 py-3 text-sm">{cost.category}</td>
+                    <td className="px-4 py-3 text-sm text-gray-500">{cost.description || '—'}</td>
+                    <td className="px-4 py-3 text-sm text-right font-medium">
+                      {formatCurrency(cost.amount, tender.currency)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-center gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEdit(cost)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDelete(cost.id)}
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-          <div className={styles.total}>
+          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg font-medium">
             <span>
               {filterCategory !== 'all' ? `Итого (${filterCategory}):` : 'Итого:'}
             </span>
-            <span>
+            <span className="text-lg">
               {formatCurrency(calculateTotal(), tender.currency)}
             </span>
           </div>

@@ -1,7 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import styles from './EmployeeDocuments.module.css';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Plus, X, FileText, Trash2, Upload, Loader2, FolderOpen } from "lucide-react";
 
 interface Document {
   id: string;
@@ -141,134 +147,22 @@ export function EmployeeDocuments({ employeeId }: EmployeeDocumentsProps) {
     return DOCUMENT_TYPES.find(t => t.value === type)?.icon || '📎';
   };
 
-  if (loading) {
-    return (
-      <div className={styles.loading}>
-        <span>⏳</span> Загрузка документов...
-      </div>
-    );
-  }
+  if (loading) return <div className="flex items-center justify-center py-8 text-muted-foreground"><Loader2 className="h-5 w-5 mr-2 animate-spin" />Загрузка документов...</div>;
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h4 className={styles.title}>📁 Документы</h4>
-        <button
-          onClick={() => setShowUploadForm(!showUploadForm)}
-          className={styles.addButton}
-        >
-          {showUploadForm ? '✕ Отмена' : '➕ Добавить'}
-        </button>
-      </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between"><h4 className="font-semibold flex items-center gap-2"><FileText className="h-5 w-5" />Документы</h4><Button onClick={() => setShowUploadForm(!showUploadForm)} variant={showUploadForm ? "outline" : "default"} size="sm">{showUploadForm ? <><X className="h-4 w-4 mr-1" />Отмена</> : <><Plus className="h-4 w-4 mr-1" />Добавить</>}</Button></div>
 
-      {error && (
-        <div className={styles.error}>{error}</div>
-      )}
+      {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
 
-      {showUploadForm && (
-        <form onSubmit={handleUpload} className={styles.uploadForm}>
-          <div className={styles.formRow}>
-            <input
-              type="text"
-              placeholder="Название документа"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className={styles.input}
-              required
-            />
-            <select
-              value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-              className={styles.select}
-            >
-              {DOCUMENT_TYPES.map(t => (
-                <option key={t.value} value={t.value}>
-                  {t.icon} {t.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div className={styles.formRow}>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-              className={styles.fileInput}
-              required
-            />
-            <input
-              type="date"
-              placeholder="Срок действия"
-              value={formData.expires_at}
-              onChange={(e) => setFormData({ ...formData, expires_at: e.target.value })}
-              className={styles.dateInput}
-            />
-          </div>
+      {showUploadForm && <Card><CardContent className="pt-4"><form onSubmit={handleUpload} className="space-y-3">
+        <div className="grid grid-cols-2 gap-2"><Input placeholder="Название документа" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required /><select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm">{DOCUMENT_TYPES.map(t => <option key={t.value} value={t.value}>{t.icon} {t.label}</option>)}</select></div>
+        <div className="grid grid-cols-2 gap-2"><input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" className="text-sm" required /><Input type="date" value={formData.expires_at} onChange={e => setFormData({ ...formData, expires_at: e.target.value })} /></div>
+        <Textarea placeholder="Примечания" value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} rows={2} />
+        <Button type="submit" disabled={uploading}>{uploading ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Загрузка...</> : <><Upload className="h-4 w-4 mr-1" />Загрузить</>}</Button>
+      </form></CardContent></Card>}
 
-          <textarea
-            placeholder="Примечания (необязательно)"
-            value={formData.notes}
-            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            className={styles.textarea}
-            rows={2}
-          />
-
-          <button
-            type="submit"
-            disabled={uploading}
-            className={styles.submitButton}
-          >
-            {uploading ? '⏳ Загрузка...' : '📤 Загрузить'}
-          </button>
-        </form>
-      )}
-
-      {documents.length === 0 ? (
-        <div className={styles.empty}>
-          <span className={styles.emptyIcon}>📂</span>
-          <p>Документы не загружены</p>
-        </div>
-      ) : (
-        <div className={styles.list}>
-          {documents.map((doc) => (
-            <div key={doc.id} className={styles.document}>
-              <div className={styles.docIcon}>
-                {getTypeIcon(doc.type)}
-              </div>
-              <div className={styles.docInfo}>
-                <a 
-                  href={doc.file_path} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className={styles.docName}
-                >
-                  {doc.name}
-                </a>
-                <div className={styles.docMeta}>
-                  <span className={styles.docType}>{doc.type_label}</span>
-                  <span className={styles.docSize}>{formatFileSize(doc.file_size)}</span>
-                  {doc.expires_at && (
-                    <span className={styles.docExpires}>
-                      до {new Date(doc.expires_at).toLocaleDateString('ru-RU')}
-                    </span>
-                  )}
-                </div>
-                {doc.notes && (
-                  <div className={styles.docNotes}>{doc.notes}</div>
-                )}
-              </div>
-              <button
-                onClick={() => handleDelete(doc.id)}
-                className={styles.deleteButton}
-                title="Удалить"
-              >
-                🗑️
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+      {documents.length === 0 ? <div className="text-center py-8"><FolderOpen className="h-12 w-12 mx-auto text-muted-foreground mb-2" /><p className="text-muted-foreground">Документы не загружены</p></div> : <div className="space-y-2">{documents.map(doc => <Card key={doc.id}><CardContent className="pt-3 flex items-center gap-3"><span className="text-2xl">{getTypeIcon(doc.type)}</span><div className="flex-1"><a href={doc.file_path} target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 hover:underline">{doc.name}</a><div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-1"><Badge variant="outline">{doc.type_label}</Badge><span>{formatFileSize(doc.file_size)}</span>{doc.expires_at && <span>до {new Date(doc.expires_at).toLocaleDateString('ru-RU')}</span>}</div>{doc.notes && <p className="text-xs text-muted-foreground mt-1">{doc.notes}</p>}</div><Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(doc.id)} title="Удалить"><Trash2 className="h-4 w-4" /></Button></CardContent></Card>)}</div>}
     </div>
   );
 }

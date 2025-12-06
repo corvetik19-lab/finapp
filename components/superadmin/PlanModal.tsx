@@ -4,7 +4,21 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { SubscriptionPlan } from '@/types/billing';
 import { createPlan, updatePlan } from '@/app/(protected)/superadmin/actions';
-import styles from './SuperadminModals.module.css';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface PlanModalProps {
   isOpen: boolean;
@@ -89,25 +103,26 @@ export function PlanModal({ isOpen, onClose, plan }: PlanModalProps) {
     onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
-        <div className={styles.header}>
-          <h2>{plan ? 'Редактировать тариф' : 'Создать тариф'}</h2>
-          <button className={styles.closeBtn} onClick={onClose}>
-            <span className="material-icons">close</span>
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{plan ? 'Редактировать тариф' : 'Создать тариф'}</DialogTitle>
+        </DialogHeader>
 
         <form onSubmit={handleSubmit}>
-          <div className={styles.body}>
-            {error && <div className={styles.error}>{error}</div>}
+          <div className="space-y-4 py-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-            <div className={styles.field}>
-              <label>Название *</label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="name">Название *</Label>
+              <Input
+                id="name"
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
@@ -116,9 +131,10 @@ export function PlanModal({ isOpen, onClose, plan }: PlanModalProps) {
               />
             </div>
 
-            <div className={styles.field}>
-              <label>Описание</label>
-              <textarea
+            <div className="space-y-2">
+              <Label htmlFor="description">Описание</Label>
+              <Textarea
+                id="description"
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 placeholder="Краткое описание тарифа..."
@@ -126,10 +142,11 @@ export function PlanModal({ isOpen, onClose, plan }: PlanModalProps) {
               />
             </div>
 
-            <div className={styles.row}>
-              <div className={styles.field}>
-                <label>Цена/месяц (₽)</label>
-                <input
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="basePriceMonthly">Цена/месяц (₽)</Label>
+                <Input
+                  id="basePriceMonthly"
                   type="number"
                   step="0.01"
                   min="0"
@@ -138,9 +155,10 @@ export function PlanModal({ isOpen, onClose, plan }: PlanModalProps) {
                   placeholder="0"
                 />
               </div>
-              <div className={styles.field}>
-                <label>Цена/год (₽)</label>
-                <input
+              <div className="space-y-2">
+                <Label htmlFor="basePriceYearly">Цена/год (₽)</Label>
+                <Input
+                  id="basePriceYearly"
                   type="number"
                   step="0.01"
                   min="0"
@@ -151,10 +169,11 @@ export function PlanModal({ isOpen, onClose, plan }: PlanModalProps) {
               </div>
             </div>
 
-            <div className={styles.row}>
-              <div className={styles.field}>
-                <label>За польз./месяц (₽)</label>
-                <input
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="pricePerUserMonthly">За польз./месяц (₽)</Label>
+                <Input
+                  id="pricePerUserMonthly"
                   type="number"
                   step="0.01"
                   min="0"
@@ -163,9 +182,10 @@ export function PlanModal({ isOpen, onClose, plan }: PlanModalProps) {
                   placeholder="0"
                 />
               </div>
-              <div className={styles.field}>
-                <label>За польз./год (₽)</label>
-                <input
+              <div className="space-y-2">
+                <Label htmlFor="pricePerUserYearly">За польз./год (₽)</Label>
+                <Input
+                  id="pricePerUserYearly"
                   type="number"
                   step="0.01"
                   min="0"
@@ -176,19 +196,21 @@ export function PlanModal({ isOpen, onClose, plan }: PlanModalProps) {
               </div>
             </div>
 
-            <div className={styles.row}>
-              <div className={styles.field}>
-                <label>Включено пользователей</label>
-                <input
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="usersIncluded">Включено пользователей</Label>
+                <Input
+                  id="usersIncluded"
                   type="number"
                   min="1"
                   value={usersIncluded}
                   onChange={e => setUsersIncluded(e.target.value)}
                 />
               </div>
-              <div className={styles.field}>
-                <label>Макс. пользователей</label>
-                <input
+              <div className="space-y-2">
+                <Label htmlFor="maxUsers">Макс. пользователей</Label>
+                <Input
+                  id="maxUsers"
                   type="number"
                   min="0"
                   value={maxUsers}
@@ -198,61 +220,49 @@ export function PlanModal({ isOpen, onClose, plan }: PlanModalProps) {
               </div>
             </div>
 
-            <div className={styles.field}>
-              <label>Доступные режимы</label>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+            <div className="space-y-2">
+              <Label>Доступные режимы</Label>
+              <div className="flex flex-wrap gap-2 mt-2">
                 {AVAILABLE_MODES.map(mode => (
-                  <label
+                  <button
                     key={mode.key}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '8px 12px',
-                      background: allowedModes.includes(mode.key) ? '#667eea' : '#f1f5f9',
-                      color: allowedModes.includes(mode.key) ? 'white' : '#475569',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      fontSize: '13px',
-                      transition: 'all 0.2s',
-                    }}
+                    type="button"
+                    onClick={() => toggleMode(mode.key)}
+                    className={cn(
+                      "px-3 py-2 text-sm rounded-md transition-colors",
+                      allowedModes.includes(mode.key)
+                        ? "bg-purple-600 text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    )}
                   >
-                    <input
-                      type="checkbox"
-                      checked={allowedModes.includes(mode.key)}
-                      onChange={() => toggleMode(mode.key)}
-                      style={{ display: 'none' }}
-                    />
                     {mode.label}
-                  </label>
+                  </button>
                 ))}
               </div>
             </div>
 
             {plan && (
-              <div className={styles.field}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={isActive}
-                    onChange={e => setIsActive(e.target.checked)}
-                  />
-                  Тариф активен
-                </label>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="isActive"
+                  checked={isActive}
+                  onCheckedChange={(checked) => setIsActive(checked === true)}
+                />
+                <Label htmlFor="isActive" className="cursor-pointer">Тариф активен</Label>
               </div>
             )}
           </div>
 
-          <div className={styles.footer}>
-            <button type="button" className={styles.cancelBtn} onClick={onClose} disabled={loading}>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
               Отмена
-            </button>
-            <button type="submit" className={styles.submitBtn} disabled={loading}>
+            </Button>
+            <Button type="submit" disabled={loading}>
               {loading ? 'Сохранение...' : plan ? 'Сохранить' : 'Создать тариф'}
-            </button>
-          </div>
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

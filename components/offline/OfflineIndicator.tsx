@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { syncService } from "@/lib/offline/sync";
-import styles from "./OfflineIndicator.module.css";
+import { Badge } from "@/components/ui/badge";
+import { WifiOff, RefreshCw, Clock } from "lucide-react";
 
 export default function OfflineIndicator() {
   const [isOnline, setIsOnline] = useState(true);
@@ -49,30 +50,24 @@ export default function OfflineIndicator() {
   }
 
   return (
-    <div className={styles.container}>
+    <div className="fixed bottom-4 left-4 z-50">
       {!isOnline && (
-        <div className={`${styles.indicator} ${styles.offline}`}>
-          <span className={styles.icon}>📴</span>
-          <span className={styles.text}>Офлайн режим</span>
-          {pendingCount > 0 && (
-            <span className={styles.badge}>{pendingCount}</span>
-          )}
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 shadow-lg">
+          <WifiOff className="h-4 w-4" />
+          <span className="text-sm font-medium">Офлайн режим</span>
+          {pendingCount > 0 && <Badge variant="destructive">{pendingCount}</Badge>}
         </div>
       )}
-
       {isOnline && isSyncing && (
-        <div className={`${styles.indicator} ${styles.syncing}`}>
-          <span className={styles.icon}>🔄</span>
-          <span className={styles.text}>Синхронизация...</span>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 shadow-lg">
+          <RefreshCw className="h-4 w-4 animate-spin" />
+          <span className="text-sm font-medium">Синхронизация...</span>
         </div>
       )}
-
       {isOnline && !isSyncing && pendingCount > 0 && (
-        <div className={`${styles.indicator} ${styles.pending}`}>
-          <span className={styles.icon}>⏳</span>
-          <span className={styles.text}>
-            Ожидает синхронизации: {pendingCount}
-          </span>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 shadow-lg">
+          <Clock className="h-4 w-4" />
+          <span className="text-sm font-medium">Ожидает синхронизации: {pendingCount}</span>
         </div>
       )}
     </div>

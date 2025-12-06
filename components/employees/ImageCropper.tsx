@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import styles from './ImageCropper.module.css';
+import { Button } from "@/components/ui/button";
+import { X, Minus, Plus, Check } from "lucide-react";
 
 interface ImageCropperProps {
   imageSrc: string;
@@ -147,82 +148,18 @@ export function ImageCropper({
   };
 
   return (
-    <div className={styles.overlay}>
-      <div className={styles.modal}>
-        <div className={styles.header}>
-          <h3>✂️ Обрезать фото</h3>
-          <button onClick={onCancel} className={styles.closeButton}>✕</button>
-        </div>
-
-        <div className={styles.content}>
-          <div 
-            ref={containerRef}
-            className={styles.cropContainer}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleMouseUp}
-          >
-            <canvas
-              ref={canvasRef}
-              width={cropSize}
-              height={cropSize}
-              className={styles.canvas}
-            />
-            <div className={styles.cropFrame} />
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+      <div className="bg-background rounded-lg shadow-xl max-w-sm w-full">
+        <div className="flex items-center justify-between p-4 border-b"><h3 className="font-semibold">✂️ Обрезать фото</h3><Button variant="ghost" size="icon" onClick={onCancel}><X className="h-4 w-4" /></Button></div>
+        <div className="p-4 space-y-4">
+          <div ref={containerRef} className="relative mx-auto cursor-move" style={{ width: cropSize, height: cropSize }} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleMouseUp}>
+            <canvas ref={canvasRef} width={cropSize} height={cropSize} className="rounded-full bg-muted" />
+            <div className="absolute inset-0 border-2 border-primary rounded-full pointer-events-none" />
           </div>
-
-          <div className={styles.controls}>
-            <button 
-              onClick={() => handleZoom(-0.1)} 
-              className={styles.zoomButton}
-              title="Уменьшить"
-            >
-              ➖
-            </button>
-            <input
-              type="range"
-              min="0.5"
-              max="3"
-              step="0.1"
-              value={scale}
-              onChange={(e) => {
-                const newScale = parseFloat(e.target.value);
-                const img = imageRef.current;
-                if (img) {
-                  const minScale = Math.max(cropSize / img.width, cropSize / img.height);
-                  if (newScale >= minScale) {
-                    setScale(newScale);
-                  }
-                }
-              }}
-              className={styles.slider}
-            />
-            <button 
-              onClick={() => handleZoom(0.1)} 
-              className={styles.zoomButton}
-              title="Увеличить"
-            >
-              ➕
-            </button>
-          </div>
-
-          <p className={styles.hint}>
-            Перетащите изображение для позиционирования
-          </p>
+          <div className="flex items-center gap-2"><Button variant="outline" size="icon" onClick={() => handleZoom(-0.1)}><Minus className="h-4 w-4" /></Button><input type="range" min={0.5} max={3} step={0.1} value={scale} onChange={e => { const v = parseFloat(e.target.value); const img = imageRef.current; if (img) { const minScale = Math.max(cropSize / img.width, cropSize / img.height); if (v >= minScale) setScale(v); } }} className="flex-1 h-2 bg-muted rounded-lg appearance-none cursor-pointer" /><Button variant="outline" size="icon" onClick={() => handleZoom(0.1)}><Plus className="h-4 w-4" /></Button></div>
+          <p className="text-sm text-muted-foreground text-center">Перетащите изображение для позиционирования</p>
         </div>
-
-        <div className={styles.footer}>
-          <button onClick={onCancel} className={styles.cancelButton}>
-            Отмена
-          </button>
-          <button onClick={handleCrop} className={styles.saveButton}>
-            ✅ Сохранить
-          </button>
-        </div>
+        <div className="flex justify-end gap-2 p-4 border-t"><Button variant="outline" onClick={onCancel}>Отмена</Button><Button onClick={handleCrop}><Check className="h-4 w-4 mr-1" />Сохранить</Button></div>
       </div>
     </div>
   );

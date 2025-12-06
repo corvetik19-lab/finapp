@@ -9,7 +9,6 @@ import "@fontsource/rubik/500.css";
 import "@fontsource/rubik/700.css";
 import "@fontsource-variable/roboto/index.css";
 import "@fontsource-variable/rubik/index.css";
-import styles from "./layout.module.css";
 import { ToastProvider } from "@/components/toast/ToastContext";
 import ToastContainer from "@/components/toast/ToastContainer";
 
@@ -42,13 +41,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru" className="light-theme">
-      <head>
-        <link
-          href="https://fonts.googleapis.com/icon?family=Material+Icons"
-          rel="stylesheet"
-        />
-      </head>
-      <body className={`antialiased ${styles.fonts}`}>
+      <body className="antialiased font-sans">
         <ToastProvider>
           {children}
           <ToastContainer />

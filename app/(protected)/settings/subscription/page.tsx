@@ -1,6 +1,9 @@
 import { createRSCClient } from '@/lib/supabase/server';
 import { getOrganizationSubscription } from '@/lib/billing/subscription-service';
 import { getCurrentOrganization } from '@/lib/platform/organization';
+import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertTriangle, CreditCard, CheckCircle, Clock, Users, Crown, Info } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,23 +28,8 @@ export default async function SubscriptionSettingsPage() {
   
   if (!organization) {
     return (
-      <div style={{ padding: '24px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '8px' }}>Подписка</h1>
-        <div style={{
-          background: '#fef3c7',
-          border: '1px solid #fcd34d',
-          borderRadius: '12px',
-          padding: '24px',
-          textAlign: 'center',
-        }}>
-          <span className="material-icons" style={{ fontSize: '48px', color: '#f59e0b' }}>
-            warning
-          </span>
-          <h3 style={{ margin: '12px 0 8px', color: '#92400e' }}>Организация не найдена</h3>
-          <p style={{ margin: 0, color: '#a16207' }}>
-            Вы не являетесь членом организации
-          </p>
-        </div>
+      <div className="p-6"><h1 className="text-2xl font-bold mb-4">Подписка</h1>
+        <Alert variant="destructive"><AlertTriangle className="h-5 w-5" /><AlertTitle>Организация не найдена</AlertTitle><AlertDescription>Вы не являетесь членом организации</AlertDescription></Alert>
       </div>
     );
   }
@@ -74,147 +62,45 @@ export default async function SubscriptionSettingsPage() {
   const extraUsers = Math.max(0, currentUsers - usersIncluded);
 
   return (
-    <div style={{ padding: '24px' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ 
-          fontSize: '24px', 
-          fontWeight: 600, 
-          marginBottom: '8px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
-          <span className="material-icons" style={{ color: '#667eea' }}>card_membership</span>
-          Подписка
-        </h1>
-        <p style={{ color: '#64748b', margin: 0 }}>
-          Информация о подписке организации &laquo;{organization.name}&raquo;
-        </p>
-      </div>
+    <div className="p-6 space-y-6">
+      <div><h1 className="text-2xl font-bold flex items-center gap-3"><CreditCard className="h-6 w-6 text-primary" />Подписка</h1><p className="text-muted-foreground">Информация о подписке организации &laquo;{organization.name}&raquo;</p></div>
 
       {!subscription ? (
-        <div style={{
-          background: '#fef3c7',
-          border: '1px solid #fcd34d',
-          borderRadius: '12px',
-          padding: '24px',
-          textAlign: 'center',
-        }}>
-          <span className="material-icons" style={{ fontSize: '48px', color: '#f59e0b', marginBottom: '12px' }}>
-            warning
-          </span>
-          <h3 style={{ margin: '0 0 8px', color: '#92400e' }}>Нет активной подписки</h3>
-          <p style={{ margin: 0, color: '#a16207' }}>
-            Обратитесь к администратору для активации подписки
-          </p>
-        </div>
+        <Alert><AlertTriangle className="h-5 w-5" /><AlertTitle>Нет активной подписки</AlertTitle><AlertDescription>Обратитесь к администратору для активации</AlertDescription></Alert>
       ) : (
         <>
-          {/* Статус-карточки */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-            gap: '16px',
-            marginBottom: '24px'
-          }}>
-            {/* Статус подписки */}
-            <div style={{
-              background: subscription.status === 'active' 
-                ? 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)' 
-                : '#fef3c7',
-              borderRadius: '12px',
-              padding: '20px',
-              textAlign: 'center'
-            }}>
-              <span className="material-icons" style={{ 
-                fontSize: '28px', 
-                color: subscription.status === 'active' ? '#16a34a' : '#f59e0b',
-                marginBottom: '8px'
-              }}>
-                {subscription.status === 'active' ? 'check_circle' : 'schedule'}
-              </span>
-              <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Статус</div>
-              <div style={{ fontSize: '16px', fontWeight: 600, color: '#1e293b' }}>
-                {subscription.status === 'active' ? 'Активна' : 
-                 subscription.status === 'trial' ? 'Пробный период' :
-                 subscription.status === 'expired' ? 'Истекла' : 'Отменена'}
-              </div>
-            </div>
-
-            {/* Дни до окончания */}
-            <div style={{
-              background: daysUntilExpiry <= 7 
-                ? 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)' 
-                : daysUntilExpiry <= 30
-                ? 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)'
-                : 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-              borderRadius: '12px',
-              padding: '20px',
-              textAlign: 'center'
-            }}>
-              <span className="material-icons" style={{ 
-                fontSize: '28px', 
-                color: daysUntilExpiry <= 7 ? '#dc2626' : daysUntilExpiry <= 30 ? '#f59e0b' : '#0284c7',
-                marginBottom: '8px'
-              }}>
-                schedule
-              </span>
-              <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>До окончания</div>
-              <div style={{ fontSize: '20px', fontWeight: 700, color: '#1e293b' }}>
-                {daysUntilExpiry} дн.
-              </div>
-              <div style={{ fontSize: '11px', color: '#64748b' }}>
-                до {formatDate(subscription.current_period_end)}
-              </div>
-            </div>
-
-            {/* Сотрудники */}
-            <div style={{
-              background: maxUsers && currentUsers >= maxUsers 
-                ? 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)'
-                : 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
-              borderRadius: '12px',
-              padding: '20px',
-              textAlign: 'center'
-            }}>
-              <span className="material-icons" style={{ 
-                fontSize: '28px', 
-                color: maxUsers && currentUsers >= maxUsers ? '#dc2626' : '#16a34a',
-                marginBottom: '8px'
-              }}>
-                group
-              </span>
-              <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Сотрудников</div>
-              <div style={{ fontSize: '20px', fontWeight: 700, color: '#1e293b' }}>
-                {currentUsers} / {maxUsers || '∞'}
-              </div>
-              <div style={{ fontSize: '11px', color: '#64748b' }}>
-                Вкл.: {usersIncluded}
-              </div>
-            </div>
-
-            {/* Тариф */}
-            <div style={{
-              background: 'linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)',
-              borderRadius: '12px',
-              padding: '20px',
-              textAlign: 'center'
-            }}>
-              <span className="material-icons" style={{ 
-                fontSize: '28px', 
-                color: '#7c3aed',
-                marginBottom: '8px'
-              }}>
-                workspace_premium
-              </span>
-              <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Тариф</div>
-              <div style={{ fontSize: '16px', fontWeight: 600, color: '#1e293b' }}>
-                {subscription.plan?.name || 'Не указан'}
-              </div>
-              <div style={{ fontSize: '11px', color: '#64748b' }}>
-                {subscription.billing_period === 'monthly' ? 'Месяц' : 'Год'}
-              </div>
-            </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className={subscription.status === 'active' ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}>
+              <CardContent className="pt-4 text-center">
+                {subscription.status === 'active' ? <CheckCircle className="h-7 w-7 mx-auto mb-2 text-green-600" /> : <Clock className="h-7 w-7 mx-auto mb-2 text-yellow-600" />}
+                <div className="text-xs text-muted-foreground">Статус</div>
+                <div className="font-semibold">{subscription.status === 'active' ? 'Активна' : subscription.status === 'trial' ? 'Пробный' : subscription.status === 'expired' ? 'Истекла' : 'Отменена'}</div>
+              </CardContent>
+            </Card>
+            <Card className={daysUntilExpiry <= 7 ? 'bg-red-50 border-red-200' : daysUntilExpiry <= 30 ? 'bg-yellow-50 border-yellow-200' : 'bg-blue-50 border-blue-200'}>
+              <CardContent className="pt-4 text-center">
+                <Clock className={`h-7 w-7 mx-auto mb-2 ${daysUntilExpiry <= 7 ? 'text-red-600' : daysUntilExpiry <= 30 ? 'text-yellow-600' : 'text-blue-600'}`} />
+                <div className="text-xs text-muted-foreground">До окончания</div>
+                <div className="text-xl font-bold">{daysUntilExpiry} дн.</div>
+                <div className="text-xs text-muted-foreground">до {formatDate(subscription.current_period_end)}</div>
+              </CardContent>
+            </Card>
+            <Card className={maxUsers && currentUsers >= maxUsers ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}>
+              <CardContent className="pt-4 text-center">
+                <Users className={`h-7 w-7 mx-auto mb-2 ${maxUsers && currentUsers >= maxUsers ? 'text-red-600' : 'text-green-600'}`} />
+                <div className="text-xs text-muted-foreground">Сотрудников</div>
+                <div className="text-xl font-bold">{currentUsers} / {maxUsers || '∞'}</div>
+                <div className="text-xs text-muted-foreground">Вкл.: {usersIncluded}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-purple-50 border-purple-200">
+              <CardContent className="pt-4 text-center">
+                <Crown className="h-7 w-7 mx-auto mb-2 text-purple-600" />
+                <div className="text-xs text-muted-foreground">Тариф</div>
+                <div className="font-semibold">{subscription.plan?.name || 'Не указан'}</div>
+                <div className="text-xs text-muted-foreground">{subscription.billing_period === 'monthly' ? 'Месяц' : 'Год'}</div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Детали подписки */}
@@ -304,29 +190,7 @@ export default async function SubscriptionSettingsPage() {
             </div>
           </div>
 
-          {/* Информация */}
-          <div style={{
-            background: '#f0f9ff',
-            border: '1px solid #bae6fd',
-            borderRadius: '12px',
-            padding: '16px 20px',
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: '12px'
-          }}>
-            <span className="material-icons" style={{ color: '#0284c7', marginTop: '2px' }}>
-              info
-            </span>
-            <div>
-              <div style={{ fontWeight: 600, color: '#0369a1', marginBottom: '4px' }}>
-                Нужна помощь?
-              </div>
-              <div style={{ fontSize: '13px', color: '#0c4a6e' }}>
-                Для изменения тарифа или других вопросов по подписке 
-                обратитесь к администратору системы.
-              </div>
-            </div>
-          </div>
+          <Alert><Info className="h-4 w-4" /><AlertTitle>Нужна помощь?</AlertTitle><AlertDescription>Для изменения тарифа обратитесь к администратору.</AlertDescription></Alert>
         </>
       )}
     </div>

@@ -2,29 +2,56 @@ import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { createRSCClient } from '@/lib/supabase/helpers';
 import { getDashboardData } from '@/lib/tenders/dashboard-service';
-import DashboardClient from '@/components/tenders/dashboard/DashboardClient';
+import DashboardNew from '@/components/tenders/dashboard/DashboardNew';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
 export const dynamic = 'force-dynamic';
 
 function LoadingState() {
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: '400px',
-      gap: '16px',
-    }}>
-      <div style={{
-        width: '48px',
-        height: '48px',
-        border: '4px solid #e2e8f0',
-        borderTopColor: '#667eea',
-        borderRadius: '50%',
-        animation: 'spin 1s linear infinite',
-      }} />
-      <p style={{ color: '#64748b', fontSize: '15px' }}>Загрузка дашборда...</p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <div className="flex gap-2">
+          <Skeleton className="h-9 w-24" />
+          <Skeleton className="h-9 w-32" />
+        </div>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i}>
+            <CardHeader className="pb-2">
+              <Skeleton className="h-4 w-24" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-8 w-16 mb-2" />
+              <Skeleton className="h-3 w-32" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader><Skeleton className="h-5 w-24" /></CardHeader>
+          <CardContent className="space-y-3">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-8 w-full" />
+            ))}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader><Skeleton className="h-5 w-24" /></CardHeader>
+          <CardContent className="space-y-3">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-8 w-full" />
+            ))}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
@@ -65,7 +92,7 @@ export default async function TenderDashboardPage() {
 
   return (
     <Suspense fallback={<LoadingState />}>
-      <DashboardClient
+      <DashboardNew
         initialData={dashboardData}
         companyId={companyId}
       />

@@ -1,8 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import styles from "./Forecasts.module.css";
 import { Line } from "react-chartjs-2";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
+import { TrendingUp, Wallet, RefreshCw, AlertCircle, BarChart3, Lightbulb } from "lucide-react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -105,45 +110,16 @@ export default function EnhancedForecastView() {
     return "#6b7280";
   };
 
-  // Предотвращаем hydration mismatch - показываем загрузку до монтирования
-  if (!mounted) {
-    return (
-      <div className={styles.enhancedForecast}>
-        <div className={styles.loading}>Загрузка прогноза...</div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className={styles.loading}>
-        <div className={styles.spinner}></div>
-        <p>Анализируем ваши траты...</p>
-      </div>
-    );
+  if (!mounted || loading) {
+    return <Card><CardContent className="flex flex-col items-center justify-center py-12"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /><p className="mt-4 text-muted-foreground">Анализируем ваши траты...</p></CardContent></Card>;
   }
 
   if (error) {
-    return (
-      <div className={styles.error}>
-        <span className="material-icons">error_outline</span>
-        <h3>Ошибка загрузки прогноза</h3>
-        <p>{error}</p>
-        <button onClick={loadForecast} className={styles.retryBtn}>
-          Попробовать снова
-        </button>
-      </div>
-    );
+    return <Card><CardContent className="flex flex-col items-center justify-center py-12 text-center"><AlertCircle className="h-12 w-12 text-destructive mb-4" /><h3 className="text-lg font-semibold">Ошибка загрузки прогноза</h3><p className="text-muted-foreground mb-4">{error}</p><Button onClick={loadForecast}><RefreshCw className="h-4 w-4 mr-2" />Попробовать снова</Button></CardContent></Card>;
   }
 
   if (!forecast || forecast.categories.length === 0) {
-    return (
-      <div className={styles.empty}>
-        <span className="material-icons">insights</span>
-        <h3>Недостаточно данных</h3>
-        <p>Добавьте транзакции за несколько месяцев для построения прогноза</p>
-      </div>
-    );
+    return <Card><CardContent className="flex flex-col items-center justify-center py-12 text-center"><BarChart3 className="h-12 w-12 text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">Недостаточно данных</h3><p className="text-muted-foreground">Добавьте транзакции за несколько месяцев для построения прогноза</p></CardContent></Card>;
   }
 
   // Данные для графика
@@ -198,123 +174,48 @@ export default function EnhancedForecastView() {
   };
 
   return (
-    <div className={styles.enhancedForecast}>
-      {/* Контролы */}
-      <div className={styles.controls}>
-        <label>
-          Анализ за:
-          <select value={months} onChange={(e) => setMonths(parseInt(e.target.value))}>
-            <option value="3">3 месяца</option>
-            <option value="6">6 месяцев</option>
-            <option value="12">12 месяцев</option>
-          </select>
-        </label>
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <span className="text-sm text-muted-foreground">Анализ за:</span>
+        <Select value={String(months)} onValueChange={(v) => setMonths(parseInt(v))}><SelectTrigger className="w-32"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="3">3 месяца</SelectItem><SelectItem value="6">6 месяцев</SelectItem><SelectItem value="12">12 месяцев</SelectItem></SelectContent></Select>
       </div>
 
-      {/* Общий прогноз */}
-      <div className={styles.totalForecast}>
-        <div className={styles.forecastCard}>
-          <div className={styles.cardHeader}>
-            <span className="material-icons">trending_up</span>
-            <h3>Прогноз на следующий месяц</h3>
-          </div>
-          <div className={styles.amount}>
-            {formatMoney(forecast.total_predicted)}
-          </div>
-          <div className={styles.meta}>
-            <span className={styles.trend} style={{ color: getTrendColor(forecast.trend_direction) }}>
-              {getTrendIcon(forecast.trend_direction)} Тренд: {forecast.trend_direction === "up" ? "Рост" : forecast.trend_direction === "down" ? "Снижение" : "Стабильно"}
-            </span>
-            <span className={styles.confidence}>
-              Уверенность: {forecast.confidence}%
-            </span>
-          </div>
-          {forecast.seasonality_factor !== 1.0 && (
-            <div className={styles.seasonality}>
-              📅 Сезонность: {forecast.seasonality_factor > 1 ? "Высокие траты" : "Низкие траты"} ({(forecast.seasonality_factor * 100).toFixed(0)}%)
-            </div>
-          )}
-        </div>
+      <div className="grid md:grid-cols-2 gap-4">
+        <Card><CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><TrendingUp className="h-5 w-5" />Прогноз на следующий месяц</CardTitle></CardHeader><CardContent>
+          <div className="text-3xl font-bold">{formatMoney(forecast.total_predicted)}</div>
+          <div className="flex items-center gap-4 mt-2 text-sm"><span style={{ color: getTrendColor(forecast.trend_direction) }}>{getTrendIcon(forecast.trend_direction)} {forecast.trend_direction === "up" ? "Рост" : forecast.trend_direction === "down" ? "Снижение" : "Стабильно"}</span><span className="text-muted-foreground">Уверенность: {forecast.confidence}%</span></div>
+          {forecast.seasonality_factor !== 1.0 && <div className="text-sm mt-2">📅 Сезонность: {forecast.seasonality_factor > 1 ? "Высокие траты" : "Низкие траты"} ({(forecast.seasonality_factor * 100).toFixed(0)}%)</div>}
+        </CardContent></Card>
 
-        <div className={styles.forecastCard}>
-          <div className={styles.cardHeader}>
-            <span className="material-icons">account_balance</span>
-            <h3>Прогноз баланса</h3>
-          </div>
-          <div className={styles.amount}>
-            {formatMoney(forecast.total_income_predicted - forecast.total_predicted)}
-          </div>
-          <div className={styles.meta}>
-            <span>Доход: {formatMoney(forecast.total_income_predicted)}</span>
-            <span>Расход: {formatMoney(forecast.total_predicted)}</span>
-          </div>
-        </div>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Wallet className="h-5 w-5" />Прогноз баланса</CardTitle></CardHeader><CardContent>
+          <div className="text-3xl font-bold">{formatMoney(forecast.total_income_predicted - forecast.total_predicted)}</div>
+          <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground"><span>Доход: {formatMoney(forecast.total_income_predicted)}</span><span>Расход: {formatMoney(forecast.total_predicted)}</span></div>
+        </CardContent></Card>
       </div>
 
-      {/* График по категориям */}
-      <div className={styles.chartSection}>
-        <h3>Прогноз по категориям</h3>
-        <div className={styles.chartContainer}>
-          <Line data={chartData} options={chartOptions} />
-        </div>
-      </div>
+      <Card><CardHeader><CardTitle>Прогноз по категориям</CardTitle></CardHeader><CardContent><div className="h-64"><Line data={chartData} options={chartOptions} /></div></CardContent></Card>
 
-      {/* Таблица категорий */}
-      <div className={styles.categoriesTable}>
-        <h3>Детальный прогноз</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Категория</th>
-              <th>Прогноз</th>
-              <th>Среднее</th>
-              <th>Тренд</th>
-              <th>Уверенность</th>
-            </tr>
-          </thead>
-          <tbody>
+      <Card><CardHeader><CardTitle>Детальный прогноз</CardTitle></CardHeader><CardContent>
+        <Table>
+          <TableHeader><TableRow><TableHead>Категория</TableHead><TableHead>Прогноз</TableHead><TableHead>Среднее</TableHead><TableHead>Тренд</TableHead><TableHead>Уверенность</TableHead></TableRow></TableHeader>
+          <TableBody>
             {forecast.categories.map((cat) => (
-              <tr key={cat.categoryId || cat.category}>
-                <td>
-                  <strong>{cat.category}</strong>
-                  <div className={styles.reasoning}>{cat.reasoning}</div>
-                </td>
-                <td className={styles.predicted}>
-                  {formatMoney(cat.predicted)}
-                </td>
-                <td className={styles.avg}>
-                  {formatMoney(cat.historical_avg)}
-                </td>
-                <td>
-                  <span style={{ color: getTrendColor(cat.trend) }}>
-                    {getTrendIcon(cat.trend)}
-                  </span>
-                </td>
-                <td>
-                  <div className={styles.progressBar}>
-                    <div
-                      className={styles.progress}
-                      style={{ width: `${cat.confidence}%` }}
-                    ></div>
-                    <span>{cat.confidence}%</span>
-                  </div>
-                </td>
-              </tr>
+              <TableRow key={cat.categoryId || cat.category}>
+                <TableCell><div className="font-medium">{cat.category}</div><div className="text-xs text-muted-foreground">{cat.reasoning}</div></TableCell>
+                <TableCell className="font-bold">{formatMoney(cat.predicted)}</TableCell>
+                <TableCell className="text-muted-foreground">{formatMoney(cat.historical_avg)}</TableCell>
+                <TableCell><span style={{ color: getTrendColor(cat.trend) }}>{getTrendIcon(cat.trend)}</span></TableCell>
+                <TableCell><div className="flex items-center gap-2"><Progress value={cat.confidence} className="flex-1 h-2" /><span className="text-xs">{cat.confidence}%</span></div></TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </CardContent></Card>
 
-      {/* AI Советы */}
       {forecast.advice.length > 0 && (
-        <div className={styles.adviceSection}>
-          <h3>💡 Рекомендации</h3>
-          <ul className={styles.adviceList}>
-            {forecast.advice.map((advice, index) => (
-              <li key={index}>{advice}</li>
-            ))}
-          </ul>
-        </div>
+        <Card><CardHeader><CardTitle className="flex items-center gap-2"><Lightbulb className="h-5 w-5" />Рекомендации</CardTitle></CardHeader><CardContent>
+          <ul className="space-y-2">{forecast.advice.map((advice, index) => (<li key={index} className="flex items-start gap-2"><span className="text-primary">•</span>{advice}</li>))}</ul>
+        </CardContent></Card>
       )}
     </div>
   );

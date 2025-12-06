@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useRef } from 'react';
-import styles from './FileUploader.module.css';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Paperclip, Loader2, AlertCircle, Eye, Download, Trash2, X } from "lucide-react";
 
 interface FileUploaderProps {
   transactionId: string;
@@ -142,107 +144,41 @@ export default function FileUploader({
   };
 
   return (
-    <div className={styles.container}>
-      {/* Кнопка загрузки */}
-      <div className={styles.uploadSection}>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept={ALLOWED_TYPES.join(',')}
-          onChange={handleFileSelect}
-          className={styles.fileInput}
-          id="file-upload"
-          disabled={uploading}
-        />
-        <label htmlFor="file-upload" className={styles.uploadButton}>
-          {uploading ? (
-            <>
-              <span className={styles.spinner}></span>
-              Загрузка...
-            </>
-          ) : (
-            <>
-              <span className="material-icons">attach_file</span>
-              Прикрепить файл
-            </>
-          )}
-        </label>
-        <span className={styles.uploadHint}>
-          Изображения или PDF, до 10 МБ
-        </span>
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <input ref={fileInputRef} type="file" accept={ALLOWED_TYPES.join(',')} onChange={handleFileSelect} className="hidden" id="file-upload" disabled={uploading} />
+        <Button variant="outline" asChild disabled={uploading}>
+          <label htmlFor="file-upload" className="cursor-pointer">{uploading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Загрузка...</> : <><Paperclip className="h-4 w-4 mr-2" />Прикрепить файл</>}</label>
+        </Button>
+        <span className="text-sm text-muted-foreground">Изображения или PDF, до 10 МБ</span>
       </div>
 
-      {/* Ошибка */}
-      {error && (
-        <div className={styles.error}>
-          <span className="material-icons">error</span>
-          {error}
-        </div>
-      )}
+      {error && <div className="flex items-center gap-2 text-sm text-destructive"><AlertCircle className="h-4 w-4" />{error}</div>}
 
-      {/* Список файлов */}
       {files.length > 0 && (
-        <div className={styles.filesList}>
+        <div className="space-y-2">
           {files.map((file) => (
-            <div key={file.id} className={styles.fileItem}>
-              <div className={styles.fileIcon}>
-                {getFileIcon(file.mime_type)}
-              </div>
-              
-              <div className={styles.fileInfo}>
-                <div className={styles.fileName}>{file.file_name}</div>
-                <div className={styles.fileSize}>
-                  {formatFileSize(file.file_size)}
+            <Card key={file.id}>
+              <CardContent className="flex items-center gap-3 py-3">
+                <span className="text-2xl">{getFileIcon(file.mime_type)}</span>
+                <div className="flex-1 min-w-0"><div className="font-medium text-sm truncate">{file.file_name}</div><div className="text-xs text-muted-foreground">{formatFileSize(file.file_size)}</div></div>
+                <div className="flex items-center gap-1">
+                  {file.mime_type.startsWith('image/') && <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handlePreview(file)}><Eye className="h-4 w-4" /></Button>}
+                  <Button variant="ghost" size="icon" className="h-8 w-8" asChild><a href={`/api/attachments/download?path=${encodeURIComponent(file.file_path)}&name=${encodeURIComponent(file.file_name)}`} download><Download className="h-4 w-4" /></a></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(file.id, file.file_path)}><Trash2 className="h-4 w-4" /></Button>
                 </div>
-              </div>
-
-              <div className={styles.fileActions}>
-                {file.mime_type.startsWith('image/') && (
-                  <button
-                    type="button"
-                    className={styles.actionButton}
-                    onClick={() => handlePreview(file)}
-                    title="Просмотр"
-                  >
-                    <span className="material-icons">visibility</span>
-                  </button>
-                )}
-                
-                <a
-                  href={`/api/attachments/download?path=${encodeURIComponent(file.file_path)}&name=${encodeURIComponent(file.file_name)}`}
-                  download
-                  className={styles.actionButton}
-                  title="Скачать"
-                >
-                  <span className="material-icons">download</span>
-                </a>
-                
-                <button
-                  type="button"
-                  className={styles.actionButton}
-                  onClick={() => handleDelete(file.id, file.file_path)}
-                  title="Удалить"
-                >
-                  <span className="material-icons">delete</span>
-                </button>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
 
-      {/* Модальное окно превью */}
       {previewUrl && (
-        <div className={styles.modal} onClick={() => setPreviewUrl(null)}>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <button
-              className={styles.modalClose}
-              onClick={() => setPreviewUrl(null)}
-            >
-              <span className="material-icons">close</span>
-            </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80" onClick={() => setPreviewUrl(null)}>
+          <div className="relative max-w-4xl max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <Button variant="ghost" size="icon" className="absolute -top-10 right-0 text-white" onClick={() => setPreviewUrl(null)}><X className="h-6 w-6" /></Button>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={previewUrl} alt="Preview" className={styles.previewImage} />
+            <img src={previewUrl} alt="Preview" className="max-w-full max-h-[90vh] rounded-lg" />
           </div>
         </div>
       )}

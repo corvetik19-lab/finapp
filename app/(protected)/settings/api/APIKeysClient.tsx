@@ -1,7 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import styles from "./APIKeys.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Key, Plus, Trash2, Loader2, Copy } from "lucide-react";
 
 interface APIKey {
   id: string;
@@ -93,183 +100,66 @@ export default function APIKeysClient() {
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>🔑 API Keys</h1>
-          <p className={styles.subtitle}>
-            Создавайте API ключи для интеграции с внешними приложениями
-          </p>
-        </div>
-        <button
-          className={styles.createBtn}
-          onClick={() => setShowForm(!showForm)}
-        >
-          ➕ Создать API ключ
-        </button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div><h1 className="text-2xl font-bold flex items-center gap-2"><Key className="h-6 w-6" />API Keys</h1><p className="text-muted-foreground">Интеграция с внешними приложениями</p></div>
+        <Button onClick={() => setShowForm(!showForm)}><Plus className="h-4 w-4 mr-1" />Создать ключ</Button>
       </div>
 
       {newKey && (
-        <div className={styles.newKeyAlert}>
-          <div className={styles.alertHeader}>
-            <span>✅ API ключ создан!</span>
-            <button onClick={() => setNewKey(null)}>✕</button>
-          </div>
-          <p className={styles.warning}>
-            ⚠️ Сохраните этот ключ в безопасном месте. Вы не сможете увидеть его снова.
-          </p>
-          <div className={styles.keyDisplay}>
-            <code>{newKey}</code>
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(newKey);
-                alert("Ключ скопирован!");
-              }}
-            >
-              📋 Копировать
-            </button>
-          </div>
-        </div>
+        <Alert><AlertTitle>Ключ создан!</AlertTitle><AlertDescription className="space-y-2">
+          <p className="text-yellow-600">Сохраните ключ - вы не увидите его снова!</p>
+          <div className="flex items-center gap-2"><code className="flex-1 bg-muted p-2 rounded text-sm">{newKey}</code><Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(newKey); }}><Copy className="h-4 w-4" /></Button></div>
+        </AlertDescription></Alert>
       )}
 
       {showForm && (
-        <div className={styles.form}>
-          <h3>Создать новый API ключ</h3>
-          
-          <label>
-            Название
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-              placeholder="My App API Key"
-            />
-          </label>
-
-          <label>
-            Разрешения
-            <div className={styles.scopesGrid}>
-              {["read", "write", "delete"].map(scope => (
-                <label key={scope} className={styles.checkbox}>
-                  <input
-                    type="checkbox"
-                    checked={formData.scopes.includes(scope)}
-                    onChange={() => toggleScope(scope)}
-                  />
-                  {scope}
-                </label>
-              ))}
-            </div>
-          </label>
-
-          <label>
-            Rate Limit (запросов в час)
-            <input
-              type="number"
-              value={formData.rate_limit}
-              onChange={(e) => setFormData({...formData, rate_limit: parseInt(e.target.value)})}
-              min="100"
-              max="10000"
-            />
-          </label>
-
-          <label>
-            Срок действия (дней, 0 = без срока)
-            <input
-              type="number"
-              value={formData.expires_in_days}
-              onChange={(e) => setFormData({...formData, expires_in_days: parseInt(e.target.value)})}
-              min="0"
-              max="365"
-            />
-          </label>
-
-          <div className={styles.formActions}>
-            <button onClick={() => setShowForm(false)}>Отмена</button>
-            <button
-              onClick={createKey}
-              disabled={creating || !formData.name}
-              className={styles.submitBtn}
-            >
-              {creating ? "Создаём..." : "Создать ключ"}
-            </button>
+        <Card><CardHeader><CardTitle>Новый API ключ</CardTitle></CardHeader><CardContent className="space-y-4">
+          <div className="space-y-2"><Label>Название</Label><Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="My App" /></div>
+          <div className="space-y-2"><Label>Разрешения</Label><div className="flex gap-4">{["read", "write", "delete"].map(scope => (<div key={scope} className="flex items-center gap-2"><Checkbox checked={formData.scopes.includes(scope)} onCheckedChange={() => toggleScope(scope)} /><span>{scope}</span></div>))}</div></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2"><Label>Rate Limit (req/hour)</Label><Input type="number" value={formData.rate_limit} onChange={(e) => setFormData({...formData, rate_limit: parseInt(e.target.value)})} min={100} max={10000} /></div>
+            <div className="space-y-2"><Label>Срок (дней, 0=бессрочно)</Label><Input type="number" value={formData.expires_in_days} onChange={(e) => setFormData({...formData, expires_in_days: parseInt(e.target.value)})} min={0} max={365} /></div>
           </div>
-        </div>
+          <div className="flex gap-2 justify-end"><Button variant="outline" onClick={() => setShowForm(false)}>Отмена</Button><Button onClick={createKey} disabled={creating || !formData.name}>{creating ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Создаём...</> : "Создать"}</Button></div>
+        </CardContent></Card>
       )}
 
-      <div className={styles.keysList}>
-        {loading ? (
-          <div className={styles.loading}>Загрузка...</div>
-        ) : keys.length === 0 ? (
-          <div className={styles.empty}>
-            <div className={styles.emptyIcon}>🔑</div>
-            <p>У вас пока нет API ключей</p>
-            <p className={styles.emptyHint}>Создайте первый ключ для начала работы с API</p>
-          </div>
-        ) : (
-          keys.map(key => (
-            <div key={key.id} className={styles.keyCard}>
-              <div className={styles.keyHeader}>
-                <div>
-                  <h3>{key.name}</h3>
-                  <code>{key.key_prefix}•••</code>
-                </div>
-                <button
-                  className={styles.deleteBtn}
-                  onClick={() => deleteKey(key.id)}
-                >
-                  🗑️ Удалить
-                </button>
-              </div>
-              
-              <div className={styles.keyDetails}>
-                <div className={styles.detail}>
-                  <span className={styles.label}>Разрешения:</span>
-                  <span>{key.scopes.join(", ")}</span>
-                </div>
-                <div className={styles.detail}>
-                  <span className={styles.label}>Rate Limit:</span>
-                  <span>{key.rate_limit} req/hour</span>
-                </div>
-                <div className={styles.detail}>
-                  <span className={styles.label}>Последнее использование:</span>
-                  <span>
-                    {key.last_used_at
-                      ? new Date(key.last_used_at).toLocaleString("ru-RU")
-                      : "Никогда"}
-                  </span>
-                </div>
-                {key.expires_at && (
-                  <div className={styles.detail}>
-                    <span className={styles.label}>Истекает:</span>
-                    <span>{new Date(key.expires_at).toLocaleDateString("ru-RU")}</span>
+      <Card>
+        <CardHeader><CardTitle>Ваши ключи</CardTitle></CardHeader>
+        <CardContent>
+          {loading ? <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div> : keys.length === 0 ? (
+            <div className="text-center py-8"><Key className="h-12 w-12 mx-auto text-muted-foreground mb-2" /><p className="text-muted-foreground">Ключей пока нет</p></div>
+          ) : (
+            <div className="space-y-3">
+              {keys.map(key => (
+                <div key={key.id} className="flex items-center justify-between p-4 rounded-lg border">
+                  <div><p className="font-medium">{key.name}</p><code className="text-sm text-muted-foreground">{key.key_prefix}•••</code></div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      <div className="flex gap-1">{key.scopes.map(s => <Badge key={s} variant="secondary">{s}</Badge>)}</div>
+                      <p>{key.rate_limit} req/h</p>
+                    </div>
+                    <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteKey(key.id)}><Trash2 className="h-4 w-4" /></Button>
                   </div>
-                )}
-              </div>
+                </div>
+              ))}
             </div>
-          ))
-        )}
-      </div>
+          )}
+        </CardContent>
+      </Card>
 
-      <div className={styles.docs}>
-        <h2>📚 Документация API</h2>
-        <p>Используйте созданный API ключ в заголовке <code>X-API-Key</code></p>
-        
-        <h3>Пример запроса:</h3>
-        <pre className={styles.codeBlock}>
-{`curl -X GET "https://finappka.vercel.app/api/v1/transactions?limit=10" \\
-  -H "X-API-Key: your-api-key-here"`}
-        </pre>
-
-        <h3>Доступные endpoints:</h3>
-        <ul className={styles.endpointsList}>
-          <li><code>GET /api/v1/transactions</code> - Получить транзакции</li>
-          <li><code>POST /api/v1/transactions</code> - Создать транзакцию</li>
-          <li><code>GET /api/v1/accounts</code> - Получить счета</li>
-          <li><code>GET /api/v1/categories</code> - Получить категории</li>
-          <li><code>GET /api/v1/budgets</code> - Получить бюджеты</li>
-        </ul>
-      </div>
+      <Card><CardHeader><CardTitle>Документация</CardTitle></CardHeader><CardContent className="space-y-4">
+        <p className="text-sm">Используйте ключ в заголовке <code className="bg-muted px-1 rounded">X-API-Key</code></p>
+        <pre className="bg-muted p-3 rounded text-sm overflow-x-auto">{`curl -X GET "https://finappka.vercel.app/api/v1/transactions" \\
+  -H "X-API-Key: your-key"`}</pre>
+        <div className="text-sm space-y-1">
+          <p className="font-medium">Endpoints:</p>
+          <p><code className="bg-muted px-1 rounded">GET /api/v1/transactions</code></p>
+          <p><code className="bg-muted px-1 rounded">POST /api/v1/transactions</code></p>
+          <p><code className="bg-muted px-1 rounded">GET /api/v1/accounts</code></p>
+        </div>
+      </CardContent></Card>
     </div>
   );
 }

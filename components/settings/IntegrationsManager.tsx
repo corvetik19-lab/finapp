@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import styles from "./IntegrationsManager.module.css";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Plug, Settings, Unplug, Plus, CheckCircle2, AlertTriangle, MessageCircle, Webhook, Mail, Send, Loader2 } from "lucide-react";
 
 interface Integration {
   id: string;
@@ -128,110 +134,36 @@ export default function IntegrationsManager({ integrations }: IntegrationsManage
     return integrations.find((i) => i.service === serviceId && i.is_active);
   };
 
+  const getIcon = (icon: string) => {
+    switch (icon) {
+      case 'telegram': return <Send className="h-5 w-5 text-white" />;
+      case 'webhook': return <Webhook className="h-5 w-5 text-white" />;
+      case 'chat_bubble': return <MessageCircle className="h-5 w-5 text-white" />;
+      case 'email': return <Mail className="h-5 w-5 text-white" />;
+      default: return <Plug className="h-5 w-5 text-white" />;
+    }
+  };
+
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>Интеграции</h1>
-          <p className={styles.subtitle}>Подключите внешние сервисы для автоматизации и уведомлений</p>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <div><h1 className="text-2xl font-bold flex items-center gap-2"><Plug className="h-6 w-6" />Интеграции</h1><p className="text-sm text-muted-foreground">Подключите внешние сервисы для автоматизации</p></div>
 
-      {message && (
-        <div className={`${styles.message} ${styles[message.type]}`}>
-          <span className="material-icons">
-            {message.type === "success" ? "check_circle" : "error"}
-          </span>
-          {message.text}
-        </div>
-      )}
+      {message && <Alert className={message.type === 'success' ? 'border-green-500 bg-green-50' : 'border-destructive'}>{message.type === 'success' ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <AlertTriangle className="h-4 w-4" />}<AlertDescription>{message.text}</AlertDescription></Alert>}
 
-      <div className={styles.grid}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {AVAILABLE_INTEGRATIONS.map((integration) => {
           const isConnected = getIntegrationStatus(integration.id);
-
           return (
-            <div key={integration.id} className={styles.card}>
-              <div className={styles.cardHeader}>
-                <div className={styles.cardIcon} style={{ background: integration.color }}>
-                  <span className="material-icons">{integration.icon}</span>
-                </div>
-                <div className={styles.cardInfo}>
-                  <h3 className={styles.cardTitle}>{integration.name}</h3>
-                  <p className={styles.cardDesc}>{integration.description}</p>
-                </div>
-                {isConnected && (
-                  <span className={styles.badge}>
-                    <span className="material-icons">check_circle</span>
-                    Подключено
-                  </span>
+            <Card key={integration.id}>
+              <CardHeader className="pb-3"><div className="flex items-start gap-3"><div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: integration.color }}>{getIcon(integration.icon)}</div><div className="flex-1"><CardTitle className="text-base flex items-center gap-2">{integration.name}{isConnected && <Badge variant="secondary" className="text-xs"><CheckCircle2 className="h-3 w-3 mr-1" />Подключено</Badge>}</CardTitle><CardDescription>{integration.description}</CardDescription></div></div></CardHeader>
+              <CardContent>
+                {selectedIntegration === integration.id ? (
+                  <div className="space-y-3">{integration.fields.map(f => <div key={f.key} className="space-y-1"><Label>{f.label}</Label><Input type={f.type} placeholder={f.placeholder} value={formData[f.key] || ''} onChange={e => setFormData({...formData, [f.key]: e.target.value})} /></div>)}<div className="flex gap-2"><Button onClick={() => handleConnect(integration.id)} disabled={isLoading}>{isLoading ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Подключение...</> : 'Подключить'}</Button><Button variant="outline" onClick={() => {setSelectedIntegration(null);setFormData({});}}>Отмена</Button></div></div>
+                ) : (
+                  <div className="flex gap-2">{isConnected ? <><Button variant="outline" size="sm"><Settings className="h-4 w-4 mr-1" />Настроить</Button><Button variant="destructive" size="sm" onClick={() => handleDisconnect(isConnected.id)} disabled={isLoading}><Unplug className="h-4 w-4 mr-1" />Отключить</Button></> : <Button onClick={() => setSelectedIntegration(integration.id)}><Plus className="h-4 w-4 mr-1" />Подключить</Button>}</div>
                 )}
-              </div>
-
-              {selectedIntegration === integration.id ? (
-                <div className={styles.form}>
-                  {integration.fields.map((field) => (
-                    <div key={field.key} className={styles.formGroup}>
-                      <label className={styles.label}>{field.label}</label>
-                      <input
-                        type={field.type}
-                        placeholder={field.placeholder}
-                        value={formData[field.key] || ""}
-                        onChange={(e) =>
-                          setFormData({ ...formData, [field.key]: e.target.value })
-                        }
-                        className={styles.input}
-                      />
-                    </div>
-                  ))}
-                  <div className={styles.formActions}>
-                    <button
-                      onClick={() => handleConnect(integration.id)}
-                      className={styles.buttonPrimary}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? "Подключение..." : "Подключить"}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedIntegration(null);
-                        setFormData({});
-                      }}
-                      className={styles.buttonSecondary}
-                    >
-                      Отмена
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className={styles.cardActions}>
-                  {isConnected ? (
-                    <>
-                      <button className={styles.buttonSecondary}>
-                        <span className="material-icons">settings</span>
-                        Настроить
-                      </button>
-                      <button
-                        onClick={() => handleDisconnect(isConnected.id)}
-                        className={styles.buttonDanger}
-                        disabled={isLoading}
-                      >
-                        <span className="material-icons">link_off</span>
-                        Отключить
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={() => setSelectedIntegration(integration.id)}
-                      className={styles.buttonPrimary}
-                    >
-                      <span className="material-icons">add</span>
-                      Подключить
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
+              </CardContent>
+            </Card>
           );
         })}
       </div>

@@ -4,8 +4,14 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { SubscriptionPlan } from '@/types/billing';
 import { updatePlanPricing } from '@/app/(protected)/superadmin/actions';
-import styles from '@/app/(protected)/superadmin/superadmin.module.css';
-import modalStyles from './SuperadminModals.module.css';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Pencil, CheckCircle, AlertCircle, Info } from 'lucide-react';
 
 interface PricingManagerProps {
   plans: SubscriptionPlan[];
@@ -87,283 +93,245 @@ export function PricingManager({ plans }: PricingManagerProps) {
   return (
     <>
       {success && (
-        <div style={{
-          background: '#dcfce7',
-          border: '1px solid #86efac',
-          color: '#166534',
-          padding: '12px 16px',
-          borderRadius: '8px',
-          marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          <span className="material-icons">check_circle</span>
-          {success}
-        </div>
+        <Alert className="mb-5 bg-green-50 border-green-200 text-green-800">
+          <CheckCircle className="h-4 w-4" />
+          <AlertDescription>{success}</AlertDescription>
+        </Alert>
       )}
 
-      <div className={styles.tableContainer}>
-        <div className={styles.tableHeader}>
-          <h3 className={styles.tableTitle}>Цены на тарифы ({plans.length})</h3>
-        </div>
-
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Тариф</th>
-              <th>Базовая (месяц)</th>
-              <th>Базовая (год)</th>
-              <th>За польз. (месяц)</th>
-              <th>За польз. (год)</th>
-              <th>Включено польз.</th>
-              <th>Макс. польз.</th>
-              <th>Статус</th>
-              <th>Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            {plans.map((plan) => (
-              <tr key={plan.id}>
-                <td>
-                  <strong>{plan.name}</strong>
-                  {plan.is_default && (
-                    <span style={{ 
-                      fontSize: '11px', 
-                      background: '#dbeafe', 
-                      color: '#1e40af',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      marginLeft: '8px'
-                    }}>
-                      По умолчанию
-                    </span>
-                  )}
-                </td>
-                <td style={{ fontWeight: 600, color: '#667eea' }}>
-                  {formatMoney(plan.base_price_monthly)}
-                </td>
-                <td>{formatMoney(plan.base_price_yearly)}</td>
-                <td>{formatMoney(plan.price_per_user_monthly)}</td>
-                <td>{formatMoney(plan.price_per_user_yearly)}</td>
-                <td>{plan.users_included}</td>
-                <td>{plan.max_users || '∞'}</td>
-                <td>
-                  <span style={{
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    fontSize: '12px',
-                    background: plan.is_active ? '#dcfce7' : '#fef3c7',
-                    color: plan.is_active ? '#166534' : '#92400e'
-                  }}>
-                    {plan.is_active ? 'Активен' : 'Неактивен'}
-                  </span>
-                </td>
-                <td>
-                  <button
-                    className={`${styles.button} ${styles.primary}`}
-                    style={{ padding: '8px 16px' }}
-                    onClick={() => openEditModal(plan)}
-                  >
-                    <span className="material-icons" style={{ fontSize: '16px' }}>edit</span>
-                    Изменить цены
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Card className="mb-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Цены на тарифы ({plans.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Тариф</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Базовая (месяц)</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Базовая (год)</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">За польз. (месяц)</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">За польз. (год)</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Включено</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Макс.</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Статус</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Действия</th>
+                </tr>
+              </thead>
+              <tbody>
+                {plans.map((plan) => (
+                  <tr key={plan.id} className="border-b last:border-0 hover:bg-gray-50">
+                    <td className="py-3 px-4">
+                      <span className="font-semibold">{plan.name}</span>
+                      {plan.is_default && (
+                        <Badge variant="secondary" className="ml-2 text-xs">По умолчанию</Badge>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 font-semibold text-purple-600 tabular-nums">
+                      {formatMoney(plan.base_price_monthly)}
+                    </td>
+                    <td className="py-3 px-4 tabular-nums">{formatMoney(plan.base_price_yearly)}</td>
+                    <td className="py-3 px-4 tabular-nums">{formatMoney(plan.price_per_user_monthly)}</td>
+                    <td className="py-3 px-4 tabular-nums">{formatMoney(plan.price_per_user_yearly)}</td>
+                    <td className="py-3 px-4">{plan.users_included}</td>
+                    <td className="py-3 px-4">{plan.max_users || '∞'}</td>
+                    <td className="py-3 px-4">
+                      <Badge variant={plan.is_active ? 'default' : 'secondary'}>
+                        {plan.is_active ? 'Активен' : 'Неактивен'}
+                      </Badge>
+                    </td>
+                    <td className="py-3 px-4">
+                      <Button size="sm" onClick={() => openEditModal(plan)}>
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Изменить цены
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Информационный блок */}
-      <div className={styles.infoCard} style={{ marginTop: '24px' }}>
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-          <span className="material-icons" style={{ color: '#667eea' }}>info</span>
-          Как работает ценообразование
-        </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
-          <div>
-            <strong style={{ color: '#475569' }}>Базовая стоимость</strong>
-            <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0' }}>
-              Фиксированная цена тарифа без учёта дополнительных пользователей
-            </p>
+      <Card>
+        <CardContent className="p-6">
+          <h3 className="flex items-center gap-2 font-semibold mb-4">
+            <Info className="h-5 w-5 text-purple-600" />
+            Как работает ценообразование
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <div className="font-medium text-gray-700 mb-1">Базовая стоимость</div>
+              <p className="text-sm text-gray-500">
+                Фиксированная цена тарифа без учёта дополнительных пользователей
+              </p>
+            </div>
+            <div>
+              <div className="font-medium text-gray-700 mb-1">Цена за пользователя</div>
+              <p className="text-sm text-gray-500">
+                Стоимость каждого пользователя сверх включённого количества
+              </p>
+            </div>
+            <div>
+              <div className="font-medium text-gray-700 mb-1">Включено пользователей</div>
+              <p className="text-sm text-gray-500">
+                Количество пользователей, входящих в базовую стоимость
+              </p>
+            </div>
+            <div>
+              <div className="font-medium text-gray-700 mb-1">Формула расчёта</div>
+              <p className="text-sm text-gray-500">
+                Итого = База + (Пользователей − Включено) × Цена за польз.
+              </p>
+            </div>
           </div>
-          <div>
-            <strong style={{ color: '#475569' }}>Цена за пользователя</strong>
-            <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0' }}>
-              Стоимость каждого пользователя сверх включённого количества
-            </p>
-          </div>
-          <div>
-            <strong style={{ color: '#475569' }}>Включено пользователей</strong>
-            <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0' }}>
-              Количество пользователей, входящих в базовую стоимость
-            </p>
-          </div>
-          <div>
-            <strong style={{ color: '#475569' }}>Формула расчёта</strong>
-            <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0' }}>
-              Итого = База + (Пользователей − Включено) × Цена за польз.
-            </p>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Модальное окно редактирования */}
-      {editingPlan && (
-        <div className={modalStyles.overlay} onClick={closeModal}>
-          <div className={modalStyles.modal} onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
-            <div className={modalStyles.header}>
-              <h2>Изменить цены: {editingPlan.name}</h2>
-              <button className={modalStyles.closeButton} onClick={closeModal}>
-                <span className="material-icons">close</span>
-              </button>
-            </div>
+      <Dialog open={!!editingPlan} onOpenChange={(open) => !open && closeModal()}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Изменить цены: {editingPlan?.name}</DialogTitle>
+          </DialogHeader>
 
-            <div className={modalStyles.body}>
-              {error && (
-                <div className={modalStyles.error}>
-                  <span className="material-icons">error</span>
-                  {error}
+          <div className="space-y-6">
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="space-y-4">
+              <h4 className="font-medium text-gray-700">Базовая стоимость тарифа</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="base_monthly">За месяц (₽)</Label>
+                  <Input
+                    id="base_monthly"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.base_price_monthly}
+                    onChange={(e) => setFormData({ ...formData, base_price_monthly: e.target.value })}
+                    placeholder="0"
+                  />
                 </div>
-              )}
-
-              <div className={modalStyles.formSection}>
-                <h4>Базовая стоимость тарифа</h4>
-                <div className={modalStyles.formRow}>
-                  <div className={modalStyles.formGroup}>
-                    <label>За месяц (₽)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.base_price_monthly}
-                      onChange={(e) => setFormData({ ...formData, base_price_monthly: e.target.value })}
-                      placeholder="0"
-                    />
-                  </div>
-                  <div className={modalStyles.formGroup}>
-                    <label>За год (₽)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.base_price_yearly}
-                      onChange={(e) => setFormData({ ...formData, base_price_yearly: e.target.value })}
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className={modalStyles.formSection}>
-                <h4>За дополнительного пользователя</h4>
-                <div className={modalStyles.formRow}>
-                  <div className={modalStyles.formGroup}>
-                    <label>За месяц (₽)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.price_per_user_monthly}
-                      onChange={(e) => setFormData({ ...formData, price_per_user_monthly: e.target.value })}
-                      placeholder="0"
-                    />
-                  </div>
-                  <div className={modalStyles.formGroup}>
-                    <label>За год (₽)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.price_per_user_yearly}
-                      onChange={(e) => setFormData({ ...formData, price_per_user_yearly: e.target.value })}
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className={modalStyles.formSection}>
-                <h4>Лимиты пользователей</h4>
-                <div className={modalStyles.formRow}>
-                  <div className={modalStyles.formGroup}>
-                    <label>Включено в тариф</label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={formData.users_included}
-                      onChange={(e) => setFormData({ ...formData, users_included: e.target.value })}
-                      placeholder="1"
-                    />
-                  </div>
-                  <div className={modalStyles.formGroup}>
-                    <label>Максимум (пусто = безлимит)</label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={formData.max_users}
-                      onChange={(e) => setFormData({ ...formData, max_users: e.target.value })}
-                      placeholder="∞"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Предварительный расчёт */}
-              <div style={{ 
-                background: '#f8fafc', 
-                borderRadius: '12px', 
-                padding: '16px',
-                marginTop: '8px'
-              }}>
-                <h4 style={{ margin: '0 0 12px', fontSize: '14px', color: '#475569' }}>
-                  Пример расчёта для 10 пользователей
-                </h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '13px' }}>
-                  <div>
-                    <span style={{ color: '#64748b' }}>Месячная оплата:</span>
-                    <strong style={{ marginLeft: '8px', color: '#667eea' }}>
-                      {formatMoney(
-                        (parseFloat(formData.base_price_monthly) || 0) * 100 +
-                        Math.max(0, 10 - (parseInt(formData.users_included) || 1)) *
-                        (parseFloat(formData.price_per_user_monthly) || 0) * 100
-                      )}
-                    </strong>
-                  </div>
-                  <div>
-                    <span style={{ color: '#64748b' }}>Годовая оплата:</span>
-                    <strong style={{ marginLeft: '8px', color: '#667eea' }}>
-                      {formatMoney(
-                        (parseFloat(formData.base_price_yearly) || 0) * 100 +
-                        Math.max(0, 10 - (parseInt(formData.users_included) || 1)) *
-                        (parseFloat(formData.price_per_user_yearly) || 0) * 100
-                      )}
-                    </strong>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="base_yearly">За год (₽)</Label>
+                  <Input
+                    id="base_yearly"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.base_price_yearly}
+                    onChange={(e) => setFormData({ ...formData, base_price_yearly: e.target.value })}
+                    placeholder="0"
+                  />
                 </div>
               </div>
             </div>
 
-            <div className={modalStyles.footer}>
-              <button
-                className={`${modalStyles.button} ${modalStyles.secondary}`}
-                onClick={closeModal}
-                disabled={loading}
-              >
-                Отмена
-              </button>
-              <button
-                className={`${modalStyles.button} ${modalStyles.primary}`}
-                onClick={handleSave}
-                disabled={loading}
-              >
-                {loading ? 'Сохранение...' : 'Сохранить цены'}
-              </button>
+            <div className="space-y-4">
+              <h4 className="font-medium text-gray-700">За дополнительного пользователя</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="user_monthly">За месяц (₽)</Label>
+                  <Input
+                    id="user_monthly"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.price_per_user_monthly}
+                    onChange={(e) => setFormData({ ...formData, price_per_user_monthly: e.target.value })}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="user_yearly">За год (₽)</Label>
+                  <Input
+                    id="user_yearly"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.price_per_user_yearly}
+                    onChange={(e) => setFormData({ ...formData, price_per_user_yearly: e.target.value })}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="font-medium text-gray-700">Лимиты пользователей</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="users_included">Включено в тариф</Label>
+                  <Input
+                    id="users_included"
+                    type="number"
+                    min="1"
+                    value={formData.users_included}
+                    onChange={(e) => setFormData({ ...formData, users_included: e.target.value })}
+                    placeholder="1"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="max_users">Максимум (пусто = безлимит)</Label>
+                  <Input
+                    id="max_users"
+                    type="number"
+                    min="1"
+                    value={formData.max_users}
+                    onChange={(e) => setFormData({ ...formData, max_users: e.target.value })}
+                    placeholder="∞"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Предварительный расчёт */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="text-sm font-medium text-gray-700 mb-3">Пример расчёта для 10 пользователей</h4>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-500">Месячная оплата:</span>
+                  <span className="ml-2 font-semibold text-purple-600">
+                    {formatMoney(
+                      (parseFloat(formData.base_price_monthly) || 0) * 100 +
+                      Math.max(0, 10 - (parseInt(formData.users_included) || 1)) *
+                      (parseFloat(formData.price_per_user_monthly) || 0) * 100
+                    )}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Годовая оплата:</span>
+                  <span className="ml-2 font-semibold text-purple-600">
+                    {formatMoney(
+                      (parseFloat(formData.base_price_yearly) || 0) * 100 +
+                      Math.max(0, 10 - (parseInt(formData.users_included) || 1)) *
+                      (parseFloat(formData.price_per_user_yearly) || 0) * 100
+                    )}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={closeModal} disabled={loading}>
+              Отмена
+            </Button>
+            <Button onClick={handleSave} disabled={loading}>
+              {loading ? 'Сохранение...' : 'Сохранить цены'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

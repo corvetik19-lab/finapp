@@ -1,5 +1,8 @@
 import { createAdminClient } from '@/lib/supabase/admin';
-import styles from '../superadmin.module.css';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Users, Shield, UserCog, User } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 function formatDateTime(dateStr: string): string {
   return new Date(dateStr).toLocaleString('ru-RU', {
@@ -76,138 +79,142 @@ export default async function UsersPage() {
   const regularUsers = users.filter(u => u.global_role === 'user').length;
 
   return (
-    <div>
-      <header className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>Все пользователи</h1>
-        <p className={styles.pageDescription}>
-          Список всех зарегистрированных пользователей на платформе
-        </p>
+    <div className="space-y-6">
+      <header>
+        <h1 className="text-2xl font-bold text-gray-900">Все пользователи</h1>
+        <p className="text-gray-500 mt-1">Список всех зарегистрированных пользователей на платформе</p>
       </header>
 
       {/* Статистика */}
-      <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <div className={styles.statHeader}>
-            <span className={styles.statLabel}>Всего пользователей</span>
-            <div className={styles.statIcon}>
-              <span className="material-icons">group</span>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-gray-500 font-medium">Всего пользователей</span>
+              <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                <Users className="h-5 w-5 text-gray-600" />
+              </div>
             </div>
-          </div>
-          <div className={styles.statValue}>{users.length}</div>
-        </div>
+            <div className="text-2xl font-bold text-gray-900">{users.length}</div>
+          </CardContent>
+        </Card>
 
-        <div className={`${styles.statCard} ${styles.highlight}`}>
-          <div className={styles.statHeader}>
-            <span className={styles.statLabel}>Супер-админы</span>
-            <div className={styles.statIcon}>
-              <span className="material-icons">admin_panel_settings</span>
+        <Card className="bg-gradient-to-br from-purple-600 to-blue-600 text-white border-0">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-white/80 font-medium">Супер-админы</span>
+              <div className="h-10 w-10 rounded-lg bg-white/20 flex items-center justify-center">
+                <Shield className="h-5 w-5 text-white" />
+              </div>
             </div>
-          </div>
-          <div className={styles.statValue}>{superAdmins}</div>
-        </div>
+            <div className="text-2xl font-bold">{superAdmins}</div>
+          </CardContent>
+        </Card>
 
-        <div className={styles.statCard}>
-          <div className={styles.statHeader}>
-            <span className={styles.statLabel}>Админы</span>
-            <div className={styles.statIcon}>
-              <span className="material-icons">manage_accounts</span>
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-gray-500 font-medium">Админы</span>
+              <div className="h-10 w-10 rounded-lg bg-green-50 flex items-center justify-center">
+                <UserCog className="h-5 w-5 text-green-600" />
+              </div>
             </div>
-          </div>
-          <div className={styles.statValue}>{admins}</div>
-        </div>
+            <div className="text-2xl font-bold text-gray-900">{admins}</div>
+          </CardContent>
+        </Card>
 
-        <div className={styles.statCard}>
-          <div className={styles.statHeader}>
-            <span className={styles.statLabel}>Пользователи</span>
-            <div className={styles.statIcon}>
-              <span className="material-icons">person</span>
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-gray-500 font-medium">Пользователи</span>
+              <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                <User className="h-5 w-5 text-blue-600" />
+              </div>
             </div>
-          </div>
-          <div className={styles.statValue}>{regularUsers}</div>
-        </div>
+            <div className="text-2xl font-bold text-gray-900">{regularUsers}</div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Таблица пользователей */}
-      <div className={styles.tableContainer}>
-        <div className={styles.tableHeader}>
-          <h3 className={styles.tableTitle}>Пользователи ({users.length})</h3>
-        </div>
-
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Пользователь</th>
-              <th>Email</th>
-              <th>Глобальная роль</th>
-              <th>Организации</th>
-              <th>Регистрация</th>
-              <th>Последний вход</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user.id}>
-                <td>
-                  <div className={styles.orgCell}>
-                    <div className={styles.orgAvatar} style={{ 
-                      width: '36px', 
-                      height: '36px', 
-                      fontSize: '14px',
-                      background: user.global_role === 'super_admin' 
-                        ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                        : user.global_role === 'admin'
-                        ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-                        : 'linear-gradient(135deg, #94a3b8 0%, #64748b 100%)'
-                    }}>
-                      {user.full_name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || '?'}
-                    </div>
-                    <span>{user.full_name || 'Без имени'}</span>
-                  </div>
-                </td>
-                <td>{user.email}</td>
-                <td>
-                  <span className={`${styles.statusBadge} ${
-                    user.global_role === 'super_admin' ? styles.active :
-                    user.global_role === 'admin' ? styles.trial : ''
-                  }`} style={{
-                    background: user.global_role === 'super_admin' ? '#f3e8ff' : undefined,
-                    color: user.global_role === 'super_admin' ? '#7c3aed' : undefined,
-                  }}>
-                    {user.global_role === 'super_admin' ? 'Супер-админ' :
-                     user.global_role === 'admin' ? 'Админ' : 'Пользователь'}
-                  </span>
-                </td>
-                <td>
-                  {user.memberships.length > 0 ? (
-                    <div style={{ fontSize: '13px' }}>
-                      {user.memberships.slice(0, 2).map((m, i) => (
-                        <div key={i} style={{ marginBottom: '2px' }}>
-                          <strong>{m.organization}</strong>
-                          <span style={{ color: '#64748b' }}> ({m.role})</span>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Пользователи ({users.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Пользователь</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Роль</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Организации</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Регистрация</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Последний вход</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((user) => (
+                  <tr key={user.id} className="border-b last:border-0 hover:bg-gray-50">
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "h-9 w-9 rounded-lg flex items-center justify-center text-white font-semibold text-sm",
+                          user.global_role === 'super_admin' 
+                            ? 'bg-gradient-to-br from-purple-600 to-blue-600'
+                            : user.global_role === 'admin'
+                            ? 'bg-gradient-to-br from-green-500 to-emerald-600'
+                            : 'bg-gradient-to-br from-gray-400 to-gray-500'
+                        )}>
+                          {user.full_name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || '?'}
                         </div>
-                      ))}
-                      {user.memberships.length > 2 && (
-                        <div style={{ color: '#94a3b8' }}>
-                          +{user.memberships.length - 2} ещё
+                        <span className="font-medium text-gray-900">{user.full_name || 'Без имени'}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-gray-600">{user.email}</td>
+                    <td className="py-3 px-4">
+                      <Badge variant={
+                        user.global_role === 'super_admin' ? 'default' :
+                        user.global_role === 'admin' ? 'secondary' : 'outline'
+                      } className={
+                        user.global_role === 'super_admin' ? 'bg-purple-100 text-purple-700 hover:bg-purple-100' : ''
+                      }>
+                        {user.global_role === 'super_admin' ? 'Супер-админ' :
+                         user.global_role === 'admin' ? 'Админ' : 'Пользователь'}
+                      </Badge>
+                    </td>
+                    <td className="py-3 px-4">
+                      {user.memberships.length > 0 ? (
+                        <div className="text-sm">
+                          {user.memberships.slice(0, 2).map((m, i) => (
+                            <div key={i} className="mb-0.5">
+                              <span className="font-medium">{m.organization}</span>
+                              <span className="text-gray-500 text-xs ml-1">({m.role})</span>
+                            </div>
+                          ))}
+                          {user.memberships.length > 2 && (
+                            <div className="text-gray-400 text-xs">+{user.memberships.length - 2} ещё</div>
+                          )}
                         </div>
+                      ) : (
+                        <span className="text-gray-400">—</span>
                       )}
-                    </div>
-                  ) : (
-                    <span style={{ color: '#94a3b8' }}>—</span>
-                  )}
-                </td>
-                <td>{formatDateTime(user.created_at)}</td>
-                <td>
-                  {user.last_sign_in_at 
-                    ? formatDateTime(user.last_sign_in_at) 
-                    : <span style={{ color: '#94a3b8' }}>Никогда</span>
-                  }
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                    </td>
+                    <td className="py-3 px-4 text-gray-600 text-sm">{formatDateTime(user.created_at)}</td>
+                    <td className="py-3 px-4 text-sm">
+                      {user.last_sign_in_at 
+                        ? <span className="text-gray-600">{formatDateTime(user.last_sign_in_at)}</span>
+                        : <span className="text-gray-400">Никогда</span>
+                      }
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

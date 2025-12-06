@@ -1,9 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import styles from "./Bookmarks.module.css";
 import BookmarkCard from "./BookmarkCard";
 import BookmarkModal from "./BookmarkModal";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { Plus, Search, Star, Loader2, Bookmark } from "lucide-react";
 
 type Bookmark = {
   id: string;
@@ -195,120 +199,34 @@ export default function BookmarksContent() {
   }
 
   return (
-    <div className={styles.container}>
-      <header className={styles.header}>
-        <div className={styles.titleGroup}>
-          <h1 className={styles.title}>
-            <span className={styles.icon}>🔖</span>
-            Закладки
-          </h1>
-          <p className={styles.subtitle}>
-            Сохранённые ссылки и полезные ресурсы
-          </p>
-        </div>
-        <button onClick={handleCreate} className={styles.createBtn}>
-          <span className="material-icons">add</span>
-          Добавить закладку
-        </button>
-      </header>
-
-      {/* Фильтры */}
-      <div className={styles.filters}>
-        <div className={styles.searchBox}>
-          <span className="material-icons">search</span>
-          <input
-            type="text"
-            placeholder="Поиск по названию, описанию, URL, тегам..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={styles.searchInput}
-          />
-        </div>
-
-        <div className={styles.filterRow}>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className={styles.select}
-          >
-            <option value="all">Все категории</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-
-          <button
-            onClick={() => setShowFavorites(!showFavorites)}
-            className={`${styles.filterBtn} ${showFavorites ? styles.active : ""}`}
-          >
-            <span className="material-icons">
-              {showFavorites ? "star" : "star_border"}
-            </span>
-            Избранное
-          </button>
-        </div>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div><h1 className="text-2xl font-bold flex items-center gap-2"><Bookmark className="h-6 w-6" />Закладки</h1><p className="text-muted-foreground">Сохранённые ссылки и ресурсы</p></div>
+        <Button onClick={handleCreate}><Plus className="h-4 w-4 mr-1" />Добавить</Button>
       </div>
 
-      {/* Статистика */}
-      <div className={styles.stats}>
-        <div className={styles.statCard}>
-          <span className={styles.statValue}>{bookmarks.length}</span>
-          <span className={styles.statLabel}>Всего закладок</span>
-        </div>
-        <div className={styles.statCard}>
-          <span className={styles.statValue}>
-            {bookmarks.filter((b) => b.is_favorite).length}
-          </span>
-          <span className={styles.statLabel}>Избранных</span>
-        </div>
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="Поиск..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" /></div>
+        <Select value={selectedCategory} onValueChange={setSelectedCategory}><SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Все категории</SelectItem>{categories.map((cat) => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select>
+        <Button variant={showFavorites ? "default" : "outline"} onClick={() => setShowFavorites(!showFavorites)}><Star className={`h-4 w-4 mr-1 ${showFavorites ? "fill-current" : ""}`} />Избранное</Button>
       </div>
 
-      {/* Список закладок */}
+      <div className="grid grid-cols-2 gap-4">
+        <Card><CardContent className="pt-4 text-center"><p className="text-3xl font-bold">{bookmarks.length}</p><p className="text-sm text-muted-foreground">Всего</p></CardContent></Card>
+        <Card><CardContent className="pt-4 text-center"><p className="text-3xl font-bold">{bookmarks.filter((b) => b.is_favorite).length}</p><p className="text-sm text-muted-foreground">Избранных</p></CardContent></Card>
+      </div>
+
       {isLoading ? (
-        <div className={styles.loading}>
-          <div className={styles.spinner}></div>
-          <p>Загрузка закладок...</p>
-        </div>
+        <div className="flex flex-col items-center py-12"><Loader2 className="h-8 w-8 animate-spin" /><p className="text-muted-foreground mt-2">Загрузка...</p></div>
       ) : filteredBookmarks.length === 0 ? (
-        <div className={styles.empty}>
-          <span className={styles.emptyIcon}>🔖</span>
-          <h3>Закладки не найдены</h3>
-          <p>
-            {searchQuery || selectedCategory !== "all" || showFavorites
-              ? "Попробуйте изменить фильтры"
-              : "Добавьте свою первую закладку"}
-          </p>
-          {!searchQuery && selectedCategory === "all" && !showFavorites && (
-            <button onClick={handleCreate} className={styles.emptyBtn}>
-              Добавить закладку
-            </button>
-          )}
-        </div>
+        <Card className="text-center py-12"><CardContent><Bookmark className="h-16 w-16 mx-auto text-muted-foreground mb-4" /><h3 className="text-lg font-semibold">Закладки не найдены</h3><p className="text-muted-foreground mb-4">{searchQuery || selectedCategory !== "all" || showFavorites ? "Измените фильтры" : "Добавьте первую закладку"}</p>{!searchQuery && selectedCategory === "all" && !showFavorites && <Button onClick={handleCreate}>Добавить</Button>}</CardContent></Card>
       ) : (
-        <div className={styles.grid}>
-          {filteredBookmarks.map((bookmark) => (
-            <BookmarkCard
-              key={bookmark.id}
-              bookmark={bookmark}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onToggleFavorite={handleToggleFavorite}
-              onVisit={handleVisit}
-            />
-          ))}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredBookmarks.map((bookmark) => <BookmarkCard key={bookmark.id} bookmark={bookmark} onEdit={handleEdit} onDelete={handleDelete} onToggleFavorite={handleToggleFavorite} onVisit={handleVisit} />)}
         </div>
       )}
 
-      {/* Модальное окно */}
-      {isModalOpen && (
-        <BookmarkModal
-          bookmark={editingBookmark}
-          onClose={handleModalClose}
-          categories={categories}
-        />
-      )}
+      {isModalOpen && <BookmarkModal bookmark={editingBookmark} onClose={handleModalClose} categories={categories} />}
     </div>
   );
 }

@@ -1,7 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import styles from './LossReasonModal.module.css';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, X, Upload, AlertCircle } from 'lucide-react';
 
 interface LossReasonModalProps {
   tenderName: string;
@@ -25,7 +31,6 @@ export function LossReasonModal({ tenderName, onSubmit, onCancel }: LossReasonMo
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      // Проверка размера файла (макс 10MB)
       if (selectedFile.size > 10 * 1024 * 1024) {
         setError('Размер файла не должен превышать 10 МБ');
         return;
@@ -37,23 +42,18 @@ export function LossReasonModal({ tenderName, onSubmit, onCancel }: LossReasonMo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!reason.trim()) {
       setError('Укажите причину проигрыша');
       return;
     }
-
     try {
       setIsSubmitting(true);
       setError(null);
-      
-      // Подготавливаем информацию о победителе
       const winnerInfo = {
         winner_inn: winnerInn.trim() || undefined,
         winner_name: winnerName.trim() || undefined,
-        winner_price: winnerPrice ? parseFloat(winnerPrice) * 100 : undefined, // рубли -> копейки
+        winner_price: winnerPrice ? parseFloat(winnerPrice) * 100 : undefined,
       };
-
       await onSubmit(reason.trim(), file, winnerInfo);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка при сохранении');
@@ -62,144 +62,77 @@ export function LossReasonModal({ tenderName, onSubmit, onCancel }: LossReasonMo
   };
 
   return (
-    <div className={styles.overlay} onClick={onCancel}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.header}>
-          <h2 className={styles.title}>Причина проигрыша</h2>
-          <button
-            type="button"
-            className={styles.closeButton}
-            onClick={onCancel}
-            disabled={isSubmitting}
-          >
-            ✕
-          </button>
-        </div>
+    <Dialog open={true} onOpenChange={(open) => !open && onCancel()}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Причина проигрыша</DialogTitle>
+          <p className="text-sm text-gray-500 truncate">{tenderName}</p>
+        </DialogHeader>
 
-        <div className={styles.tenderName}>{tenderName}</div>
-
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.field}>
-            <label htmlFor="reason" className={styles.label}>
-              Причина проигрыша <span className={styles.required}>*</span>
-            </label>
-            <textarea
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="reason">Причина проигрыша <span className="text-red-500">*</span></Label>
+            <Textarea
               id="reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Опишите причину проигрыша тендера..."
-              rows={5}
-              className={styles.textarea}
+              rows={4}
               disabled={isSubmitting}
               required
             />
           </div>
 
-          <div className={styles.winnerSection}>
-            <h3 className={styles.sectionTitle}>Информация о победителе</h3>
-            
-            <div className={styles.field}>
-              <label htmlFor="winnerInn" className={styles.label}>
-                ИНН победителя
-              </label>
-              <input
-                type="text"
-                id="winnerInn"
-                value={winnerInn}
-                onChange={(e) => setWinnerInn(e.target.value)}
-                placeholder="1234567890"
-                className={styles.input}
-                disabled={isSubmitting}
-                maxLength={12}
-              />
+          <div className="space-y-3 p-3 bg-gray-50 rounded-lg">
+            <h4 className="font-medium text-sm">Информация о победителе</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="winnerInn" className="text-xs">ИНН победителя</Label>
+                <Input id="winnerInn" value={winnerInn} onChange={(e) => setWinnerInn(e.target.value)} placeholder="1234567890" disabled={isSubmitting} maxLength={12} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="winnerPrice" className="text-xs">Цена победы (руб.)</Label>
+                <Input type="number" id="winnerPrice" value={winnerPrice} onChange={(e) => setWinnerPrice(e.target.value)} placeholder="1000000.00" disabled={isSubmitting} step="0.01" min="0" />
+              </div>
             </div>
-
-            <div className={styles.field}>
-              <label htmlFor="winnerName" className={styles.label}>
-                Название победителя
-              </label>
-              <input
-                type="text"
-                id="winnerName"
-                value={winnerName}
-                onChange={(e) => setWinnerName(e.target.value)}
-                placeholder="ООО «Название компании»"
-                className={styles.input}
-                disabled={isSubmitting}
-              />
-            </div>
-
-            <div className={styles.field}>
-              <label htmlFor="winnerPrice" className={styles.label}>
-                Цена победы (руб.)
-              </label>
-              <input
-                type="number"
-                id="winnerPrice"
-                value={winnerPrice}
-                onChange={(e) => setWinnerPrice(e.target.value)}
-                placeholder="1000000.00"
-                className={styles.input}
-                disabled={isSubmitting}
-                step="0.01"
-                min="0"
-              />
+            <div className="space-y-1">
+              <Label htmlFor="winnerName" className="text-xs">Название победителя</Label>
+              <Input id="winnerName" value={winnerName} onChange={(e) => setWinnerName(e.target.value)} placeholder="ООО «Название компании»" disabled={isSubmitting} />
             </div>
           </div>
 
-          <div className={styles.field}>
-            <label htmlFor="file" className={styles.label}>
-              Прикрепить документ (необязательно)
-            </label>
-            <input
-              type="file"
-              id="file"
-              onChange={handleFileChange}
-              className={styles.fileInput}
-              disabled={isSubmitting}
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-            />
+          <div className="space-y-2">
+            <Label htmlFor="file">Прикрепить документ</Label>
+            <div className="flex items-center gap-2">
+              <Input type="file" id="file" onChange={handleFileChange} disabled={isSubmitting} accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" className="flex-1" />
+            </div>
             {file && (
-              <div className={styles.fileInfo}>
-                <span className={styles.fileName}>{file.name}</span>
-                <button
-                  type="button"
-                  onClick={() => setFile(null)}
-                  className={styles.removeFile}
-                  disabled={isSubmitting}
-                >
-                  ✕
-                </button>
+              <div className="flex items-center gap-2 p-2 bg-blue-50 rounded text-sm">
+                <Upload className="h-4 w-4 text-blue-600" />
+                <span className="flex-1 truncate">{file.name}</span>
+                <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => setFile(null)} disabled={isSubmitting}>
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
             )}
-            <div className={styles.hint}>
-              Поддерживаемые форматы: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG (макс. 10 МБ)
-            </div>
+            <p className="text-xs text-gray-500">PDF, DOC, DOCX, XLS, XLSX, JPG, PNG (макс. 10 МБ)</p>
           </div>
 
           {error && (
-            <div className={styles.error}>{error}</div>
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
 
-          <div className={styles.actions}>
-            <button
-              type="button"
-              onClick={onCancel}
-              className={styles.cancelButton}
-              disabled={isSubmitting}
-            >
-              Отмена
-            </button>
-            <button
-              type="submit"
-              className={styles.submitButton}
-              disabled={isSubmitting || !reason.trim()}
-            >
-              {isSubmitting ? 'Сохранение...' : 'Сохранить'}
-            </button>
-          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Отмена</Button>
+            <Button type="submit" disabled={isSubmitting || !reason.trim()}>
+              {isSubmitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Сохранение...</> : 'Сохранить'}
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

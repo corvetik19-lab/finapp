@@ -7,7 +7,8 @@ import { SubscriptionModal } from './SubscriptionModal';
 import { PaymentModal } from './PaymentModal';
 import { ConfirmModal } from './ConfirmModal';
 import { renewOrganizationSubscription, cancelOrganizationSubscription } from '@/app/(protected)/superadmin/actions';
-import styles from '@/app/(protected)/superadmin/superadmin.module.css';
+import { Button } from '@/components/ui/button';
+import { Pencil, RefreshCw, ArrowUpCircle, CreditCard, XCircle } from 'lucide-react';
 
 interface OrganizationActionsProps {
   organizationId: string;
@@ -58,48 +59,33 @@ export function OrganizationActions({
 
   return (
     <>
-      <div style={{ display: 'flex', gap: '12px', marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
-        <button
-          className={`${styles.button} ${styles.primary}`}
-          onClick={() => setShowSubscriptionModal(true)}
-        >
-          <span className="material-icons">edit</span>
+      <div className="flex flex-wrap gap-3 mt-5 pt-5 border-t border-gray-200">
+        <Button onClick={() => setShowSubscriptionModal(true)}>
+          <Pencil className="h-4 w-4 mr-2" />
           {subscription ? 'Редактировать' : 'Создать подписку'}
-        </button>
+        </Button>
 
         {subscription && subscription.status !== 'cancelled' && (
           <>
-            <button
-              className={`${styles.button} ${styles.secondary}`}
-              onClick={() => setShowRenewModal(true)}
-            >
-              <span className="material-icons">autorenew</span>
+            <Button variant="outline" onClick={() => setShowRenewModal(true)}>
+              <RefreshCw className="h-4 w-4 mr-2" />
               Продлить
-            </button>
+            </Button>
 
-            <button
-              className={`${styles.button} ${styles.secondary}`}
-              onClick={() => setShowSubscriptionModal(true)}
-            >
-              <span className="material-icons">upgrade</span>
+            <Button variant="outline" onClick={() => setShowSubscriptionModal(true)}>
+              <ArrowUpCircle className="h-4 w-4 mr-2" />
               Сменить тариф
-            </button>
+            </Button>
 
-            <button
-              className={`${styles.button} ${styles.secondary}`}
-              onClick={() => setShowPaymentModal(true)}
-            >
-              <span className="material-icons">add_card</span>
+            <Button variant="outline" onClick={() => setShowPaymentModal(true)}>
+              <CreditCard className="h-4 w-4 mr-2" />
               Добавить платёж
-            </button>
+            </Button>
 
-            <button
-              className={`${styles.button} ${styles.danger}`}
-              onClick={() => setShowCancelModal(true)}
-            >
-              <span className="material-icons">cancel</span>
+            <Button variant="destructive" onClick={() => setShowCancelModal(true)}>
+              <XCircle className="h-4 w-4 mr-2" />
               Отменить
-            </button>
+            </Button>
           </>
         )}
       </div>

@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import styles from "./CreditCardTransactionsModal.module.css";
 import { formatMoney } from "@/lib/utils/format";
 import type { CreditCard } from "./CreditCardsList";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { CreditCard as CreditCardIcon, AlertCircle, Receipt, ArrowDown, ArrowUp, ArrowLeftRight, Loader2 } from "lucide-react";
 
 type Transaction = {
   id: string;
@@ -75,123 +77,36 @@ export default function CreditCardTransactionsModal({
     }
   };
 
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
   return (
-    <div className={styles.modalOverlay} onClick={handleOverlayClick}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <header className={styles.modalHeader}>
-          <div className={styles.modalTitle}>
-            <span className="material-icons" aria-hidden>
-              credit_card
-            </span>
-            Транзакции: {card.bank}
-          </div>
-          <button
-            type="button"
-            className={styles.closeButton}
-            onClick={onClose}
-            aria-label="Закрыть"
-          >
-            <span className="material-icons" aria-hidden>
-              close
-            </span>
-          </button>
-        </header>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><CreditCardIcon className="h-5 w-5" />Транзакции: {card.bank}</DialogTitle>
+        </DialogHeader>
 
-        <div className={styles.modalBody}>
-          {isLoading && (
-            <div className={styles.loading}>
-              <div className={styles.spinner}></div>
-              <p>Загрузка транзакций...</p>
-            </div>
-          )}
-
-          {error && (
-            <div className={styles.error}>
-              <span className="material-icons" aria-hidden>
-                error_outline
+        <div className="max-h-[400px] overflow-y-auto space-y-2">
+          {isLoading && <div className="flex flex-col items-center py-8"><Loader2 className="h-8 w-8 animate-spin" /><p className="text-muted-foreground mt-2">Загрузка...</p></div>}
+          {error && <div className="flex items-center gap-2 text-destructive p-4 bg-destructive/10 rounded-lg"><AlertCircle className="h-5 w-5" />{error}</div>}
+          {!isLoading && !error && transactions.length === 0 && <div className="text-center py-8"><Receipt className="h-12 w-12 mx-auto text-muted-foreground" /><p className="mt-2 text-muted-foreground">Нет транзакций</p></div>}
+          
+          {!isLoading && !error && transactions.length > 0 && transactions.map((txn) => (
+            <div key={txn.id} className={`flex items-center gap-3 p-3 rounded-lg border ${txn.direction === 'income' ? 'bg-green-50 border-green-200' : txn.direction === 'transfer' ? 'bg-blue-50 border-blue-200' : 'bg-red-50 border-red-200'}`}>
+              <div className={`p-2 rounded-full ${txn.direction === 'income' ? 'bg-green-100' : txn.direction === 'transfer' ? 'bg-blue-100' : 'bg-red-100'}`}>
+                {txn.direction === 'income' ? <ArrowDown className="h-4 w-4 text-green-600" /> : txn.direction === 'transfer' ? <ArrowLeftRight className="h-4 w-4 text-blue-600" /> : <ArrowUp className="h-4 w-4 text-red-600" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium truncate">{txn.direction === 'transfer' ? (txn.transfer_from_account_id === card.id ? `→ ${txn.transfer_to_account_name || '?'}` : `← ${txn.transfer_from_account_name || '?'}`) : txn.counterparty || txn.note || 'Без описания'}</p>
+                <p className="text-xs text-muted-foreground">{formatDate(txn.occurred_at)}{txn.category_name && ` • ${txn.category_name}`}</p>
+              </div>
+              <span className={`font-bold ${txn.direction === 'income' ? 'text-green-600' : txn.direction === 'transfer' ? 'text-blue-600' : 'text-red-600'}`}>
+                {txn.direction === 'income' ? '−' : txn.direction === 'transfer' ? '' : '+'}{formatMoney(txn.amount, txn.currency)}
               </span>
-              {error}
             </div>
-          )}
-
-          {!isLoading && !error && transactions.length === 0 && (
-            <div className={styles.emptyState}>
-              <span className="material-icons" aria-hidden>
-                receipt_long
-              </span>
-              <p>Нет транзакций по этой карте</p>
-            </div>
-          )}
-
-          {!isLoading && !error && transactions.length > 0 && (
-            <div className={styles.transactionsList}>
-              {transactions.map((txn) => (
-                <div
-                  key={txn.id}
-                  className={`${styles.transactionItem} ${
-                    txn.direction === "income" ? styles.income : txn.direction === "transfer" ? styles.transfer : styles.expense
-                  }`}
-                >
-                  <div className={styles.transactionIcon}>
-                    <span className="material-icons" aria-hidden>
-                      {txn.direction === "income" ? "arrow_downward" : txn.direction === "transfer" ? "swap_horiz" : "arrow_upward"}
-                    </span>
-                  </div>
-
-                  <div className={styles.transactionInfo}>
-                    <div className={styles.transactionMain}>
-                      <span className={styles.transactionCounterparty}>
-                        {txn.direction === "transfer"
-                          ? txn.transfer_from_account_id === card.id
-                            ? `Перевод → ${txn.transfer_to_account_name || "?"}`
-                            : `Перевод ← ${txn.transfer_from_account_name || "?"}`
-                          : txn.counterparty || txn.note || "Без описания"}
-                      </span>
-                      {txn.category_name && (
-                        <span className={styles.transactionCategory}>{txn.category_name}</span>
-                      )}
-                    </div>
-                    <div className={styles.transactionDate}>{formatDate(txn.occurred_at)}</div>
-                  </div>
-
-                  <div className={styles.transactionAmount}>
-                    <span
-                      className={
-                        txn.direction === "income"
-                          ? styles.amountIncome
-                          : txn.direction === "transfer"
-                            ? styles.amountTransfer
-                            : styles.amountExpense
-                      }
-                    >
-                      {txn.direction === "income" 
-                        ? "−" 
-                        : txn.direction === "transfer"
-                          ? txn.transfer_from_account_id === card.id
-                            ? "→"
-                            : "←"
-                          : "+"}
-                      {formatMoney(txn.amount, txn.currency)}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          ))}
         </div>
 
-        <div className={styles.modalFooter}>
-          <button type="button" className={styles.btnSecondary} onClick={onClose}>
-            Закрыть
-          </button>
-        </div>
-      </div>
-    </div>
+        <DialogFooter><Button variant="outline" onClick={onClose}>Закрыть</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

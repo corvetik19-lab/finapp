@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import styles from "./TelegramSettings.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { MessageCircle, CheckCircle, Link as LinkIcon, Loader2 } from "lucide-react";
 
 interface TelegramSettings {
   telegram_user_id: string | null;
@@ -97,150 +101,57 @@ export default function TelegramSettingsClient() {
   }
 
   if (loading) {
-    return <div className={styles.loading}>Загрузка...</div>;
+    return <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   const isLinked = settings?.telegram_user_id !== null;
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>💬 Telegram Бот</h1>
-        <p className={styles.subtitle}>
-          Управляйте финансами прямо из Telegram
-        </p>
-      </div>
+    <div className="space-y-6">
+      <div><h1 className="text-2xl font-bold flex items-center gap-2"><MessageCircle className="h-6 w-6" />Telegram Бот</h1><p className="text-muted-foreground">Управляйте финансами из Telegram</p></div>
 
-      {message && (
-        <div className={`${styles.message} ${styles[message.type]}`}>
-          {message.type === "success" ? "✅" : "❌"} {message.text}
-        </div>
-      )}
+      {message && <Alert variant={message.type === "error" ? "destructive" : "default"}><AlertDescription>{message.text}</AlertDescription></Alert>}
 
       {isLinked && settings ? (
-        <div className={styles.linkedCard}>
-          <div className={styles.linkedHeader}>
-            <div className={styles.linkedIcon}>✅</div>
-            <div>
-              <div className={styles.linkedTitle}>Telegram подключен</div>
-              <div className={styles.linkedUsername}>
-                @{settings.telegram_username || "без username"}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-8 w-8 text-green-500" />
+              <div><CardTitle>Telegram подключен</CardTitle><p className="text-muted-foreground">@{settings.telegram_username || "без username"}</p></div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div><span className="text-muted-foreground">User ID:</span> <Badge variant="secondary">{settings.telegram_user_id}</Badge></div>
+              {settings.telegram_linked_at && <div><span className="text-muted-foreground">Подключено:</span> {new Date(settings.telegram_linked_at).toLocaleDateString("ru-RU")}</div>}
+            </div>
+            <Button variant="destructive" onClick={unlinkTelegram}>Отвязать</Button>
+            <div className="pt-4 border-t">
+              <h3 className="font-semibold mb-2">Команды:</h3>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div><code className="bg-muted px-1 rounded">/balance</code> — Баланс</div>
+                <div><code className="bg-muted px-1 rounded">/stats</code> — Статистика</div>
+                <div><code className="bg-muted px-1 rounded">/budgets</code> — Бюджеты</div>
+                <div><code className="bg-muted px-1 rounded">/add 500 кофе</code> — Расход</div>
               </div>
             </div>
-          </div>
-
-          <div className={styles.linkedInfo}>
-            <div className={styles.infoItem}>
-              <div className={styles.infoLabel}>User ID:</div>
-              <div className={styles.infoValue}>{settings.telegram_user_id}</div>
-            </div>
-            {settings.telegram_linked_at && (
-              <div className={styles.infoItem}>
-                <div className={styles.infoLabel}>Подключено:</div>
-                <div className={styles.infoValue}>
-                  {new Date(settings.telegram_linked_at).toLocaleDateString("ru-RU")}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <button className={styles.unlinkBtn} onClick={unlinkTelegram}>
-            Отвязать аккаунт
-          </button>
-
-          <div className={styles.commands}>
-            <h3>📱 Доступные команды:</h3>
-            <div className={styles.commandsList}>
-              <div className={styles.command}>
-                <code>/balance</code>
-                <span>Показать баланс</span>
-              </div>
-              <div className={styles.command}>
-                <code>/stats</code>
-                <span>Статистика за месяц</span>
-              </div>
-              <div className={styles.command}>
-                <code>/budgets</code>
-                <span>Состояние бюджетов</span>
-              </div>
-              <div className={styles.command}>
-                <code>/add 500 кофе</code>
-                <span>Добавить расход</span>
-              </div>
-            </div>
-            <p className={styles.commandsNote}>
-              Также поддерживаются естественные команды: &quot;Покажи баланс&quot;, &quot;Добавь 1000р на продукты&quot;
-            </p>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       ) : (
-        <div className={styles.unlinkCard}>
-          <div className={styles.steps}>
-            <h3>🚀 Как подключить:</h3>
-            <div className={styles.step}>
-              <div className={styles.stepNumber}>1</div>
-              <div className={styles.stepContent}>
-                <div className={styles.stepTitle}>Найдите бота</div>
-                <div className={styles.stepDesc}>
-                  Откройте Telegram и найдите нашего бота:
-                  <br />
-                  <strong>@finapp_tracker_bot</strong>
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.step}>
-              <div className={styles.stepNumber}>2</div>
-              <div className={styles.stepContent}>
-                <div className={styles.stepTitle}>Сгенерируйте код</div>
-                <div className={styles.stepDesc}>
-                  Нажмите кнопку ниже, чтобы получить одноразовый код привязки
-                </div>
-              </div>
-            </div>
-
+        <Card>
+          <CardHeader><CardTitle>Как подключить</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex gap-4"><Badge className="h-8 w-8 flex items-center justify-center rounded-full">1</Badge><div><p className="font-medium">Найдите бота</p><p className="text-sm text-muted-foreground">@finapp_tracker_bot</p></div></div>
+            <div className="flex gap-4"><Badge className="h-8 w-8 flex items-center justify-center rounded-full">2</Badge><div><p className="font-medium">Сгенерируйте код</p></div></div>
             {linkCode ? (
-              <div className={styles.codeCard}>
-                <div className={styles.codeLabel}>Ваш код привязки:</div>
-                <div className={styles.code}>{linkCode}</div>
-                <div className={styles.codeHint}>
-                  ⏱️ Код действителен 10 минут
-                </div>
-              </div>
+              <Card className="bg-muted"><CardContent className="pt-4 text-center"><p className="text-sm text-muted-foreground">Код привязки:</p><p className="text-3xl font-mono font-bold my-2">{linkCode}</p><p className="text-xs text-muted-foreground">Действителен 10 минут</p></CardContent></Card>
             ) : (
-              <button
-                className={styles.generateBtn}
-                onClick={generateLinkCode}
-                disabled={generatingCode}
-              >
-                {generatingCode ? "Генерируем..." : "🔗 Сгенерировать код"}
-              </button>
+              <Button onClick={generateLinkCode} disabled={generatingCode}>{generatingCode ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Генерация...</> : <><LinkIcon className="h-4 w-4 mr-1" />Сгенерировать код</>}</Button>
             )}
-
-            <div className={styles.step}>
-              <div className={styles.stepNumber}>3</div>
-              <div className={styles.stepContent}>
-                <div className={styles.stepTitle}>Отправьте код боту</div>
-                <div className={styles.stepDesc}>
-                  Напишите боту:
-                  <br />
-                  <code>/start {linkCode || "ВАШ_КОД"}</code>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+            <div className="flex gap-4"><Badge className="h-8 w-8 flex items-center justify-center rounded-full">3</Badge><div><p className="font-medium">Отправьте боту</p><p className="text-sm text-muted-foreground"><code>/start {linkCode || "ВАШ_КОД"}</code></p></div></div>
+          </CardContent>
+        </Card>
       )}
-
-      <div className={styles.info}>
-        <h3>ℹ️ Информация</h3>
-        <ul>
-          <li>Бот работает через Telegram API</li>
-          <li>Все команды выполняются от вашего имени</li>
-          <li>Данные передаются по защищённому соединению</li>
-          <li>Вы можете отвязать бота в любой момент</li>
-        </ul>
-      </div>
     </div>
   );
 }

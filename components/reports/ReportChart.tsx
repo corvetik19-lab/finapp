@@ -4,7 +4,8 @@ import { useEffect, useRef } from "react";
 import { Chart, registerables } from "chart.js";
 import type { ReportData } from "@/lib/reports/types";
 import { getCategoryColor, formatCurrency } from "@/lib/reports/utils";
-import styles from "./ReportChart.module.css";
+import { Button } from "@/components/ui/button";
+import { FileText, Table, Trash2, BarChart3 } from "lucide-react";
 
 Chart.register(...registerables);
 
@@ -181,35 +182,35 @@ export default function ReportChart({
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h3 className={styles.title}>Предпросмотр отчета</h3>
-        <div className={styles.actions}>
+    <div className="bg-card rounded-lg border p-4">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold">Предпросмотр отчета</h3>
+        <div className="flex gap-2">
           {onExportPDF && (
-            <button className={styles.action} onClick={onExportPDF}>
-              <span className="material-icons">picture_as_pdf</span>
+            <Button size="sm" variant="outline" onClick={onExportPDF}>
+              <FileText className="h-4 w-4 mr-1" />
               PDF
-            </button>
+            </Button>
           )}
           {onExportExcel && (
-            <button className={styles.action} onClick={onExportExcel}>
-              <span className="material-icons">grid_on</span>
+            <Button size="sm" variant="outline" onClick={onExportExcel}>
+              <Table className="h-4 w-4 mr-1" />
               Excel
-            </button>
+            </Button>
           )}
           {onClear && (
-            <button className={styles.action} onClick={onClear}>
-              <span className="material-icons">delete_sweep</span>
+            <Button size="sm" variant="outline" onClick={onClear}>
+              <Trash2 className="h-4 w-4 mr-1" />
               Очистить
-            </button>
+            </Button>
           )}
         </div>
       </div>
 
-      <div className={styles.chartWrapper}>
+      <div className="h-80">
         {!data ? (
-          <div className={styles.empty}>
-            <span className="material-icons">assessment</span>
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+            <BarChart3 className="h-12 w-12 mb-4" />
             <p>Сформируйте отчёт для отображения графика</p>
           </div>
         ) : (

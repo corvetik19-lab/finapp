@@ -1,7 +1,9 @@
 'use client';
 
 import { Tender } from '@/lib/tenders/types';
-import styles from './tender-header.module.css';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Calendar, DollarSign, ExternalLink, MapPin, Building2, Users } from 'lucide-react';
 
 interface TenderHeaderProps {
   tender: Tender;
@@ -10,7 +12,7 @@ interface TenderHeaderProps {
 export function TenderHeader({ tender }: TenderHeaderProps) {
   const formatCurrency = (amount: number | null, currency: string = 'RUB') => {
     if (amount === null || amount === undefined) return '—';
-    const value = amount / 100; // копейки -> рубли
+    const value = amount / 100;
     return new Intl.NumberFormat('ru-RU', {
       style: 'currency',
       currency: currency,
@@ -32,112 +34,124 @@ export function TenderHeader({ tender }: TenderHeaderProps) {
   };
 
   return (
-    <div className={styles.header}>
-      {/* Компактный заголовок */}
-      <div className={styles.compactHeader}>
-        <div className={styles.titleRow}>
-          <h1 className={styles.title}>{tender.subject}</h1>
+    <div className="space-y-4">
+      {/* Заголовок */}
+      <div className="space-y-2">
+        <div className="flex items-start gap-3 flex-wrap">
+          <h1 className="text-2xl font-bold text-gray-900 flex-1">{tender.subject}</h1>
           {tender.stage && (
-            <span
-              className={styles.stageBadge}
-              style={{ backgroundColor: tender.stage.color || '#6b7280' }}
-            >
+            <Badge style={{ backgroundColor: tender.stage.color || '#6b7280' }} className="text-white">
               {tender.stage.name}
-            </span>
+            </Badge>
           )}
         </div>
-        
-        <div className={styles.subtitle}>
-          {tender.type?.name && <span className={styles.typeLabel}>{tender.type.name}</span>}
-          {tender.customer}
+        <div className="flex items-center gap-2 text-gray-600">
+          {tender.type?.name && <Badge variant="outline">{tender.type.name}</Badge>}
+          <span>{tender.customer}</span>
         </div>
       </div>
 
-      {/* Важная информация - компактно */}
-      <div className={styles.keyInfoSimple}>
-        <div className={styles.keyInfoSimpleItem}>
-          <span className={styles.keyInfoSimpleLabel}>Срок подачи заявок</span>
-          <span className={styles.keyInfoSimpleValue}>{formatDate(tender.submission_deadline)}</span>
-        </div>
+      {/* Ключевая информация */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <Calendar className="h-4 w-4" />
+                Срок подачи заявок
+              </div>
+              <div className="font-semibold">{formatDate(tender.submission_deadline)}</div>
+            </div>
 
-        <div className={styles.keyInfoSimpleItem}>
-          <span className={styles.keyInfoSimpleLabel}>НМЦК</span>
-          <span className={styles.keyInfoSimpleValue}>{formatCurrency(tender.nmck, tender.currency)}</span>
-        </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <DollarSign className="h-4 w-4" />
+                НМЦК
+              </div>
+              <div className="font-semibold text-blue-600">{formatCurrency(tender.nmck, tender.currency)}</div>
+            </div>
 
-        {tender.bid_price && tender.bid_price > 0 && (
-          <div className={styles.keyInfoSimpleItem}>
-            <span className={styles.keyInfoSimpleLabel}>Цена для торгов</span>
-            <span className={styles.keyInfoSimpleValue}>{formatCurrency(tender.bid_price, tender.currency)}</span>
-          </div>
-        )}
-
-        <div className={styles.keyInfoSimpleItem}>
-          <span className={styles.keyInfoSimpleLabel}>№ ЕИС</span>
-          <span className={styles.keyInfoSimpleValue}>
-            {tender.eis_url ? (
-              <a href={tender.eis_url} target="_blank" rel="noopener noreferrer" className={styles.eisLink}>
-                {tender.purchase_number}
-              </a>
-            ) : (
-              tender.purchase_number
+            {tender.bid_price && tender.bid_price > 0 && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <DollarSign className="h-4 w-4" />
+                  Цена для торгов
+                </div>
+                <div className="font-semibold text-green-600">{formatCurrency(tender.bid_price, tender.currency)}</div>
+              </div>
             )}
-          </span>
-        </div>
-      </div>
 
-      {/* Информация о победителе (для этапа "Проиграли") */}
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <ExternalLink className="h-4 w-4" />
+                № ЕИС
+              </div>
+              <div className="font-semibold">
+                {tender.eis_url ? (
+                  <a href={tender.eis_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    {tender.purchase_number}
+                  </a>
+                ) : (
+                  tender.purchase_number
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Информация о победителе */}
       {tender.stage?.name === 'Проиграли' && (tender.winner_inn || tender.winner_name || tender.winner_price) && (
-        <div className={styles.winnerInfo}>
-          <h3 className={styles.winnerInfoTitle}>Информация о победителе</h3>
-          <div className={styles.keyInfoSimple}>
-            {tender.winner_inn && (
-              <div className={styles.keyInfoSimpleItem}>
-                <span className={styles.keyInfoSimpleLabel}>ИНН победителя</span>
-                <span className={styles.keyInfoSimpleValue}>{tender.winner_inn}</span>
-              </div>
-            )}
-            {tender.winner_name && (
-              <div className={styles.keyInfoSimpleItem}>
-                <span className={styles.keyInfoSimpleLabel}>Название победителя</span>
-                <span className={styles.keyInfoSimpleValue}>{tender.winner_name}</span>
-              </div>
-            )}
-            {tender.winner_price && (
-              <div className={styles.keyInfoSimpleItem}>
-                <span className={styles.keyInfoSimpleLabel}>Цена победы</span>
-                <span className={styles.keyInfoSimpleValue}>{formatCurrency(tender.winner_price, tender.currency)}</span>
-              </div>
-            )}
-          </div>
-        </div>
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-4">
+            <h3 className="font-semibold text-red-800 mb-3">Информация о победителе</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {tender.winner_inn && (
+                <div className="space-y-1">
+                  <div className="text-sm text-red-600">ИНН победителя</div>
+                  <div className="font-medium">{tender.winner_inn}</div>
+                </div>
+              )}
+              {tender.winner_name && (
+                <div className="space-y-1">
+                  <div className="text-sm text-red-600">Название победителя</div>
+                  <div className="font-medium">{tender.winner_name}</div>
+                </div>
+              )}
+              {tender.winner_price && (
+                <div className="space-y-1">
+                  <div className="text-sm text-red-600">Цена победы</div>
+                  <div className="font-medium">{formatCurrency(tender.winner_price, tender.currency)}</div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Дополнительная информация - компактно */}
-      <div className={styles.additionalInfo}>
-        {tender.platform && (
-          <div className={styles.infoItem}>
-            <span className={styles.infoLabel}>Площадка:</span>
-            <span className={styles.infoValue}>{tender.platform}</span>
-          </div>
-        )}
-        
-        {tender.city && (
-          <div className={styles.infoItem}>
-            <span className={styles.infoLabel}>Город:</span>
-            <span className={styles.infoValue}>{tender.city}</span>
-          </div>
-        )}
-
-        {tender.responsible && tender.responsible.length > 0 && (
-          <div className={styles.infoItem}>
-            <span className={styles.infoLabel}>Ответственные:</span>
-            <span className={styles.infoValue}>
-              {tender.responsible.map(r => r.employee.full_name).join(', ')}
-            </span>
-          </div>
-        )}
-      </div>
+      {/* Дополнительная информация */}
+      {(tender.platform || tender.city || (tender.responsible && tender.responsible.length > 0)) && (
+        <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
+          {tender.platform && (
+            <div className="flex items-center gap-1">
+              <Building2 className="h-4 w-4" />
+              <span>{tender.platform}</span>
+            </div>
+          )}
+          {tender.city && (
+            <div className="flex items-center gap-1">
+              <MapPin className="h-4 w-4" />
+              <span>{tender.city}</span>
+            </div>
+          )}
+          {tender.responsible && tender.responsible.length > 0 && (
+            <div className="flex items-center gap-1">
+              <Users className="h-4 w-4" />
+              <span>{tender.responsible.map(r => r.employee.full_name).join(', ')}</span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

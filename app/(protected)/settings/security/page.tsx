@@ -1,63 +1,52 @@
 import { redirect } from "next/navigation";
 import { getCachedUser } from "@/lib/supabase/server";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Shield, Monitor } from "lucide-react";
 
 export default async function SecuritySettingsPage() {
-  const {
-    data: { user },
-  } = await getCachedUser();
+  const { data: { user } } = await getCachedUser();
 
   if (!user) {
     redirect("/login");
   }
 
   return (
-    <div>
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '8px' }}>Безопасность</h1>
-        <p style={{ color: '#64748b' }}>Настройки безопасности аккаунта</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold mb-2">Безопасность</h1>
+        <p className="text-muted-foreground">Настройки безопасности аккаунта</p>
       </div>
 
-      <div style={{ 
-        background: 'white', 
-        borderRadius: '12px', 
-        padding: '24px',
-        border: '1px solid #e2e8f0'
-      }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>
-          Двухфакторная аутентификация
-        </h2>
-        <p style={{ color: '#64748b', marginBottom: '16px' }}>
-          Добавьте дополнительный уровень защиты для вашего аккаунта
-        </p>
-        <button 
-          style={{
-            padding: '10px 20px',
-            background: '#667eea',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontWeight: 500
-          }}
-        >
-          Настроить 2FA
-        </button>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Двухфакторная аутентификация
+          </CardTitle>
+          <CardDescription>
+            Добавьте дополнительный уровень защиты для вашего аккаунта
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button>Настроить 2FA</Button>
+        </CardContent>
+      </Card>
 
-      <div style={{ 
-        background: 'white', 
-        borderRadius: '12px', 
-        padding: '24px',
-        border: '1px solid #e2e8f0',
-        marginTop: '16px'
-      }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>
-          Активные сессии
-        </h2>
-        <p style={{ color: '#64748b' }}>
-          Управление активными сессиями вашего аккаунта
-        </p>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Monitor className="h-5 w-5" />
+            Активные сессии
+          </CardTitle>
+          <CardDescription>
+            Управление активными сессиями вашего аккаунта
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">Здесь будут отображаться активные сессии</p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

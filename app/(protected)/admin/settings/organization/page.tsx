@@ -6,7 +6,6 @@ import { getOrganizations } from '@/lib/admin/organizations';
 import { getAllAuthUsers } from '@/lib/admin/users';
 import { OrganizationsList } from '@/components/admin/organizations-list';
 import { CreateOrganizationModal } from '@/components/admin/create-organization-modal';
-import styles from './AdminOrganizations.module.css';
 
 export default async function OrganizationSettingsPage() {
   const { data: { user } } = await getCachedUser();
@@ -27,19 +26,6 @@ export default async function OrganizationSettingsPage() {
     const organizations = await getOrganizations();
     const users = await getAllAuthUsers();
     
-    const { data: memberships } = await supabase
-        .from('company_members')
-        .select('company:companies(organization_id)')
-        .eq('user_id', user.id);
-
-    type MembershipWithCompany = {
-        company: { organization_id: string } | null;
-    };
-
-    const memberOrgIds = (memberships as unknown as MembershipWithCompany[])
-        ?.map((m) => m.company?.organization_id)
-        .filter((id): id is string => typeof id === 'string') || [];
-
     // Получаем organization_id для активной компании
     let activeOrgId: string | null = null;
     if (profile?.active_company_id) {
@@ -57,38 +43,37 @@ export default async function OrganizationSettingsPage() {
     const suspended = total - active;
 
     return (
-      <div className={styles.container}>
+      <div className="max-w-6xl mx-auto p-6 space-y-6">
           {/* Заголовок и действия */}
-          <div className={styles.header}>
+          <div className="flex items-center justify-between">
               <div>
-                  <h1 className={styles.title}>Организации</h1>
-                  <p className={styles.subtitle}>Управление клиентами и их доступом к модулям</p>
+                  <h1 className="text-2xl font-bold">Организации</h1>
+                  <p className="text-muted-foreground">Управление клиентами и их доступом к модулям</p>
               </div>
               <CreateOrganizationModal users={users} />
           </div>
 
           {/* Карточки статистики */}
-          <div className={styles.statsGrid}>
-              <div className={styles.statCard}>
-                  <div className={styles.statLabel}>Всего организаций</div>
-                  <div className={styles.statValue}>{total}</div>
+          <div className="grid grid-cols-3 gap-4">
+              <div className="bg-card rounded-lg border p-4">
+                  <div className="text-sm text-muted-foreground">Всего организаций</div>
+                  <div className="text-2xl font-bold">{total}</div>
               </div>
-              <div className={styles.statCard}>
-                  <div className={styles.statLabel}>Активные</div>
-                  <div className={`${styles.statValue} ${styles.success}`}>{active}</div>
+              <div className="bg-card rounded-lg border p-4">
+                  <div className="text-sm text-muted-foreground">Активные</div>
+                  <div className="text-2xl font-bold text-green-600">{active}</div>
               </div>
-              <div className={styles.statCard}>
-                  <div className={styles.statLabel}>Остановленные</div>
-                  <div className={`${styles.statValue} ${styles.warning}`}>{suspended}</div>
+              <div className="bg-card rounded-lg border p-4">
+                  <div className="text-sm text-muted-foreground">Остановленные</div>
+                  <div className="text-2xl font-bold text-yellow-600">{suspended}</div>
               </div>
           </div>
 
           {/* Список */}
-          <div className={styles.listContainer}>
+          <div className="bg-card rounded-lg border">
               <OrganizationsList
                   organizations={organizations}
                   isSuperAdmin={true}
-                  memberOrgIds={memberOrgIds}
                   activeOrgId={activeOrgId}
               />
           </div>

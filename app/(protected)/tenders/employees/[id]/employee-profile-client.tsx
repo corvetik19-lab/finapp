@@ -11,7 +11,7 @@ import { EmployeeTendersKanban } from '@/components/employees/EmployeeTendersKan
 import { EmployeeActivityChart } from '@/components/employees/EmployeeActivityChart';
 import { EmployeeDocuments } from '@/components/employees/EmployeeDocuments';
 import { EmployeeComparison } from '@/components/employees/EmployeeComparison';
-import styles from '../../tenders.module.css';
+import { Button } from '@/components/ui/button';
 
 interface EmployeeProfileClientProps {
   employeeId: string;
@@ -195,12 +195,7 @@ export function EmployeeProfileClient({ employeeId }: EmployeeProfileClientProps
             ⚠️ Ошибка
           </div>
           <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>{error || 'Сотрудник не найден'}</p>
-          <button
-            onClick={() => router.push('/tenders/employees')}
-            className={`${styles.btn} ${styles.btnPrimary}`}
-          >
-            ← Вернуться к списку
-          </button>
+          <Button onClick={() => router.push('/tenders/employees')}>← Вернуться</Button>
         </div>
       </div>
     );
@@ -211,25 +206,15 @@ export function EmployeeProfileClient({ employeeId }: EmployeeProfileClientProps
       {/* Заголовок */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.push('/tenders/employees')}
-            className={`${styles.btn} ${styles.btnSecondary}`}
-          >
-            ← Назад
-          </button>
+          <Button variant="outline" onClick={() => router.push('/tenders/employees')}>← Назад</Button>
           <h1 className="text-3xl font-bold text-gray-900">Профиль сотрудника</h1>
         </div>
-        <button
-          onClick={() => setIsEditModalOpen(true)}
-          className={`${styles.btn} ${styles.btnPrimary}`}
-        >
-          ✏️ Редактировать
-        </button>
+        <Button onClick={() => setIsEditModalOpen(true)}>✏️ Редактировать</Button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
         {/* Основная информация */}
-        <div className={styles.card} style={{ gridColumn: '1 / -1' }}>
+        <div className="rounded-lg border bg-card shadow-sm" style={{ gridColumn: '1 / -1' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', padding: '1.5rem', flexWrap: 'wrap' }}>
             {/* Аватар */}
             <AvatarUploader
@@ -288,40 +273,16 @@ export function EmployeeProfileClient({ employeeId }: EmployeeProfileClientProps
             </div>
 
             {/* Быстрые действия */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <a
-                href={`mailto:${employee.email}`}
-                className={`${styles.btn} ${styles.btnSecondary}`}
-                style={{ textDecoration: 'none', textAlign: 'center' }}
-              >
-                ✉️ Написать
-              </a>
-              {employee.phone && (
-                <a
-                  href={`tel:${employee.phone}`}
-                  className={`${styles.btn} ${styles.btnSecondary}`}
-                  style={{ textDecoration: 'none', textAlign: 'center' }}
-                >
-                  📞 Позвонить
-                </a>
-              )}
-              {employee.telegram && (
-                <a
-                  href={`https://t.me/${employee.telegram.replace('@', '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`${styles.btn} ${styles.btnSecondary}`}
-                  style={{ textDecoration: 'none', textAlign: 'center' }}
-                >
-                  💬 Telegram
-                </a>
-              )}
+            <div className="flex flex-col gap-2">
+              <a href={`mailto:${employee.email}`} className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium hover:bg-accent">✉️ Написать</a>
+              {employee.phone && <a href={`tel:${employee.phone}`} className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium hover:bg-accent">📞 Позвонить</a>}
+              {employee.telegram && <a href={`https://t.me/${employee.telegram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium hover:bg-accent">💬 Telegram</a>}
             </div>
           </div>
         </div>
 
         {/* Табы */}
-        <div className={styles.card} style={{ gridColumn: '1 / -1', padding: 0 }}>
+        <div className="rounded-lg border bg-card shadow-sm" style={{ gridColumn: '1 / -1', padding: 0 }}>
           <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0' }}>
             {[
               { id: 'info', label: '📋 Информация' },
@@ -355,7 +316,7 @@ export function EmployeeProfileClient({ employeeId }: EmployeeProfileClientProps
         {activeTab === 'info' && (
           <>
             {/* Контактная информация */}
-            <div className={styles.card}>
+            <div className="rounded-lg border bg-card shadow-sm">
               <div style={{ padding: '1.5rem' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1e293b', marginBottom: '1rem' }}>
                   📞 Контакты
@@ -388,7 +349,7 @@ export function EmployeeProfileClient({ employeeId }: EmployeeProfileClientProps
         </div>
 
         {/* Рабочая информация */}
-        <div className={styles.card}>
+        <div className="rounded-lg border bg-card shadow-sm">
           <div style={{ padding: '1.5rem' }}>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1e293b', marginBottom: '1rem' }}>
               💼 Рабочие данные
@@ -420,7 +381,7 @@ export function EmployeeProfileClient({ employeeId }: EmployeeProfileClientProps
 
             {/* Дополнительная информация */}
             {(employee.birth_date || employee.notes) && (
-              <div className={styles.card} style={{ gridColumn: '1 / -1' }}>
+              <div className="rounded-lg border bg-card shadow-sm" style={{ gridColumn: '1 / -1' }}>
                 <div style={{ padding: '1.5rem' }}>
                   <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1e293b', marginBottom: '1rem' }}>
                     📋 Дополнительно
@@ -451,7 +412,7 @@ export function EmployeeProfileClient({ employeeId }: EmployeeProfileClientProps
         {activeTab === 'tenders' && (
           <>
             {/* Статистика */}
-            <div className={styles.card} style={{ gridColumn: '1 / -1' }}>
+            <div className="rounded-lg border bg-card shadow-sm" style={{ gridColumn: '1 / -1' }}>
               <div style={{ padding: '1.5rem' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1e293b', marginBottom: '1rem' }}>
                   📊 Статистика по тендерам
@@ -486,7 +447,7 @@ export function EmployeeProfileClient({ employeeId }: EmployeeProfileClientProps
             </div>
 
             {/* Список тендеров */}
-            <div className={styles.card} style={{ gridColumn: '1 / -1' }}>
+            <div className="rounded-lg border bg-card shadow-sm" style={{ gridColumn: '1 / -1' }}>
               <div style={{ padding: '1.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                   <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1e293b' }}>
@@ -589,7 +550,7 @@ export function EmployeeProfileClient({ employeeId }: EmployeeProfileClientProps
 
         {/* Вкладка Канбан */}
         {activeTab === 'kanban' && (
-          <div className={styles.card} style={{ gridColumn: '1 / -1' }}>
+          <div className="rounded-lg border bg-card shadow-sm" style={{ gridColumn: '1 / -1' }}>
             <div style={{ padding: '1.5rem' }}>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1e293b', marginBottom: '1rem' }}>
                 📌 Канбан тендеров
@@ -602,7 +563,7 @@ export function EmployeeProfileClient({ employeeId }: EmployeeProfileClientProps
         {/* Вкладка Аналитика */}
         {activeTab === 'analytics' && (
           <>
-            <div className={styles.card} style={{ gridColumn: '1 / -1' }}>
+            <div className="rounded-lg border bg-card shadow-sm" style={{ gridColumn: '1 / -1' }}>
               <div style={{ padding: '1.5rem' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1e293b', marginBottom: '1rem' }}>
                   📈 Активность по месяцам
@@ -610,7 +571,7 @@ export function EmployeeProfileClient({ employeeId }: EmployeeProfileClientProps
                 <EmployeeActivityChart employeeId={employee.id} />
               </div>
             </div>
-            <div className={styles.card} style={{ gridColumn: '1 / -1' }}>
+            <div className="rounded-lg border bg-card shadow-sm" style={{ gridColumn: '1 / -1' }}>
               <div style={{ padding: '1.5rem' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1e293b', marginBottom: '1rem' }}>
                   👥 Сравнение с коллегами
@@ -623,7 +584,7 @@ export function EmployeeProfileClient({ employeeId }: EmployeeProfileClientProps
 
         {/* Вкладка Документы */}
         {activeTab === 'documents' && (
-          <div className={styles.card} style={{ gridColumn: '1 / -1' }}>
+          <div className="rounded-lg border bg-card shadow-sm" style={{ gridColumn: '1 / -1' }}>
             <div style={{ padding: '1.5rem' }}>
               <EmployeeDocuments employeeId={employee.id} />
             </div>
@@ -632,7 +593,7 @@ export function EmployeeProfileClient({ employeeId }: EmployeeProfileClientProps
 
         {/* Вкладка История */}
         {activeTab === 'history' && (
-          <div className={styles.card} style={{ gridColumn: '1 / -1' }}>
+          <div className="rounded-lg border bg-card shadow-sm" style={{ gridColumn: '1 / -1' }}>
             <div style={{ padding: '1.5rem' }}>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1e293b', marginBottom: '1rem' }}>
                 📜 История изменений

@@ -5,7 +5,9 @@ import { useState } from "react";
 import { ShipmentsTable } from "./ShipmentsTable";
 import { ShipmentFormModal } from "./ShipmentFormModal";
 import type { ShipmentFormInput } from "@/lib/logistics/service";
-import styles from "./ShipmentsManager.module.css";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Truck, Plus, Download, Printer, Package, CircleCheck, Clock } from "lucide-react";
 
 interface ShipmentsManagerProps {
   initialShipments: Shipment[];
@@ -41,82 +43,26 @@ export function ShipmentsManager({ initialShipments }: ShipmentsManagerProps) {
   };
 
   return (
-    <div className={styles.container}>
+    <div className="space-y-6">
       {/* Заголовок */}
-      <div className={styles.header}>
-        <div className={styles.titleSection}>
-          <h1 className={styles.title}>
-            🚚 Логистика
-          </h1>
-          <p className={styles.subtitle}>
-            Управление отправками и доставками
-          </p>
-        </div>
-        
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className={styles.addBtn}
-        >
-          <span className="material-icons">add</span>
-          Новая отправка
-        </button>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div><h1 className="text-2xl font-bold flex items-center gap-2"><Truck className="h-6 w-6" />Логистика</h1><p className="text-sm text-muted-foreground">Управление отправками и доставками</p></div>
+        <Button onClick={() => setIsModalOpen(true)}><Plus className="h-4 w-4 mr-1" />Новая отправка</Button>
       </div>
 
       {/* Статистика */}
-      <div className={styles.stats}>
-        <div className={styles.statCard}>
-          <div className={styles.statIcon}>📦</div>
-          <div className={styles.statInfo}>
-            <div className={styles.statValue}>{shipments.length}</div>
-            <div className={styles.statLabel}>Всего отправок</div>
-          </div>
-        </div>
-        
-        <div className={styles.statCard}>
-          <div className={styles.statIcon}>🚛</div>
-          <div className={styles.statInfo}>
-            <div className={styles.statValue}>
-              {shipments.filter(s => s.status === 'in_transit').length}
-            </div>
-            <div className={styles.statLabel}>В пути</div>
-          </div>
-        </div>
-        
-        <div className={styles.statCard}>
-          <div className={styles.statIcon}>✅</div>
-          <div className={styles.statInfo}>
-            <div className={styles.statValue}>
-              {shipments.filter(s => s.status === 'delivered').length}
-            </div>
-            <div className={styles.statLabel}>Доставлено</div>
-          </div>
-        </div>
-        
-        <div className={styles.statCard}>
-          <div className={styles.statIcon}>⏰</div>
-          <div className={styles.statInfo}>
-            <div className={styles.statValue}>
-              {shipments.filter(s => ['draft', 'confirmed', 'pending_pickup'].includes(s.status)).length}
-            </div>
-            <div className={styles.statLabel}>В ожидании</div>
-          </div>
-        </div>
+      <div className="grid grid-cols-4 gap-4">
+        <Card><CardContent className="pt-4 flex items-center gap-3"><Package className="h-5 w-5 text-blue-500" /><div><div className="text-xl font-bold">{shipments.length}</div><div className="text-xs text-muted-foreground">Всего отправок</div></div></CardContent></Card>
+        <Card><CardContent className="pt-4 flex items-center gap-3"><Truck className="h-5 w-5 text-orange-500" /><div><div className="text-xl font-bold">{shipments.filter(s => s.status === 'in_transit').length}</div><div className="text-xs text-muted-foreground">В пути</div></div></CardContent></Card>
+        <Card><CardContent className="pt-4 flex items-center gap-3"><CircleCheck className="h-5 w-5 text-green-500" /><div><div className="text-xl font-bold">{shipments.filter(s => s.status === 'delivered').length}</div><div className="text-xs text-muted-foreground">Доставлено</div></div></CardContent></Card>
+        <Card><CardContent className="pt-4 flex items-center gap-3"><Clock className="h-5 w-5 text-amber-500" /><div><div className="text-xl font-bold">{shipments.filter(s => ['draft', 'confirmed', 'pending_pickup'].includes(s.status)).length}</div><div className="text-xs text-muted-foreground">В ожидании</div></div></CardContent></Card>
       </div>
 
       {/* Быстрые действия */}
-      <div className={styles.quickActions}>
-        <button className={styles.quickActionBtn} onClick={() => setIsModalOpen(true)}>
-          <span className="material-icons">add_circle</span>
-          Новая отправка
-        </button>
-        <button className={styles.quickActionBtn}>
-          <span className="material-icons">file_download</span>
-          Экспорт
-        </button>
-        <button className={styles.quickActionBtn}>
-          <span className="material-icons">print</span>
-          Печать накладных
-        </button>
+      <div className="flex gap-2">
+        <Button variant="outline" onClick={() => setIsModalOpen(true)}><Plus className="h-4 w-4 mr-1" />Новая отправка</Button>
+        <Button variant="outline"><Download className="h-4 w-4 mr-1" />Экспорт</Button>
+        <Button variant="outline"><Printer className="h-4 w-4 mr-1" />Печать накладных</Button>
       </div>
 
       {/* Таблица */}

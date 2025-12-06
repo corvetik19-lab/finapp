@@ -1,7 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import styles from '../../tenders.module.css';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Download, Loader2 } from 'lucide-react';
 
 interface Payout {
   id: string;
@@ -79,13 +83,7 @@ export default function PayoutsReportPage() {
   };
 
   if (loading) {
-    return (
-      <div className="p-6">
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
-      </div>
-    );
+    return <div className="p-6 flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   const filteredPayouts = payouts.filter(p => {
@@ -107,145 +105,53 @@ export default function PayoutsReportPage() {
   };
 
   return (
-    <div className={styles.tendersContainer}>
-      <div className={styles.pageHeader}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h1 className={styles.pageTitle}>💸 Расходы</h1>
-            <p className={styles.pageDescription}>Выплаты поставщикам, сотрудникам и прочие расходы</p>
-          </div>
-          <button className={`${styles.btn} ${styles.btnPrimary}`}>
-            📥 Экспорт
-          </button>
-        </div>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div><h1 className="text-2xl font-bold">💸 Расходы</h1><p className="text-muted-foreground">Выплаты поставщикам, сотрудникам и прочие</p></div>
+        <Button><Download className="h-4 w-4 mr-1" />Экспорт</Button>
       </div>
 
-      {/* Ключевые метрики */}
-      <div className={styles.cardsGrid}>
-        <div className={`${styles.statCard} ${styles.info}`}>
-          <div className={styles.statLabel}>Всего выплат</div>
-          <div className={styles.statValue}>{formatCurrency(stats.total)}</div>
-          <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>{payouts.length} операций</div>
-        </div>
-        <div className={`${styles.statCard} ${styles.success}`}>
-          <div className={styles.statLabel}>Выплачено</div>
-          <div className={styles.statValue}>{formatCurrency(stats.paid)}</div>
-          <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>{((stats.paid / stats.total) * 100).toFixed(1)}% от общей суммы</div>
-        </div>
-        <div className={`${styles.statCard} ${styles.warning}`}>
-          <div className={styles.statLabel}>Ожидает выплаты</div>
-          <div className={styles.statValue}>{formatCurrency(stats.pending)}</div>
-          <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>Требует обработки</div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="border-l-4 border-l-blue-500"><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Всего выплат</p><p className="text-2xl font-bold">{formatCurrency(stats.total)}</p><p className="text-xs text-muted-foreground">{payouts.length} операций</p></CardContent></Card>
+        <Card className="border-l-4 border-l-green-500"><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Выплачено</p><p className="text-2xl font-bold text-green-600">{formatCurrency(stats.paid)}</p><p className="text-xs text-muted-foreground">{((stats.paid / stats.total) * 100).toFixed(1)}% от общей</p></CardContent></Card>
+        <Card className="border-l-4 border-l-yellow-500"><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Ожидает</p><p className="text-2xl font-bold text-yellow-600">{formatCurrency(stats.pending)}</p><p className="text-xs text-muted-foreground">Требует обработки</p></CardContent></Card>
       </div>
 
-      {/* Распределение по категориям */}
-      <div className={styles.card}>
-        <h3 className={styles.cardTitle}>Распределение по категориям</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#eff6ff', borderRadius: '12px' }}>
-            <div>
-              <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>Поставщики</div>
-              <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{payouts.filter(p => p.category === 'supplier').length} выплат</div>
-            </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#3b82f6' }}>{formatCurrency(stats.byCategory.supplier)}</div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f0fdf4', borderRadius: '12px' }}>
-            <div>
-              <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>Сотрудники</div>
-              <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{payouts.filter(p => p.category === 'employee').length} выплат</div>
-            </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#10b981' }}>{formatCurrency(stats.byCategory.employee)}</div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#faf5ff', borderRadius: '12px' }}>
-            <div>
-              <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>Налоги</div>
-              <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{payouts.filter(p => p.category === 'tax').length} выплат</div>
-            </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#8b5cf6' }}>{formatCurrency(stats.byCategory.tax)}</div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f8fafc', borderRadius: '12px' }}>
-            <div>
-              <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>Прочее</div>
-              <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{payouts.filter(p => p.category === 'other').length} выплат</div>
-            </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#64748b' }}>{formatCurrency(stats.byCategory.other)}</div>
-          </div>
-        </div>
+      <Card><CardHeader><CardTitle>Распределение по категориям</CardTitle></CardHeader><CardContent><div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg"><div><p className="font-medium text-sm">Поставщики</p><p className="text-xs text-muted-foreground">{payouts.filter(p => p.category === 'supplier').length} выплат</p></div><span className="text-lg font-bold text-blue-600">{formatCurrency(stats.byCategory.supplier)}</span></div>
+        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg"><div><p className="font-medium text-sm">Сотрудники</p><p className="text-xs text-muted-foreground">{payouts.filter(p => p.category === 'employee').length} выплат</p></div><span className="text-lg font-bold text-green-600">{formatCurrency(stats.byCategory.employee)}</span></div>
+        <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg"><div><p className="font-medium text-sm">Налоги</p><p className="text-xs text-muted-foreground">{payouts.filter(p => p.category === 'tax').length} выплат</p></div><span className="text-lg font-bold text-purple-600">{formatCurrency(stats.byCategory.tax)}</span></div>
+        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><div><p className="font-medium text-sm">Прочее</p><p className="text-xs text-muted-foreground">{payouts.filter(p => p.category === 'other').length} выплат</p></div><span className="text-lg font-bold text-gray-600">{formatCurrency(stats.byCategory.other)}</span></div>
+      </div></CardContent></Card>
+
+      <div className="flex gap-2">
+        <Button variant={filter === 'all' ? 'default' : 'outline'} onClick={() => setFilter('all')}>Все ({payouts.length})</Button>
+        <Button variant={filter === 'paid' ? 'default' : 'outline'} onClick={() => setFilter('paid')}>Выплачено ({payouts.filter(p => p.status === 'paid').length})</Button>
+        <Button variant={filter === 'pending' ? 'default' : 'outline'} onClick={() => setFilter('pending')}>Ожидает ({payouts.filter(p => p.status !== 'paid').length})</Button>
       </div>
 
-      {/* Фильтры */}
-      <div className={styles.btnGroup}>
-        <button
-          onClick={() => setFilter('all')}
-          className={filter === 'all' ? `${styles.btn} ${styles.btnPrimary}` : `${styles.btn} ${styles.btnSecondary}`}
-        >
-          Все ({payouts.length})
-        </button>
-        <button
-          onClick={() => setFilter('paid')}
-          className={filter === 'paid' ? `${styles.btn} ${styles.btnPrimary}` : `${styles.btn} ${styles.btnSecondary}`}
-        >
-          Выплачено ({payouts.filter(p => p.status === 'paid').length})
-        </button>
-        <button
-          onClick={() => setFilter('pending')}
-          className={filter === 'pending' ? `${styles.btn} ${styles.btnPrimary}` : `${styles.btn} ${styles.btnSecondary}`}
-        >
-          Ожидает ({payouts.filter(p => p.status !== 'paid').length})
-        </button>
-      </div>
+      <Card><CardHeader><CardTitle>Список выплат</CardTitle></CardHeader><CardContent>
+        <Table><TableHeader><TableRow><TableHead>Дата</TableHead><TableHead>Получатель</TableHead><TableHead className="text-center">Категория</TableHead><TableHead className="text-right">Сумма</TableHead><TableHead>Контракт</TableHead><TableHead className="text-center">Статус</TableHead></TableRow></TableHeader>
+          <TableBody>{filteredPayouts.map((payout) => (
+            <TableRow key={payout.id}>
+              <TableCell>{formatDate(payout.date)}</TableCell>
+              <TableCell className="font-semibold">{payout.recipient}</TableCell>
+              <TableCell className="text-center"><Badge variant={payout.category === 'supplier' ? 'default' : payout.category === 'employee' ? 'secondary' : 'outline'}>{getCategoryLabel(payout.category)}</Badge></TableCell>
+              <TableCell className="text-right font-bold">{formatCurrency(payout.amount)}</TableCell>
+              <TableCell>{payout.contract || '—'}</TableCell>
+              <TableCell className="text-center"><Badge variant={payout.status === 'paid' ? 'default' : payout.status === 'pending' ? 'secondary' : 'outline'}>{getStatusLabel(payout.status)}</Badge></TableCell>
+            </TableRow>
+          ))}</TableBody>
+        </Table>
+      </CardContent></Card>
 
-      {/* Таблица выплат */}
-      <div className={styles.card}>
-        <h3 className={styles.cardTitle}>Список выплат</h3>
-        <table className={styles.table}>
-          <thead>
-              <tr>
-                <th>Дата</th>
-                <th>Получатель</th>
-                <th style={{ textAlign: 'center' }}>Категория</th>
-                <th style={{ textAlign: 'right' }}>Сумма</th>
-                <th>Контракт</th>
-                <th style={{ textAlign: 'center' }}>Статус</th>
-              </tr>
-            </thead>
-          <tbody>
-              {filteredPayouts.map((payout) => (
-                <tr key={payout.id}>
-                  <td>{formatDate(payout.date)}</td>
-                  <td style={{ fontWeight: 600 }}>{payout.recipient}</td>
-                  <td style={{ textAlign: 'center' }}>
-                    <span className={payout.category === 'supplier' ? styles.badgeInfo : payout.category === 'employee' ? styles.badgeSuccess : payout.category === 'tax' ? styles.badgeWarning : styles.badgeSecondary}>
-                      {getCategoryLabel(payout.category)}
-                    </span>
-                  </td>
-                  <td style={{ textAlign: 'right', fontWeight: 700 }}>
-                    {formatCurrency(payout.amount)}
-                  </td>
-                  <td>{payout.contract || '—'}</td>
-                  <td style={{ textAlign: 'center' }}>
-                    <span className={payout.status === 'paid' ? styles.badgeSuccess : payout.status === 'pending' ? styles.badgeWarning : styles.badgeInfo}>
-                      {getStatusLabel(payout.status)}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-        </table>
-      </div>
-
-      {/* Рекомендации */}
-      <div className={styles.card} style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)', border: '2px solid #10b981' }}>
-        <h3 className={styles.cardTitle} style={{ color: '#065f46' }}>💡 Аналитика</h3>
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.875rem', color: '#065f46' }}>
-          <li>• Всего выплат: {formatCurrency(stats.total)} за период</li>
-          <li>• Выплачено {((stats.paid / stats.total) * 100).toFixed(1)}% от запланированного</li>
-          <li>• Основная категория расходов: Поставщики ({formatCurrency(stats.byCategory.supplier)})</li>
-          <li>• Ожидает выплаты: {formatCurrency(stats.pending)} - контролируйте сроки</li>
-          <li>• Средняя выплата: {formatCurrency(stats.total / payouts.length)}</li>
-        </ul>
-      </div>
+      <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-500"><CardHeader><CardTitle className="text-green-800">Аналитика</CardTitle></CardHeader><CardContent className="text-green-800 text-sm space-y-2">
+        <p>Всего выплат: {formatCurrency(stats.total)} за период</p>
+        <p>Выплачено {((stats.paid / stats.total) * 100).toFixed(1)}% от запланированного</p>
+        <p>Основная категория расходов: Поставщики ({formatCurrency(stats.byCategory.supplier)})</p>
+        <p>Ожидает выплаты: {formatCurrency(stats.pending)}</p>
+        <p>Средняя выплата: {formatCurrency(stats.total / payouts.length)}</p>
+      </CardContent></Card>
     </div>
   );
 }

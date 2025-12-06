@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import styles from "./OnboardingTour.module.css";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+import { ChevronLeft, ChevronRight, Rocket } from "lucide-react";
 
 interface Step {
   id: string;
@@ -142,49 +146,28 @@ export default function OnboardingTour() {
   const progress = ((currentStep + 1) / steps.length) * 100;
 
   return (
-    <div className={styles.overlay}>
-      <div className={styles.modal}>
-        <div className={styles.header}>
-          <div className={styles.progress}>
-            <div
-              className={styles.progressBar}
-              style={{ width: `${progress}%` }}
-            />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <Card className="w-full max-w-md mx-4">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between mb-2">
+            <Progress value={progress} className="flex-1 h-2" />
+            <Button variant="ghost" size="sm" className="ml-4" onClick={skipTour}>Пропустить</Button>
           </div>
-          <button className={styles.skipBtn} onClick={skipTour}>
-            Пропустить
-          </button>
-        </div>
-
-        <div className={styles.content}>
-          <h2 className={styles.title}>{step.title}</h2>
-          <p className={styles.description}>{step.description}</p>
-        </div>
-
-        <div className={styles.footer}>
-          <div className={styles.dots}>
-            {steps.map((_, index) => (
-              <div
-                key={index}
-                className={`${styles.dot} ${
-                  index === currentStep ? styles.activeDot : ""
-                } ${index < currentStep ? styles.completedDot : ""}`}
-              />
-            ))}
+        </CardHeader>
+        <CardContent className="text-center py-8">
+          <h2 className="text-xl font-bold mb-4">{step.title}</h2>
+          <p className="text-muted-foreground">{step.description}</p>
+        </CardContent>
+        <CardFooter className="flex-col gap-4">
+          <div className="flex justify-center gap-2">
+            {steps.map((_, index) => (<div key={index} className={cn("w-2 h-2 rounded-full transition-colors", index === currentStep ? "bg-primary" : index < currentStep ? "bg-primary/50" : "bg-muted")} />))}
           </div>
-
-          <div className={styles.actions}>
-            {currentStep > 0 && (
-              <button className={styles.prevBtn} onClick={prevStep}>
-                ← Назад
-              </button>
-            )}
-            <button className={styles.nextBtn} onClick={nextStep}>
-              {currentStep === steps.length - 1 ? "Начать!" : "Далее →"}
-            </button>
+          <div className="flex justify-between w-full">
+            {currentStep > 0 ? <Button variant="outline" onClick={prevStep}><ChevronLeft className="h-4 w-4 mr-1" />Назад</Button> : <div />}
+            <Button onClick={nextStep}>{currentStep === steps.length - 1 ? <><Rocket className="h-4 w-4 mr-1" />Начать!</> : <>Далее<ChevronRight className="h-4 w-4 ml-1" /></>}</Button>
           </div>
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

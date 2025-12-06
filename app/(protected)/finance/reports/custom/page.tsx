@@ -7,7 +7,14 @@ import ReportChart from "@/components/reports/ReportChart";
 import ReportsList from "@/components/reports/ReportsList";
 import type { ReportBuilderConfig, ReportData, Report } from "@/lib/reports/types";
 import { exportToCSV } from "@/lib/reports/utils";
-import styles from "./CustomReports.module.css";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Save, X, Loader2 } from "lucide-react";
 
 export default function CustomReportsPage() {
   const router = useRouter();
@@ -321,16 +328,10 @@ export default function CustomReportsPage() {
   };
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>Пользовательские отчёты</h1>
-        <button
-          className={styles.backBtn}
-          onClick={() => router.push("/reports")}
-        >
-          <span className="material-icons">arrow_back</span>
-          К стандартным отчётам
-        </button>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Пользовательские отчёты</h1>
+        <Button variant="outline" onClick={() => router.push("/reports")}><ArrowLeft className="h-4 w-4 mr-1" />К стандартным</Button>
       </div>
 
       <ReportBuilder
@@ -347,223 +348,32 @@ export default function CustomReportsPage() {
         onClear={handleClear}
       />
 
-      {/* Таблица детализации вынесена отдельно */}
-      {reportData && (
-        <div className={styles.detailsSection}>
-          <h4>Детализация</h4>
-          <table className={styles.detailsTable}>
-            <thead>
-              <tr>
-                <th>Категория</th>
-                <th style={{ color: '#4caf50' }}>Доходы</th>
-                <th style={{ color: '#f44336' }}>Расходы</th>
-                <th>Итого</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Array.from(
-                reportData.transactions.reduce((map, t) => {
-                  const key = t.category || "Без категории";
-                  if (!map.has(key)) {
-                    map.set(key, { income: 0, expense: 0 });
-                  }
-                  const group = map.get(key)!;
-                  if (t.direction === "income") {
-                    group.income += t.amount;
-                  } else if (t.direction === "expense") {
-                    group.expense += t.amount;
-                  }
-                  return map;
-                }, new Map<string, { income: number; expense: number }>())
-              ).map(([category, values]) => (
-                <tr key={category}>
-                  <td><strong>{category}</strong></td>
-                  <td style={{ color: '#4caf50' }}>
-                    {values.income > 0 ? `+${values.income.toFixed(2)} ₽` : '—'}
-                  </td>
-                  <td style={{ color: '#f44336' }}>
-                    {values.expense > 0 ? `-${values.expense.toFixed(2)} ₽` : '—'}
-                  </td>
-                  <td>
-                    <strong>{(values.income - values.expense).toFixed(2)} ₽</strong>
-                  </td>
-                </tr>
-              ))}
-              <tr style={{ borderTop: '2px solid #ddd', fontWeight: 'bold' }}>
-                <td>ИТОГО:</td>
-                <td style={{ color: '#4caf50' }}>+{reportData.summary.totalIncome.toFixed(2)} ₽</td>
-                <td style={{ color: '#f44336' }}>-{reportData.summary.totalExpense.toFixed(2)} ₽</td>
-                <td style={{ color: reportData.summary.balance >= 0 ? '#4caf50' : '#f44336' }}>
-                  {reportData.summary.balance.toFixed(2)} ₽
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      {reportData && <Card><CardHeader><CardTitle>Детализация</CardTitle></CardHeader><CardContent>
+        <Table><TableHeader><TableRow><TableHead>Категория</TableHead><TableHead className="text-green-600">Доходы</TableHead><TableHead className="text-red-600">Расходы</TableHead><TableHead>Итого</TableHead></TableRow></TableHeader>
+        <TableBody>{Array.from(reportData.transactions.reduce((m, t) => { const k = t.category || 'Без категории'; if (!m.has(k)) m.set(k, { income: 0, expense: 0 }); const g = m.get(k)!; if (t.direction === 'income') g.income += t.amount; else if (t.direction === 'expense') g.expense += t.amount; return m; }, new Map<string, { income: number; expense: number }>())).map(([cat, v]) => <TableRow key={cat}><TableCell className="font-medium">{cat}</TableCell><TableCell className="text-green-600">{v.income > 0 ? `+${v.income.toFixed(2)} ₽` : '—'}</TableCell><TableCell className="text-red-600">{v.expense > 0 ? `-${v.expense.toFixed(2)} ₽` : '—'}</TableCell><TableCell className="font-bold">{(v.income - v.expense).toFixed(2)} ₽</TableCell></TableRow>)}
+        <TableRow className="border-t-2"><TableCell className="font-bold">ИТОГО</TableCell><TableCell className="font-bold text-green-600">+{reportData.summary.totalIncome.toFixed(2)} ₽</TableCell><TableCell className="font-bold text-red-600">-{reportData.summary.totalExpense.toFixed(2)} ₽</TableCell><TableCell className={`font-bold ${reportData.summary.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>{reportData.summary.balance.toFixed(2)} ₽</TableCell></TableRow></TableBody></Table>
+      </CardContent></Card>}
+
+      {reportData && <div className="flex justify-center p-5 bg-muted rounded-lg"><Button onClick={() => setShowSaveModal(true)}><Save className="h-4 w-4 mr-1" />Сохранить отчёт</Button></div>}
+
+      {comparisonReports.length > 0 && <Card><CardHeader><div className="flex items-center justify-between"><CardTitle>График сравнения</CardTitle><Button variant="outline" size="sm" onClick={() => setComparisonReports([])}>Очистить</Button></div></CardHeader><CardContent className="space-y-4">
+        <div className="space-y-2">{comparisonReports.map((r, i) => <div key={`${r.name}-${i}`} className="flex items-center justify-between p-2 border rounded"><div className="flex items-center gap-2"><Badge style={{ backgroundColor: `hsl(${i * 60}, 70%, 50%)` }}>{i + 1}</Badge><div><div className="font-medium text-sm">{r.name}</div><div className="text-xs text-muted-foreground"><span className="text-green-600">↑{r.data.summary.totalIncome.toFixed(2)}₽</span> | <span className="text-red-600">↓{r.data.summary.totalExpense.toFixed(2)}₽</span> | <span className={r.data.summary.balance >= 0 ? 'text-green-600' : 'text-red-600'}>{r.data.summary.balance.toFixed(2)}₽</span></div></div></div><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setComparisonReports(comparisonReports.filter((_, j) => j !== i))}><X className="h-4 w-4" /></Button></div>)}</div>
+        <canvas id="comparisonCanvas" style={{ maxHeight: '400px' }} />
+      </CardContent></Card>}
+
+      <Card><CardHeader><CardTitle>Сохранённые отчёты</CardTitle></CardHeader><CardContent>
+        <p className="text-sm text-muted-foreground mb-4">💡 Кликните на отчёт чтобы применить фильтры</p>
+        {isLoading ? <div className="flex items-center justify-center py-8 text-muted-foreground"><Loader2 className="h-5 w-5 mr-2 animate-spin" />Загрузка...</div> : <ReportsList reports={savedReports} onSelect={handleSelectReport} onDelete={handleDeleteReport} />}
+      </CardContent></Card>
+
+      <Dialog open={showSaveModal} onOpenChange={setShowSaveModal}><DialogContent><DialogHeader><DialogTitle>Сохранить отчёт</DialogTitle></DialogHeader>
+        <div className="space-y-4">
+          <div className="text-sm bg-muted p-3 rounded"><p className="font-medium mb-2">📌 Сохраняются фильтры:</p><ul className="list-disc list-inside text-muted-foreground space-y-1"><li>Период: <strong>{currentConfig?.period === 'today' ? 'Сегодня' : currentConfig?.period === 'week' ? 'Неделя' : currentConfig?.period === 'month' ? 'Месяц' : currentConfig?.period === 'quarter' ? 'Квартал' : currentConfig?.period === 'year' ? 'Год' : 'Произвольный'}</strong></li><li>Типы: <strong>{currentConfig?.dataTypes.map(t => t === 'income' ? 'Доходы' : t === 'expense' ? 'Расходы' : t).join(', ')}</strong></li></ul></div>
+          <div><Label>Название</Label><Input value={saveForm.name} onChange={e => setSaveForm({...saveForm, name: e.target.value})} placeholder="Расходы за октябрь" /></div>
+          <div><Label>Категория</Label><select value={saveForm.category} onChange={e => setSaveForm({...saveForm, category: e.target.value as typeof saveForm.category})} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"><option value="custom">Пользовательские</option><option value="income_expense">Доходы/Расходы</option><option value="cash_flow">Денежный поток</option><option value="balance">Баланс</option><option value="budget">Бюджет</option><option value="category">По категориям</option></select></div>
         </div>
-      )}
-
-      {reportData && (
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          marginBottom: '60px', 
-          marginTop: '40px',
-          padding: '20px',
-          backgroundColor: '#f8f9fa',
-          borderRadius: '12px'
-        }}>
-          <button
-            className={styles.saveBtn}
-            onClick={() => setShowSaveModal(true)}
-          >
-            <span className="material-icons">save</span>
-            Сохранить отчёт
-          </button>
-        </div>
-      )}
-
-      {/* Блок сравнения отчётов */}
-      {comparisonReports.length > 0 && (
-        <div className={styles.comparisonSection}>
-          <div className={styles.comparisonHeader}>
-            <h2>График сравнения</h2>
-            <button 
-              className={styles.btnSecondary}
-              onClick={() => setComparisonReports([])}
-            >
-              Очистить все
-            </button>
-          </div>
-          
-          <div className={styles.comparisonList}>
-            {comparisonReports.map((report, index) => (
-              <div key={`${report.name}-${index}`} className={styles.comparisonItem}>
-                <div className={styles.comparisonInfo}>
-                  <span className={styles.comparisonBadge} style={{ backgroundColor: `hsl(${index * 60}, 70%, 50%)` }}>
-                    {index + 1}
-                  </span>
-                  <div className={styles.comparisonDetails}>
-                    <span className={styles.comparisonName}>{report.name}</span>
-                    <div className={styles.comparisonStats}>
-                      <span style={{ color: '#4caf50', fontWeight: 600 }}>
-                        ↑ {report.data.summary.totalIncome.toFixed(2)} ₽
-                      </span>
-                      <span style={{ margin: '0 8px', color: '#999' }}>|</span>
-                      <span style={{ color: '#f44336', fontWeight: 600 }}>
-                        ↓ {report.data.summary.totalExpense.toFixed(2)} ₽
-                      </span>
-                      <span style={{ margin: '0 8px', color: '#999' }}>|</span>
-                      <span style={{ color: report.data.summary.balance >= 0 ? '#4caf50' : '#f44336', fontWeight: 600 }}>
-                        = {report.data.summary.balance.toFixed(2)} ₽
-                      </span>
-                      <span style={{ margin: '0 8px', color: '#999' }}>•</span>
-                      <span style={{ color: '#666', fontSize: '13px' }}>
-                        {report.data.summary.transactionCount} операций
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  className={styles.comparisonDelete}
-                  onClick={() => setComparisonReports(comparisonReports.filter((_, i) => i !== index))}
-                  title="Удалить из сравнения"
-                >
-                  <span className="material-icons">close</span>
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {/* График сравнения */}
-          <div className={styles.comparisonChart}>
-            <canvas id="comparisonCanvas" style={{ maxHeight: '400px' }}></canvas>
-          </div>
-        </div>
-      )}
-
-      <div className={styles.savedReports}>
-        <h2 className={styles.sectionTitle}>Сохранённые отчёты</h2>
-        <p className={styles.sectionHint}>
-          💡 Кликните на отчёт чтобы применить сохранённые фильтры и сформировать его заново
-        </p>
-        {isLoading ? (
-          <div className={styles.loading}>Загрузка...</div>
-        ) : (
-          <ReportsList
-            reports={savedReports}
-            onSelect={handleSelectReport}
-            onDelete={handleDeleteReport}
-          />
-        )}
-      </div>
-
-      {/* Модальное окно сохранения */}
-      {showSaveModal && (
-        <div className={styles.modalOverlay} onClick={() => setShowSaveModal(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h3>Сохранить отчёт</h3>
-              <button className={styles.closeBtn} onClick={() => setShowSaveModal(false)}>
-                <span className="material-icons">close</span>
-              </button>
-            </div>
-            <div className={styles.modalBody}>
-              <div className={styles.presetInfo}>
-                <p>📌 Сохраняются все фильтры отчёта:</p>
-                <ul>
-                  <li>Период: <strong>{currentConfig?.period === "today" ? "Сегодня" : 
-                               currentConfig?.period === "week" ? "Текущая неделя" :
-                               currentConfig?.period === "month" ? "Текущий месяц" :
-                               currentConfig?.period === "quarter" ? "Текущий квартал" :
-                               currentConfig?.period === "year" ? "Текущий год" : "Произвольный период"}</strong></li>
-                  <li>Типы данных: <strong>{currentConfig?.dataTypes.map(t => 
-                    t === "income" ? "Доходы" : t === "expense" ? "Расходы" : t
-                  ).join(", ")}</strong></li>
-                  {currentConfig?.categories && currentConfig.categories.length > 0 && (
-                    <li>Категорий: <strong>{currentConfig.categories.length}</strong></li>
-                  )}
-                  {currentConfig?.accounts && currentConfig.accounts.length > 0 && (
-                    <li>Счетов: <strong>{currentConfig.accounts.length}</strong></li>
-                  )}
-                </ul>
-              </div>
-              <div className={styles.formGroup}>
-                <label>Название отчёта</label>
-                <input
-                  type="text"
-                  value={saveForm.name}
-                  onChange={(e) => setSaveForm({...saveForm, name: e.target.value})}
-                  placeholder="Напр., Расходы за октябрь"
-                  className={styles.input}
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label>Категория</label>
-                <select
-                  value={saveForm.category}
-                  onChange={(e) => setSaveForm({...saveForm, category: e.target.value as typeof saveForm.category})}
-                  className={styles.input}
-                >
-                  <option value="custom">Пользовательские</option>
-                  <option value="income_expense">Доходы/Расходы</option>
-                  <option value="cash_flow">Денежный поток</option>
-                  <option value="balance">Баланс</option>
-                  <option value="budget">Бюджет</option>
-                  <option value="category">По категориям</option>
-                </select>
-              </div>
-            </div>
-            <div className={styles.modalFooter}>
-              <button className={styles.btnSecondary} onClick={() => setShowSaveModal(false)}>
-                Отмена
-              </button>
-              <button className={styles.btnPrimary} onClick={handleSaveReport}>
-                Сохранить
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+        <DialogFooter><Button variant="outline" onClick={() => setShowSaveModal(false)}>Отмена</Button><Button onClick={handleSaveReport}>Сохранить</Button></DialogFooter>
+      </DialogContent></Dialog>
     </div>
   );
 }

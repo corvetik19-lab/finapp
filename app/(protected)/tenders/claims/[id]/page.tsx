@@ -3,7 +3,10 @@ import { createRSCClient } from "@/lib/supabase/server";
 import { Debt, CLAIM_STAGE_LABELS } from "@/types/debt";
 import { formatMoney } from "@/lib/utils/format";
 import Link from "next/link";
-import styles from "./page.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 interface ClaimDetailPageProps {
   params: Promise<{ id: string }>;
@@ -37,187 +40,49 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
   }
   
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.breadcrumb}>
-          <Link href="/tenders/claims" className={styles.backLink}>
-            ← Назад к списку претензий
-          </Link>
-        </div>
-        <div className={styles.titleSection}>
-          <h1 className={styles.title}>Детали претензии</h1>
-          <div className={styles.stageBadge}>
-            <span className={`${styles.stageIndicator} ${styles[`stage_${claim.stage}`]}`}>
-              {CLAIM_STAGE_LABELS[claim.stage]}
-            </span>
-          </div>
-        </div>
+    <div className="p-6 space-y-6">
+      <div className="space-y-4">
+        <Link href="/tenders/claims"><Button variant="ghost"><ArrowLeft className="h-4 w-4 mr-1" />Назад к претензиям</Button></Link>
+        <div className="flex items-center gap-4"><h1 className="text-2xl font-bold">Детали претензии</h1><Badge>{CLAIM_STAGE_LABELS[claim.stage]}</Badge></div>
       </div>
 
-      <div className={styles.content}>
-        <div className={styles.mainInfo}>
-          <div className={styles.card}>
-            <h2 className={styles.cardTitle}>📋 Основная информация</h2>
-            <div className={styles.infoGrid}>
-              <div className={styles.infoItem}>
-                <label className={styles.infoLabel}>Тип</label>
-                <span className={styles.infoValue}>
-                  {claim.type === 'owe' ? 'Мы должны' : 'Нам должны'}
-                </span>
-              </div>
-              <div className={styles.infoItem}>
-                <label className={styles.infoLabel}>Должник/Кредитор</label>
-                <span className={styles.infoValue}>{claim.creditor_debtor_name}</span>
-              </div>
-              <div className={styles.infoItem}>
-                <label className={styles.infoLabel}>Сумма долга</label>
-                <span className={`${styles.infoValue} ${styles.amount}`}>
-                  {formatMoney(claim.amount, claim.currency)}
-                </span>
-              </div>
-              <div className={styles.infoItem}>
-                <label className={styles.infoLabel}>Валюта</label>
-                <span className={styles.infoValue}>{claim.currency}</span>
-              </div>
-            </div>
-          </div>
+      <div className="grid lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-4">
+          <Card><CardHeader><CardTitle>📋 Основная информация</CardTitle></CardHeader><CardContent><div className="grid grid-cols-2 gap-4">
+            <div><p className="text-sm text-muted-foreground">Тип</p><p className="font-medium">{claim.type === 'owe' ? 'Мы должны' : 'Нам должны'}</p></div>
+            <div><p className="text-sm text-muted-foreground">Должник/Кредитор</p><p className="font-medium">{claim.creditor_debtor_name}</p></div>
+            <div><p className="text-sm text-muted-foreground">Сумма долга</p><p className="font-medium text-lg">{formatMoney(claim.amount, claim.currency)}</p></div>
+            <div><p className="text-sm text-muted-foreground">Валюта</p><p className="font-medium">{claim.currency}</p></div>
+          </div></CardContent></Card>
 
-          <div className={styles.card}>
-            <h2 className={styles.cardTitle}>📅 Даты</h2>
-            <div className={styles.infoGrid}>
-              <div className={styles.infoItem}>
-                <label className={styles.infoLabel}>Дата возникновения</label>
-                <span className={styles.infoValue}>
-                  {new Date(claim.date_created).toLocaleDateString('ru-RU')}
-                </span>
-              </div>
-              <div className={styles.infoItem}>
-                <label className={styles.infoLabel}>Срок возврата</label>
-                <span className={styles.infoValue}>
-                  {claim.date_due 
-                    ? new Date(claim.date_due).toLocaleDateString('ru-RU')
-                    : 'Не указан'
-                  }
-                </span>
-              </div>
-              <div className={styles.infoItem}>
-                <label className={styles.infoLabel}>Создано</label>
-                <span className={styles.infoValue}>
-                  {new Date(claim.created_at).toLocaleString('ru-RU')}
-                </span>
-              </div>
-              <div className={styles.infoItem}>
-                <label className={styles.infoLabel}>Обновлено</label>
-                <span className={styles.infoValue}>
-                  {new Date(claim.updated_at).toLocaleString('ru-RU')}
-                </span>
-              </div>
-            </div>
-          </div>
+          <Card><CardHeader><CardTitle>📅 Даты</CardTitle></CardHeader><CardContent><div className="grid grid-cols-2 gap-4">
+            <div><p className="text-sm text-muted-foreground">Дата возникновения</p><p className="font-medium">{new Date(claim.date_created).toLocaleDateString('ru-RU')}</p></div>
+            <div><p className="text-sm text-muted-foreground">Срок возврата</p><p className="font-medium">{claim.date_due ? new Date(claim.date_due).toLocaleDateString('ru-RU') : 'Не указан'}</p></div>
+            <div><p className="text-sm text-muted-foreground">Создано</p><p className="font-medium">{new Date(claim.created_at).toLocaleString('ru-RU')}</p></div>
+            <div><p className="text-sm text-muted-foreground">Обновлено</p><p className="font-medium">{new Date(claim.updated_at).toLocaleString('ru-RU')}</p></div>
+          </div></CardContent></Card>
 
-          {(claim.tender_id || claim.application_number || claim.contract_number) && (
-            <div className={styles.card}>
-              <h2 className={styles.cardTitle}>🏢 Данные тендера</h2>
-              <div className={styles.infoGrid}>
-                {claim.tender_id && claim.tender && (
-                  <>
-                    <div className={styles.infoItem}>
-                      <label className={styles.infoLabel}>Номер тендера</label>
-                      <span className={styles.infoValue}>
-                        {claim.tender.purchase_number}
-                      </span>
-                    </div>
-                    <div className={styles.infoItem}>
-                      <label className={styles.infoLabel}>Заказчик</label>
-                      <span className={styles.infoValue}>
-                        {claim.tender.customer}
-                      </span>
-                    </div>
-                  </>
-                )}
-                {claim.application_number && (
-                  <div className={styles.infoItem}>
-                    <label className={styles.infoLabel}>№ Заявки</label>
-                    <span className={styles.infoValue}>{claim.application_number}</span>
-                  </div>
-                )}
-                {claim.contract_number && (
-                  <div className={styles.infoItem}>
-                    <label className={styles.infoLabel}>№ Договора</label>
-                    <span className={styles.infoValue}>{claim.contract_number}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          {(claim.tender_id || claim.application_number || claim.contract_number) && <Card><CardHeader><CardTitle>🏢 Данные тендера</CardTitle></CardHeader><CardContent><div className="grid grid-cols-2 gap-4">
+            {claim.tender_id && claim.tender && <><div><p className="text-sm text-muted-foreground">Номер тендера</p><p className="font-medium">{claim.tender.purchase_number}</p></div><div><p className="text-sm text-muted-foreground">Заказчик</p><p className="font-medium">{claim.tender.customer}</p></div></>}
+            {claim.application_number && <div><p className="text-sm text-muted-foreground">№ Заявки</p><p className="font-medium">{claim.application_number}</p></div>}
+            {claim.contract_number && <div><p className="text-sm text-muted-foreground">№ Договора</p><p className="font-medium">{claim.contract_number}</p></div>}
+          </div></CardContent></Card>}
 
-          {(claim.plaintiff || claim.defendant) && (
-            <div className={styles.card}>
-              <h2 className={styles.cardTitle}>⚖️ Участники</h2>
-              <div className={styles.infoGrid}>
-                {claim.plaintiff && (
-                  <div className={styles.infoItem}>
-                    <label className={styles.infoLabel}>Истец</label>
-                    <span className={styles.infoValue}>{claim.plaintiff}</span>
-                  </div>
-                )}
-                {claim.defendant && (
-                  <div className={styles.infoItem}>
-                    <label className={styles.infoLabel}>Ответчик</label>
-                    <span className={styles.infoValue}>{claim.defendant}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          {(claim.plaintiff || claim.defendant) && <Card><CardHeader><CardTitle>⚖️ Участники</CardTitle></CardHeader><CardContent><div className="grid grid-cols-2 gap-4">
+            {claim.plaintiff && <div><p className="text-sm text-muted-foreground">Истец</p><p className="font-medium">{claim.plaintiff}</p></div>}
+            {claim.defendant && <div><p className="text-sm text-muted-foreground">Ответчик</p><p className="font-medium">{claim.defendant}</p></div>}
+          </div></CardContent></Card>}
         </div>
 
-        <div className={styles.sidebar}>
-          <div className={styles.card}>
-            <h2 className={styles.cardTitle}>💰 Статус платежей</h2>
-            <div className={styles.paymentStatus}>
-              <div className={styles.paymentItem}>
-                <label>Сумма долга:</label>
-                <span className={styles.totalAmount}>
-                  {formatMoney(claim.amount, claim.currency)}
-                </span>
-              </div>
-              <div className={styles.paymentItem}>
-                <label>Оплачено:</label>
-                <span className={styles.paidAmount}>
-                  {formatMoney(claim.amount_paid || 0, claim.currency)}
-                </span>
-              </div>
-              <div className={styles.paymentItem}>
-                <label>Остаток:</label>
-                <span className={styles.remainingAmount}>
-                  {formatMoney((claim.amount || 0) - (claim.amount_paid || 0), claim.currency)}
-                </span>
-              </div>
-              <div className={styles.paymentProgress}>
-                <div 
-                  className={styles.progressBar}
-                  style={{
-                    width: `${Math.min(100, ((claim.amount_paid || 0) / (claim.amount || 1)) * 100)}%`
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {claim.description && (
-            <div className={styles.card}>
-              <h2 className={styles.cardTitle}>📝 Описание</h2>
-              <p className={styles.description}>{claim.description}</p>
-            </div>
-          )}
-
-          {claim.comments && (
-            <div className={styles.card}>
-              <h2 className={styles.cardTitle}>💬 Комментарии</h2>
-              <p className={styles.comments}>{claim.comments}</p>
-            </div>
-          )}
+        <div className="space-y-4">
+          <Card><CardHeader><CardTitle>💰 Статус платежей</CardTitle></CardHeader><CardContent className="space-y-3">
+            <div className="flex justify-between"><span className="text-muted-foreground">Сумма долга:</span><span className="font-semibold">{formatMoney(claim.amount, claim.currency)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Оплачено:</span><span className="font-semibold text-green-600">{formatMoney(claim.amount_paid || 0, claim.currency)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Остаток:</span><span className="font-semibold text-red-600">{formatMoney((claim.amount || 0) - (claim.amount_paid || 0), claim.currency)}</span></div>
+            <div className="h-2 bg-muted rounded-full overflow-hidden"><div className="h-full bg-green-500 transition-all" style={{ width: `${Math.min(100, ((claim.amount_paid || 0) / (claim.amount || 1)) * 100)}%` }} /></div>
+          </CardContent></Card>
+          {claim.description && <Card><CardHeader><CardTitle>📝 Описание</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">{claim.description}</p></CardContent></Card>}
+          {claim.comments && <Card><CardHeader><CardTitle>💬 Комментарии</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">{claim.comments}</p></CardContent></Card>}
         </div>
       </div>
     </div>

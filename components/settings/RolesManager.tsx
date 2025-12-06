@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import styles from "./RolesManager.module.css";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Pencil, Trash2, Lock, Sparkles, Gavel, RotateCcw, Loader2, ShieldCheck, CheckSquare, Square } from "lucide-react";
 
 export type RoleRecord = {
   id: string;
@@ -202,7 +210,6 @@ export default function RolesManager({ roles: initialRoles, companyId }: RolesMa
   const [showModal, setShowModal] = useState(false);
   const [editingRole, setEditingRole] = useState<RoleRecord | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -402,301 +409,27 @@ export default function RolesManager({ roles: initialRoles, companyId }: RolesMa
   const allPermissionsSelected = selectedAvailableCount === AVAILABLE_PERMISSIONS.length;
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h2 className={styles.title}>Управление ролями</h2>
-          <p className={styles.subtitle}>
-            Создавайте роли и настраивайте права доступа для пользователей
-          </p>
-        </div>
-        <button className={styles.btnPrimary} onClick={handleCreate}>
-          <span className="material-icons">add</span>
-          Создать роль
-        </button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between"><div><h2 className="text-xl font-bold">Управление ролями</h2><p className="text-sm text-muted-foreground">Создавайте роли и настраивайте права доступа</p></div><Button onClick={handleCreate}><Plus className="h-4 w-4 mr-1" />Создать роль</Button></div>
+
+      <div className="space-y-3">
+        {roles.map(role => { const isSystemRole = role.is_system || role.is_default; return (
+          <Card key={role.id} className={isSystemRole ? 'border-muted' : ''}><CardContent className="pt-4"><div className="flex items-start justify-between"><div className="flex items-center gap-3"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: role.color }} /><div><div className="font-medium flex items-center gap-2">{role.name}{isSystemRole && <Badge variant="secondary" className="text-xs"><Lock className="h-3 w-3 mr-1" />Системная</Badge>}</div><div className="text-sm text-muted-foreground">{role.description}</div></div></div><div className="flex gap-1"><Button variant="ghost" size="icon" onClick={() => handleEdit(role)} title="Редактировать"><Pencil className="h-4 w-4" /></Button>{!isSystemRole && <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(role)} title="Удалить"><Trash2 className="h-4 w-4" /></Button>}</div></div><div className="mt-3"><div className="text-xs text-muted-foreground mb-1">Разрешений: {role.permissions.length}</div><div className="flex flex-wrap gap-1">{role.permissions.slice(0, 5).map(perm => { const permission = AVAILABLE_PERMISSIONS.find(p => p.id === perm); return permission ? <Badge key={perm} variant="outline" className="text-xs">{permission.label}</Badge> : null; })}{role.permissions.length > 5 && <Badge variant="outline" className="text-xs">+{role.permissions.length - 5}</Badge>}</div></div></CardContent></Card>
+        ); })}
+        {roles.length === 0 && <div className="text-center py-12"><ShieldCheck className="h-12 w-12 mx-auto text-muted-foreground mb-2" /><p>Нет созданных ролей</p><Button variant="outline" className="mt-2" onClick={handleCreate}>Создать первую роль</Button></div>}
       </div>
 
-      <div className={styles.rolesList}>
-        {roles.map(role => {
-          const isSystemRole = role.is_system || role.is_default;
-          return (
-          <div key={role.id} className={`${styles.roleCard} ${isSystemRole ? styles.systemRoleCard : ''}`}>
-            <div className={styles.roleHeader}>
-              <div className={styles.roleInfo}>
-                <div 
-                  className={styles.roleColor} 
-                  style={{ backgroundColor: role.color }}
-                />
-                <div>
-                  <div className={styles.roleName}>
-                    {role.name}
-                    {isSystemRole && (
-                      <span className={styles.defaultBadge}>
-                        <span className="material-icons" style={{ fontSize: 12 }}>lock</span>
-                        Системная
-                      </span>
-                    )}
-                  </div>
-                  <div className={styles.roleDescription}>{role.description}</div>
-                </div>
-              </div>
-              <div className={styles.roleActions}>
-                <button
-                  className={styles.btnIcon}
-                  onClick={() => handleEdit(role)}
-                  title="Редактировать"
-                >
-                  <span className="material-icons">edit</span>
-                </button>
-                {!isSystemRole && (
-                  <button
-                    className={styles.btnIconDanger}
-                    onClick={() => handleDelete(role)}
-                    title="Удалить"
-                  >
-                    <span className="material-icons">delete</span>
-                  </button>
-                )}
-              </div>
-            </div>
-            
-            <div className={styles.rolePermissions}>
-              <div className={styles.permissionsLabel}>
-                Разрешений: {role.permissions.length}
-              </div>
-              <div className={styles.permissionsTags}>
-                {role.permissions.slice(0, 5).map(perm => {
-                  const permission = AVAILABLE_PERMISSIONS.find(p => p.id === perm);
-                  return permission ? (
-                    <span key={perm} className={styles.permissionTag}>
-                      {permission.label}
-                    </span>
-                  ) : null;
-                })}
-                {role.permissions.length > 5 && (
-                  <span className={styles.permissionTag}>
-                    +{role.permissions.length - 5}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-        })}
-
-        {roles.length === 0 && (
-          <div className={styles.emptyState}>
-            <span className="material-icons">admin_panel_settings</span>
-            <p>Нет созданных ролей</p>
-            <button className={styles.btnSecondary} onClick={handleCreate}>
-              Создать первую роль
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Модальное окно */}
-      {showModal && (
-        <div className={styles.modalOverlay} onClick={() => setShowModal(false)}>
-          <div 
-            className={`${styles.modal} ${isFullscreen ? styles.modalFullscreen : ''}`} 
-            onClick={e => e.stopPropagation()}
-          >
-            <div className={styles.modalHeader}>
-              <h3>{editingRole ? "Редактировать роль" : "Создать роль"}</h3>
-              <div className={styles.modalHeaderActions}>
-                <button
-                  className={styles.fullscreenBtn}
-                  onClick={() => setIsFullscreen(!isFullscreen)}
-                  title={isFullscreen ? "Свернуть" : "Развернуть на весь экран"}
-                >
-                  <span className="material-icons">
-                    {isFullscreen ? "fullscreen_exit" : "fullscreen"}
-                  </span>
-                </button>
-                <button
-                  className={styles.closeBtn}
-                  onClick={() => setShowModal(false)}
-                >
-                  <span className="material-icons">close</span>
-                </button>
-              </div>
-            </div>
-
-            <div className={styles.modalBody}>
-              {/* Шаблоны ролей - только при создании */}
-              {!editingRole && (
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>
-                    <span className="material-icons" style={{ fontSize: 18, verticalAlign: 'middle', marginRight: 6 }}>auto_awesome</span>
-                    Быстрый выбор из шаблонов
-                  </label>
-                  <div className={styles.presetsGrid}>
-                    {ROLE_PRESETS.map((preset, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        className={styles.presetCard}
-                        onClick={() => setFormData({
-                          name: preset.name,
-                          description: preset.description,
-                          permissions: preset.permissions,
-                          color: preset.color,
-                          is_default: false,
-                          allowed_modes: null
-                        })}
-                      >
-                        <div 
-                          className={styles.presetColor}
-                          style={{ backgroundColor: preset.color }}
-                        />
-                        <div className={styles.presetInfo}>
-                          <div className={styles.presetName}>{preset.name}</div>
-                          <div className={styles.presetDesc}>{preset.description}</div>
-                          <div className={styles.presetCount}>
-                            {preset.permissions.length} разрешений
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Название роли *</label>
-                <input
-                  type="text"
-                  className={styles.formInput}
-                  value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Например: Менеджер, Бухгалтер"
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Описание</label>
-                <textarea
-                  className={styles.formTextarea}
-                  value={formData.description}
-                  onChange={e => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Краткое описание роли и её назначения"
-                  rows={3}
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Цвет</label>
-                <div className={styles.colorPicker}>
-                  {ROLE_COLORS.map(color => (
-                    <button
-                      key={color}
-                      className={`${styles.colorOption} ${formData.color === color ? styles.colorSelected : ''}`}
-                      style={{ backgroundColor: color }}
-                      onClick={() => setFormData({ ...formData, color })}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Режим тендеров включён по умолчанию для всех ролей */}
-              <div className={styles.modeInfo}>
-                <span className="material-icons">gavel</span>
-                <span>Все роли относятся к режиму <strong>Тендеры</strong></span>
-              </div>
-
-              <div className={styles.formGroup}>
-                <div className={styles.permissionsHeader}>
-                  <label className={styles.formLabel}>Разрешения *</label>
-                  <div className={styles.permissionsActions}>
-                    <button
-                      type="button"
-                      className={styles.btnSmall}
-                      onClick={allPermissionsSelected ? deselectAllPermissions : selectAllPermissions}
-                    >
-                      <span className="material-icons">
-                        {allPermissionsSelected ? "clear_all" : "select_all"}
-                      </span>
-                      {allPermissionsSelected ? "Снять все" : "Выбрать все"}
-                    </button>
-                    <span className={styles.permissionsCount}>
-                      Выбрано: {selectedAvailableCount} / {AVAILABLE_PERMISSIONS.length}
-                    </span>
-                  </div>
-                </div>
-                <div className={styles.permissionsGrid}>
-                  {Object.entries(permissionsByCategory).map(([category, perms]) => {
-                    const categoryPerms = perms.map(p => p.id);
-                    const allCategorySelected = categoryPerms.every(p => formData.permissions.includes(p));
-                    
-                    return (
-                      <div key={category} className={styles.permissionCategory}>
-                        <div className={styles.categoryHeader}>
-                          <div className={styles.categoryTitle}>{category}</div>
-                          <button
-                            type="button"
-                            className={styles.btnCategoryToggle}
-                            onClick={() => selectCategoryPermissions(category)}
-                            title={allCategorySelected ? "Снять все" : "Выбрать все"}
-                          >
-                            <span className="material-icons">
-                              {allCategorySelected ? "check_box" : "check_box_outline_blank"}
-                            </span>
-                          </button>
-                        </div>
-                        {perms.map(perm => (
-                          <label key={perm.id} className={styles.permissionCheckbox}>
-                            <input
-                              type="checkbox"
-                              checked={formData.permissions.includes(perm.id)}
-                              onChange={() => togglePermission(perm.id)}
-                            />
-                            <span>{perm.label}</span>
-                          </label>
-                        ))}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.modalFooter}>
-              <div className={styles.modalFooterLeft}>
-                {/* Кнопка сброса для системных ролей */}
-                {editingRole && (editingRole.is_system || editingRole.is_default) && (
-                  <button
-                    type="button"
-                    className={styles.btnReset}
-                    onClick={handleResetToDefault}
-                    disabled={isSaving}
-                    title="Вернуть исходные права системной роли"
-                  >
-                    <span className="material-icons">restart_alt</span>
-                    Сбросить права
-                  </button>
-                )}
-              </div>
-              <div className={styles.modalFooterRight}>
-                <button
-                  className={styles.btnSecondary}
-                  onClick={() => setShowModal(false)}
-                  disabled={isSaving}
-                >
-                  Отмена
-                </button>
-                <button
-                  className={styles.btnPrimary}
-                  onClick={handleSave}
-                  disabled={isSaving}
-                >
-                  {isSaving ? "Сохранение..." : editingRole ? "Сохранить" : "Создать"}
-                </button>
-              </div>
-            </div>
-          </div>
+      <Dialog open={showModal} onOpenChange={setShowModal}><DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto"><DialogHeader><DialogTitle>{editingRole ? "Редактировать роль" : "Создать роль"}</DialogTitle></DialogHeader>
+        <div className="space-y-4">
+          {!editingRole && <div><Label className="flex items-center gap-1"><Sparkles className="h-4 w-4" />Шаблоны ролей</Label><div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">{ROLE_PRESETS.map((preset, idx) => <button key={idx} type="button" className="text-left p-3 border rounded-lg hover:bg-muted transition" onClick={() => setFormData({ name: preset.name, description: preset.description, permissions: preset.permissions, color: preset.color, is_default: false, allowed_modes: null })}><div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: preset.color }} /><span className="font-medium text-sm">{preset.name}</span></div><p className="text-xs text-muted-foreground mt-1">{preset.permissions.length} прав</p></button>)}</div></div>}
+          <div className="space-y-1"><Label>Название *</Label><Input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Менеджер, Бухгалтер" /></div>
+          <div className="space-y-1"><Label>Описание</Label><Textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="Краткое описание роли" rows={2} /></div>
+          <div className="space-y-1"><Label>Цвет</Label><div className="flex gap-2 flex-wrap">{ROLE_COLORS.map(c => <button key={c} type="button" className={`w-6 h-6 rounded-full border-2 ${formData.color === c ? 'border-foreground' : 'border-transparent'}`} style={{ backgroundColor: c }} onClick={() => setFormData({ ...formData, color: c })} />)}</div></div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted p-2 rounded"><Gavel className="h-4 w-4" />Все роли относятся к режиму <strong>Тендеры</strong></div>
+          <div><div className="flex items-center justify-between mb-2"><Label>Разрешения *</Label><div className="flex items-center gap-2"><Button variant="outline" size="sm" onClick={allPermissionsSelected ? deselectAllPermissions : selectAllPermissions}>{allPermissionsSelected ? <><Square className="h-4 w-4 mr-1" />Снять все</> : <><CheckSquare className="h-4 w-4 mr-1" />Выбрать все</>}</Button><span className="text-xs text-muted-foreground">{selectedAvailableCount}/{AVAILABLE_PERMISSIONS.length}</span></div></div><div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-64 overflow-y-auto">{Object.entries(permissionsByCategory).map(([category, perms]) => { const categoryPerms = perms.map(p => p.id); const allCategorySelected = categoryPerms.every(p => formData.permissions.includes(p)); return (<div key={category} className="border rounded p-2"><div className="flex items-center justify-between mb-2"><span className="text-sm font-medium">{category}</span><button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => selectCategoryPermissions(category)}>{allCategorySelected ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}</button></div>{perms.map(perm => <label key={perm.id} className="flex items-center gap-2 text-sm py-1 cursor-pointer"><Checkbox checked={formData.permissions.includes(perm.id)} onCheckedChange={() => togglePermission(perm.id)} />{perm.label}</label>)}</div>); })}</div></div>
         </div>
-      )}
+        <DialogFooter className="flex justify-between"><div>{editingRole && (editingRole.is_system || editingRole.is_default) && <Button variant="outline" onClick={handleResetToDefault} disabled={isSaving}><RotateCcw className="h-4 w-4 mr-1" />Сбросить права</Button>}</div><div className="flex gap-2"><Button variant="outline" onClick={() => setShowModal(false)} disabled={isSaving}>Отмена</Button><Button onClick={handleSave} disabled={isSaving}>{isSaving ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Сохранение...</> : editingRole ? 'Сохранить' : 'Создать'}</Button></div></DialogFooter>
+      </DialogContent></Dialog>
     </div>
   );
 }

@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import type { TenderFilters } from '@/lib/tenders/types';
-import styles from '@/app/(protected)/tenders/tenders.module.css';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { X } from 'lucide-react';
 
 interface TendersFiltersProps {
   onFilterChange: (filters: TenderFilters) => void;
@@ -38,14 +40,12 @@ export function TendersFilters({
   const hasActiveFilters = Object.values(filters).some((v) => v !== undefined);
 
   return (
-    <div className={styles.card} style={{ marginBottom: '1rem' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+    <div className="bg-card rounded-xl border p-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {/* Поиск */}
-        <div className={styles.formGroup}>
-          <label htmlFor="search">
-            Поиск
-          </label>
-          <input
+        <div>
+          <label htmlFor="search" className="text-sm font-medium mb-1 block">Поиск</label>
+          <Input
             id="search"
             type="search"
             placeholder="Номер, предмет, заказчик..."
@@ -55,14 +55,13 @@ export function TendersFilters({
         </div>
 
         {/* Статус */}
-        <div className={styles.formGroup}>
-          <label htmlFor="status">
-            Статус
-          </label>
+        <div>
+          <label htmlFor="status" className="text-sm font-medium mb-1 block">Статус</label>
           <select
             id="status"
             value={filters.status || ''}
             onChange={(e) => updateFilter('status', e.target.value)}
+            className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
           >
             <option value="">Все статусы</option>
             <option value="active">Активный</option>
@@ -73,89 +72,75 @@ export function TendersFilters({
         </div>
 
         {/* Этап */}
-        <div className={styles.formGroup}>
-          <label htmlFor="stage">
-            Этап
-          </label>
+        <div>
+          <label htmlFor="stage" className="text-sm font-medium mb-1 block">Этап</label>
           <select
             id="stage"
             value={filters.stage_id || ''}
             onChange={(e) => updateFilter('stage_id', e.target.value)}
+            className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
           >
             <option value="">Все этапы</option>
             {stages.map((stage) => (
-              <option key={stage.id} value={stage.id}>
-                {stage.name}
-              </option>
+              <option key={stage.id} value={stage.id}>{stage.name}</option>
             ))}
           </select>
         </div>
 
         {/* Тип */}
-        <div className={styles.formGroup}>
-          <label htmlFor="type">
-            Тип закупки
-          </label>
+        <div>
+          <label htmlFor="type" className="text-sm font-medium mb-1 block">Тип закупки</label>
           <select
             id="type"
             value={filters.type_id || ''}
             onChange={(e) => updateFilter('type_id', e.target.value)}
+            className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
           >
             <option value="">Все типы</option>
             {types.map((type) => (
-              <option key={type.id} value={type.id}>
-                {type.name}
-              </option>
+              <option key={type.id} value={type.id}>{type.name}</option>
             ))}
           </select>
         </div>
 
         {/* Шаблон этапов */}
         {templates.length > 0 && (
-          <div className={styles.formGroup}>
-            <label htmlFor="template">
-              📚 Шаблон этапов
-            </label>
+          <div>
+            <label htmlFor="template" className="text-sm font-medium mb-1 block">📚 Шаблон этапов</label>
             <select
               id="template"
               value={filters.template_id || ''}
               onChange={(e) => updateFilter('template_id', e.target.value)}
+              className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
             >
               <option value="">Все шаблоны</option>
               {templates.map((template) => (
-                <option key={template.id} value={template.id}>
-                  {template.icon} {template.name}
-                </option>
+                <option key={template.id} value={template.id}>{template.icon} {template.name}</option>
               ))}
             </select>
           </div>
         )}
 
         {/* Менеджер */}
-        <div className={styles.formGroup}>
-          <label htmlFor="manager">
-            Менеджер
-          </label>
+        <div>
+          <label htmlFor="manager" className="text-sm font-medium mb-1 block">Менеджер</label>
           <select
             id="manager"
             value={filters.manager_id || ''}
             onChange={(e) => updateFilter('manager_id', e.target.value)}
+            className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
           >
             <option value="">Все менеджеры</option>
             {managers.map((manager) => (
-              <option key={manager.id} value={manager.id}>
-                {manager.full_name}
-              </option>
+              <option key={manager.id} value={manager.id}>{manager.full_name}</option>
             ))}
           </select>
         </div>
 
         {/* Дата от */}
-        <div className={styles.formGroup}>
-          <label htmlFor="date_from">
-            Дедлайн от
-          </label>
-          <input
+        <div>
+          <label htmlFor="date_from" className="text-sm font-medium mb-1 block">Дедлайн от</label>
+          <Input
             id="date_from"
             type="date"
             value={filters.date_from || ''}
@@ -164,11 +149,9 @@ export function TendersFilters({
         </div>
 
         {/* Дата до */}
-        <div className={styles.formGroup}>
-          <label htmlFor="date_to">
-            Дедлайн до
-          </label>
-          <input
+        <div>
+          <label htmlFor="date_to" className="text-sm font-medium mb-1 block">Дедлайн до</label>
+          <Input
             id="date_to"
             type="date"
             value={filters.date_to || ''}
@@ -177,52 +160,39 @@ export function TendersFilters({
         </div>
 
         {/* Кнопка сброса */}
-        <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+        <div className="flex items-end">
           {hasActiveFilters && (
-            <button
-              onClick={clearFilters}
-              className={`${styles.btn} ${styles.btnSecondary}`}
-              style={{ width: '100%' }}
-            >
-              ✕ Сбросить фильтры
-            </button>
+            <Button variant="secondary" onClick={clearFilters} className="w-full">
+              <X className="h-4 w-4 mr-1" /> Сбросить фильтры
+            </Button>
           )}
         </div>
       </div>
 
       {/* Активные фильтры */}
       {hasActiveFilters && (
-        <div style={{ marginTop: '1rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <div className="mt-4 flex flex-wrap gap-2">
           {filters.search && (
-            <span className={styles.badgeInfo} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span className="inline-flex items-center gap-2 px-2 py-1 bg-primary/10 text-primary rounded-full text-sm">
               Поиск: {filters.search}
-              <button
-                onClick={() => updateFilter('search', undefined)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-              >
-                ✕
+              <button onClick={() => updateFilter('search', undefined)} className="hover:text-primary/70">
+                <X className="h-3 w-3" />
               </button>
             </span>
           )}
           {filters.status && (
-            <span className={styles.badgeInfo} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span className="inline-flex items-center gap-2 px-2 py-1 bg-primary/10 text-primary rounded-full text-sm">
               Статус: {filters.status}
-              <button
-                onClick={() => updateFilter('status', undefined)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-              >
-                ✕
+              <button onClick={() => updateFilter('status', undefined)} className="hover:text-primary/70">
+                <X className="h-3 w-3" />
               </button>
             </span>
           )}
           {filters.stage_id && (
-            <span className={styles.badgeInfo} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span className="inline-flex items-center gap-2 px-2 py-1 bg-primary/10 text-primary rounded-full text-sm">
               Этап
-              <button
-                onClick={() => updateFilter('stage_id', undefined)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-              >
-                ✕
+              <button onClick={() => updateFilter('stage_id', undefined)} className="hover:text-primary/70">
+                <X className="h-3 w-3" />
               </button>
             </span>
           )}

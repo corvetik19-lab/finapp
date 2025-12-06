@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import styles from "./Chat.module.css";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { Send, Loader2, RefreshCw } from "lucide-react";
 import ChatSidebar from "./ChatSidebar";
 import {
   getChatMessagesAction,
@@ -227,7 +230,7 @@ export default function Chat() {
   };
 
   return (
-    <div className={styles.container}>
+    <div className="flex h-full">
       <ChatSidebar
         currentChatId={currentChatId}
         onSelectChat={handleSelectChat}
@@ -235,23 +238,24 @@ export default function Chat() {
         refreshKey={refreshKey}
       />
 
-      <div className={styles.chatArea}>
+      <div className="flex-1 flex flex-col">
         {/* Header */}
-        <div className={styles.header}>
-          <h2>ChatGPT</h2>
-          <button
-            className={styles.modelButton}
+        <div className="flex items-center justify-between p-4 border-b">
+          <h2 className="font-semibold">ChatGPT</h2>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setShowModelSelector(!showModelSelector)}
             disabled={isLoading}
           >
             {selectedModel.split("/")[1] || selectedModel}
-          </button>
+          </Button>
         </div>
 
         {/* Model Selector */}
         {showModelSelector && (
-          <div className={styles.modelSelector}>
-            <h3>Рекомендуемые модели</h3>
+          <div className="absolute right-4 top-16 z-50 bg-card border rounded-lg shadow-lg p-4 w-64">
+            <h3 className="font-medium mb-2">Рекомендуемые модели</h3>
             {models.recommended.map((model) => (
               <button
                 key={model.id}
@@ -259,12 +263,15 @@ export default function Chat() {
                   setSelectedModel(model.id);
                   setShowModelSelector(false);
                 }}
-                className={selectedModel === model.id ? styles.selected : ""}
+                className={cn(
+                  "w-full text-left px-3 py-2 rounded text-sm hover:bg-muted",
+                  selectedModel === model.id && "bg-primary text-primary-foreground"
+                )}
               >
                 {model.name} {model.is_free && "🆓"}
               </button>
             ))}
-            <h3>Бесплатные модели</h3>
+            <h3 className="font-medium mb-2 mt-4">Бесплатные модели</h3>
             {models.free.map((model) => (
               <button
                 key={model.id}
@@ -272,7 +279,10 @@ export default function Chat() {
                   setSelectedModel(model.id);
                   setShowModelSelector(false);
                 }}
-                className={selectedModel === model.id ? styles.selected : ""}
+                className={cn(
+                  "w-full text-left px-3 py-2 rounded text-sm hover:bg-muted",
+                  selectedModel === model.id && "bg-primary text-primary-foreground"
+                )}
               >
                 {model.name}
               </button>
@@ -281,12 +291,12 @@ export default function Chat() {
         )}
 
         {/* Messages */}
-        <div className={styles.messages}>
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.length === 0 ? (
-            <div className={styles.welcomeMessage}>
-              <div className={styles.welcomeIcon}>💬</div>
-              <h3>Привет! Я ваш финансовый помощник</h3>
-              <p>
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <div className="text-5xl mb-4">💬</div>
+              <h3 className="text-lg font-semibold">Привет! Я ваш финансовый помощник</h3>
+              <p className="text-muted-foreground max-w-md">
                 Я могу помочь вам с анализом расходов, планированием бюджета и
                 ответить на вопросы о ваших финансах.
               </p>
@@ -295,61 +305,56 @@ export default function Chat() {
             messages.map((message) => (
               <div
                 key={message.id}
-                className={
-                  message.role === "user"
-                    ? styles.userMessage
-                    : styles.assistantMessage
-                }
+                className={cn(
+                  "flex gap-3 max-w-3xl",
+                  message.role === "user" ? "ml-auto flex-row-reverse" : ""
+                )}
               >
-                <div className={styles.messageIcon}>
+                <div className="text-2xl">
                   {message.role === "user" ? "👤" : "🤖"}
                 </div>
-                <div className={styles.messageContent}>
-                  {message.content}
+                <div className={cn(
+                  "rounded-lg p-3",
+                  message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
+                )}>
+                  <div className="whitespace-pre-wrap">{message.content}</div>
                 </div>
               </div>
             ))
           )}
           {connectionStatus === "error" && errorMessage && (
-            <div className={styles.errorMessage}>
-              <div className={styles.errorIcon}>⚠️</div>
-              <div className={styles.errorContent}>
-                <h3>Ошибка подключения к AI</h3>
-                <p>&quot;{errorMessage}&quot;</p>
-                <div className={styles.errorHelp}>
-                  <p>
-                    <strong>Возможные причины:</strong>
-                  </p>
-                  <ul>
-                    <li>OpenAI API ключ не настроен</li>
-                    <li>Проблемы с интернет-соединением</li>
-                    <li>API ключ недействителен или исчерпан лимит</li>
-                  </ul>
-                  <p>
-                    <strong>Как исправить:</strong>
-                  </p>
-                  <ul>
-                    <li>
-                      Проверьте переменную окружения{" "}
-                      <code>OPENAI_API_KEY</code> в .env.local
-                    </li>
-                    <li>
-                      Убедитесь что API ключ действителен на
-                      https://platform.openai.com/api-keys
-                    </li>
-                    <li>Попробуйте перезагрузить страницу</li>
-                  </ul>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex gap-3">
+                <div className="text-2xl">⚠️</div>
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-red-800">Ошибка подключения к AI</h3>
+                  <p className="text-red-700">&quot;{errorMessage}&quot;</p>
+                  <div className="text-sm text-red-700 space-y-2">
+                    <p><strong>Возможные причины:</strong></p>
+                    <ul className="list-disc list-inside">
+                      <li>OpenAI API ключ не настроен</li>
+                      <li>Проблемы с интернет-соединением</li>
+                      <li>API ключ недействителен или исчерпан лимит</li>
+                    </ul>
+                    <p><strong>Как исправить:</strong></p>
+                    <ul className="list-disc list-inside">
+                      <li>Проверьте переменную окружения <code className="bg-red-100 px-1 rounded">OPENAI_API_KEY</code> в .env.local</li>
+                      <li>Убедитесь что API ключ действителен на https://platform.openai.com/api-keys</li>
+                      <li>Попробуйте перезагрузить страницу</li>
+                    </ul>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setConnectionStatus("checking");
+                      setErrorMessage("");
+                      window.location.reload();
+                    }}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-1" /> Попробовать снова
+                  </Button>
                 </div>
-                <button
-                  onClick={() => {
-                    setConnectionStatus("checking");
-                    setErrorMessage("");
-                    window.location.reload();
-                  }}
-                  className={styles.retryButton}
-                >
-                  🔄 Попробовать снова
-                </button>
               </div>
             </div>
           )}
@@ -357,22 +362,18 @@ export default function Chat() {
         </div>
 
         {/* Input */}
-        <form className={styles.inputForm} onSubmit={handleSubmit}>
-          <input
+        <form className="p-4 border-t flex gap-2" onSubmit={handleSubmit}>
+          <Input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Сообщение ChatGPT"
             disabled={isLoading}
-            className={styles.input}
+            className="flex-1"
           />
-          <button
-            type="submit"
-            disabled={isLoading || !input.trim()}
-            className={styles.sendButton}
-          >
-            {isLoading ? "⏳" : "↑"}
-          </button>
+          <Button type="submit" disabled={isLoading || !input.trim()}>
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          </Button>
         </form>
       </div>
     </div>

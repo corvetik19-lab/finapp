@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import styles from "./Calculator.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { X, Delete } from "lucide-react";
 
 type CalculatorProps = {
   onResult: (value: string) => void;
@@ -130,46 +132,31 @@ export default function Calculator({ onResult, onClose, initialValue }: Calculat
   }, [display, expression, onClose]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className={styles.calculator}>
-      <div className={styles.header}>
-        <span>Калькулятор</span>
-        <button type="button" onClick={onClose} className={styles.closeBtn}>
-          <span className="material-icons">close</span>
-        </button>
-      </div>
-      
-      <div className={styles.display}>
-        {expression && <div className={styles.expression}>{expression}</div>}
-        <div className={styles.value}>{display}</div>
-      </div>
-
-      <div className={styles.buttons}>
-        <button type="button" onClick={handleClear} className={styles.btnClear}>C</button>
-        <button type="button" onClick={handleBackspace} className={styles.btnOperator}>
-          <span className="material-icons">backspace</span>
-        </button>
-        <button type="button" onClick={() => handleOperator("/")} className={styles.btnOperator}>÷</button>
-        <button type="button" onClick={() => handleOperator("*")} className={styles.btnOperator}>×</button>
-
-        <button type="button" onClick={() => handleNumber("7")}>7</button>
-        <button type="button" onClick={() => handleNumber("8")}>8</button>
-        <button type="button" onClick={() => handleNumber("9")}>9</button>
-        <button type="button" onClick={() => handleOperator("-")} className={styles.btnOperator}>−</button>
-
-        <button type="button" onClick={() => handleNumber("4")}>4</button>
-        <button type="button" onClick={() => handleNumber("5")}>5</button>
-        <button type="button" onClick={() => handleNumber("6")}>6</button>
-        <button type="button" onClick={() => handleOperator("+")} className={styles.btnOperator}>+</button>
-
-        <button type="button" onClick={() => handleNumber("1")}>1</button>
-        <button type="button" onClick={() => handleNumber("2")}>2</button>
-        <button type="button" onClick={() => handleNumber("3")}>3</button>
-        <button type="button" onClick={() => handleNumber("0")}>0</button>
-
-        <button type="button" onClick={handleDecimal}>.</button>
-        <button type="button" onClick={handleEquals} className={styles.btnEquals}>=</button>
-      </div>
-    </div>
+    <Card className="w-[280px] shadow-xl">
+      <CardHeader className="flex-row items-center justify-between py-3 px-4">
+        <CardTitle className="text-base">Калькулятор</CardTitle>
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}><X className="h-4 w-4" /></Button>
+      </CardHeader>
+      <CardContent className="p-4 pt-0 space-y-4">
+        <div className="bg-muted rounded-lg p-3 text-right">
+          {expression && <div className="text-xs text-muted-foreground">{expression}</div>}
+          <div className="text-2xl font-bold font-mono">{display}</div>
+        </div>
+        <div className="grid grid-cols-4 gap-2">
+          <Button variant="destructive" size="sm" onClick={handleClear}>C</Button>
+          <Button variant="secondary" size="sm" onClick={handleBackspace}><Delete className="h-4 w-4" /></Button>
+          <Button variant="secondary" size="sm" onClick={() => handleOperator("/")}>÷</Button>
+          <Button variant="secondary" size="sm" onClick={() => handleOperator("*")}>×</Button>
+          {["7","8","9"].map(n => <Button key={n} variant="outline" size="sm" onClick={() => handleNumber(n)}>{n}</Button>)}
+          <Button variant="secondary" size="sm" onClick={() => handleOperator("-")}>−</Button>
+          {["4","5","6"].map(n => <Button key={n} variant="outline" size="sm" onClick={() => handleNumber(n)}>{n}</Button>)}
+          <Button variant="secondary" size="sm" onClick={() => handleOperator("+")}>+</Button>
+          {["1","2","3","0"].map(n => <Button key={n} variant="outline" size="sm" onClick={() => handleNumber(n)}>{n}</Button>)}
+          <Button variant="outline" size="sm" onClick={handleDecimal}>.</Button>
+          <Button className="bg-primary" size="sm" onClick={handleEquals}>=</Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

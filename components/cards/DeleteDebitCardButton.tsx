@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Trash2, Loader2 } from "lucide-react";
 
 type DeleteDebitCardButtonProps = {
   cardId: string;
@@ -50,21 +52,10 @@ export default function DeleteDebitCardButton({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={handleDelete}
-        disabled={isPending}
-        className={className}
-        title="Удалить карту"
-      >
-        <span className="material-icons" aria-hidden>
-          delete
-        </span>
-        {isPending && <span style={{ fontSize: 12 }}>Удаление...</span>}
-      </button>
-      {error && (
-        <div style={{ color: "red", fontSize: 12, marginTop: 4 }}>{error}</div>
-      )}
+      <Button variant="ghost" size="icon" onClick={handleDelete} disabled={isPending} className={className} title="Удалить карту">
+        {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+      </Button>
+      {error && <div className="text-destructive text-xs mt-1">{error}</div>}
     </>
   );
 }

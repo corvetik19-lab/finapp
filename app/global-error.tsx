@@ -2,6 +2,7 @@
 
 import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
 
 export default function GlobalError({
   error,
@@ -11,16 +12,19 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log error to Sentry
     Sentry.captureException(error);
   }, [error]);
 
   return (
     <html>
-      <body>
-        <div style={{ padding: "20px", textAlign: "center" }}>
-          <h2>Что-то пошло не так!</h2>
-          <button onClick={() => reset()}>Попробовать снова</button>
+      <body className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="p-8 text-center bg-white rounded-lg shadow-lg max-w-md">
+          <div className="text-5xl mb-4">⚠️</div>
+          <h2 className="text-xl font-semibold mb-2">Что-то пошло не так!</h2>
+          <p className="text-gray-600 mb-6">Произошла непредвиденная ошибка</p>
+          <Button onClick={() => reset()}>
+            Попробовать снова
+          </Button>
         </div>
       </body>
     </html>

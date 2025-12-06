@@ -3,7 +3,10 @@
 import { useState, useEffect, useRef } from "react";
 import { searchProductItems, getProductItems } from "@/lib/product-items/service";
 import type { ProductItem } from "@/types/product-item";
-import styles from "./ProductAutocomplete.module.css";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 
 type ProductAutocompleteProps = {
   value: string;
@@ -135,116 +138,47 @@ export function ProductAutocomplete({
 
   const isValidProduct = selectedProduct !== null;
 
+  const renderProduct = (product: ProductItem, isSelected = false) => (
+    <div key={product.id} className={cn("px-3 py-2 cursor-pointer hover:bg-muted rounded-md", isSelected && "bg-muted")} onClick={() => handleSelectProduct(product)} onMouseEnter={() => setSelectedIndex(suggestions.indexOf(product))}>
+      <div className="font-medium text-sm">{product.name}</div>
+      <div className="text-xs text-muted-foreground">
+        {product.description && <span>{product.description}</span>}
+        {product.default_price_per_unit && <span>{product.description ? " • " : ""}{(product.default_price_per_unit / 100).toFixed(2)} ₽</span>}
+        {product.categories && <span> • {product.categories.name}</span>}
+      </div>
+    </div>
+  );
+
   return (
-    <div className={styles.wrapper} ref={wrapperRef}>
-      <div className={styles.inputWrapper}>
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => handleInputChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          className={`${styles.input} ${!isValidProduct && value ? styles.inputInvalid : ""}`}
-          autoComplete="off"
-        />
-        <button
-          type="button"
-          onClick={toggleDropdown}
-          className={styles.dropdownButton}
-          title="Показать все товары"
-        >
-          <span className="material-icons">
-            {showDropdown ? "expand_less" : "expand_more"}
-          </span>
-        </button>
+    <div className="relative" ref={wrapperRef}>
+      <div className="flex gap-1">
+        <Input type="text" value={value} onChange={(e) => handleInputChange(e.target.value)} onKeyDown={handleKeyDown} placeholder={placeholder} className={cn("flex-1", !isValidProduct && value && "border-destructive")} autoComplete="off" />
+        <Button type="button" variant="outline" size="icon" onClick={toggleDropdown} title="Показать все товары">
+          {showDropdown ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </Button>
       </div>
       
-      {loading && (
-        <div className={styles.loading}>
-          <span className={styles.spinner}></span>
-        </div>
-      )}
+      {loading && <div className="absolute right-12 top-2"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>}
 
       {!isValidProduct && value && !showSuggestions && !showDropdown && (
-        <div className={styles.error}>
-          Товар не найден в справочнике. Выберите из списка.
-        </div>
+        <div className="text-xs text-destructive mt-1">Товар не найден. Выберите из списка.</div>
       )}
 
       {showSuggestions && suggestions.length > 0 && (
-        <div className={styles.suggestions}>
-          {suggestions.map((product, index) => (
-            <div
-              key={product.id}
-              className={`${styles.suggestion} ${
-                index === selectedIndex ? styles.selected : ""
-              }`}
-              onClick={() => handleSelectProduct(product)}
-              onMouseEnter={() => setSelectedIndex(index)}
-            >
-              <div className={styles.productName}>{product.name}</div>
-              <div className={styles.productDetails}>
-                {product.description && (
-                  <span className={styles.productDescription}>
-                    {product.description}
-                  </span>
-                )}
-                {product.default_price_per_unit && (
-                  <span className={styles.productPrice}>
-                    {product.description ? " • " : ""}
-                    {(product.default_price_per_unit / 100).toFixed(2)} ₽
-                  </span>
-                )}
-                {product.categories && (
-                  <span className={styles.productCategory}>
-                    {" • "}
-                    {product.categories.name}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
+        <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-60 overflow-y-auto">
+          {suggestions.map((product, index) => renderProduct(product, index === selectedIndex))}
         </div>
       )}
 
       {showDropdown && allProducts.length > 0 && (
-        <div className={styles.suggestions}>
-          {allProducts.map((product) => (
-            <div
-              key={product.id}
-              className={styles.suggestion}
-              onClick={() => handleSelectProduct(product)}
-            >
-              <div className={styles.productName}>{product.name}</div>
-              <div className={styles.productDetails}>
-                {product.description && (
-                  <span className={styles.productDescription}>
-                    {product.description}
-                  </span>
-                )}
-                {product.default_price_per_unit && (
-                  <span className={styles.productPrice}>
-                    {product.description ? " • " : ""}
-                    {(product.default_price_per_unit / 100).toFixed(2)} ₽
-                  </span>
-                )}
-                {product.categories && (
-                  <span className={styles.productCategory}>
-                    {" • "}
-                    {product.categories.name}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
+        <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-60 overflow-y-auto">
+          {allProducts.map((product) => renderProduct(product))}
         </div>
       )}
 
       {showDropdown && allProducts.length === 0 && (
-        <div className={styles.suggestions}>
-          <div className={styles.emptyMessage}>
-            Нет товаров в справочнике. Добавьте товары в настройках.
-          </div>
+        <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg p-3 text-sm text-muted-foreground">
+          Нет товаров в справочнике. Добавьте товары в настройках.
         </div>
       )}
     </div>

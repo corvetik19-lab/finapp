@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { getSupabaseClient } from '@/lib/supabase/client';
-import styles from './AttachmentsList.module.css';
+import { Button } from "@/components/ui/button";
+import { Loader2, Download, Eye, Trash2, Paperclip, FileText, AlertCircle } from "lucide-react";
 
 interface Attachment {
   id: string;
@@ -35,28 +37,6 @@ export function AttachmentsList({ transactionId, onDelete, onViewFile }: Attachm
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
-  };
-
-  const getFileIcon = (mimeType: string) => {
-    if (mimeType.startsWith('image/')) {
-      return (
-        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-      );
-    }
-    if (mimeType === 'application/pdf') {
-      return (
-        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-        </svg>
-      );
-    }
-    return (
-      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-    );
   };
 
   const fetchAttachments = useCallback(async () => {
@@ -187,119 +167,32 @@ export function AttachmentsList({ transactionId, onDelete, onViewFile }: Attachm
     }
   };
 
-  if (loading) {
-    return (
-      <div className={styles.loading}>
-        <div className={styles.spinner} />
-        <span>Загрузка вложений...</span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className={styles.error}>
-        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        {error}
-      </div>
-    );
-  }
-
-  if (attachments.length === 0) {
-    return (
-      <div className={styles.empty}>
-        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-        </svg>
-        <p>Нет вложений</p>
-      </div>
-    );
-  }
+  if (loading) return <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Загрузка...</div>;
+  if (error) return <div className="flex items-center gap-2 text-sm text-destructive"><AlertCircle className="h-4 w-4" />{error}</div>;
+  if (attachments.length === 0) return <div className="flex items-center gap-2 text-sm text-muted-foreground"><Paperclip className="h-4 w-4" />Нет вложений</div>;
 
   return (
-    <div className={styles.attachmentsList}>
-      <h4 className={styles.title}>
-        Вложения ({attachments.length})
-      </h4>
-      
-      <div className={styles.grid}>
+    <div className="space-y-2">
+      <h4 className="font-medium text-sm">Вложения ({attachments.length})</h4>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
         {attachments.map((attachment) => {
           const isImage = attachment.mime_type?.startsWith('image/') || false;
           const signedUrl = signedUrls[attachment.id] || '';
           const fileName = attachment.storage_path?.split('/').pop() || 'Файл';
-
           return (
-            <div key={attachment.id} className={styles.attachment}>
+            <div key={attachment.id} className="border rounded-lg p-2 space-y-2">
               {isImage ? (
-                <div className={styles.imagePreview}>
-                  {signedUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={signedUrl} alt={fileName} />
-                  )}
+                <div className="aspect-video bg-muted rounded overflow-hidden">
+                  {signedUrl && <Image src={signedUrl} alt={fileName} fill className="object-cover" />}
                 </div>
               ) : (
-                <div className={styles.filePreview}>
-                  {getFileIcon(attachment.mime_type || 'application/octet-stream')}
-                </div>
+                <div className="aspect-video bg-muted rounded flex items-center justify-center"><FileText className="h-8 w-8 text-muted-foreground" /></div>
               )}
-
-              <div className={styles.attachmentInfo}>
-                <div className={styles.attachmentName} title={fileName}>
-                  {fileName}
-                </div>
-                <div className={styles.attachmentSize}>
-                  {formatFileSize(attachment.size_bytes || 0)}
-                </div>
-              </div>
-
-              <div className={styles.attachmentActions}>
-                <button
-                  type="button"
-                  onClick={() => handleDownload(attachment)}
-                  className={styles.downloadButton}
-                  title="Скачать"
-                >
-                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                </button>
-
-                {signedUrl && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (onViewFile) {
-                        onViewFile({
-                          fileName,
-                          fileUrl: signedUrl,
-                          mimeType: attachment.mime_type,
-                        });
-                      }
-                    }}
-                    className={styles.viewButton}
-                    title="Просмотр"
-                  >
-                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  </button>
-                )}
-
-                {onDelete && (
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(attachment)}
-                    className={styles.deleteButton}
-                    title="Удалить"
-                  >
-                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                )}
+              <div><div className="text-xs font-medium truncate" title={fileName}>{fileName}</div><div className="text-xs text-muted-foreground">{formatFileSize(attachment.size_bytes || 0)}</div></div>
+              <div className="flex gap-1">
+                <Button variant="ghost" size="sm" onClick={() => handleDownload(attachment)} title="Скачать"><Download className="h-4 w-4" /></Button>
+                {signedUrl && <Button variant="ghost" size="sm" onClick={() => onViewFile?.({ fileName, fileUrl: signedUrl, mimeType: attachment.mime_type })} title="Просмотр"><Eye className="h-4 w-4" /></Button>}
+                {onDelete && <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDelete(attachment)} title="Удалить"><Trash2 className="h-4 w-4" /></Button>}
               </div>
             </div>
           );

@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import type { DashboardData } from '@/lib/tenders/dashboard-service';
-import styles from './Dashboard.module.css';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { RefreshCw, ChevronRight, Trophy, Clock } from 'lucide-react';
 
 interface Props {
   initialData: DashboardData;
@@ -59,440 +61,235 @@ export default function DashboardClient({ initialData, companyId }: Props) {
   const maxMonthlyCount = Math.max(...monthly.map(m => m.count), 1);
 
   return (
-    <div className={styles.container}>
+    <div className="space-y-6">
       {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.headerInfo}>
-          <h1>
-            <span className={styles.headerIcon}>📊</span>
-            Дашборд тендеров
-          </h1>
-          <p>Аналитика и ключевые показатели эффективности</p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">📊 Дашборд тендеров</h1>
+          <p className="text-gray-500 mt-1">Аналитика и ключевые показатели эффективности</p>
         </div>
-        <div className={styles.headerActions}>
-          <button 
-            className={styles.refreshBtn} 
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            {isRefreshing ? '⏳' : '🔄'} Обновить
-          </button>
-          <Link href="/tenders/department" className={styles.primaryBtn}>
-            📋 К тендерам
-          </Link>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />Обновить
+          </Button>
+          <Button asChild><Link href="/tenders/department">📋 К тендерам</Link></Button>
         </div>
       </div>
-
       {/* KPI Cards */}
-      <div className={styles.kpiGrid}>
-        <div className={styles.kpiCard} style={{ '--kpi-color': '#3b82f6', '--kpi-bg': '#dbeafe' } as React.CSSProperties}>
-          <div className={styles.kpiHeader}>
-            <div className={styles.kpiIcon}>📋</div>
-            {overview.activeTenders > 0 && (
-              <span className={`${styles.kpiTrend} ${styles.kpiTrendUp}`}>
-                {overview.activeTenders} активных
-              </span>
-            )}
-          </div>
-          <div className={styles.kpiValue}>{overview.totalTenders}</div>
-          <div className={styles.kpiLabel}>Всего тендеров</div>
-          <div className={styles.kpiSubtext}>На рассмотрении: {overview.pendingTenders}</div>
-        </div>
-
-        <div className={styles.kpiCard} style={{ '--kpi-color': '#10b981', '--kpi-bg': '#d1fae5' } as React.CSSProperties}>
-          <div className={styles.kpiHeader}>
-            <div className={styles.kpiIcon}>🏆</div>
-            <span className={`${styles.kpiTrend} ${overview.winRate >= 50 ? styles.kpiTrendUp : styles.kpiTrendDown}`}>
-              {overview.winRate.toFixed(0)}% побед
-            </span>
-          </div>
-          <div className={styles.kpiValue}>{overview.wonTenders}</div>
-          <div className={styles.kpiLabel}>Выиграно</div>
-          <div className={styles.kpiSubtext}>Проиграно: {overview.lostTenders}</div>
-        </div>
-
-        <div className={styles.kpiCard} style={{ '--kpi-color': '#8b5cf6', '--kpi-bg': '#ede9fe' } as React.CSSProperties}>
-          <div className={styles.kpiHeader}>
-            <div className={styles.kpiIcon}>💰</div>
-          </div>
-          <div className={styles.kpiValue}>{formatCurrency(overview.totalNmck)}</div>
-          <div className={styles.kpiLabel}>Общая НМЦК</div>
-          <div className={styles.kpiSubtext}>Контракты: {formatCurrency(overview.totalContractPrice)}</div>
-        </div>
-
-        <div className={styles.kpiCard} style={{ '--kpi-color': '#f59e0b', '--kpi-bg': '#fef3c7' } as React.CSSProperties}>
-          <div className={styles.kpiHeader}>
-            <div className={styles.kpiIcon}>💎</div>
-            {overview.totalNmck > 0 && (
-              <span className={`${styles.kpiTrend} ${styles.kpiTrendUp}`}>
-                {((overview.totalSavings / overview.totalNmck) * 100).toFixed(1)}%
-              </span>
-            )}
-          </div>
-          <div className={styles.kpiValue}>{formatCurrency(overview.totalSavings)}</div>
-          <div className={styles.kpiLabel}>Экономия</div>
-          <div className={styles.kpiSubtext}>Средний контракт: {formatCurrency(overview.avgContractValue)}</div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="border-l-4 border-l-blue-500">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-2xl">📋</span>
+              {overview.activeTenders > 0 && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">{overview.activeTenders} активных</span>}
+            </div>
+            <div className="text-3xl font-bold text-gray-900">{overview.totalTenders}</div>
+            <div className="text-sm text-gray-500">Всего тендеров</div>
+            <div className="text-xs text-gray-400 mt-1">На рассмотрении: {overview.pendingTenders}</div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-green-500">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-2xl">🏆</span>
+              <span className={`text-xs px-2 py-1 rounded-full ${overview.winRate >= 50 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{overview.winRate.toFixed(0)}% побед</span>
+            </div>
+            <div className="text-3xl font-bold text-gray-900">{overview.wonTenders}</div>
+            <div className="text-sm text-gray-500">Выиграно</div>
+            <div className="text-xs text-gray-400 mt-1">Проиграно: {overview.lostTenders}</div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-purple-500">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2"><span className="text-2xl">💰</span></div>
+            <div className="text-2xl font-bold text-gray-900">{formatCurrency(overview.totalNmck)}</div>
+            <div className="text-sm text-gray-500">Общая НМЦК</div>
+            <div className="text-xs text-gray-400 mt-1">Контракты: {formatCurrency(overview.totalContractPrice)}</div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-amber-500">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-2xl">💎</span>
+              {overview.totalNmck > 0 && <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">{((overview.totalSavings / overview.totalNmck) * 100).toFixed(1)}%</span>}
+            </div>
+            <div className="text-2xl font-bold text-gray-900">{formatCurrency(overview.totalSavings)}</div>
+            <div className="text-sm text-gray-500">Экономия</div>
+            <div className="text-xs text-gray-400 mt-1">Средний контракт: {formatCurrency(overview.avgContractValue)}</div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Charts Grid */}
-      <div className={styles.chartsGrid}>
-        {/* By Stage */}
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h3 className={styles.cardTitle}>
-              <span className={styles.cardTitleIcon}>📈</span>
-              По этапам
-            </h3>
-          </div>
-          <div className={styles.cardBody}>
-            {byStage.length > 0 ? (
-              byStage.map(stage => (
-                <div key={stage.stage} className={styles.progressItem}>
-                  <div className={styles.progressHeader}>
-                    <div className={styles.progressLabel}>
-                      <span className={styles.progressDot} style={{ background: stage.color }} />
-                      <span className={styles.progressName}>{stage.stage}</span>
-                    </div>
-                    <span className={styles.progressValue}>{stage.count}</span>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2">📈 По этапам</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            {byStage.length > 0 ? byStage.map(stage => (
+              <div key={stage.stage} className="space-y-1">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full" style={{ background: stage.color }} />
+                    <span className="text-gray-700">{stage.stage}</span>
                   </div>
-                  <div className={styles.progressBar}>
-                    <div 
-                      className={styles.progressFill} 
-                      style={{ 
-                        width: `${stage.percent}%`,
-                        background: stage.color,
-                      }} 
-                    />
+                  <span className="font-medium">{stage.count}</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all" style={{ width: `${stage.percent}%`, background: stage.color }} />
+                </div>
+              </div>
+            )) : <div className="text-center py-8 text-gray-500"><span className="text-3xl">📊</span><p className="mt-2">Нет данных</p></div>}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2">🏷️ По типам</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            {byType.length > 0 ? byType.map((type, idx) => {
+              const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
+              const color = colors[idx % colors.length];
+              return (
+                <div key={type.type} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full" style={{ background: color }} />
+                      <span className="text-gray-700">{type.type}</span>
+                    </div>
+                    <span className="font-medium">{type.count}</span>
+                  </div>
+                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all" style={{ width: `${type.percent}%`, background: color }} />
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className={styles.emptyState}>
-                <div className={styles.emptyIcon}>📊</div>
-                <p className={styles.emptyText}>Нет данных</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* By Type */}
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h3 className={styles.cardTitle}>
-              <span className={styles.cardTitleIcon}>🏷️</span>
-              По типам
-            </h3>
-          </div>
-          <div className={styles.cardBody}>
-            {byType.length > 0 ? (
-              byType.map((type, idx) => {
-                const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
-                const color = colors[idx % colors.length];
-                return (
-                  <div key={type.type} className={styles.progressItem}>
-                    <div className={styles.progressHeader}>
-                      <div className={styles.progressLabel}>
-                        <span className={styles.progressDot} style={{ background: color }} />
-                        <span className={styles.progressName}>{type.type}</span>
-                      </div>
-                      <span className={styles.progressValue}>{type.count}</span>
-                    </div>
-                    <div className={styles.progressBar}>
-                      <div 
-                        className={styles.progressFill} 
-                        style={{ 
-                          width: `${type.percent}%`,
-                          background: color,
-                        }} 
-                      />
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className={styles.emptyState}>
-                <div className={styles.emptyIcon}>🏷️</div>
-                <p className={styles.emptyText}>Нет данных</p>
-              </div>
-            )}
-          </div>
-        </div>
+              );
+            }) : <div className="text-center py-8 text-gray-500"><span className="text-3xl">🏷️</span><p className="mt-2">Нет данных</p></div>}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Monthly Chart */}
-      <div className={styles.card} style={{ marginBottom: 24 }}>
-        <div className={styles.cardHeader}>
-          <h3 className={styles.cardTitle}>
-            <span className={styles.cardTitleIcon}>📅</span>
-            Динамика за 12 месяцев
-          </h3>
-          <div className={styles.cardActions}>
-            <span style={{ fontSize: 12, color: '#64748b', display: 'flex', alignItems: 'center', gap: 16 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 12, height: 12, borderRadius: 2, background: '#10b981' }} />
-                Победы
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 12, height: 12, borderRadius: 2, background: '#ef4444' }} />
-                Проигрыши
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 12, height: 12, borderRadius: 2, background: '#94a3b8' }} />
-                В работе
-              </span>
-            </span>
+      <Card className="mb-6">
+        <CardHeader className="pb-2 flex flex-row items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">📅 Динамика за 12 месяцев</CardTitle>
+          <div className="flex items-center gap-4 text-xs text-gray-500">
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-500" />Победы</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-500" />Проигрыши</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-400" />В работе</span>
           </div>
-        </div>
-        <div className={styles.cardBody}>
-          <div className={styles.monthlyChart}>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-end gap-2 h-40">
             {monthly.map(month => {
               const other = month.count - month.won - month.lost;
               const wonHeight = (month.won / maxMonthlyCount) * 100;
               const lostHeight = (month.lost / maxMonthlyCount) * 100;
               const otherHeight = (other / maxMonthlyCount) * 100;
-              
               return (
-                <div key={month.monthKey} className={styles.monthBar} title={`${month.month}: ${month.count} тендеров`}>
-                  <div className={styles.monthBarContainer}>
-                    {month.won > 0 && (
-                      <div 
-                        className={styles.monthBarWon} 
-                        style={{ height: `${wonHeight}%` }}
-                        title={`Выиграно: ${month.won}`}
-                      />
-                    )}
-                    {other > 0 && (
-                      <div 
-                        className={styles.monthBarOther} 
-                        style={{ height: `${otherHeight}%` }}
-                        title={`В работе: ${other}`}
-                      />
-                    )}
-                    {month.lost > 0 && (
-                      <div 
-                        className={styles.monthBarLost} 
-                        style={{ height: `${lostHeight}%` }}
-                        title={`Проиграно: ${month.lost}`}
-                      />
-                    )}
+                <div key={month.monthKey} className="flex-1 flex flex-col items-center gap-1" title={`${month.month}: ${month.count}`}>
+                  <div className="w-full flex flex-col-reverse h-32">
+                    {month.won > 0 && <div className="bg-green-500 rounded-t" style={{ height: `${wonHeight}%` }} title={`Выиграно: ${month.won}`} />}
+                    {other > 0 && <div className="bg-gray-400" style={{ height: `${otherHeight}%` }} title={`В работе: ${other}`} />}
+                    {month.lost > 0 && <div className="bg-red-500 rounded-b" style={{ height: `${lostHeight}%` }} title={`Проиграно: ${month.lost}`} />}
                   </div>
-                  <span className={styles.monthLabel}>
-                    {month.month.split(' ')[0]}
-                  </span>
+                  <span className="text-xs text-gray-500">{month.month.split(' ')[0]}</span>
                 </div>
               );
             })}
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Main Grid: Recent + Deadlines + Tasks */}
-      <div className={styles.mainGrid}>
-        {/* Recent Tenders */}
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h3 className={styles.cardTitle}>
-              <span className={styles.cardTitleIcon}>🕐</span>
-              Последние тендеры
-            </h3>
-            <Link href="/tenders/list" className={styles.cardBtn}>
-              Все тендеры →
-            </Link>
-          </div>
-          {recentTenders.length > 0 ? (
-            <div className={styles.tendersList}>
-              {recentTenders.map(tender => (
-                <Link 
-                  key={tender.id} 
-                  href={`/tenders/${tender.id}`}
-                  className={styles.tenderItem}
-                >
-                  <div 
-                    className={styles.tenderStage} 
-                    style={{ background: tender.stageColor }}
-                  />
-                  <div className={styles.tenderInfo}>
-                    <div className={styles.tenderCustomer}>{tender.customer}</div>
-                    <div className={styles.tenderSubject}>{tender.subject}</div>
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">🕐 Последние тендеры</CardTitle>
+            <Link href="/tenders/list" className="text-sm text-blue-600 hover:underline flex items-center gap-1">Все тендеры <ChevronRight className="h-4 w-4" /></Link>
+          </CardHeader>
+          <CardContent className="divide-y">
+            {recentTenders.length > 0 ? recentTenders.map(tender => (
+              <Link key={tender.id} href={`/tenders/${tender.id}`} className="flex items-center gap-3 py-3 hover:bg-gray-50 -mx-4 px-4">
+                <div className="w-1 h-10 rounded-full" style={{ background: tender.stageColor }} />
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm truncate">{tender.customer}</div>
+                  <div className="text-xs text-gray-500 truncate">{tender.subject}</div>
+                </div>
+                <div className="text-right">
+                  <div className="font-semibold text-sm">{formatCurrency(tender.nmck)}</div>
+                  <div className="text-xs text-gray-400">{formatDate(tender.createdAt)}</div>
+                </div>
+              </Link>
+            )) : <div className="text-center py-8 text-gray-500"><span className="text-3xl">📋</span><p className="mt-2">Нет тендеров</p></div>}
+          </CardContent>
+        </Card>
+        <div className="space-y-4">
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Clock className="h-4 w-4" />Ближайшие сроки</CardTitle></CardHeader>
+            <CardContent className="space-y-2">
+              {upcomingDeadlines.length > 0 ? upcomingDeadlines.map(deadline => (
+                <Link key={deadline.id} href={`/tenders/${deadline.id}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
+                  <div className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center text-white ${deadline.daysLeft <= 2 ? 'bg-red-500' : deadline.daysLeft <= 5 ? 'bg-amber-500' : 'bg-blue-500'}`}>
+                    <span className="text-lg font-bold leading-none">{deadline.daysLeft}</span>
+                    <span className="text-xs">{deadline.daysLeft === 1 ? 'день' : deadline.daysLeft < 5 ? 'дня' : 'дней'}</span>
                   </div>
-                  <div className={styles.tenderMeta}>
-                    <div className={styles.tenderNmck}>{formatCurrency(tender.nmck)}</div>
-                    <div className={styles.tenderDate}>{formatDate(tender.createdAt)}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{deadline.customer}</div>
+                    <div className="text-xs text-gray-500 truncate">{deadline.purchaseNumber}</div>
                   </div>
                 </Link>
-              ))}
-            </div>
-          ) : (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>📋</div>
-              <p className={styles.emptyTitle}>Нет тендеров</p>
-              <p className={styles.emptyText}>Создайте первый тендер</p>
-            </div>
-          )}
-        </div>
-
-        {/* Right Column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          {/* Upcoming Deadlines */}
-          <div className={styles.card}>
-            <div className={styles.cardHeader}>
-              <h3 className={styles.cardTitle}>
-                <span className={styles.cardTitleIcon}>⏰</span>
-                Ближайшие сроки
-              </h3>
-            </div>
-            {upcomingDeadlines.length > 0 ? (
-              <div className={styles.deadlinesList}>
-                {upcomingDeadlines.map(deadline => (
-                  <Link 
-                    key={deadline.id}
-                    href={`/tenders/${deadline.id}`}
-                    className={styles.deadlineItem}
-                  >
-                    <div className={`${styles.deadlineDays} ${
-                      deadline.daysLeft <= 2 ? styles.deadlineDaysUrgent :
-                      deadline.daysLeft <= 5 ? styles.deadlineDaysWarning :
-                      styles.deadlineDaysNormal
-                    }`}>
-                      <span className={styles.deadlineDaysNumber}>{deadline.daysLeft}</span>
-                      <span className={styles.deadlineDaysLabel}>
-                        {deadline.daysLeft === 1 ? 'день' : 
-                         deadline.daysLeft < 5 ? 'дня' : 'дней'}
-                      </span>
-                    </div>
-                    <div className={styles.deadlineInfo}>
-                      <div className={styles.deadlineCustomer}>{deadline.customer}</div>
-                      <div className={styles.deadlineNumber}>{deadline.purchaseNumber}</div>
-                    </div>
-                    <span 
-                      className={styles.deadlineStageBadge}
-                      style={{ background: deadline.stageColor }}
-                    >
-                      {deadline.stage}
-                    </span>
-                  </Link>
-                ))}
+              )) : <div className="text-center py-4 text-gray-500">✅ Нет срочных дел</div>}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2 flex flex-row items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">✅ Задачи</CardTitle>
+              <Link href="/tenders/tasks" className="text-sm text-blue-600 hover:underline">Все →</Link>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-4 gap-2 text-center">
+                <div className="p-2 bg-gray-50 rounded-lg"><div className="text-xl font-bold">{taskSummary.total}</div><div className="text-xs text-gray-500">Всего</div></div>
+                <div className="p-2 bg-blue-50 rounded-lg"><div className="text-xl font-bold text-blue-600">{taskSummary.inProgress}</div><div className="text-xs text-gray-500">В работе</div></div>
+                <div className="p-2 bg-green-50 rounded-lg"><div className="text-xl font-bold text-green-600">{taskSummary.completed}</div><div className="text-xs text-gray-500">Готово</div></div>
+                <div className="p-2 bg-red-50 rounded-lg"><div className="text-xl font-bold text-red-600">{taskSummary.overdue}</div><div className="text-xs text-gray-500">Просрочено</div></div>
               </div>
-            ) : (
-              <div className={styles.emptyState}>
-                <div className={styles.emptyIcon}>✅</div>
-                <p className={styles.emptyText}>Нет срочных дел</p>
-              </div>
-            )}
-          </div>
-
-          {/* Tasks Summary */}
-          <div className={styles.card}>
-            <div className={styles.cardHeader}>
-              <h3 className={styles.cardTitle}>
-                <span className={styles.cardTitleIcon}>✅</span>
-                Задачи
-              </h3>
-              <Link href="/tenders/tasks" className={styles.cardBtn}>
-                Все задачи →
-              </Link>
-            </div>
-            <div className={styles.tasksSummary}>
-              <div className={styles.taskStat}>
-                <div className={styles.taskStatValue}>{taskSummary.total}</div>
-                <div className={styles.taskStatLabel}>Всего</div>
-              </div>
-              <div className={`${styles.taskStat} ${styles.taskStatInProgress}`}>
-                <div className={styles.taskStatValue}>{taskSummary.inProgress}</div>
-                <div className={styles.taskStatLabel}>В работе</div>
-              </div>
-              <div className={`${styles.taskStat} ${styles.taskStatCompleted}`}>
-                <div className={styles.taskStatValue}>{taskSummary.completed}</div>
-                <div className={styles.taskStatLabel}>Выполнено</div>
-              </div>
-              <div className={`${styles.taskStat} ${styles.taskStatOverdue}`}>
-                <div className={styles.taskStatValue}>{taskSummary.overdue}</div>
-                <div className={styles.taskStatLabel}>Просрочено</div>
-              </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
-
-      {/* Bottom Grid: Managers + Quick Actions */}
-      <div className={styles.bottomGrid}>
-        {/* Top Managers */}
-        <div className={styles.card} style={{ gridColumn: 'span 2' }}>
-          <div className={styles.cardHeader}>
-            <h3 className={styles.cardTitle}>
-              <span className={styles.cardTitleIcon}>🏆</span>
-              Топ менеджеров
-            </h3>
-          </div>
-          {topManagers.length > 0 ? (
-            <div className={styles.managersList}>
-              {topManagers.map((manager, idx) => (
-                <div key={manager.id} className={styles.managerItem}>
-                  <div className={`${styles.managerRank} ${
-                    idx === 0 ? styles.managerRank1 :
-                    idx === 1 ? styles.managerRank2 :
-                    idx === 2 ? styles.managerRank3 :
-                    styles.managerRankOther
-                  }`}>
-                    {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
-                  </div>
-                  <div className={styles.managerAvatar}>
-                    {manager.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                  </div>
-                  <div className={styles.managerInfo}>
-                    <div className={styles.managerName}>{manager.name}</div>
-                    <div className={styles.managerStats}>
-                      <span>📋 {manager.totalTenders} тендеров</span>
-                      <span>🏆 {manager.wonTenders} побед</span>
-                      <span>💰 {formatCurrency(manager.totalContractValue)}</span>
-                    </div>
-                  </div>
-                  <div className={`${styles.managerWinRate} ${
-                    manager.winRate >= 60 ? styles.winRateHigh :
-                    manager.winRate >= 40 ? styles.winRateMedium :
-                    styles.winRateLow
-                  }`}>
-                    {manager.winRate.toFixed(0)}%
-                  </div>
+      {/* Bottom Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Trophy className="h-4 w-4" />Топ менеджеров</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            {topManagers.length > 0 ? topManagers.map((manager, idx) => (
+              <div key={manager.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
+                <div className="text-2xl w-8">{idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : <span className="text-sm font-bold text-gray-400">{idx + 1}</span>}</div>
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium">{manager.name.split(' ').map(n => n[0]).join('')}</div>
+                <div className="flex-1">
+                  <div className="font-medium text-sm">{manager.name}</div>
+                  <div className="text-xs text-gray-500 flex gap-3"><span>📋 {manager.totalTenders}</span><span>🏆 {manager.wonTenders}</span><span>💰 {formatCurrency(manager.totalContractValue)}</span></div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>👥</div>
-              <p className={styles.emptyText}>Нет данных о менеджерах</p>
-            </div>
-          )}
-        </div>
-
-        {/* Quick Actions */}
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h3 className={styles.cardTitle}>
-              <span className={styles.cardTitleIcon}>⚡</span>
-              Быстрые действия
-            </h3>
-          </div>
-          <div className={styles.quickActions}>
-            <Link href="/tenders/department" className={styles.quickAction}>
-              <span className={styles.quickActionIcon} style={{ background: '#dbeafe' }}>📝</span>
-              <span className={styles.quickActionLabel}>Новый тендер</span>
+                <div className={`px-3 py-1 rounded-full text-sm font-bold ${manager.winRate >= 60 ? 'bg-green-100 text-green-700' : manager.winRate >= 40 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>{manager.winRate.toFixed(0)}%</div>
+              </div>
+            )) : <div className="text-center py-8 text-gray-500">👥 Нет данных</div>}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2">⚡ Быстрые действия</CardTitle></CardHeader>
+          <CardContent className="grid grid-cols-2 gap-3">
+            <Link href="/tenders/department" className="flex flex-col items-center gap-2 p-4 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors">
+              <span className="text-2xl">📝</span><span className="text-sm font-medium">Новый тендер</span>
             </Link>
-            <Link href="/tenders/tasks" className={styles.quickAction}>
-              <span className={styles.quickActionIcon} style={{ background: '#d1fae5' }}>✅</span>
-              <span className={styles.quickActionLabel}>Задачи</span>
+            <Link href="/tenders/tasks" className="flex flex-col items-center gap-2 p-4 rounded-lg bg-green-50 hover:bg-green-100 transition-colors">
+              <span className="text-2xl">✅</span><span className="text-sm font-medium">Задачи</span>
             </Link>
-            <Link href="/tenders/calendar" className={styles.quickAction}>
-              <span className={styles.quickActionIcon} style={{ background: '#fef3c7' }}>📅</span>
-              <span className={styles.quickActionLabel}>Календарь</span>
+            <Link href="/tenders/calendar" className="flex flex-col items-center gap-2 p-4 rounded-lg bg-amber-50 hover:bg-amber-100 transition-colors">
+              <span className="text-2xl">📅</span><span className="text-sm font-medium">Календарь</span>
             </Link>
-            <Link href="/tenders/list" className={styles.quickAction}>
-              <span className={styles.quickActionIcon} style={{ background: '#ede9fe' }}>📋</span>
-              <span className={styles.quickActionLabel}>Реестр</span>
+            <Link href="/tenders/list" className="flex flex-col items-center gap-2 p-4 rounded-lg bg-purple-50 hover:bg-purple-100 transition-colors">
+              <span className="text-2xl">📋</span><span className="text-sm font-medium">Реестр</span>
             </Link>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -2,7 +2,10 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { createBrowserClient } from "@supabase/ssr";
-import styles from './ReceiptsManager.module.css';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Camera, Receipt, AlertCircle, Loader2, Eye, Download, Trash2, Link, FileText } from "lucide-react";
 
 interface Attachment {
   id: string;
@@ -248,125 +251,73 @@ export default function ReceiptsManager({ initialReceipts }: ReceiptsManagerProp
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>Мои чеки</h1>
-        <div className={styles.uploadWrapper}>
-            <input
-            ref={fileInputRef}
-            type="file"
-            accept={ALLOWED_TYPES.join(',')}
-            onChange={handleFileSelect}
-            className={styles.fileInput}
-            id="receipt-upload"
-            disabled={uploading}
-            />
-            <label htmlFor="receipt-upload" className={styles.uploadButton}>
-            {uploading ? (
-                <>
-                <span className={styles.spinner}></span>
-                Загрузка...
-                </>
-            ) : (
-                <>
-                <span className="material-icons">add_a_photo</span>
-                Загрузить чек
-                </>
-            )}
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Мои чеки</h1>
+        <div>
+          <input ref={fileInputRef} type="file" accept={ALLOWED_TYPES.join(',')} onChange={handleFileSelect} className="hidden" id="receipt-upload" disabled={uploading} />
+          <Button asChild disabled={uploading}>
+            <label htmlFor="receipt-upload" className="cursor-pointer">
+              {uploading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Загрузка...</> : <><Camera className="h-4 w-4 mr-2" />Загрузить чек</>}
             </label>
+          </Button>
         </div>
       </div>
 
       {error && (
-        <div className={styles.error}>
-          <span className="material-icons">error</span>
-          {error}
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+          <AlertCircle className="h-4 w-4" />{error}
         </div>
       )}
 
       {receipts.length === 0 ? (
-        <div className={styles.emptyState}>
-            <span className="material-icons">receipt_long</span>
-            <h3>Нет загруженных чеков</h3>
-            <p>Загрузите фото или PDF чеков, чтобы хранить их здесь.</p>
+        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+          <Receipt className="h-16 w-16 mb-4 opacity-50" />
+          <h3 className="text-lg font-medium">Нет загруженных чеков</h3>
+          <p className="text-sm">Загрузите фото или PDF чеков, чтобы хранить их здесь.</p>
         </div>
       ) : (
-        <div className={styles.grid}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {receipts.map((file) => (
-            <div key={file.id} className={styles.card}>
-              <div className={styles.cardPreview} onClick={() => handlePreview(file)}>
+            <Card key={file.id} className="overflow-hidden">
+              <div className="aspect-[4/3] bg-muted/50 cursor-pointer flex items-center justify-center" onClick={() => handlePreview(file)}>
                 {file.mime_type.startsWith('image/') ? (
-                   // eslint-disable-next-line @next/next/no-img-element
-                  <img 
-                    src={`/api/attachments/view?path=${encodeURIComponent(file.file_path)}`} 
-                    alt={file.file_name} 
-                    loading="lazy"
-                  />
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={`/api/attachments/view?path=${encodeURIComponent(file.file_path)}`} alt={file.file_name} loading="lazy" className="w-full h-full object-cover" />
                 ) : (
-                  <div className={styles.pdfIcon}>
-                    <span className="material-icons">picture_as_pdf</span>
-                  </div>
+                  <FileText className="h-16 w-16 text-red-500" />
                 )}
               </div>
-              
-              <div className={styles.cardInfo}>
-                <div className={styles.fileName} title={file.file_name}>{file.file_name}</div>
-                <div className={styles.fileMeta}>
-                    <span>{formatFileSize(file.file_size)}</span>
-                    <span>•</span>
-                    <span>{formatDate(file.created_at)}</span>
+              <CardContent className="p-3 space-y-2">
+                <div className="font-medium truncate text-sm" title={file.file_name}>{file.file_name}</div>
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <span>{formatFileSize(file.file_size)}</span><span>•</span><span>{formatDate(file.created_at)}</span>
                 </div>
                 {file.transaction_id && (
-                    <div className={styles.linkedBadge}>
-                        <span className="material-icons">link</span>
-                        Привязан к транзакции
-                    </div>
+                  <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700">
+                    <Link className="h-3 w-3" />Привязан к транзакции
+                  </div>
                 )}
-              </div>
-
-              <div className={styles.cardActions}>
-                 <button
-                  className={styles.iconButton}
-                  onClick={() => handlePreview(file)}
-                  title="Просмотр"
-                >
-                  <span className="material-icons">visibility</span>
-                </button>
-                <a
-                  href={`/api/attachments/download?path=${encodeURIComponent(file.file_path)}&name=${encodeURIComponent(file.file_name)}`}
-                  download
-                  className={styles.iconButton}
-                  title="Скачать"
-                >
-                  <span className="material-icons">download</span>
-                </a>
-                <button
-                  className={`${styles.iconButton} ${styles.deleteButton}`}
-                  onClick={() => handleDelete(file.id, file.file_path)}
-                  title="Удалить"
-                >
-                  <span className="material-icons">delete</span>
-                </button>
-              </div>
-            </div>
+                <div className="flex items-center gap-1 pt-1">
+                  <Button variant="ghost" size="sm" onClick={() => handlePreview(file)} title="Просмотр"><Eye className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="sm" asChild title="Скачать">
+                    <a href={`/api/attachments/download?path=${encodeURIComponent(file.file_path)}&name=${encodeURIComponent(file.file_name)}`} download><Download className="h-4 w-4" /></a>
+                  </Button>
+                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDelete(file.id, file.file_path)} title="Удалить"><Trash2 className="h-4 w-4" /></Button>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
 
-      {previewUrl && (
-        <div className={styles.modal} onClick={() => setPreviewUrl(null)}>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <button
-              className={styles.modalClose}
-              onClick={() => setPreviewUrl(null)}
-            >
-              <span className="material-icons">close</span>
-            </button>
-             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={previewUrl} alt="Preview" className={styles.modalImage} />
-          </div>
-        </div>
-      )}
+      <Dialog open={!!previewUrl} onOpenChange={() => setPreviewUrl(null)}>
+        <DialogContent className="max-w-4xl p-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {previewUrl && <img src={previewUrl} alt="Preview" className="w-full h-auto max-h-[80vh] object-contain" />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

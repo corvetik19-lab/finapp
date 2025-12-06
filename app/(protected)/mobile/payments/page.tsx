@@ -1,7 +1,5 @@
 import { loadUpcomingPayments } from "@/lib/dashboard/upcoming-payments";
 import UpcomingPaymentsCard from "@/components/dashboard/UpcomingPaymentsCard";
-import styles from "@/components/dashboard/Dashboard.module.css";
-
 export const dynamic = 'force-dynamic';
 
 export default async function MobilePaymentsPage() {
@@ -21,7 +19,7 @@ export default async function MobilePaymentsPage() {
   }));
 
   return (
-    <div className={styles.mobilePage}>
+    <div className="p-4">
       <UpcomingPaymentsCard payments={upcomingPayments} />
     </div>
   );

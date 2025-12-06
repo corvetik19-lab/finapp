@@ -2,7 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useNotifications } from "@/contexts/NotificationContext";
-import styles from "./NotificationSettings.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Bell, Clock, Loader2, Save, Trash2, CheckCircle, MessageCircle } from "lucide-react";
 
 interface NotificationSettings {
   overspend_alerts: boolean;
@@ -114,309 +120,63 @@ export default function NotificationSettingsPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.loading}>Загрузка...</div>
-      </div>
-    );
+    return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   if (!settings) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.error}>{error || "Не удалось загрузить настройки"}</div>
-      </div>
-    );
+    return <Alert variant="destructive"><AlertDescription>{error || "Не удалось загрузить"}</AlertDescription></Alert>;
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>Настройки уведомлений</h1>
-          <p className={styles.subtitle}>
-            Настройте типы уведомлений, время и канал доставки
-          </p>
-        </div>
-        <div className={styles.stats}>
-          <div className={styles.stat}>
-            <span className={styles.statValue}>{notifications.length}</span>
-            <span className={styles.statLabel}>Всего уведомлений</span>
-          </div>
-          <div className={styles.stat}>
-            <span className={styles.statValue}>
-              {notifications.filter((n) => !n.read).length}
-            </span>
-            <span className={styles.statLabel}>Непрочитанных</span>
-          </div>
-        </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div><h1 className="text-2xl font-bold flex items-center gap-2"><Bell className="h-6 w-6" />Уведомления</h1><p className="text-muted-foreground">Типы, время и канал доставки</p></div>
+        <div className="flex gap-2"><Badge variant="outline">Всего: {notifications.length}</Badge><Badge variant="secondary">Непрочитанных: {notifications.filter((n) => !n.read).length}</Badge></div>
       </div>
 
-      {error && (
-        <div className={styles.errorBanner}>
-          <span className="material-icons">error</span>
-          {error}
-        </div>
-      )}
+      {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
+      {success && <Alert><CheckCircle className="h-4 w-4" /><AlertDescription>Настройки сохранены</AlertDescription></Alert>}
 
-      {success && (
-        <div className={styles.successBanner}>
-          <span className="material-icons">check_circle</span>
-          Настройки успешно сохранены
-        </div>
-      )}
+      <Card>
+        <CardHeader><CardTitle className="flex items-center gap-2"><MessageCircle className="h-5 w-5" />Telegram</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          {settings.telegram_chat_id ? <Alert><CheckCircle className="h-4 w-4" /><AlertDescription>Telegram подключен{settings.telegram_username && ` (@${settings.telegram_username})`}</AlertDescription></Alert> : <Alert><AlertDescription>Telegram не подключен</AlertDescription></Alert>}
+          <div className="flex items-center justify-between"><div><Label>Отправлять в Telegram</Label><p className="text-sm text-muted-foreground">Получать уведомления в бот</p></div><Switch checked={settings.telegram_enabled} onCheckedChange={() => toggleSetting("telegram_enabled")} disabled={!settings.telegram_chat_id} /></div>
+        </CardContent>
+      </Card>
 
-      {/* Telegram интеграция */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>
-          <span className="material-icons">telegram</span>
-          Telegram уведомления
-        </h2>
-        
-        <div className={styles.telegramStatus}>
-          {settings.telegram_chat_id ? (
-            <div className={styles.telegramConnected}>
-              <span className="material-icons">check_circle</span>
-              <div>
-                <strong>Telegram подключен</strong>
-                {settings.telegram_username && <p>@{settings.telegram_username}</p>}
-              </div>
-            </div>
-          ) : (
-            <div className={styles.telegramDisconnected}>
-              <span className="material-icons">info</span>
-              <div>
-                <strong>Telegram не подключен</strong>
-                <p>Перейдите в настройки Telegram для привязки бота</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className={styles.settingRow}>
-          <div className={styles.settingInfo}>
-            <h3>Отправлять в Telegram</h3>
-            <p>Получать уведомления в Telegram бот</p>
-          </div>
-          <button
-            type="button"
-            className={`${styles.toggle} ${settings.telegram_enabled ? styles.toggleActive : ""}`}
-            onClick={() => toggleSetting("telegram_enabled")}
-            disabled={!settings.telegram_chat_id}
-          >
-            <span className={styles.toggleSwitch} />
-          </button>
-        </div>
-      </div>
-
-      {/* Расписание */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>
-          <span className="material-icons">schedule</span>
-          Расписание уведомлений
-        </h2>
-
-        <div className={styles.settingRow}>
-          <div className={styles.settingInfo}>
-            <h3>Использовать расписание</h3>
-            <p>Отправлять уведомления в определённое время</p>
-          </div>
-          <button
-            type="button"
-            className={`${styles.toggle} ${settings.schedule_enabled ? styles.toggleActive : ""}`}
-            onClick={() => toggleSetting("schedule_enabled")}
-          >
-            <span className={styles.toggleSwitch} />
-          </button>
-        </div>
-
-        {settings.schedule_enabled && (
-          <>
-            <div className={styles.settingRow}>
-              <div className={styles.settingInfo}>
-                <h3>Время отправки</h3>
-                <p>Выберите время для получения уведомлений</p>
-              </div>
-              <input
-                type="time"
-                className={styles.timeInput}
-                value={settings.schedule_time}
-                onChange={(e) => updateSetting("schedule_time", e.target.value)}
-              />
-            </div>
-
-            <div className={styles.settingRow}>
-              <div className={styles.settingInfo}>
-                <h3>Дни недели</h3>
-                <p>Выберите дни для получения уведомлений</p>
-              </div>
-              <div className={styles.daysSelector}>
-                {DAYS_OF_WEEK.map((day) => (
-                  <button
-                    key={day.value}
-                    type="button"
-                    className={`${styles.dayButton} ${
-                      settings.schedule_days?.includes(day.value) ? styles.dayActive : ""
-                    }`}
-                    onClick={() => toggleDay(day.value)}
-                  >
-                    {day.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-
-        <div className={styles.settingRow}>
-          <div className={styles.settingInfo}>
-            <h3>Тихие часы (начало)</h3>
-            <p>Не отправлять уведомления с этого времени</p>
-          </div>
-          <input
-            type="time"
-            className={styles.timeInput}
-            value={settings.quiet_hours_start || ""}
-            onChange={(e) => updateSetting("quiet_hours_start", e.target.value || null)}
-          />
-        </div>
-
-        <div className={styles.settingRow}>
-          <div className={styles.settingInfo}>
-            <h3>Тихие часы (конец)</h3>
-            <p>Возобновить отправку с этого времени</p>
-          </div>
-          <input
-            type="time"
-            className={styles.timeInput}
-            value={settings.quiet_hours_end || ""}
-            onChange={(e) => updateSetting("quiet_hours_end", e.target.value || null)}
-          />
-        </div>
-      </div>
-
-      {/* Типы уведомлений */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>
-          <span className="material-icons">notifications_active</span>
-          Типы уведомлений
-        </h2>
-
-        <div className={styles.settingRow}>
-          <div className={styles.settingInfo}>
-            <h3>Превышение трат</h3>
-            <p>Уведомления об аномальных тратах</p>
-          </div>
-          <button
-            type="button"
-            className={`${styles.toggle} ${settings.overspend_alerts ? styles.toggleActive : ""}`}
-            onClick={() => toggleSetting("overspend_alerts")}
-          >
-            <span className={styles.toggleSwitch} />
-          </button>
-        </div>
-
-        <div className={styles.settingRow}>
-          <div className={styles.settingInfo}>
-            <h3>Бюджетные предупреждения</h3>
-            <p>Уведомления о превышении бюджетов</p>
-          </div>
-          <button
-            type="button"
-            className={`${styles.toggle} ${settings.budget_warnings ? styles.toggleActive : ""}`}
-            onClick={() => toggleSetting("budget_warnings")}
-          >
-            <span className={styles.toggleSwitch} />
-          </button>
-        </div>
-
-        <div className={styles.settingRow}>
-          <div className={styles.settingInfo}>
-            <h3>Напоминания о транзакциях</h3>
-            <p>Напоминания о пропущенных днях</p>
-          </div>
-          <button
-            type="button"
-            className={`${styles.toggle} ${settings.missing_transaction_reminders ? styles.toggleActive : ""}`}
-            onClick={() => toggleSetting("missing_transaction_reminders")}
-          >
-            <span className={styles.toggleSwitch} />
-          </button>
-        </div>
-
-        <div className={styles.settingRow}>
-          <div className={styles.settingInfo}>
-            <h3>Предстоящие платежи</h3>
-            <p>Напоминания о платежах</p>
-          </div>
-          <button
-            type="button"
-            className={`${styles.toggle} ${settings.upcoming_payment_reminders ? styles.toggleActive : ""}`}
-            onClick={() => toggleSetting("upcoming_payment_reminders")}
-          >
-            <span className={styles.toggleSwitch} />
-          </button>
-        </div>
-
-        <div className={styles.settingRow}>
-          <div className={styles.settingInfo}>
-            <h3>AI инсайты</h3>
-            <p>Финансовые инсайты на основе AI</p>
-          </div>
-          <button
-            type="button"
-            className={`${styles.toggle} ${settings.ai_insights ? styles.toggleActive : ""}`}
-            onClick={() => toggleSetting("ai_insights")}
-          >
-            <span className={styles.toggleSwitch} />
-          </button>
-        </div>
-
-        <div className={styles.settingRow}>
-          <div className={styles.settingInfo}>
-            <h3>AI рекомендации</h3>
-            <p>Персональные рекомендации</p>
-          </div>
-          <button
-            type="button"
-            className={`${styles.toggle} ${settings.ai_recommendations ? styles.toggleActive : ""}`}
-            onClick={() => toggleSetting("ai_recommendations")}
-          >
-            <span className={styles.toggleSwitch} />
-          </button>
-        </div>
-      </div>
-
-      <div className={styles.actions}>
-        <button
-          type="button"
-          className={`${styles.actionButton} ${styles.danger}`}
-          onClick={clearAll}
-        >
-          <span className="material-icons">delete_sweep</span>
-          Очистить все
-        </button>
-      </div>
-
-      <div className={styles.footer}>
-        <button
-          type="button"
-          className={styles.saveButton}
-          onClick={handleSave}
-          disabled={isSaving}
-        >
-          {isSaving ? (
+      <Card>
+        <CardHeader><CardTitle className="flex items-center gap-2"><Clock className="h-5 w-5" />Расписание</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between"><div><Label>Использовать расписание</Label><p className="text-sm text-muted-foreground">Отправлять в определённое время</p></div><Switch checked={settings.schedule_enabled} onCheckedChange={() => toggleSetting("schedule_enabled")} /></div>
+          {settings.schedule_enabled && (
             <>
-              <span className="material-icons rotating">hourglass_top</span>
-              Сохранение...
-            </>
-          ) : (
-            <>
-              <span className="material-icons">save</span>
-              Сохранить настройки
+              <div className="flex items-center justify-between"><Label>Время отправки</Label><input type="time" className="border rounded px-2 py-1" value={settings.schedule_time} onChange={(e) => updateSetting("schedule_time", e.target.value)} /></div>
+              <div className="space-y-2"><Label>Дни недели</Label><div className="flex gap-1">{DAYS_OF_WEEK.map((day) => (<Button key={day.value} size="sm" variant={settings.schedule_days?.includes(day.value) ? "default" : "outline"} onClick={() => toggleDay(day.value)}>{day.label}</Button>))}</div></div>
             </>
           )}
-        </button>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2"><Label>Тихие часы (начало)</Label><input type="time" className="border rounded px-2 py-1 w-full" value={settings.quiet_hours_start || ""} onChange={(e) => updateSetting("quiet_hours_start", e.target.value || null)} /></div>
+            <div className="space-y-2"><Label>Тихие часы (конец)</Label><input type="time" className="border rounded px-2 py-1 w-full" value={settings.quiet_hours_end || ""} onChange={(e) => updateSetting("quiet_hours_end", e.target.value || null)} /></div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5" />Типы уведомлений</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between"><div><Label>Превышение трат</Label><p className="text-sm text-muted-foreground">Аномальные траты</p></div><Switch checked={settings.overspend_alerts} onCheckedChange={() => toggleSetting("overspend_alerts")} /></div>
+          <div className="flex items-center justify-between"><div><Label>Бюджетные предупреждения</Label><p className="text-sm text-muted-foreground">Превышение бюджетов</p></div><Switch checked={settings.budget_warnings} onCheckedChange={() => toggleSetting("budget_warnings")} /></div>
+          <div className="flex items-center justify-between"><div><Label>Напоминания о транзакциях</Label><p className="text-sm text-muted-foreground">Пропущенные дни</p></div><Switch checked={settings.missing_transaction_reminders} onCheckedChange={() => toggleSetting("missing_transaction_reminders")} /></div>
+          <div className="flex items-center justify-between"><div><Label>Предстоящие платежи</Label><p className="text-sm text-muted-foreground">Напоминания о платежах</p></div><Switch checked={settings.upcoming_payment_reminders} onCheckedChange={() => toggleSetting("upcoming_payment_reminders")} /></div>
+          <div className="flex items-center justify-between"><div><Label>AI инсайты</Label><p className="text-sm text-muted-foreground">Финансовые инсайты</p></div><Switch checked={settings.ai_insights} onCheckedChange={() => toggleSetting("ai_insights")} /></div>
+          <div className="flex items-center justify-between"><div><Label>AI рекомендации</Label><p className="text-sm text-muted-foreground">Персональные советы</p></div><Switch checked={settings.ai_recommendations} onCheckedChange={() => toggleSetting("ai_recommendations")} /></div>
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-between">
+        <Button variant="destructive" onClick={clearAll}><Trash2 className="h-4 w-4 mr-1" />Очистить все</Button>
+        <Button onClick={handleSave} disabled={isSaving}>{isSaving ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Сохранение...</> : <><Save className="h-4 w-4 mr-1" />Сохранить</>}</Button>
       </div>
     </div>
   );

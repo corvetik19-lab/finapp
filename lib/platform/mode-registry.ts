@@ -77,7 +77,7 @@ export const MODE_REGISTRY: Record<string, ModeConfig> = {
     color: '#3B82F6',
     description: 'Управление портфелем, акциями, облигациями и аналитика доходности',
     isEnabled: true, // Включено для демонстрации
-    isPremium: true,
+    isPremium: false,
     order: 2,
     permissions: {
       view: ['viewer', 'member', 'admin', 'owner'],
@@ -138,7 +138,7 @@ export const MODE_REGISTRY: Record<string, ModeConfig> = {
     color: '#F59E0B',
     description: 'Учёт и управление тендерами, документооборот и аналитика',
     isEnabled: true,
-    isPremium: true,
+    isPremium: false,
     order: 4,
     permissions: {
       view: ['viewer', 'member', 'admin', 'owner'],

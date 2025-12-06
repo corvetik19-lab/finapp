@@ -9,7 +9,15 @@ import {
 } from "@/lib/product-items/service";
 import type { ProductItem, ProductItemInput } from "@/types/product-item";
 import { getSupabaseClient } from "@/lib/supabase/client";
-import styles from "./ProductItemsManager.module.css";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
+import { Plus, Search, X, ShoppingCart, SearchX, Pencil, Trash2, Loader2, TrendingUp, TrendingDown } from "lucide-react";
 
 type Category = {
   id: string;
@@ -208,369 +216,107 @@ export function ProductItemsManager() {
   };
 
   if (loading) {
-    return <div className={styles.loading}>Загрузка...</div>;
+    return <div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin mr-2" />Загрузка...</div>;
   }
 
+  // Функция рендера таблицы товаров
+  const renderItemsTable = (itemsList: ProductItem[]) => (
+    <Table>
+      <TableHeader>
+        <TableRow><TableHead>Название</TableHead><TableHead>Ед.</TableHead><TableHead>Цена</TableHead><TableHead>Категория</TableHead><TableHead>Статус</TableHead><TableHead>Действия</TableHead></TableRow>
+      </TableHeader>
+      <TableBody>
+        {itemsList.map((item) => (
+          <TableRow key={item.id} className={cn(!item.is_active && "opacity-50")}>
+            <TableCell>
+              <div><span className="font-medium">{item.name}</span>{item.description && <span className="block text-xs text-muted-foreground">{item.description}</span>}</div>
+            </TableCell>
+            <TableCell>{item.default_unit}</TableCell>
+            <TableCell>{formatPrice(item.default_price_per_unit)}</TableCell>
+            <TableCell>{item.category_id ? categories.find(c => c.id === item.category_id)?.name || "—" : "—"}</TableCell>
+            <TableCell><span className={cn("px-2 py-0.5 rounded-full text-xs", item.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600")}>{item.is_active ? "Активен" : "Неактивен"}</span></TableCell>
+            <TableCell>
+              <div className="flex gap-1">
+                <Button variant="ghost" size="sm" onClick={() => handleEdit(item)} title="Редактировать"><Pencil className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="sm" onClick={() => handleToggleStatus(item)} title={item.is_active ? "Деактивировать" : "Активировать"}>{item.is_active ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}</Button>
+                <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDelete(item.id)} title="Удалить"><Trash2 className="h-4 w-4" /></Button>
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.searchContainer}>
-          <span className="material-icons" style={{ color: '#757575' }}>search</span>
-          <input
-            type="text"
-            placeholder="Поиск товаров..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={styles.searchInput}
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              className={styles.clearButton}
-              aria-label="Очистить поиск"
-            >
-              <span className="material-icons">close</span>
-            </button>
-          )}
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Поиск товаров..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
+          {searchQuery && <Button variant="ghost" size="sm" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0" onClick={() => setSearchQuery("")}><X className="h-4 w-4" /></Button>}
         </div>
-        <button 
-          className={styles.addButton}
-          onClick={() => setShowAddForm(!showAddForm)}
-        >
-          <span className="material-icons">add</span>
-          Добавить товар
-        </button>
+        <Button onClick={() => setShowAddForm(!showAddForm)}><Plus className="h-4 w-4 mr-1" />Добавить товар</Button>
       </div>
 
+      {/* Add/Edit Form */}
       {showAddForm && (
-        <form className={styles.form} onSubmit={handleSubmit}>
-          <h3>{editingId ? "Редактировать товар" : "Новый товар"}</h3>
-          
-          <div className={styles.formGrid}>
-            <div className={styles.formGroup}>
-              <label>Название товара *</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Например: Молоко"
-                required
-              />
-            </div>
-
-            <div className={styles.formGroup}>
-              <label>Единица измерения <span className={styles.required}>*</span></label>
-              <select
-                value={formData.default_unit}
-                onChange={(e) => setFormData({ ...formData, default_unit: e.target.value })}
-                required
-              >
-                <option value="шт">шт</option>
-                <option value="кг">кг</option>
-                <option value="л">л</option>
-                <option value="г">г</option>
-                <option value="мл">мл</option>
-                <option value="упак">упак</option>
-                <option value="м">м</option>
-                <option value="м²">м²</option>
-              </select>
-            </div>
-
-            <div className={styles.formGroup}>
-              <label>Цена по умолчанию (₽)</label>
-              <input
-                type="number"
-                step="0.01"
-                value={formData.default_price_per_unit ? formData.default_price_per_unit / 100 : ""}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setFormData({ 
-                    ...formData, 
-                    default_price_per_unit: value ? Math.round(parseFloat(value) * 100) : null 
-                  });
-                }}
-                placeholder="0.00"
-              />
-            </div>
-
-            <div className={styles.formGroup}>
-              <label>Категория <span className={styles.required}>*</span></label>
-              <select
-                value={formData.category_id && formData.category_type ? `${formData.category_id}|${formData.category_type}` : formData.category_id || ""}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (!value) {
-                    setFormData({ ...formData, category_id: null, category_type: null });
-                    return;
-                  }
-                  
-                  // Формат: "categoryId|type" для both категорий, или просто "categoryId"
-                  const [categoryId, type] = value.split("|");
-                  const category = categories.find(c => c.id === categoryId);
-                  
-                  setFormData({ 
-                    ...formData, 
-                    category_id: categoryId,
-                    category_type: type ? (type as "income" | "expense") : (category?.kind === "both" ? null : null)
-                  });
-                }}
-                required
-              >
-                <option value="">— выберите категорию —</option>
-                {incomeCategories.length > 0 && (
-                  <optgroup label="Доходы">
-                    {incomeCategories.map((cat) => (
-                      <option 
-                        key={`${cat.id}-income`} 
-                        value={cat.kind === "both" ? `${cat.id}|income` : cat.id}
-                      >
-                        {cat.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-                {expenseCategories.length > 0 && (
-                  <optgroup label="Расходы">
-                    {expenseCategories.map((cat) => (
-                      <option 
-                        key={`${cat.id}-expense`} 
-                        value={cat.kind === "both" ? `${cat.id}|expense` : cat.id}
-                      >
-                        {cat.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-              </select>
-            </div>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>Описание</label>
-            <textarea
-              value={formData.description || ""}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value || null })}
-              placeholder="Дополнительная информация о товаре"
-              rows={2}
-            />
-          </div>
-
-          <div className={styles.formActions}>
-            <button type="button" onClick={resetForm} className={styles.cancelButton}>
-              Отмена
-            </button>
-            <button type="submit" className={styles.saveButton}>
-              {editingId ? "Сохранить" : "Добавить"}
-            </button>
-          </div>
-        </form>
+        <Card>
+          <CardHeader><CardTitle>{editingId ? "Редактировать товар" : "Новый товар"}</CardTitle></CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="space-y-2"><Label>Название *</Label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Например: Молоко" required /></div>
+                <div className="space-y-2"><Label>Единица *</Label>
+                  <Select value={formData.default_unit} onValueChange={(v) => setFormData({ ...formData, default_unit: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent><SelectItem value="шт">шт</SelectItem><SelectItem value="кг">кг</SelectItem><SelectItem value="л">л</SelectItem><SelectItem value="г">г</SelectItem><SelectItem value="мл">мл</SelectItem><SelectItem value="упак">упак</SelectItem><SelectItem value="м">м</SelectItem><SelectItem value="м²">м²</SelectItem></SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2"><Label>Цена (₽)</Label><Input type="number" step="0.01" value={formData.default_price_per_unit ? formData.default_price_per_unit / 100 : ""} onChange={(e) => setFormData({ ...formData, default_price_per_unit: e.target.value ? Math.round(parseFloat(e.target.value) * 100) : null })} placeholder="0.00" /></div>
+                <div className="space-y-2"><Label>Категория *</Label>
+                  <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={formData.category_id && formData.category_type ? `${formData.category_id}|${formData.category_type}` : formData.category_id || ""} onChange={(e) => { const value = e.target.value; if (!value) { setFormData({ ...formData, category_id: null, category_type: null }); return; } const [categoryId, type] = value.split("|"); setFormData({ ...formData, category_id: categoryId, category_type: type ? (type as "income" | "expense") : null }); }} required>
+                    <option value="">— выберите —</option>
+                    {incomeCategories.length > 0 && <optgroup label="Доходы">{incomeCategories.map((cat) => <option key={`${cat.id}-income`} value={cat.kind === "both" ? `${cat.id}|income` : cat.id}>{cat.name}</option>)}</optgroup>}
+                    {expenseCategories.length > 0 && <optgroup label="Расходы">{expenseCategories.map((cat) => <option key={`${cat.id}-expense`} value={cat.kind === "both" ? `${cat.id}|expense` : cat.id}>{cat.name}</option>)}</optgroup>}
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-2"><Label>Описание</Label><Textarea value={formData.description || ""} onChange={(e) => setFormData({ ...formData, description: e.target.value || null })} placeholder="Дополнительная информация" rows={2} /></div>
+              <div className="flex gap-2 justify-end"><Button type="button" variant="outline" onClick={resetForm}>Отмена</Button><Button type="submit">{editingId ? "Сохранить" : "Добавить"}</Button></div>
+            </form>
+          </CardContent>
+        </Card>
       )}
 
-      <div className={styles.tableContainer}>
-        {items.length === 0 ? (
-          <div className={styles.emptyState}>
-            <span className="material-icons">shopping_cart</span>
-            <p>Нет добавленных товаров</p>
-            <p className={styles.emptyHint}>Добавьте товары, которые вы часто покупаете</p>
+      {/* Items List */}
+      {items.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground"><ShoppingCart className="h-12 w-12 mb-3 opacity-50" /><p>Нет добавленных товаров</p><p className="text-sm">Добавьте товары, которые вы часто покупаете</p></div>
+      ) : (() => {
+        const filteredItems = filterItems(items);
+        if (filteredItems.length === 0 && searchQuery) {
+          return <div className="flex flex-col items-center justify-center py-12 text-muted-foreground"><SearchX className="h-12 w-12 mb-3 opacity-50" /><p>Ничего не найдено</p><p className="text-sm">Попробуйте изменить поисковый запрос</p></div>;
+        }
+        const incomeItems = filterItems(items.filter(item => { const cat = categories.find(c => c.id === item.category_id); if (!cat) return false; return item.category_type === "income" || cat.kind === "income"; }));
+        const expenseItems = filterItems(items.filter(item => { const cat = categories.find(c => c.id === item.category_id); if (!cat) return false; return item.category_type === "expense" || cat.kind === "expense"; }));
+        return (
+          <div className="space-y-6">
+            {incomeItems.length > 0 && (
+              <Card>
+                <CardHeader><CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5 text-green-600" />Доходы ({incomeItems.length})</CardTitle></CardHeader>
+                <CardContent className="p-0">{renderItemsTable(incomeItems)}</CardContent>
+              </Card>
+            )}
+            {expenseItems.length > 0 && (
+              <Card>
+                <CardHeader><CardTitle className="flex items-center gap-2"><TrendingDown className="h-5 w-5 text-red-600" />Расходы ({expenseItems.length})</CardTitle></CardHeader>
+                <CardContent className="p-0">{renderItemsTable(expenseItems)}</CardContent>
+              </Card>
+            )}
           </div>
-        ) : (() => {
-          const filteredItems = filterItems(items);
-          const hasResults = filteredItems.length > 0;
-          
-          if (!hasResults && searchQuery) {
-            return (
-              <div className={styles.emptyState}>
-                <span className="material-icons">search_off</span>
-                <p>Ничего не найдено</p>
-                <p className={styles.emptyHint}>Попробуйте изменить поисковый запрос</p>
-              </div>
-            );
-          }
-          
-          return (
-            <>
-              {/* Товары доходов */}
-              {(() => {
-                const incomeItems = filterItems(items.filter(item => {
-                const category = categories.find(c => c.id === item.category_id);
-                if (!category) return false;
-                if (item.category_type === "income") return true;
-                if (category.kind === "income") return true;
-                return false;
-              }));
-              
-              if (incomeItems.length === 0) return null;
-              
-              return (
-                <div className={styles.section}>
-                  <h2 className={styles.sectionTitle}>
-                    <span className={styles.incomeIcon}>💰</span>
-                    Доходы
-                  </h2>
-                  <table className={styles.table}>
-                    <thead>
-                      <tr>
-                        <th>Название</th>
-                        <th>Ед. изм.</th>
-                        <th>Цена</th>
-                        <th>Категория</th>
-                        <th>Статус</th>
-                        <th>Действия</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {incomeItems.map((item) => (
-                        <tr key={item.id} className={!item.is_active ? styles.inactive : ""}>
-                          <td>
-                            <div className={styles.itemName}>
-                              {item.name}
-                              {item.description && (
-                                <span className={styles.itemDescription}>{item.description}</span>
-                              )}
-                            </div>
-                          </td>
-                          <td>{item.default_unit}</td>
-                          <td>{formatPrice(item.default_price_per_unit)}</td>
-                          <td>
-                            {item.category_id ? (
-                              <span>{categories.find(c => c.id === item.category_id)?.name || "—"}</span>
-                            ) : (
-                              "—"
-                            )}
-                          </td>
-                          <td>
-                            <span className={item.is_active ? styles.statusActive : styles.statusInactive}>
-                              {item.is_active ? "Активен" : "Неактивен"}
-                            </span>
-                          </td>
-                          <td>
-                            <div className={styles.actions}>
-                              <button
-                                onClick={() => handleEdit(item)}
-                                className={styles.actionButton}
-                                title="Редактировать"
-                              >
-                                <span className="material-icons">edit</span>
-                              </button>
-                              <button
-                                onClick={() => handleToggleStatus(item)}
-                                className={styles.actionButton}
-                                title={item.is_active ? "Сделать неактивным" : "Сделать активным"}
-                              >
-                                <span className="material-icons">
-                                  {item.is_active ? "toggle_on" : "toggle_off"}
-                                </span>
-                              </button>
-                              <button
-                                onClick={() => handleDelete(item.id)}
-                                className={styles.actionButton}
-                                title="Удалить"
-                              >
-                                <span className="material-icons">delete</span>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              );
-            })()}
-
-            {/* Товары расходов */}
-            {(() => {
-              const expenseItems = filterItems(items.filter(item => {
-                const category = categories.find(c => c.id === item.category_id);
-                if (!category) return false;
-                if (item.category_type === "expense") return true;
-                if (category.kind === "expense") return true;
-                return false;
-              }));
-              
-              if (expenseItems.length === 0) return null;
-              
-              return (
-                <div className={styles.section}>
-                  <h2 className={styles.sectionTitle}>
-                    <span className={styles.expenseIcon}>💸</span>
-                    Расходы
-                  </h2>
-                  <table className={styles.table}>
-                    <thead>
-                      <tr>
-                        <th>Название</th>
-                        <th>Ед. изм.</th>
-                        <th>Цена</th>
-                        <th>Категория</th>
-                        <th>Статус</th>
-                        <th>Действия</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {expenseItems.map((item) => (
-                        <tr key={item.id} className={!item.is_active ? styles.inactive : ""}>
-                          <td>
-                            <div className={styles.itemName}>
-                              {item.name}
-                              {item.description && (
-                                <span className={styles.itemDescription}>{item.description}</span>
-                              )}
-                            </div>
-                          </td>
-                          <td>{item.default_unit}</td>
-                          <td>{formatPrice(item.default_price_per_unit)}</td>
-                          <td>
-                            {item.category_id ? (
-                              <span>{categories.find(c => c.id === item.category_id)?.name || "—"}</span>
-                            ) : (
-                              "—"
-                            )}
-                          </td>
-                          <td>
-                            <span className={item.is_active ? styles.statusActive : styles.statusInactive}>
-                              {item.is_active ? "Активен" : "Неактивен"}
-                            </span>
-                          </td>
-                          <td>
-                            <div className={styles.actions}>
-                              <button
-                                onClick={() => handleEdit(item)}
-                                className={styles.actionButton}
-                                title="Редактировать"
-                              >
-                                <span className="material-icons">edit</span>
-                              </button>
-                              <button
-                                onClick={() => handleToggleStatus(item)}
-                                className={styles.actionButton}
-                                title={item.is_active ? "Сделать неактивным" : "Сделать активным"}
-                              >
-                                <span className="material-icons">
-                                  {item.is_active ? "toggle_on" : "toggle_off"}
-                                </span>
-                              </button>
-                              <button
-                                onClick={() => handleDelete(item.id)}
-                                className={styles.actionButton}
-                                title="Удалить"
-                              >
-                                <span className="material-icons">delete</span>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              );
-            })()}
-          </>
-          );
-        })()}
-      </div>
+        );
+      })()}
     </div>
   );
 }

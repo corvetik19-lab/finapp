@@ -1,22 +1,32 @@
 "use client";
 
-import { useState, useTransition, useId } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateCardAction } from "@/app/(protected)/finance/cards/actions";
-import styles from "@/app/(protected)/finance/cards/cards.module.css";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Pencil } from "lucide-react";
 
 type EditDebitCardButtonProps = {
   cardId: string;
   cardName: string;
   cardBalance: number;
-  className?: string;
 };
 
 export default function EditDebitCardButton({
   cardId,
   cardName,
   cardBalance,
-  className,
 }: EditDebitCardButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState(cardName);
@@ -24,30 +34,24 @@ export default function EditDebitCardButton({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const titleId = useId();
 
-  const handleOpen = () => {
-    setName(cardName);
-    setBalance((cardBalance / 100).toString());
-    setError(null);
-    setIsOpen(true);
-  };
-
-  const handleClose = () => {
-    setIsOpen(false);
-    setError(null);
+  const handleOpen = (open: boolean) => {
+    if (open) {
+      setName(cardName);
+      setBalance((cardBalance / 100).toString());
+      setError(null);
+    }
+    setIsOpen(open);
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
-
     const formData = new FormData(e.currentTarget);
-
     startTransition(async () => {
       try {
         await updateCardAction(formData);
-        handleClose();
+        setIsOpen(false);
         router.refresh();
       } catch (err) {
         console.error("Update error:", err);
@@ -57,95 +61,56 @@ export default function EditDebitCardButton({
   };
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={handleOpen}
-        className={className}
-        title="Редактировать карту"
-      >
-        <span className="material-icons" aria-hidden>
-          edit
-        </span>
-      </button>
-
-      {isOpen && (
-        <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-labelledby={titleId}>
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <div className={styles.modalTitle} id={titleId}>
-                Редактировать карту
-              </div>
-              <button
-                className={styles.modalClose}
-                type="button"
-                onClick={handleClose}
-                aria-label="Закрыть"
-              >
-                ×
-              </button>
+    <Dialog open={isOpen} onOpenChange={handleOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Pencil className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Редактировать карту</DialogTitle>
+          <DialogDescription>Измените параметры карты</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <input type="hidden" name="id" value={cardId} />
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor={`edit-card-name-${cardId}`}>Название карты</Label>
+              <Input
+                id={`edit-card-name-${cardId}`}
+                name="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Например, Основная карта"
+                required
+              />
             </div>
-
-            <form onSubmit={handleSubmit}>
-              <input type="hidden" name="id" value={cardId} />
-              
-              <div className={styles.modalBody}>
-                <div className={styles.formField}>
-                  <label htmlFor={`edit-card-name-${cardId}`}>Название карты</label>
-                  <input
-                    id={`edit-card-name-${cardId}`}
-                    name="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Например, Основная карта"
-                    required
-                  />
-                </div>
-
-                <div className={styles.formField}>
-                  <label htmlFor={`edit-card-balance-${cardId}`}>Баланс (₽)</label>
-                  <input
-                    id={`edit-card-balance-${cardId}`}
-                    name="balance"
-                    type="number"
-                    step="0.01"
-                    value={balance}
-                    onChange={(e) => setBalance(e.target.value)}
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
-
-                {error && (
-                  <div style={{ color: "#d14343", fontSize: "14px", marginTop: "8px" }}>
-                    {error}
-                  </div>
-                )}
-              </div>
-
-              <div className={styles.modalFooter}>
-                <div className={styles.modalActions}>
-                  <button
-                    className={styles.secondaryBtn}
-                    type="button"
-                    onClick={handleClose}
-                    disabled={isPending}
-                  >
-                    Отмена
-                  </button>
-                  <button
-                    className={styles.primaryBtn}
-                    type="submit"
-                    disabled={isPending}
-                  >
-                    {isPending ? "Сохраняем..." : "Сохранить"}
-                  </button>
-                </div>
-              </div>
-            </form>
+            <div className="grid gap-2">
+              <Label htmlFor={`edit-card-balance-${cardId}`}>Баланс (₽)</Label>
+              <Input
+                id={`edit-card-balance-${cardId}`}
+                name="balance"
+                type="number"
+                step="0.01"
+                value={balance}
+                onChange={(e) => setBalance(e.target.value)}
+                placeholder="0.00"
+                required
+              />
+            </div>
+            {error && <p className="text-sm text-red-500">{error}</p>}
           </div>
-        </div>
-      )}
-    </>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsOpen(false)} disabled={isPending}>
+              Отмена
+            </Button>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? "Сохраняем..." : "Сохранить"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import styles from "@/components/settings/Settings.module.css";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Save, RefreshCw, CheckCircle, Circle } from "lucide-react";
 
 type TourStatus = {
   dashboard: boolean;
@@ -99,168 +103,36 @@ export default function TourManager() {
   };
 
   return (
-    <div className={styles.cardStack}>
-      {/* Основные настройки */}
-      <div className={styles.card}>
-        <h3 className={styles.sectionTitle}>Управление туром</h3>
-        <p className={styles.sectionSubtitle}>
-          Настройте отображение интерактивных подсказок и туров по приложению
-        </p>
+    <div className="space-y-6">
+      <Card><CardHeader><CardTitle>Управление туром</CardTitle></CardHeader><CardContent className="space-y-4">
+        <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
+          <div><div className="font-medium">Включить туры</div><div className="text-sm text-muted-foreground">Интерактивные подсказки при входе на новые страницы</div></div>
+          <Switch checked={enabled} onCheckedChange={async (v) => { setEnabled(v); try { await fetch("/api/settings/tour", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ enabled: v, completedTours }) }); setMessage({ type: "success", text: v ? "Туры включены" : "Туры отключены" }); } catch { setMessage({ type: "error", text: "Не удалось сохранить" }); } }} />
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={saveSettings} disabled={isSaving}><Save className="h-4 w-4 mr-2" />{isSaving ? "Сохранение..." : "Сохранить"}</Button>
+          <Button variant="outline" onClick={resetAllTours}><RefreshCw className="h-4 w-4 mr-2" />Сбросить все</Button>
+        </div>
+        {message && <Alert variant={message.type === "error" ? "destructive" : "default"}><AlertDescription>{message.text}</AlertDescription></Alert>}
+      </CardContent></Card>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          {/* Глобальное включение/выключение */}
-          <div style={{ 
-            padding: "16px", 
-            borderRadius: "12px", 
-            background: "var(--muted-bg)",
-            border: "1px solid var(--border-color)"
-          }}>
-            <label style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer" }}>
-              <input
-                type="checkbox"
-                checked={enabled}
-                onChange={async (e) => {
-                  const newValue = e.target.checked;
-                  setEnabled(newValue);
-                  
-                  // Автоматически сохраняем при изменении
-                  try {
-                    await fetch("/api/settings/tour", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        enabled: newValue,
-                        completedTours,
-                      }),
-                    });
-                    setMessage({ 
-                      type: "success", 
-                      text: newValue ? "Туры включены" : "Туры отключены" 
-                    });
-                  } catch (error) {
-                    console.error("Error saving tour settings:", error);
-                    setMessage({ type: "error", text: "Не удалось сохранить настройки" });
-                  }
-                }}
-                style={{ 
-                  width: "20px", 
-                  height: "20px",
-                  cursor: "pointer",
-                  accentColor: "var(--primary-color)"
-                }}
-              />
-              <div>
-                <div style={{ fontWeight: 600, color: "var(--text-primary)", marginBottom: "4px" }}>
-                  Включить туры по приложению
-                </div>
-                <div style={{ fontSize: "14px", color: "var(--text-secondary)" }}>
-                  При входе на новые страницы будут показываться интерактивные подсказки
-                </div>
-              </div>
-            </label>
-          </div>
-
-          {/* Кнопки управления */}
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-            <button onClick={saveSettings} className={styles.btn} disabled={isSaving}>
-              <span className="material-icons" style={{ fontSize: "18px" }}>save</span>
-              {isSaving ? "Сохранение..." : "Сохранить настройки"}
-            </button>
-            <button onClick={resetAllTours} className={styles.btnSecondary}>
-              <span className="material-icons" style={{ fontSize: "18px" }}>refresh</span>
-              Сбросить все туры
-            </button>
-          </div>
-
-          {message && (
-            <div
-              style={{
-                padding: "12px 16px",
-                borderRadius: "8px",
-                background: message.type === "success" ? "rgba(34, 197, 94, 0.1)" : "rgba(239, 68, 68, 0.1)",
-                border: `1px solid ${message.type === "success" ? "rgba(34, 197, 94, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
-                color: message.type === "success" ? "var(--success)" : "var(--danger)",
-                fontSize: "14px",
-              }}
-            >
-              {message.text}
+      <Card><CardHeader><CardTitle>Статус туров</CardTitle></CardHeader><CardContent className="space-y-2">
+        {(Object.keys(TOUR_LABELS) as Array<keyof TourStatus>).map((tourKey) => (
+          <div key={tourKey} className="flex items-center justify-between p-3 rounded-lg border">
+            <div className="flex items-center gap-3">
+              {completedTours[tourKey] ? <CheckCircle className="h-5 w-5 text-green-500" /> : <Circle className="h-5 w-5 text-muted-foreground" />}
+              <div><div className="font-medium">{TOUR_LABELS[tourKey]}</div><div className="text-xs text-muted-foreground">{completedTours[tourKey] ? "Пройден" : "Не пройден"}</div></div>
             </div>
-          )}
-        </div>
-      </div>
+            <Button size="sm" variant="outline" onClick={() => toggleTour(tourKey)}>{completedTours[tourKey] ? "Показать" : "Пройден"}</Button>
+          </div>
+        ))}
+      </CardContent></Card>
 
-      {/* Туры по разделам */}
-      <div className={styles.card}>
-        <h3 className={styles.sectionTitle}>Статус туров по разделам</h3>
-        <p className={styles.sectionSubtitle}>
-          Отметьте разделы, где вы хотите показывать или скрывать туры
-        </p>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          {(Object.keys(TOUR_LABELS) as Array<keyof TourStatus>).map((tourKey) => (
-            <div
-              key={tourKey}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "14px 16px",
-                borderRadius: "8px",
-                background: "var(--muted-bg)",
-                border: "1px solid var(--border-color)",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <span
-                  className="material-icons"
-                  style={{
-                    fontSize: "24px",
-                    color: completedTours[tourKey] ? "var(--success)" : "var(--text-secondary)",
-                  }}
-                >
-                  {completedTours[tourKey] ? "check_circle" : "radio_button_unchecked"}
-                </span>
-                <div>
-                  <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                    {TOUR_LABELS[tourKey]}
-                  </div>
-                  <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
-                    {completedTours[tourKey] ? "Тур пройден" : "Тур не пройден"}
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={() => toggleTour(tourKey)}
-                className={styles.btnSecondary}
-                style={{ fontSize: "13px", padding: "6px 12px" }}
-              >
-                {completedTours[tourKey] ? "Показать снова" : "Отметить пройденным"}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Справка */}
-      <div className={styles.card}>
-        <h3 className={styles.sectionTitle}>О турах</h3>
-        <div style={{ fontSize: "14px", color: "var(--text-secondary)", lineHeight: "1.7" }}>
-          <p style={{ marginBottom: "12px" }}>
-            <strong style={{ color: "var(--text-primary)" }}>Интерактивные туры</strong> помогают новым пользователям быстрее освоить функционал приложения.
-          </p>
-          <p style={{ marginBottom: "12px" }}>
-            При первом посещении разделов автоматически запускаются подсказки, которые шаг за шагом объясняют основные возможности.
-          </p>
-          <p>
-            Вы можете:
-          </p>
-          <ul style={{ marginLeft: "20px", marginTop: "8px" }}>
-            <li>Отключить туры полностью</li>
-            <li>Сбросить прогресс и пройти туры заново</li>
-            <li>Управлять отдельными турами по разделам</li>
-          </ul>
-        </div>
-      </div>
+      <Card><CardHeader><CardTitle>О турах</CardTitle></CardHeader><CardContent className="text-sm text-muted-foreground space-y-2">
+        <p><strong className="text-foreground">Интерактивные туры</strong> помогают освоить приложение.</p>
+        <p>При первом посещении разделов запускаются подсказки.</p>
+        <ul className="list-disc list-inside"><li>Отключить туры полностью</li><li>Сбросить прогресс</li><li>Управлять отдельными турами</li></ul>
+      </CardContent></Card>
     </div>
   );
 }

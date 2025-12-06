@@ -2,7 +2,12 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { TenderFilters, TenderStage, TenderType } from '@/lib/tenders/types';
-import styles from './TendersRegistryFilters.module.css';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Search, Filter, X, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface TendersRegistryFiltersProps {
   filters: TenderFilters;
@@ -65,139 +70,107 @@ export function TendersRegistryFilters({
   const hasActiveFilters = Object.values(localFilters).some(v => v !== undefined && v !== '');
 
   return (
-    <div className={styles.filters}>
+    <div className="space-y-4">
       {/* Quick Filters */}
-      <div className={styles.quickFilters}>
-        <div className={styles.searchWrapper}>
-          <svg className={styles.searchIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8"/>
-            <path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-64 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
             type="text"
             placeholder="Поиск по названию, заказчику, номеру..."
             value={localFilters.search || ''}
             onChange={(e) => handleChange('search', e.target.value)}
-            className={styles.searchInput}
+            className="pl-10 pr-10"
           />
           {localFilters.search && (
-            <button
-              onClick={() => handleChange('search', '')}
-              className={styles.clearSearchButton}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
+            <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => handleChange('search', '')}>
+              <X className="h-4 w-4" />
+            </Button>
           )}
         </div>
 
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className={styles.filterToggle}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-          </svg>
+        <Button variant="outline" onClick={() => setIsExpanded(!isExpanded)}>
+          <Filter className="h-4 w-4 mr-2" />
           Фильтры
-          {hasActiveFilters && <span className={styles.filterBadge}>{Object.values(localFilters).filter(v => v).length}</span>}
-        </button>
+          {hasActiveFilters && <Badge variant="secondary" className="ml-2">{Object.values(localFilters).filter(v => v).length}</Badge>}
+          {isExpanded ? <ChevronUp className="h-4 w-4 ml-2" /> : <ChevronDown className="h-4 w-4 ml-2" />}
+        </Button>
 
         {hasActiveFilters && (
-          <button onClick={handleClear} className={styles.clearButton}>
+          <Button variant="ghost" onClick={handleClear}>
+            <X className="h-4 w-4 mr-1" />
             Сбросить
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Expanded Filters */}
       {isExpanded && (
-        <div className={styles.expandedFilters}>
-          <div className={styles.filterGrid}>
-            <div className={styles.filterField}>
-              <label className={styles.label}>Статус</label>
-              <select
-                value={localFilters.status || ''}
-                onChange={(e) => handleChange('status', e.target.value)}
-                className={styles.select}
-              >
-                <option value="">Все статусы</option>
-                <option value="active">Активный</option>
-                <option value="won">Выигран</option>
-                <option value="lost">Проигран</option>
-                <option value="archived">Архив</option>
-              </select>
+        <div className="p-4 bg-gray-50 rounded-lg border">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="space-y-2">
+              <Label>Статус</Label>
+              <Select value={localFilters.status || 'all'} onValueChange={(v) => handleChange('status', v === 'all' ? '' : v)}>
+                <SelectTrigger><SelectValue placeholder="Все статусы" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все статусы</SelectItem>
+                  <SelectItem value="active">Активный</SelectItem>
+                  <SelectItem value="won">Выигран</SelectItem>
+                  <SelectItem value="lost">Проигран</SelectItem>
+                  <SelectItem value="archived">Архив</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className={styles.filterField}>
-              <label className={styles.label}>Этап</label>
-              <select
-                value={localFilters.stage_id || ''}
-                onChange={(e) => handleChange('stage_id', e.target.value)}
-                className={styles.select}
-              >
-                <option value="">Все этапы</option>
-                {stages.map(stage => (
-                  <option key={stage.id} value={stage.id}>
-                    {stage.name}
-                  </option>
-                ))}
-              </select>
+            <div className="space-y-2">
+              <Label>Этап</Label>
+              <Select value={localFilters.stage_id || 'all'} onValueChange={(v) => handleChange('stage_id', v === 'all' ? '' : v)}>
+                <SelectTrigger><SelectValue placeholder="Все этапы" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все этапы</SelectItem>
+                  {stages.map(stage => (
+                    <SelectItem key={stage.id} value={stage.id}>{stage.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className={styles.filterField}>
-              <label className={styles.label}>Тип</label>
-              <select
-                value={localFilters.type_id || ''}
-                onChange={(e) => handleChange('type_id', e.target.value)}
-                className={styles.select}
-              >
-                <option value="">Все типы</option>
-                {types.map(type => (
-                  <option key={type.id} value={type.id}>
-                    {type.name}
-                  </option>
-                ))}
-              </select>
+            <div className="space-y-2">
+              <Label>Тип</Label>
+              <Select value={localFilters.type_id || 'all'} onValueChange={(v) => handleChange('type_id', v === 'all' ? '' : v)}>
+                <SelectTrigger><SelectValue placeholder="Все типы" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все типы</SelectItem>
+                  {types.map(type => (
+                    <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {employees.length > 0 && (
-              <div className={styles.filterField}>
-                <label className={styles.label}>Ответственный</label>
-                <select
-                  value={localFilters.manager_id || ''}
-                  onChange={(e) => handleChange('manager_id', e.target.value)}
-                  className={styles.select}
-                >
-                  <option value="">Все сотрудники</option>
-                  {employees.map(emp => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.full_name}
-                    </option>
-                  ))}
-                </select>
+              <div className="space-y-2">
+                <Label>Ответственный</Label>
+                <Select value={localFilters.manager_id || 'all'} onValueChange={(v) => handleChange('manager_id', v === 'all' ? '' : v)}>
+                  <SelectTrigger><SelectValue placeholder="Все сотрудники" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Все сотрудники</SelectItem>
+                    {employees.map(emp => (
+                      <SelectItem key={emp.id} value={emp.id}>{emp.full_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
 
-            <div className={styles.filterField}>
-              <label className={styles.label}>Дата от</label>
-              <input
-                type="date"
-                value={localFilters.date_from || ''}
-                onChange={(e) => handleChange('date_from', e.target.value)}
-                className={styles.input}
-              />
+            <div className="space-y-2">
+              <Label>Дата от</Label>
+              <Input type="date" value={localFilters.date_from || ''} onChange={(e) => handleChange('date_from', e.target.value)} />
             </div>
 
-            <div className={styles.filterField}>
-              <label className={styles.label}>Дата до</label>
-              <input
-                type="date"
-                value={localFilters.date_to || ''}
-                onChange={(e) => handleChange('date_to', e.target.value)}
-                className={styles.input}
-              />
+            <div className="space-y-2">
+              <Label>Дата до</Label>
+              <Input type="date" value={localFilters.date_to || ''} onChange={(e) => handleChange('date_to', e.target.value)} />
             </div>
           </div>
         </div>

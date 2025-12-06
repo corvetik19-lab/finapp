@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from "react";
 import UpcomingPaymentsCard, { type UpcomingPayment } from "@/components/dashboard/UpcomingPaymentsCard";
-import styles from "./PaymentsPageClient.module.css";
 import { formatMoney } from "@/lib/utils/format";
+import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CalendarDays, CreditCard, Clock, AlertTriangle } from "lucide-react";
 
 type PaymentsPageClientProps = {
   payments: UpcomingPayment[];
@@ -108,65 +110,88 @@ export default function PaymentsPageClient({ payments, currency }: PaymentsPageC
   const nextPaymentText = nextPayment ? `${nextPayment.name} — ${formatDate(nextPayment.dueDate)}` : "—";
 
   return (
-    <>
-      <div className={styles.filters}>
-        <label className={styles.filter}>
-          <span className={styles.filterLabel}>Год</span>
-          <select className={styles.filterSelect} value={filterYear} onChange={(event) => setFilterYear(Number(event.target.value))}>
-            {yearOptions.map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className={styles.filter}>
-          <span className={styles.filterLabel}>Месяц</span>
-          <select className={styles.filterSelect} value={filterMonth} onChange={(event) => setFilterMonth(Number(event.target.value))}>
-            {MONTH_OPTIONS.map((month) => (
-              <option key={month.value} value={month.value}>
-                {month.label}
-              </option>
-            ))}
-          </select>
-        </label>
+    <div className="space-y-6">
+      {/* Фильтры */}
+      <div className="flex gap-4">
+        <div className="space-y-1">
+          <span className="text-sm text-muted-foreground">Год</span>
+          <Select value={String(filterYear)} onValueChange={(v) => setFilterYear(Number(v))}>
+            <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+            <SelectContent>{yearOptions.map((year) => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <span className="text-sm text-muted-foreground">Месяц</span>
+          <Select value={String(filterMonth)} onValueChange={(v) => setFilterMonth(Number(v))}>
+            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+            <SelectContent>{MONTH_OPTIONS.map((month) => <SelectItem key={month.value} value={String(month.value)}>{month.label}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
       </div>
 
-      <section className={styles.stats}>
-        <article className={styles.statCard}>
-          <div className={styles.statTitle}>Всего платежей</div>
-          <div className={styles.statValue}>{filteredPayments.length}</div>
-          <div className={styles.statFooter}>{`Активных: ${pendingPayments.length}${stats.overdue > 0 ? `, просрочено: ${stats.overdue}` : ""}`}</div>
-        </article>
-        <article className={styles.statCard}>
-          <div className={styles.statTitle}>Ближайшие расходы</div>
-          <div className={styles.statValue}>{formatMoney(stats.expense, currency)}</div>
-          <div className={styles.statFooter}>Запланированные расходы за месяц</div>
-        </article>
-        <article className={styles.statCard}>
-          <div className={styles.statTitle}>Следующий платёж</div>
-          <div className={styles.statValueSmall}>{nextPaymentText}</div>
-          <div className={styles.statFooter}>Плановая дата ближайшего платежа</div>
-        </article>
-        <article className={styles.statCard}>
-          <div className={styles.statTitle}>Обязательств в 30 дней</div>
-          <div className={styles.statValue}>{upcomingWindow}</div>
-          <div className={styles.statFooter}>Количество платежей в ближайший месяц</div>
-        </article>
-      </section>
-
-      <div className={styles.cards}>
-        <UpcomingPaymentsCard
-          payments={filteredPayments}
-          defaultCurrency={currency}
-          showOpenAllButton={false}
-          showActions={true}
-          showFilters={false}
-          showStatusBadges={true}
-          title="Предстоящие платежи"
-          subtitle={`${MONTH_OPTIONS[filterMonth].label} ${filterYear}`}
-        />
+      {/* Статистика */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-100"><CalendarDays className="h-5 w-5 text-blue-600" /></div>
+              <div>
+                <div className="text-sm text-muted-foreground">Всего платежей</div>
+                <div className="text-2xl font-bold">{filteredPayments.length}</div>
+                <div className="text-xs text-muted-foreground">{`Активных: ${pendingPayments.length}${stats.overdue > 0 ? `, просрочено: ${stats.overdue}` : ""}`}</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-red-100"><CreditCard className="h-5 w-5 text-red-600" /></div>
+              <div>
+                <div className="text-sm text-muted-foreground">Ближайшие расходы</div>
+                <div className="text-2xl font-bold">{formatMoney(stats.expense, currency)}</div>
+                <div className="text-xs text-muted-foreground">Запланированные расходы за месяц</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-amber-100"><Clock className="h-5 w-5 text-amber-600" /></div>
+              <div>
+                <div className="text-sm text-muted-foreground">Следующий платёж</div>
+                <div className="text-lg font-semibold truncate max-w-[180px]">{nextPaymentText}</div>
+                <div className="text-xs text-muted-foreground">Плановая дата ближайшего платежа</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-purple-100"><AlertTriangle className="h-5 w-5 text-purple-600" /></div>
+              <div>
+                <div className="text-sm text-muted-foreground">Обязательств в 30 дней</div>
+                <div className="text-2xl font-bold">{upcomingWindow}</div>
+                <div className="text-xs text-muted-foreground">Количество платежей в ближайший месяц</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </>
+
+      {/* Список платежей */}
+      <UpcomingPaymentsCard
+        payments={filteredPayments}
+        defaultCurrency={currency}
+        showOpenAllButton={false}
+        showActions={true}
+        showFilters={false}
+        showStatusBadges={true}
+        title="Предстоящие платежи"
+        subtitle={`${MONTH_OPTIONS[filterMonth].label} ${filterYear}`}
+      />
+    </div>
   );
 }

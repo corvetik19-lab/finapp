@@ -1,12 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import styles from './modals.module.css';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 
-interface TypeData {
-  name: string;
-  description: string;
-}
+interface TypeData { name: string; description: string; }
 
 interface TypeModalProps {
   type?: Partial<TypeData> & { id?: string; is_system?: boolean };
@@ -16,126 +19,51 @@ interface TypeModalProps {
 }
 
 export function TypeModal({ type, isOpen, onClose, onSave }: TypeModalProps) {
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-  });
+  const [formData, setFormData] = useState({ name: '', description: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (type) {
-      setFormData({
-        name: type.name || '',
-        description: type.description || '',
-      });
-    } else {
-      setFormData({
-        name: '',
-        description: '',
-      });
-    }
+    if (type) { setFormData({ name: type.name || '', description: type.description || '' }); }
+    else { setFormData({ name: '', description: '' }); }
     setError('');
   }, [type, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    if (!formData.name.trim()) {
-      setError('Название типа обязательно');
-      return;
-    }
-
+    if (!formData.name.trim()) { setError('Название типа обязательно'); return; }
     setLoading(true);
-    try {
-      await onSave(formData);
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка при сохранении');
-    } finally {
-      setLoading(false);
-    }
+    try { await onSave(formData); onClose(); }
+    catch (err) { setError(err instanceof Error ? err.message : 'Ошибка при сохранении'); }
+    finally { setLoading(false); }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h2 className={styles.modalTitle}>
-            {type ? 'Редактировать тип' : 'Создать тип'}
-          </h2>
-          <button onClick={onClose} className={styles.closeButton}>
-            ✕
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className={styles.modalBody}>
-          {error && (
-            <div className={styles.errorMessage}>
-              ⚠️ {error}
-            </div>
-          )}
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              Название типа <span className={styles.required}>*</span>
-              {type?.is_system && (
-                <span style={{ marginLeft: '8px', fontSize: '12px', color: '#64748b', fontWeight: 'normal' }}>
-                  (системный тип)
-                </span>
-              )}
-            </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className={styles.input}
-              placeholder="Например: Электронный аукцион"
-              required
-              readOnly={type?.is_system}
-              disabled={type?.is_system}
-              style={type?.is_system ? { backgroundColor: '#f8fafc', cursor: 'not-allowed' } : {}}
-            />
-            {type?.is_system && (
-              <p className={styles.hint} style={{ color: '#64748b', fontSize: '12px', marginTop: '4px' }}>
-                Название системного типа нельзя изменить
-              </p>
-            )}
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{type ? 'Редактировать тип' : 'Создать тип'}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
+          <div className="space-y-2">
+            <Label>Название типа <span className="text-red-500">*</span>
+              {type?.is_system && <span className="ml-2 text-xs text-gray-500">(системный тип)</span>}
+            </Label>
+            <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Например: Электронный аукцион" required readOnly={type?.is_system} disabled={type?.is_system} className={type?.is_system ? 'bg-gray-100 cursor-not-allowed' : ''} />
+            {type?.is_system && <p className="text-xs text-gray-500">Название системного типа нельзя изменить</p>}
           </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Описание</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className={styles.textarea}
-              placeholder="Краткое описание типа тендера"
-              rows={4}
-            />
+          <div className="space-y-2">
+            <Label>Описание</Label>
+            <Textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Краткое описание типа тендера" rows={4} />
           </div>
-
-          <div className={styles.modalFooter}>
-            <button
-              type="button"
-              onClick={onClose}
-              className={styles.secondaryButton}
-              disabled={loading}
-            >
-              Отмена
-            </button>
-            <button
-              type="submit"
-              className={styles.primaryButton}
-              disabled={loading}
-            >
-              {loading ? 'Сохранение...' : 'Сохранить'}
-            </button>
-          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>Отмена</Button>
+            <Button type="submit" disabled={loading}>{loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Сохранение...</> : 'Сохранить'}</Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
