@@ -8,7 +8,6 @@ import {
   CreditCard,
   User,
   Building2,
-  Scale,
   Users,
   Shield,
   Key,
@@ -52,7 +51,6 @@ const settingsNavigation = {
       title: "Управление",
       items: [
         { title: "Организация", url: "/settings/organization", icon: Building2 },
-        { title: "Юр. лица", url: "/settings/legal-entities", icon: Scale },
         { title: "Пользователи", url: "/settings/users", icon: Users },
         { title: "Роли и права", url: "/settings/roles", icon: Shield },
         { title: "Отделы", url: "/settings/departments", icon: Users },
