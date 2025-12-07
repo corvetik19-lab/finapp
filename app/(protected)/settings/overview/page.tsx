@@ -28,20 +28,28 @@ export default async function SettingsOverviewPage() {
   ];
 
   return (
-    <div className="space-y-6">
-      <div><h1 className="text-2xl font-bold">Обзор настроек</h1><p className="text-muted-foreground">Управляйте организацией, пользователями, интеграциями</p></div>
+    <div className="max-w-5xl mx-auto space-y-6 px-2 md:px-0">
+      <div>
+        <h1 className="text-2xl font-bold">Обзор настроек</h1>
+        <div className="text-muted-foreground">Управляйте организацией, пользователями, интеграциями</div>
+      </div>
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {cards.map((card) => (
+        {cards.map((card) => {
+          const Icon = card.icon;
+          return (
           <Link key={card.href} href={card.href}>
             <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
               <CardHeader className="flex flex-row items-center gap-4">
-                <div className={`p-3 rounded-lg ${card.color}`}><card.icon className="h-6 w-6 text-white" /></div>
-                <div><CardTitle className="text-lg">{card.title}</CardTitle><p className="text-sm text-muted-foreground">{card.desc}</p></div>
+                <div className={`p-3 rounded-lg ${card.color}`}><Icon className="h-6 w-6 text-white" /></div>
+                <div>
+                  <CardTitle className="text-lg">{card.title}</CardTitle>
+                  <div className="text-sm text-muted-foreground">{card.desc}</div>
+                </div>
               </CardHeader>
               <CardContent><span className="text-sm text-primary flex items-center gap-1">Перейти <ArrowRight className="h-4 w-4" /></span></CardContent>
             </Card>
           </Link>
-        ))}
+        )})}
       </div>
     </div>
   );

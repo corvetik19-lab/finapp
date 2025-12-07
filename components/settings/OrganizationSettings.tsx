@@ -133,7 +133,10 @@ export default function OrganizationSettings({
 
   return (
     <div className="space-y-6">
-      <div><h1 className="text-2xl font-bold flex items-center gap-2"><Building2 className="h-6 w-6" />Информация об организации</h1><p className="text-sm text-muted-foreground">Просмотр и управление данными</p></div>
+      <div>
+        <h1 className="text-2xl font-bold flex items-center gap-2"><Building2 className="h-6 w-6" />Информация об организации</h1>
+        <div className="text-sm text-muted-foreground">Просмотр и управление данными</div>
+      </div>
 
       {/* Основная информация */}
       <Card><CardHeader><CardTitle className="flex items-center gap-2"><Building2 className="h-5 w-5 text-primary" />Основная информация</CardTitle></CardHeader><CardContent>
@@ -145,23 +148,85 @@ export default function OrganizationSettings({
             <Button type="submit" disabled={isLoading}>{isLoading ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Сохранение...</> : 'Сохранить изменения'}</Button>
           </form>
         ) : (
-          <div className="grid grid-cols-2 gap-4"><div className="flex items-center gap-3"><Building2 className="h-5 w-5 text-muted-foreground" /><div><p className="text-xs text-muted-foreground">Название</p><p className="font-medium">{organization.name}</p></div></div><div className="flex items-center gap-3"><Link2 className="h-5 w-5 text-muted-foreground" /><div><p className="text-xs text-muted-foreground">Slug</p><p className="font-medium">{organization.slug || '—'}</p></div></div></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center gap-3">
+              <Building2 className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <div className="text-xs text-muted-foreground">Название</div>
+                <div className="font-medium">{organization.name}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link2 className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <div className="text-xs text-muted-foreground">Slug</div>
+                <div className="font-medium">{organization.slug || '—'}</div>
+              </div>
+            </div>
+          </div>
         )}
       </CardContent></Card>
 
       {/* Участники */}
       <Card><CardHeader><CardTitle className="flex items-center gap-2"><Users className="h-5 w-5 text-primary" />Участники ({members.length})</CardTitle></CardHeader><CardContent>
         <div className="space-y-2">
-          {members.map(member => <div key={member.id} className={`flex items-center gap-3 p-2 rounded ${member.profiles?.id === currentUserId ? 'bg-muted' : ''}`}><div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-sm font-medium">{member.profiles?.avatar_url ? <Image src={member.profiles.avatar_url} alt="" fill className="rounded-full object-cover" /> : (member.profiles?.full_name || member.profiles?.email || '?')[0].toUpperCase()}</div><div className="flex-1"><p className="text-sm font-medium">{member.profiles?.full_name || 'Без имени'}{member.profiles?.id === currentUserId && <Badge variant="outline" className="ml-2 text-xs">Вы</Badge>}</p><p className="text-xs text-muted-foreground">{member.profiles?.email || '—'}</p></div><Badge style={{ background: `${getRoleColor(member.role)}20`, color: getRoleColor(member.role) }}>{getRoleName(member.role)}</Badge></div>)}
+          {members.map(member => (
+            <div
+              key={member.id}
+              className={`flex items-center gap-3 p-2 rounded ${member.profiles?.id === currentUserId ? 'bg-muted' : ''}`}
+            >
+              <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-sm font-medium">
+                {member.profiles?.avatar_url ? (
+                  <Image src={member.profiles.avatar_url} alt="" fill className="rounded-full object-cover" />
+                ) : (
+                  (member.profiles?.full_name || member.profiles?.email || '?')[0].toUpperCase()
+                )}
+              </div>
+              <div className="flex-1">
+                <div className="text-sm font-medium flex items-center gap-2">
+                  <span>{member.profiles?.full_name || 'Без имени'}</span>
+                  {member.profiles?.id === currentUserId && (
+                    <Badge variant="outline" className="text-xs inline-flex items-center">
+                      Вы
+                    </Badge>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground">{member.profiles?.email || '—'}</div>
+              </div>
+              <Badge style={{ background: `${getRoleColor(member.role)}20`, color: getRoleColor(member.role) }}>
+                {getRoleName(member.role)}
+              </Badge>
+            </div>
+          ))}
         </div>
       </CardContent></Card>
 
       {/* Доп. информация */}
       <Card><CardHeader><CardTitle>Дополнительно</CardTitle></CardHeader><CardContent>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="flex items-center gap-3"><Calendar className="h-5 w-5 text-muted-foreground" /><div><p className="text-xs text-muted-foreground">Дата создания</p><p className="font-medium">{new Date(organization.created_at).toLocaleDateString("ru-RU", { year: "numeric", month: "long", day: "numeric" })}</p></div></div>
-          <div className="flex items-center gap-3"><Fingerprint className="h-5 w-5 text-muted-foreground" /><div><p className="text-xs text-muted-foreground">ID</p><p className="text-xs font-mono">{organization.id}</p></div></div>
-          {organization.allowed_modes && organization.allowed_modes.length > 0 && <div className="flex items-center gap-3"><LayoutGrid className="h-5 w-5 text-muted-foreground" /><div><p className="text-xs text-muted-foreground">Режимы</p><p className="font-medium">{organization.allowed_modes.join(', ')}</p></div></div>}
+          <div className="flex items-center gap-3">
+            <Calendar className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <div className="text-xs text-muted-foreground">Дата создания</div>
+              <div className="font-medium">{new Date(organization.created_at).toLocaleDateString("ru-RU", { year: "numeric", month: "long", day: "numeric" })}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Fingerprint className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <div className="text-xs text-muted-foreground">ID</div>
+              <div className="text-xs font-mono">{organization.id}</div>
+            </div>
+          </div>
+          {organization.allowed_modes && organization.allowed_modes.length > 0 && (
+            <div className="flex items-center gap-3">
+              <LayoutGrid className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <div className="text-xs text-muted-foreground">Режимы</div>
+                <div className="font-medium">{organization.allowed_modes.join(', ')}</div>
+              </div>
+            </div>
+          )}
         </div>
       </CardContent></Card>
 

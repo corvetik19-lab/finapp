@@ -24,8 +24,10 @@ export default function AdminSettingsLayout({ children }: { children: ReactNode 
       </aside>
       
       {/* Content */}
-      <main className="flex-1 min-w-0 px-6 pt-0 pb-6 overflow-y-auto bg-white">
-        {children}
+      <main className="flex-1 min-w-0 px-4 md:px-8 pt-4 pb-8 overflow-y-auto bg-white">
+        <div className="max-w-6xl mx-auto w-full">
+          {children}
+        </div>
       </main>
     </div>
   );
