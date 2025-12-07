@@ -7,6 +7,7 @@ import { Trash2, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/components/toast/ToastContext";
 
 interface Message {
   role: "user" | "assistant" | "system";
@@ -73,6 +74,7 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { show: showToast } = useToast();
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -398,10 +400,24 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
     setIsProcessing(true);
 
     try {
+      const validItems = preview.items.filter(
+        (item) => item.receiptName?.trim() && item.quantity > 0
+      );
+
+      if (validItems.length === 0) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: "❌ Нет позиций для сохранения. Добавьте товары или сопоставьте их.",
+            timestamp: new Date(),
+          },
+        ]);
+        return;
+      }
+
       const itemsByCategory = new Map<string, typeof preview.items>();
-      
-      for (const item of preview.items) {
-        if (!item.matchedProductId) continue;
+      for (const item of validItems) {
         const categoryKey = item.categoryId || "no_category";
         if (!itemsByCategory.has(categoryKey)) itemsByCategory.set(categoryKey, []);
         itemsByCategory.get(categoryKey)!.push(item);
@@ -418,10 +434,12 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
             categoryName: items[0]?.categoryName || null,
             items: items.map(item => ({
               productId: item.matchedProductId,
-              productName: item.matchedProductName,
+              productName: item.matchedProductName || item.receiptName,
+              receiptName: item.receiptName,
               quantity: item.quantity,
               pricePerUnit: item.pricePerUnit,
-              total: item.total
+              total: item.total,
+              unit: item.unit || "шт",
             })),
             totalAmount: items.reduce((sum, item) => sum + item.total, 0)
           })),
@@ -439,6 +457,7 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
       setMessages((prev) => [...prev, assistantMessage]);
 
       if (data.success) {
+        showToast("✅ Транзакции по чеку созданы", { type: "success" });
         if (selectedReceipt) {
           try {
             await fetch("/api/attachments/delete", {
@@ -458,8 +477,13 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
         localStorage.removeItem('receiptChatPreview');
         localStorage.removeItem('receiptChatText');
         setTimeout(() => window.location.reload(), 2000);
+      } else if (data.message) {
+        showToast(data.message, { type: "error" });
+      } else {
+        showToast("❌ Транзакции не созданы", { type: "error" });
       }
     } catch {
+      showToast("❌ Ошибка сохранения чека", { type: "error" });
       const errorMessage: Message = {
         role: "assistant",
         content: "❌ Ошибка сохранения чека. Попробуйте еще раз.",
@@ -547,31 +571,76 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
 
         {/* Preview */}
         {preview && (
-          <div className="bg-card rounded-lg shadow-xl w-full max-w-xl flex flex-col max-h-[80vh] overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="font-semibold">📋 Предпросмотр чека</h3>
-              <Button variant="ghost" size="icon" onClick={handleCancelPreview} aria-label="Закрыть">
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Магазин:</label>
-                  <Input type="text" value={preview.storeName} onChange={(e) => setPreview({ ...preview, storeName: e.target.value })} className="mt-1" />
+          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[85vh] overflow-hidden border">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b bg-gradient-to-r from-primary/5 to-transparent">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <span className="text-xl">🧾</span>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Дата:</label>
-                  <Input type="date" value={preview.date} onChange={(e) => setPreview({ ...preview, date: e.target.value })} className="mt-1" />
+                  <h3 className="font-semibold text-lg">Предпросмотр чека</h3>
+                  <p className="text-xs text-muted-foreground">{preview.items.length} позиций</p>
                 </div>
               </div>
-              
-              <div>
-                <h4 className="font-medium mb-2">Товары:</h4>
+              <Button variant="ghost" size="icon" onClick={handleCancelPreview} className="rounded-full hover:bg-destructive/10 hover:text-destructive">
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Store & Date */}
+              <div className="px-6 py-4 bg-muted/30 border-b">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Магазин</label>
+                    <Input 
+                      type="text" 
+                      value={preview.storeName} 
+                      onChange={(e) => setPreview({ ...preview, storeName: e.target.value })} 
+                      className="h-10 bg-background"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Дата</label>
+                    <Input 
+                      type="date" 
+                      value={preview.date} 
+                      onChange={(e) => setPreview({ ...preview, date: e.target.value })} 
+                      className="h-10 bg-background"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Items */}
+              <div className="px-6 py-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-sm flex items-center gap-2">
+                    <span className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-xs">📦</span>
+                    Товары
+                  </h4>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={() => {
+                      const newItem: ReceiptItem = { receiptName: "", quantity: 1, pricePerUnit: 0, total: 0, matchedProductId: null, matchedProductName: null, categoryId: null, categoryName: null, unit: "шт", isManuallyAdded: true };
+                      setPreview({ ...preview, items: [...preview.items, newItem] });
+                    }}
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1" />
+                    Добавить
+                  </Button>
+                </div>
+                
                 <div className="space-y-2">
                   {preview.items.map((item, idx) => (
-                    <div key={idx} className="p-3 border rounded-lg">
-                      <div className="flex items-center gap-2 flex-wrap">
+                    <div key={idx} className="p-3 bg-muted/30 rounded-xl border border-border/50 hover:border-border transition-colors">
+                      {/* Row 1: Receipt name → Product match */}
+                      <div className="flex items-center gap-2">
                         {item.isManuallyAdded ? (
                           <Input
                             type="text"
@@ -582,30 +651,42 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
                               setPreview({ ...preview, items: newItems });
                             }}
                             placeholder="Название товара"
-                            className="flex-1 min-w-[120px]"
+                            className="flex-1 h-9 text-sm bg-background"
                           />
                         ) : (
-                          <span className="text-sm font-medium">{item.receiptName}</span>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm font-medium truncate block">{item.receiptName}</span>
+                          </div>
                         )}
-                        <span className="text-muted-foreground">→</span>
-                        <div className="flex-1 min-w-[150px] relative" data-searchable-select>
-                          <div className="relative">
+                        
+                        <span className="text-muted-foreground shrink-0">→</span>
+                        
+                        {/* Product selector with + button inline */}
+                        <div className="flex items-center gap-1.5 flex-1 min-w-0" data-searchable-select>
+                          <div className="relative flex-1">
                             <Input
                               type="text"
-                              placeholder="Поиск товара..."
+                              placeholder="Выберите товар..."
                               value={searchTerms[idx] ?? item.matchedProductName ?? ""}
                               onChange={(e) => setSearchTerms({ ...searchTerms, [idx]: e.target.value })}
                               onFocus={() => { if (searchTerms[idx] === undefined) setSearchTerms({ ...searchTerms, [idx]: "" }); }}
+                              className={cn(
+                                "h-9 text-sm bg-background pr-8",
+                                item.matchedProductId && "border-green-500/50 bg-green-50/50 dark:bg-green-950/20"
+                              )}
                             />
+                            {item.matchedProductId && (
+                              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-green-500">✓</span>
+                            )}
                             {searchTerms[idx] !== undefined && (
-                              <div className="absolute top-full left-0 right-0 bg-card border rounded-md shadow-lg z-10 max-h-48 overflow-y-auto">
+                              <div className="absolute top-full left-0 right-0 mt-1 bg-card border rounded-lg shadow-xl z-20 max-h-48 overflow-y-auto">
                                 {preview.availableProducts
                                   .filter(product => product.name.toLowerCase().includes((searchTerms[idx] || "").toLowerCase()))
                                   .slice(0, 10)
                                   .map(product => (
                                     <div
                                       key={product.id}
-                                      className="px-3 py-2 hover:bg-muted cursor-pointer text-sm"
+                                      className="px-3 py-2 hover:bg-primary/10 cursor-pointer text-sm transition-colors"
                                       onClick={() => {
                                         const newItems = [...preview.items];
                                         newItems[idx] = { ...item, matchedProductId: product.id, matchedProductName: product.name, categoryId: product.categoryId, categoryName: product.categoryName, unit: product.defaultUnit || "шт" };
@@ -615,7 +696,8 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
                                         setSearchTerms(newSearchTerms);
                                       }}
                                     >
-                                      {product.name} {product.categoryName ? `(${product.categoryName})` : ''}
+                                      <span className="font-medium">{product.name}</span>
+                                      {product.categoryName && <span className="text-muted-foreground ml-1">({product.categoryName})</span>}
                                     </div>
                                   ))}
                                 {preview.availableProducts.filter(p => p.name.toLowerCase().includes((searchTerms[idx] || "").toLowerCase())).length === 0 && (
@@ -628,7 +710,7 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
                             type="button"
                             variant="outline"
                             size="icon"
-                            className="ml-1"
+                            className="h-9 w-9 shrink-0"
                             onClick={() => {
                               setNewProductName(item.receiptName);
                               setNewProductUnit(detectUnit(item.receiptName));
@@ -636,44 +718,99 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
                               setCurrentItemIndex(idx);
                               setShowAddProductModal(true);
                             }}
-                            title="Добавить новый товар"
+                            title="Создать новый товар"
                           >
-                            +
+                            <Plus className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 mt-2 text-sm flex-wrap">
+                      
+                      {/* Row 2: Quantity, price, total */}
+                      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/30">
                         {item.isManuallyAdded ? (
                           <>
-                            <Input type="number" step="0.01" min="0" value={item.quantity} onChange={(e) => { const q = parseFloat(e.target.value) || 0; const newItems = [...preview.items]; newItems[idx] = { ...item, quantity: q, total: q * item.pricePerUnit }; setPreview({ ...preview, items: newItems }); }} className="w-16" />
-                            <select value={item.unit || "шт"} onChange={(e) => { const newItems = [...preview.items]; newItems[idx] = { ...item, unit: e.target.value }; setPreview({ ...preview, items: newItems }); }} className="h-9 rounded-md border px-2 text-sm">
-                              <option value="шт">шт</option><option value="кг">кг</option><option value="л">л</option><option value="г">г</option><option value="мл">мл</option><option value="упак">упак</option>
+                            <Input 
+                              type="number" 
+                              step="0.01" 
+                              min="0" 
+                              value={item.quantity} 
+                              onChange={(e) => { 
+                                const q = parseFloat(e.target.value) || 0; 
+                                const newItems = [...preview.items]; 
+                                newItems[idx] = { ...item, quantity: q, total: q * item.pricePerUnit }; 
+                                setPreview({ ...preview, items: newItems }); 
+                              }} 
+                              className="w-16 h-8 text-sm bg-background" 
+                            />
+                            <select 
+                              value={item.unit || "шт"} 
+                              onChange={(e) => { 
+                                const newItems = [...preview.items]; 
+                                newItems[idx] = { ...item, unit: e.target.value }; 
+                                setPreview({ ...preview, items: newItems }); 
+                              }} 
+                              className="h-8 rounded-md border bg-background px-2 text-sm"
+                            >
+                              <option value="шт">шт</option>
+                              <option value="кг">кг</option>
+                              <option value="л">л</option>
+                              <option value="г">г</option>
+                              <option value="мл">мл</option>
+                              <option value="упак">упак</option>
                             </select>
-                            <span>×</span>
-                            <Input type="number" step="0.01" min="0" value={item.pricePerUnit} onChange={(e) => { const p = parseFloat(e.target.value) || 0; const newItems = [...preview.items]; newItems[idx] = { ...item, pricePerUnit: p, total: item.quantity * p }; setPreview({ ...preview, items: newItems }); }} className="w-20" />
-                            <span>₽ =</span>
-                            <strong>{item.total.toFixed(2)} ₽</strong>
-                            <Button type="button" variant="ghost" size="icon" onClick={() => { const newItems = preview.items.filter((_, i) => i !== idx); setPreview({ ...preview, items: newItems }); }} title="Удалить"><Trash2 className="h-4 w-4" /></Button>
+                            <span className="text-muted-foreground">×</span>
+                            <Input 
+                              type="number" 
+                              step="0.01" 
+                              min="0" 
+                              value={item.pricePerUnit} 
+                              onChange={(e) => { 
+                                const p = parseFloat(e.target.value) || 0; 
+                                const newItems = [...preview.items]; 
+                                newItems[idx] = { ...item, pricePerUnit: p, total: item.quantity * p }; 
+                                setPreview({ ...preview, items: newItems }); 
+                              }} 
+                              className="w-20 h-8 text-sm bg-background" 
+                            />
+                            <span className="text-muted-foreground">₽</span>
+                            <span className="text-muted-foreground">=</span>
+                            <span className="font-semibold text-sm">{item.total.toFixed(2)} ₽</span>
+                            <div className="flex-1" />
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => { 
+                                const newItems = preview.items.filter((_, i) => i !== idx); 
+                                setPreview({ ...preview, items: newItems }); 
+                              }} 
+                              title="Удалить"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </>
                         ) : (
-                          <span className="text-muted-foreground">{item.quantity} {item.unit || "шт"} × {item.pricePerUnit.toFixed(2)} ₽ = {item.total.toFixed(2)} ₽</span>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span className="bg-muted px-2 py-0.5 rounded text-xs">{item.quantity} {item.unit || "шт"}</span>
+                            <span>×</span>
+                            <span>{item.pricePerUnit.toFixed(2)} ₽</span>
+                            <span>=</span>
+                            <span className="font-semibold text-foreground">{item.total.toFixed(2)} ₽</span>
+                          </div>
                         )}
                       </div>
                     </div>
                   ))}
                 </div>
-                
-                <Button type="button" variant="outline" className="w-full mt-2" onClick={() => {
-                  const newItem: ReceiptItem = { receiptName: "", quantity: 1, pricePerUnit: 0, total: 0, matchedProductId: null, matchedProductName: null, categoryId: null, categoryName: null, unit: "шт", isManuallyAdded: true };
-                  setPreview({ ...preview, items: [...preview.items, newItem] });
-                }}>
-                  <Plus className="h-4 w-4 mr-1" /> Добавить товар
-                </Button>
               </div>
-              
-              {/* Группировка */}
-              <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-                <h4 className="font-medium mb-2">📊 Транзакции по категориям:</h4>
+
+              {/* Summary */}
+              <div className="px-6 py-4 bg-gradient-to-b from-muted/30 to-muted/50 border-t">
+                <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-xs">📊</span>
+                  Итого по категориям
+                </h4>
                 {(() => {
                   const grouped = new Map<string, typeof preview.items>();
                   let addedTotal = 0;
@@ -687,32 +824,65 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
                   const difference = preview.totalAmount - addedTotal;
                   const isComplete = Math.abs(difference) < 0.01;
                   return (
-                    <>
+                    <div className="space-y-2">
                       {Array.from(grouped.entries()).map(([categoryId, items]) => (
-                        <div key={categoryId} className="mb-2">
-                          <div className="flex justify-between text-sm font-medium">
-                            <span>{items[0]?.categoryName || "Без категории"}</span>
-                            <span>{items.reduce((s, i) => s + i.total, 0).toFixed(2)} ₽</span>
+                        <div key={categoryId} className="flex items-center justify-between py-1.5 px-3 bg-background/50 rounded-lg">
+                          <div>
+                            <span className="text-sm font-medium">{items[0]?.categoryName || "Без категории"}</span>
+                            <span className="text-xs text-muted-foreground ml-2">({items.length} поз.)</span>
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            {items.map((item, i) => <div key={i}>• {item.matchedProductName} ({item.quantity} {item.unit || "шт"})</div>)}
-                          </div>
+                          <span className="font-semibold">{items.reduce((s, i) => s + i.total, 0).toFixed(2)} ₽</span>
                         </div>
                       ))}
-                      <div className="pt-2 border-t mt-2 space-y-1 text-sm">
-                        <div className="flex justify-between"><span>Итого по чеку:</span><strong>{preview.totalAmount.toFixed(2)} ₽</strong></div>
-                        <div className="flex justify-between"><span>Добавлено товаров:</span><strong style={{ color: isComplete ? '#10b981' : '#f59e0b' }}>{addedTotal.toFixed(2)} ₽</strong></div>
-                        {!isComplete && <div className="flex justify-between text-red-500"><span>Разница:</span><strong>{Math.abs(difference).toFixed(2)} ₽</strong></div>}
-                        {isComplete && <div className="text-green-500">✅ Все товары добавлены!</div>}
+                      
+                      <div className="pt-3 mt-3 border-t border-border/50 space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Сумма по чеку:</span>
+                          <span className="font-semibold">{preview.totalAmount.toFixed(2)} ₽</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Распределено:</span>
+                          <span className={cn("font-semibold", isComplete ? "text-green-600" : "text-amber-600")}>
+                            {addedTotal.toFixed(2)} ₽
+                          </span>
+                        </div>
+                        {!isComplete && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-red-500">Разница:</span>
+                            <span className="font-semibold text-red-500">{Math.abs(difference).toFixed(2)} ₽</span>
+                          </div>
+                        )}
+                        {isComplete && (
+                          <div className="flex items-center gap-2 text-green-600 text-sm font-medium pt-1">
+                            <span className="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-xs">✓</span>
+                            Все товары распределены!
+                          </div>
+                        )}
                       </div>
-                    </>
+                    </div>
                   );
                 })()}
               </div>
-              <div className="flex gap-2 mt-4">
-                <Button variant="outline" onClick={handleCancelPreview} disabled={isProcessing}>Отмена</Button>
-                <Button onClick={handleSaveReceipt} disabled={isProcessing}>{isProcessing ? "⏳ Сохранение..." : "✅ Сохранить"}</Button>
-              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t bg-card flex items-center justify-between gap-3">
+              <Button variant="outline" onClick={handleCancelPreview} disabled={isProcessing} className="flex-1">
+                Отмена
+              </Button>
+              <Button onClick={handleSaveReceipt} disabled={isProcessing} className="flex-1 bg-gradient-to-r from-primary to-primary/90">
+                {isProcessing ? (
+                  <>
+                    <span className="animate-spin mr-2">⏳</span>
+                    Сохранение...
+                  </>
+                ) : (
+                  <>
+                    <span className="mr-2">✅</span>
+                    Создать транзакции
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         )}

@@ -28,7 +28,7 @@ export default async function SettingsOverviewPage() {
   ];
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 px-2 md:px-0">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Обзор настроек</h1>
         <div className="text-muted-foreground">Управляйте организацией, пользователями, интеграциями</div>

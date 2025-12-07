@@ -28,10 +28,11 @@ export default function ProtectedShell({ children, activeOrganization }: Protect
   const isFinancePage = pathname.startsWith("/finance");
   const isAdminPage = pathname.startsWith("/admin");
   const isSuperadminPage = pathname.startsWith("/superadmin");
+  const isSettingsPage = pathname.startsWith("/settings");
   const [isExiting, setIsExiting] = useState(false);
   
   // Страницы с собственным sidebar
-  const hasOwnSidebar = isTendersPage || isFinancePage || isAdminPage || isSuperadminPage;
+  const hasOwnSidebar = isTendersPage || isFinancePage || isAdminPage || isSuperadminPage || isSettingsPage;
 
   const handleExitOrganization = async () => {
     if (isExiting) return;

@@ -346,12 +346,6 @@ components/finance/
 
 ### Выполнено:
 
-**CSS Module файлы — УДАЛЕНЫ (0 осталось):**
-- ~~`app/(public)/invite/[token]/invite.module.css`~~ ✅
-- ~~`app/(protected)/tenders/[id]/tender-detail.module.css`~~ ✅
-- ~~`app/(protected)/tenders/logistics/[id]/shipment-detail.module.css`~~ ✅
-- ~~`app/(protected)/tenders/claims/[id]/page.module.css`~~ ✅
-
 **Все `<button>` мигрированы на shadcn Button (0 осталось):**
 
 - ✅ `components/admin/organization-details.tsx` → shadcn Tabs + Button
