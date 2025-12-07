@@ -57,8 +57,8 @@
   --text-tertiary: #adb5bd;
   --border-primary: #dee2e6;
   --border-hover: #adb5bd;
-  --primary: #6366f1;
-  --primary-dark: #4f46e5;
+  --platform-primary: #6366f1;
+  --platform-primary-dark: #4f46e5;
   --primary-alpha: rgba(99, 102, 241, 0.1);
 }
 
