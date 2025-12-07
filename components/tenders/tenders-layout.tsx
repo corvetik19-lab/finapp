@@ -43,6 +43,9 @@ const breadcrumbTitles: Record<string, string> = {
   "/tenders/dictionaries/customers": "Заказчики",
   "/tenders/dictionaries/platforms": "Площадки",
   "/tenders/dictionaries/types": "Типы тендеров",
+  "/tenders/dictionaries/legal-entities": "Юр. лица",
+  "/tenders/dictionaries/banks": "Банки",
+  "/tenders/dictionaries/suppliers": "Поставщики",
 }
 
 function getBreadcrumbs(pathname: string) {

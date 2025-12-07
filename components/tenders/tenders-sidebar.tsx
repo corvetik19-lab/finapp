@@ -96,7 +96,7 @@ const tendersNavigation = {
       { title: "Площадки", url: "/tenders/dictionaries/platforms", icon: Globe },
       { title: "Банки", url: "/tenders/dictionaries/banks", icon: Landmark },
       { title: "Типы тендеров", url: "/tenders/dictionaries/types", icon: List },
-      { title: "Юр. лица", url: "/settings/legal-entities", icon: Scale },
+      { title: "Юр. лица", url: "/tenders/dictionaries/legal-entities", icon: Scale },
     ],
   },
   other: [
