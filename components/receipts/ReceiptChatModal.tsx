@@ -423,28 +423,30 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
         itemsByCategory.get(categoryKey)!.push(item);
       }
 
+      const requestBody = {
+        storeName: preview.storeName,
+        date: preview.date,
+        itemsByCategory: Array.from(itemsByCategory.entries()).map(([categoryId, items]) => ({
+          categoryId: categoryId === "no_category" ? null : categoryId,
+          categoryName: items[0]?.categoryName || null,
+          items: items.map(item => ({
+            productId: item.matchedProductId,
+            productName: item.matchedProductName || item.receiptName,
+            receiptName: item.receiptName,
+            quantity: item.quantity,
+            pricePerUnit: item.pricePerUnit,
+            total: item.total,
+            unit: item.unit || "шт",
+          })),
+          totalAmount: items.reduce((sum, item) => sum + item.total, 0)
+        })),
+        totalAmount: preview.totalAmount
+      };
+      
       const response = await fetch("/api/ai/save-receipt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          storeName: preview.storeName,
-          date: preview.date,
-          itemsByCategory: Array.from(itemsByCategory.entries()).map(([categoryId, items]) => ({
-            categoryId: categoryId === "no_category" ? null : categoryId,
-            categoryName: items[0]?.categoryName || null,
-            items: items.map(item => ({
-              productId: item.matchedProductId,
-              productName: item.matchedProductName || item.receiptName,
-              receiptName: item.receiptName,
-              quantity: item.quantity,
-              pricePerUnit: item.pricePerUnit,
-              total: item.total,
-              unit: item.unit || "шт",
-            })),
-            totalAmount: items.reduce((sum, item) => sum + item.total, 0)
-          })),
-          totalAmount: preview.totalAmount
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();

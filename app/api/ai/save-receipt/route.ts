@@ -15,12 +15,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { storeName, date, itemsByCategory, totalAmount } = await request.json();
+    const body = await request.json();
+    const { storeName, date, itemsByCategory, totalAmount } = body;
+    
+    // Проверяем что есть категории для создания
+    if (!itemsByCategory || itemsByCategory.length === 0) {
+      return NextResponse.json({
+        success: false,
+        message: "❌ Нет позиций для сохранения. Добавьте товары в чек.",
+      });
+    }
 
-    // Находим счёт пользователя
+    // Находим счёт пользователя (с company_id)
     const { data: accounts } = await supabase
       .from("accounts")
-      .select("id, name")
+      .select("id, name, company_id")
       .eq("user_id", user.id)
       .is("deleted_at", null)
       .limit(1);
@@ -32,6 +41,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    
+    // Берём company_id из счёта
+    const companyId = account.company_id || null;
 
     const createdTransactions = [];
     let totalCreated = 0;
@@ -52,7 +64,8 @@ export async function POST(request: NextRequest) {
           occurred_at: date || new Date().toISOString(),
           note: `Покупка в ${storeName}`,
           counterparty: storeName,
-          category_id: categoryId
+          category_id: categoryId,
+          company_id: companyId
         })
         .select()
         .single();
@@ -71,10 +84,11 @@ export async function POST(request: NextRequest) {
             transaction_id: transaction.id,
             name: item.productName,
             quantity: item.quantity,
-            unit: 'шт',
+            unit: item.unit || 'шт',
             price_per_unit: Math.round(item.pricePerUnit * 100),
             total_amount: Math.round(item.total * 100),
-            category_id: categoryId
+            category_id: categoryId,
+            company_id: companyId
           });
       }
 
@@ -99,6 +113,15 @@ export async function POST(request: NextRequest) {
         total: categoryTotal
       });
       totalCreated++;
+    }
+
+    // Проверяем что хотя бы одна транзакция создана
+    if (totalCreated === 0) {
+      console.error("No transactions created. itemsByCategory:", JSON.stringify(itemsByCategory, null, 2));
+      return NextResponse.json({
+        success: false,
+        message: "❌ Не удалось создать транзакции. Проверьте данные чека.",
+      });
     }
 
     const summary = `✅ Чек обработан!\n\n` +
