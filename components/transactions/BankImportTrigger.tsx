@@ -118,8 +118,10 @@ export default function BankImportTrigger() {
       }
 
       // Если есть товар - создаём позицию
+      console.log("🔍 Transaction product:", { hasProduct: !!t.product, product: t.product, inserted: inserted?.id });
       if (t.product && inserted) {
-        await supabase.from("transaction_items").insert({
+        const totalAmount = Math.round(t.product.quantity * t.product.price_per_unit);
+        const { error: itemError } = await supabase.from("transaction_items").insert({
           transaction_id: inserted.id,
           user_id: user.id,
           product_id: t.product.id,
@@ -127,9 +129,15 @@ export default function BankImportTrigger() {
           quantity: t.product.quantity,
           unit: t.product.unit,
           price_per_unit: t.product.price_per_unit,
+          total_amount: totalAmount,
           category_id: t.category_id,
           company_id: companyId,
         });
+        if (itemError) {
+          console.error("❌ Error creating transaction item:", itemError);
+        } else {
+          console.log("✅ Transaction item created");
+        }
       }
     }
 

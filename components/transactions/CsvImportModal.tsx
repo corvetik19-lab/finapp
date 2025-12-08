@@ -49,6 +49,7 @@ type MergedOperation = {
   date: string;
   productId?: string;
   productName?: string;
+  productUnit?: string; // Сохраняем unit для надёжности
 };
 
 interface CsvImportModalProps {
@@ -373,6 +374,8 @@ export function CsvImportModal({ open, onOpenChange, categories, products = [], 
       ? products.find(p => p.id === mergeProduct) 
       : null;
 
+    console.log("🔍 [Merge] mergeProduct:", mergeProduct, "product:", product);
+
     // Создаём объединённую операцию
     const newMerged: MergedOperation = {
       id: `merged-${Date.now()}`,
@@ -383,7 +386,10 @@ export function CsvImportModal({ open, onOpenChange, categories, products = [], 
       date: lastDate,
       productId: product?.id,
       productName: product?.name,
+      productUnit: product?.default_unit || "шт",
     };
+
+    console.log("🔍 [Merge] Created merged operation:", newMerged);
 
     // Удаляем выбранные объединённые операции
     setMergedOperations(prev => [
@@ -465,25 +471,29 @@ export function CsvImportModal({ open, onOpenChange, categories, products = [], 
         direction: (op.amount >= 0 ? "income" : "expense") as "income" | "expense",
       }));
 
-      // Объединённые операции
+      // Объединённые операции - используем сохранённые данные напрямую
+      console.log("🔍 [Import] mergedOperations:", mergedOperations);
       const mergedTransactions = mergedOperations.map(m => {
-        const product = m.productId ? products.find(p => p.id === m.productId) : null;
+        // Если есть productId и productName - создаём product объект
+        const hasProduct = m.productId && m.productName;
+        console.log("🔍 [Import] m.productId:", m.productId, "m.productName:", m.productName, "hasProduct:", hasProduct);
         return {
           date: formatDateForDB(m.date),
           amount: Math.abs(m.amount),
           description: m.productName || m.categoryName, // Название = товар или категория
           category_id: m.categoryId,
           direction: (m.amount >= 0 ? "income" : "expense") as "income" | "expense",
-          product: product ? {
-            id: product.id,
-            name: product.name,
+          product: hasProduct ? {
+            id: m.productId!,
+            name: m.productName!,
             quantity: 1,
-            unit: product.default_unit || "шт",
+            unit: m.productUnit || "шт",
             price_per_unit: Math.abs(m.amount), // вся сумма = цена за единицу
           } : undefined,
         };
       });
 
+      console.log("🔍 [Import] mergedTransactions to send:", mergedTransactions);
       await onImport([...regularTransactions, ...mergedTransactions]);
       
       // Очищаем localStorage и сбрасываем состояние
