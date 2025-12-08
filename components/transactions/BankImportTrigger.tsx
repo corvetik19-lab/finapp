@@ -70,18 +70,21 @@ export default function BankImportTrigger() {
   }>) => {
     const supabase = getSupabaseClient();
     
-    // Получаем первый счёт пользователя как дефолтный
+    // Получаем первый счёт пользователя как дефолтный (с company_id)
     const { data: accounts } = await supabase
       .from("accounts")
-      .select("id")
+      .select("id, company_id")
       .is("deleted_at", null)
       .limit(1);
     
-    const defaultAccountId = accounts?.[0]?.id;
+    const defaultAccount = accounts?.[0];
     
-    if (!defaultAccountId) {
+    if (!defaultAccount?.id) {
       throw new Error("Создайте хотя бы один счёт перед импортом");
     }
+
+    const defaultAccountId = defaultAccount.id;
+    const companyId = defaultAccount.company_id || null;
 
     // Получаем текущего пользователя
     const { data: { user } } = await supabase.auth.getUser();
@@ -103,6 +106,7 @@ export default function BankImportTrigger() {
           note: `Импорт из банковской выписки`,
           category_id: t.category_id || null,
           account_id: defaultAccountId,
+          company_id: companyId,
           tags: ["банк", "импорт"],
         })
         .select("id")
@@ -117,12 +121,14 @@ export default function BankImportTrigger() {
       if (t.product && inserted) {
         await supabase.from("transaction_items").insert({
           transaction_id: inserted.id,
+          user_id: user.id,
           product_id: t.product.id,
           name: t.product.name,
           quantity: t.product.quantity,
           unit: t.product.unit,
           price_per_unit: t.product.price_per_unit,
           category_id: t.category_id,
+          company_id: companyId,
         });
       }
     }
