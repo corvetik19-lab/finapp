@@ -1,6 +1,7 @@
 "use server";
 
 import { createRouteClient } from "@/lib/supabase/helpers";
+import { getCurrentCompanyId } from "@/lib/platform/organization";
 import type { TransactionItem, TransactionItemInput } from "@/types/transaction";
 
 /**
@@ -23,6 +24,9 @@ export async function createTransactionItems(
     return [];
   }
 
+  // Получаем company_id
+  const companyId = await getCurrentCompanyId();
+
   // Подготовка данных для вставки
   const itemsToInsert = items.map((item) => ({
     transaction_id: transactionId,
@@ -33,6 +37,7 @@ export async function createTransactionItems(
     price_per_unit: item.price_per_unit,
     total_amount: Math.round(item.quantity * item.price_per_unit),
     product_id: item.product_id || null, // связь с товаром из справочника
+    company_id: companyId,
   }));
 
   const { data, error } = await supabase

@@ -24,6 +24,7 @@ import { z } from "zod";
 import { NextResponse } from "next/server";
 import { checkTransactionAchievements } from "@/lib/gamification/detectors";
 import { createTransactionItems } from "@/lib/transactions/transaction-items-service";
+import { getCurrentCompanyId } from "@/lib/platform/organization";
 import type { TransactionItemInput } from "@/types/transaction";
 
 export async function createDefaultAccount() {
@@ -532,6 +533,9 @@ export async function importTransactionsAction(rows: CsvNormalizedRow[]): Promis
   const rowErrors: string[] = [];
   let duplicates = 0;
 
+  // Получаем company_id
+  const companyId = await getCurrentCompanyId();
+
   for (const row of rows) {
     if (row.direction === "transfer") {
       rowErrors.push(`Строка ${row.rowNumber}: импорт переводов пока не поддерживается`);
@@ -587,6 +591,7 @@ export async function importTransactionsAction(rows: CsvNormalizedRow[]): Promis
       occurred_at: occurredISO,
       note: row.note ?? null,
       counterparty: row.counterparty ?? null,
+      company_id: companyId,
     });
   }
 

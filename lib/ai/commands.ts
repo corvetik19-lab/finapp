@@ -283,10 +283,10 @@ async function addTransaction(
     };
   }
 
-  // Получаем первый счёт пользователя
+  // Получаем первый счёт пользователя (с company_id)
   const { data: accounts } = await supabase
     .from("accounts")
-    .select("id")
+    .select("id, company_id")
     .eq("user_id", userId)
     .limit(1);
 
@@ -296,6 +296,8 @@ async function addTransaction(
       message: "Сначала создайте счёт",
     };
   }
+
+  const companyId = accounts[0].company_id || null;
 
   // Получаем или создаём категорию
   let categoryId = null;
@@ -318,6 +320,7 @@ async function addTransaction(
           user_id: userId,
           name: category,
           kind: direction || "expense",
+          company_id: companyId,
         })
         .select()
         .single();
@@ -337,6 +340,7 @@ async function addTransaction(
     note: description || `Добавлено через чат: ${command.original}`,
     occurred_at: new Date().toISOString(),
     tags: [],
+    company_id: companyId,
   });
 
   if (error) throw error;
