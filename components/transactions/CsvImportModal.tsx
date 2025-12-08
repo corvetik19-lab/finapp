@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, FileSpreadsheet, Merge, Plus, X, Loader2, Maximize2, Minimize2 } from "lucide-react";
+import { Upload, FileSpreadsheet, Merge, Plus, X, Loader2, Maximize2, Minimize2, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Category = {
@@ -94,6 +94,7 @@ export function CsvImportModal({ open, onOpenChange, categories, products = [], 
   const [mergedOperations, setMergedOperations] = useState<MergedOperation[]>([]);
   const [step, setStep] = useState<"upload" | "review">("upload");
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isMergedCollapsed, setIsMergedCollapsed] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [categoryAssignments, setCategoryAssignments] = useState<Map<string, string>>(new Map());
 
@@ -650,48 +651,59 @@ export function CsvImportModal({ open, onOpenChange, categories, products = [], 
 
             {/* Объединённые операции */}
             {mergedOperations.length > 0 && (
-              <div className="p-4 rounded-lg border-2 border-primary/30 bg-primary/5 space-y-2">
-                <p className="text-sm font-medium flex items-center gap-2">
-                  <Merge className="h-4 w-4" />
-                  Объединённые операции ({mergedOperations.length})
-                  {mergeMode && <span className="text-xs text-muted-foreground ml-2">— выберите для вычитания</span>}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {mergedOperations.map(m => (
-                    <div 
-                      key={m.id} 
-                      onClick={mergeMode ? () => toggleMergedSelect(m.id) : undefined}
-                      className={cn(
-                        "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all",
-                        m.amount >= 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800",
-                        mergeMode && "cursor-pointer hover:ring-2 hover:ring-primary",
-                        selectedMergedForCombine.has(m.id) && "ring-2 ring-primary ring-offset-2 scale-105"
-                      )}
-                    >
-                      {mergeMode && (
-                        <Checkbox 
-                          checked={selectedMergedForCombine.has(m.id)}
-                          onCheckedChange={() => toggleMergedSelect(m.id)}
-                          className="h-4 w-4"
-                        />
-                      )}
-                      <span className="text-xs opacity-70">{m.date}</span>
-                      <span className="font-medium">{m.categoryName}</span>
-                      {m.productName && (
-                        <span className="text-xs bg-white/50 px-1.5 py-0.5 rounded">📦 {m.productName}</span>
-                      )}
-                      <span className="font-bold">{formatMoney(m.amount)}</span>
-                      {!mergeMode && (
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); deleteMerged(m.id); }}
-                          className="ml-1 hover:bg-white/50 rounded p-0.5"
+              <div className="rounded-lg border-2 border-primary/30 bg-primary/5">
+                <button 
+                  type="button"
+                  onClick={() => setIsMergedCollapsed(!isMergedCollapsed)}
+                  className="w-full p-3 flex items-center justify-between hover:bg-primary/10 transition-colors rounded-t-lg"
+                >
+                  <p className="text-sm font-medium flex items-center gap-2">
+                    <Merge className="h-4 w-4" />
+                    Объединённые операции ({mergedOperations.length})
+                    {mergeMode && <span className="text-xs text-muted-foreground ml-2">— выберите для вычитания</span>}
+                  </p>
+                  {isMergedCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                </button>
+                {!isMergedCollapsed && (
+                  <div className="px-3 pb-3">
+                    <div className="flex flex-wrap gap-2 max-h-[180px] overflow-y-auto">
+                      {mergedOperations.map(m => (
+                        <div 
+                          key={m.id} 
+                          onClick={mergeMode ? () => toggleMergedSelect(m.id) : undefined}
+                          className={cn(
+                            "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all",
+                            m.amount >= 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800",
+                            mergeMode && "cursor-pointer hover:ring-2 hover:ring-primary",
+                            selectedMergedForCombine.has(m.id) && "ring-2 ring-primary ring-offset-2 scale-105"
+                          )}
                         >
-                          <X className="h-3 w-3" />
-                        </button>
-                      )}
+                          {mergeMode && (
+                            <Checkbox 
+                              checked={selectedMergedForCombine.has(m.id)}
+                              onCheckedChange={() => toggleMergedSelect(m.id)}
+                              className="h-4 w-4"
+                            />
+                          )}
+                          <span className="text-xs opacity-70">{m.date}</span>
+                          <span className="font-medium">{m.categoryName}</span>
+                          {m.productName && (
+                            <span className="text-xs bg-white/50 px-1.5 py-0.5 rounded">📦 {m.productName}</span>
+                          )}
+                          <span className="font-bold">{formatMoney(m.amount)}</span>
+                          {!mergeMode && (
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); deleteMerged(m.id); }}
+                              className="ml-1 hover:bg-white/50 rounded p-0.5"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                )}
               </div>
             )}
 
