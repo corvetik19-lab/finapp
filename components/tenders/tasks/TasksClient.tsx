@@ -56,6 +56,7 @@ interface Props {
   tenders: TaskTender[];
   companyId: string;
   userId: string;
+  canViewAll: boolean;
 }
 
 const STATUS_CONFIG: Record<TaskStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; className: string }> = {
@@ -84,7 +85,7 @@ const StatusIcon = ({ status }: { status: TaskStatus }) => {
 type ViewMode = 'list' | 'board' | 'calendar';
 type FilterStatus = TaskStatus | 'all' | 'active';
 
-export default function TasksClient({ initialData, employees, tenders, companyId, userId }: Props) {
+export default function TasksClient({ initialData, employees, tenders, companyId, userId, canViewAll }: Props) {
   const [data, setData] = useState<TasksData>(initialData);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('active');
@@ -506,17 +507,19 @@ export default function TasksClient({ initialData, employees, tenders, companyId
                   <SelectItem value="low">Низкий</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={filterAssignee} onValueChange={setFilterAssignee}>
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="Исполнитель" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Все исполнители</SelectItem>
-                  {employees.map(emp => (
-                    <SelectItem key={emp.id} value={emp.id}>{emp.full_name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {canViewAll && (
+                <Select value={filterAssignee} onValueChange={setFilterAssignee}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="Исполнитель" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Все исполнители</SelectItem>
+                    {employees.map(emp => (
+                      <SelectItem key={emp.id} value={emp.id}>{emp.full_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
         </CardContent>

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { createRSCClient } from '@/lib/supabase/helpers';
 import { getTasksData, getEmployees, getTendersForTasks } from '@/lib/tenders/tasks-service';
+import { getCurrentUserPermissions, canViewAllTenders } from '@/lib/permissions/check-permissions';
 import TasksClient from '@/components/tenders/tasks/TasksClient';
 
 export const dynamic = 'force-dynamic';
@@ -57,6 +58,10 @@ export default async function TenderTasksPage() {
     );
   }
 
+  // Получаем права пользователя
+  const userPermissions = await getCurrentUserPermissions();
+  const canViewAll = canViewAllTenders(userPermissions);
+
   // Загружаем данные параллельно
   const [tasksData, employees, tenders] = await Promise.all([
     getTasksData(companyId),
@@ -72,6 +77,7 @@ export default async function TenderTasksPage() {
         tenders={tenders}
         companyId={companyId}
         userId={user.id}
+        canViewAll={canViewAll}
       />
     </Suspense>
   );
