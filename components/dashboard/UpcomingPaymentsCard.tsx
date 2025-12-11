@@ -28,6 +28,7 @@ export type UpcomingPayment = {
   status?: "pending" | "paid";
   paidAt?: string | null;
   paidTransactionId?: string | null;
+  categoryId?: string | null;
 };
 
 export type UpcomingPaymentsCardProps = {
@@ -228,7 +229,7 @@ export default function UpcomingPaymentsCard({
   };
 
   const loadTransactionOptions = useCallback(
-    async (search?: string, includeIds?: string[]) => {
+    async (search?: string, includeIds?: string[], paymentDueDate?: string, categoryId?: string | null) => {
       try {
         setTransactionsLoading(true);
         setTransactionsError(null);
@@ -239,6 +240,24 @@ export default function UpcomingPaymentsCard({
         } else {
           // Исключаем транзакции уже привязанные к другим платежам
           params.set("excludeLinked", "true");
+        }
+
+        // Фильтруем по месяцу платежа
+        if (paymentDueDate) {
+          const dueDate = new Date(paymentDueDate);
+          if (!Number.isNaN(dueDate.getTime())) {
+            const year = dueDate.getFullYear();
+            const month = dueDate.getMonth();
+            const fromDate = new Date(year, month, 1).toISOString();
+            const toDate = new Date(year, month + 1, 0, 23, 59, 59, 999).toISOString();
+            params.set("fromDate", fromDate);
+            params.set("toDate", toDate);
+          }
+        }
+
+        // Фильтруем по категории платежа
+        if (categoryId) {
+          params.set("categoryId", categoryId);
         }
 
         const queryString = params.toString();
@@ -261,7 +280,7 @@ export default function UpcomingPaymentsCard({
   useEffect(() => {
     if (!selectingPayment) return;
     const includeIds = selectingPayment?.paidTransactionId ? [selectingPayment.paidTransactionId] : undefined;
-    void loadTransactionOptions(undefined, includeIds);
+    void loadTransactionOptions(undefined, includeIds, selectingPayment.dueDate, selectingPayment.categoryId);
   }, [selectingPayment, loadTransactionOptions]);
 
   useEffect(() => {
@@ -298,6 +317,7 @@ export default function UpcomingPaymentsCard({
         amountMajor: amountMajorNumber,
         direction: values.direction,
         accountName: values.accountName,
+        categoryId: values.categoryId,
       };
 
       const res = await fetch("/api/upcoming-payments", {
@@ -354,7 +374,7 @@ export default function UpcomingPaymentsCard({
 
   const handleSearchTransactions = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    await loadTransactionOptions(transactionSearch);
+    await loadTransactionOptions(transactionSearch, undefined, selectingPayment?.dueDate, selectingPayment?.categoryId);
   };
 
   const handleEditUnlinkTransaction = async () => {
@@ -399,9 +419,10 @@ export default function UpcomingPaymentsCard({
       return;
     }
 
-    // Находим выбранную транзакцию чтобы получить account_id
+    // Находим выбранную транзакцию чтобы получить account_id и сумму
     const selectedTransaction = transactionsOptions.find(opt => opt.id === selectedTransactionId);
     const accountId = selectedTransaction?.account_id;
+    const transactionAmount = selectedTransaction?.amount; // сумма в копейках
 
     setIsMarkingPaid(true);
     setTransactionsError(null);
@@ -412,7 +433,8 @@ export default function UpcomingPaymentsCard({
         body: JSON.stringify({ 
           paymentId: selectingPayment.id, 
           transactionId: selectedTransactionId,
-          accountId: accountId 
+          accountId: accountId,
+          amountMinor: transactionAmount, // обновляем сумму платежа из транзакции
         }),
       });
       const result = (await res.json()) as { success: boolean; error?: string };
@@ -448,6 +470,7 @@ export default function UpcomingPaymentsCard({
         amountMajor: Math.abs(editingPayment.amountMinor) / 100,
         direction: editingPayment.direction ?? "expense",
         accountName: editingPayment.accountName ?? undefined,
+        categoryId: editingPayment.categoryId ?? undefined,
       };
     }
     return undefined;
@@ -586,6 +609,15 @@ export default function UpcomingPaymentsCard({
             {selectingPayment && <p className="text-sm text-muted-foreground">Выберите транзакцию для «{selectingPayment.name}»</p>}
           </DialogHeader>
           <div className="space-y-4">
+            {selectingPayment?.categoryId ? (
+              <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
+                Показаны транзакции за {new Date(selectingPayment.dueDate).toLocaleDateString("ru-RU", { month: "long", year: "numeric" })} с выбранной категорией
+              </div>
+            ) : (
+              <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                💡 Укажите категорию в настройках платежа, чтобы показывались только транзакции этой категории
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Поиск транзакции</Label>
               <form onSubmit={handleSearchTransactions} className="flex gap-2">
@@ -622,4 +654,5 @@ export type TransactionOption = {
   id: string;
   label: string;
   account_id: string;
+  amount: number; // сумма в копейках
 };

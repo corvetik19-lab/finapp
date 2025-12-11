@@ -5,6 +5,7 @@ import { createBudget } from "./actions";
 import BudgetsList from "@/components/budgets/BudgetsList";
 import BudgetForm from "@/components/budgets/BudgetForm";
 import SavingsDistribution from "@/components/budgets/SavingsDistribution";
+import ResetBudgetsButton from "@/components/budgets/ResetBudgetsButton";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Wallet, PieChart, ListChecks, Clock } from "lucide-react";
@@ -50,6 +51,20 @@ export default async function BudgetsPage() {
 
   const creditCards = (accountsRaw ?? []) as { id: string; name: string; type: string }[];
 
+  // Загружаем товары для бюджетов по товарам
+  let productsQuery = supabase
+    .from("product_items")
+    .select("id,name")
+    .order("name", { ascending: true });
+
+  if (companyId) {
+    productsQuery = productsQuery.eq("company_id", companyId);
+  }
+
+  const { data: productsRaw } = await productsQuery;
+
+  const products = (productsRaw ?? []) as { id: string; name: string }[];
+
   // Загружаем дебетовые карты для распределения экономии с балансами
   let debitAccountsQuery = supabase
     .from("accounts")
@@ -94,12 +109,16 @@ export default async function BudgetsPage() {
 
   const initialDistributions = savedDistributions || [];
   
-  // Фильтруем категории и счета - убираем те, для которых уже есть бюджет
+  // Фильтруем категории, счета и товары - убираем те, для которых уже есть бюджет
   const usedCategoryIds = new Set(budgets.map(b => b.category_id).filter(Boolean));
   const usedAccountIds = new Set(budgets.map(b => b.account_id).filter(Boolean));
+  const usedProductIds = new Set(budgets.map(b => b.product_id).filter(Boolean));
   
   // Доступные кредитные карты (без бюджета)
   const availableCreditCards = creditCards.filter(card => !usedAccountIds.has(card.id));
+  
+  // Доступные товары (без бюджета)
+  const availableProducts = products.filter(product => !usedProductIds.has(product.id));
   
   // Категории с kind='both' - это категории для чистой прибыли (доход - расход)
   const bothCategories = categories.filter(c => c.kind === "both");
@@ -155,6 +174,7 @@ export default async function BudgetsPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Бюджеты</h1>
           <p className="text-sm text-muted-foreground">Планирование доходов и расходов</p>
         </div>
+        <ResetBudgetsButton />
       </div>
 
       {/* Summary Cards */}
@@ -260,6 +280,7 @@ export default async function BudgetsPage() {
         categories={availableCategories} 
         netProfitCategories={netProfitCategories}
         creditCards={availableCreditCards}
+        products={availableProducts}
         onSubmit={createBudget} 
       />
 

@@ -74,7 +74,7 @@ export function CreateOrganizationModal({ users = [] }: CreateOrganizationModalP
                         <div className="space-y-2"><Label>Описание</Label><Textarea name="description" placeholder="Краткое описание деятельности..." /></div>
                         <div className="space-y-2">
                             <Label>Владелец</Label>
-                            <Select value={ownerId} onValueChange={setOwnerId}><SelectTrigger><SelectValue placeholder="Не назначен" /></SelectTrigger><SelectContent><SelectItem value="">-- Не назначен --</SelectItem>{users.filter(u => u.global_role !== 'super_admin').map(user => <SelectItem key={user.id} value={user.id}>{user.email} {user.full_name ? `(${user.full_name})` : ''}</SelectItem>)}</SelectContent></Select>
+                            <Select value={ownerId || "__none__"} onValueChange={(v) => setOwnerId(v === "__none__" ? "" : v)}><SelectTrigger><SelectValue placeholder="Не назначен" /></SelectTrigger><SelectContent><SelectItem value="__none__">-- Не назначен --</SelectItem>{users.filter(u => u.global_role !== 'super_admin').map(user => <SelectItem key={user.id} value={user.id}>{user.email} {user.full_name ? `(${user.full_name})` : ''}</SelectItem>)}</SelectContent></Select>
                             <p className="text-xs text-muted-foreground">Выбранный пользователь станет администратором.</p>
                         </div>
                         <div className="space-y-2">

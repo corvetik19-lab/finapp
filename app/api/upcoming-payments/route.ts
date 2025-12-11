@@ -13,7 +13,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: message }, { status: 400 });
     }
 
-    const { id, name, dueDate, amountMajor, direction, accountName } = parsed.data;
+    const { id, name, dueDate, amountMajor, direction, accountName, categoryId } = parsed.data;
     const amountMinor = Math.round(amountMajor * 100);
     const dueAt = new Date(`${dueDate}T00:00:00Z`);
 
@@ -37,6 +37,7 @@ export async function POST(req: Request) {
       amount_minor: amountMinor,
       direction,
       account_name: accountName ?? null,
+      category_id: categoryId ?? null,
       user_id: user.id,
     };
 

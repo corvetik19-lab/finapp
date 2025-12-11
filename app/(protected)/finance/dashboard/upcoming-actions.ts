@@ -20,7 +20,7 @@ export async function saveUpcomingPaymentAction(
     return { success: false, error: message };
   }
 
-  const { id, name, dueDate, amountMajor, direction, accountName } = parsed.data;
+  const { id, name, dueDate, amountMajor, direction, accountName, categoryId } = parsed.data;
   const amountMinor = Math.round(amountMajor * 100);
 
   try {
@@ -44,6 +44,7 @@ export async function saveUpcomingPaymentAction(
       amount_minor: amountMinor,
       direction,
       account_name: accountName ?? null,
+      category_id: categoryId ?? null,
     };
 
     logger.info("saveUpcomingPaymentAction payload", {

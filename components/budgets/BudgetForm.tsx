@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/toast/ToastContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Calendar, Loader2 } from "lucide-react";
+import { Plus, Loader2, CalendarDays } from "lucide-react";
 
 type Category = {
   id: string;
@@ -27,35 +27,61 @@ type CreditCard = {
   type: string;
 };
 
+type ProductItem = {
+  id: string;
+  name: string;
+};
+
 type BudgetFormProps = {
   categories: Category[];
   netProfitCategories?: NetProfitCategory[];
   creditCards?: CreditCard[];
+  products?: ProductItem[];
   onSubmit: (formData: FormData) => Promise<void>;
 };
 
-export default function BudgetForm({ categories, netProfitCategories = [], creditCards = [], onSubmit }: BudgetFormProps) {
+// Форматировать дату в YYYY-MM-DD (локальное время)
+function formatLocalDate(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+// Получить период месяца по смещению (0 = текущий, 1 = следующий)
+function getMonthPeriod(offset: number) {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + offset;
+  
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  
+  return {
+    start: formatLocalDate(firstDay),
+    end: formatLocalDate(lastDay),
+    label: firstDay.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' }),
+    value: `${offset}`,
+  };
+}
+
+// Получить доступные месяцы (текущий и следующий)
+function getAvailableMonths() {
+  return [
+    getMonthPeriod(0), // Текущий
+    getMonthPeriod(1), // Следующий
+  ];
+}
+
+export default function BudgetForm({ categories, netProfitCategories = [], creditCards = [], products = [], onSubmit }: BudgetFormProps) {
   const router = useRouter();
   const { show: showToast } = useToast();
-  const [periodStart, setPeriodStart] = useState("");
-  const [periodEnd, setPeriodEnd] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const setCurrentMonth = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    
-    // Первый день месяца
-    const firstDay = `${year}-${month}-01`;
-    
-    // Последний день месяца
-    const lastDay = new Date(year, now.getMonth() + 1, 0);
-    const lastDayStr = `${year}-${month}-${String(lastDay.getDate()).padStart(2, "0")}`;
-    
-    setPeriodStart(firstDay);
-    setPeriodEnd(lastDayStr);
-  };
+  const [selectedMonthOffset, setSelectedMonthOffset] = useState(0);
+  
+  // Доступные месяцы (текущий и следующий)
+  const availableMonths = useMemo(() => getAvailableMonths(), []);
+  const selectedPeriod = useMemo(() => getMonthPeriod(selectedMonthOffset), [selectedMonthOffset]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -66,14 +92,17 @@ export default function BudgetForm({ categories, netProfitCategories = [], credi
     
     try {
       const formData = new FormData(form);
+      
+      // Устанавливаем период выбранного месяца
+      formData.set('period_start', selectedPeriod.start);
+      formData.set('period_end', selectedPeriod.end);
+      
       await onSubmit(formData);
       
       // Показываем уведомление
       showToast("✅ Бюджет успешно создан", { type: "success" });
       
       // Очищаем форму перед refresh
-      setPeriodStart("");
-      setPeriodEnd("");
       if (form) {
         form.reset();
       }
@@ -92,10 +121,29 @@ export default function BudgetForm({ categories, netProfitCategories = [], credi
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Создать бюджет</CardTitle>
+        <CardTitle className="text-lg flex items-center gap-2">
+          <CalendarDays className="h-5 w-5" />
+          Создать бюджет
+        </CardTitle>
+        <CardDescription>
+          Выберите месяц и категорию или товар для бюджета
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="space-y-2">
+            <Label>Месяц</Label>
+            <select 
+              value={selectedMonthOffset}
+              onChange={(e) => setSelectedMonthOffset(Number(e.target.value))}
+              className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm capitalize"
+            >
+              {availableMonths.map((m) => (
+                <option key={m.value} value={m.value}>{m.label}</option>
+              ))}
+            </select>
+          </div>
+          
           <div className="space-y-2 sm:col-span-2">
             <Label>Категория</Label>
             <select 
@@ -128,60 +176,39 @@ export default function BudgetForm({ categories, netProfitCategories = [], credi
                   ))}
                 </optgroup>
               )}
+              {products.length > 0 && (
+                <optgroup label="📦 Товары">
+                  {products.map((product) => (
+                    <option key={`prod_${product.id}`} value={`prod_${product.id}`}>{product.name}</option>
+                  ))}
+                </optgroup>
+              )}
             </select>
           </div>
           
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Label>Начало</Label>
-              <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={setCurrentMonth} title="Текущий месяц">
-                <Calendar className="h-3 w-3" />
-              </Button>
-            </div>
-            <Input
-              type="date"
-              name="period_start"
-              value={periodStart}
-              onChange={(e) => setPeriodStart(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label>Окончание</Label>
-            <Input
-              type="date"
-              name="period_end"
-              value={periodEnd}
-              onChange={(e) => setPeriodEnd(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
             <Label>Лимит (₽)</Label>
-            <Input type="text" name="limit_amount" inputMode="decimal" required />
+            <Input type="text" name="limit_amount" inputMode="decimal" placeholder="0" required />
           </div>
           
-          <div className="space-y-2 sm:col-span-2 lg:col-span-3">
-            <Label>Комментарий (необязательно)</Label>
-            <textarea 
+          <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+            <Label>Комментарий</Label>
+            <Input 
               name="notes" 
-              className="w-full min-h-[60px] rounded-md border border-input bg-background px-3 py-2 text-sm"
-              placeholder="Добавьте заметку к бюджету..."
+              placeholder="Заметка..."
             />
           </div>
           
           <input type="hidden" name="currency" value="RUB" />
           
-          <div className="sm:col-span-2 lg:col-span-4 flex justify-end">
+          <div className="sm:col-span-2 lg:col-span-5 flex justify-end">
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
                 <Plus className="h-4 w-4 mr-2" />
               )}
-              {isSubmitting ? "Сохранение..." : "Сохранить бюджет"}
+              {isSubmitting ? "Сохранение..." : "Добавить бюджет"}
             </Button>
           </div>
         </form>

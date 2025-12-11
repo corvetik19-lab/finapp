@@ -6,6 +6,7 @@ export type BudgetRow = {
   id: string;
   category_id: string | null;
   account_id: string | null;
+  product_id: string | null;
   period_start: string;
   period_end: string;
   limit_amount: number;
@@ -21,12 +22,17 @@ export type BudgetRow = {
     name: string;
     type: string;
   } | null;
+  product: {
+    id: string;
+    name: string;
+  } | null;
 };
 
 export type BudgetWithUsage = {
   id: string;
   category_id: string | null;
   account_id: string | null;
+  product_id: string | null;
   period_start: string;
   period_end: string;
   limit_minor: number;
@@ -35,6 +41,7 @@ export type BudgetWithUsage = {
   notes: string | null;
   category: BudgetRow["category"];
   account: BudgetRow["account"];
+  product: BudgetRow["product"];
   spent_minor: number;
   spent_major: number;
   remaining_minor: number;
@@ -53,6 +60,31 @@ function startOfDay(date: string) {
   return start.toISOString();
 }
 
+// Получить начало и конец текущего месяца
+function getCurrentMonthPeriod(): { start: string; end: string } {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  
+  // Первый день месяца
+  const firstDay = new Date(year, month, 1);
+  // Последний день месяца
+  const lastDay = new Date(year, month + 1, 0);
+  
+  // Форматируем как YYYY-MM-DD в локальном времени (не UTC!)
+  const formatLocal = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+  
+  return {
+    start: formatLocal(firstDay),
+    end: formatLocal(lastDay),
+  };
+}
+
 function normalizeBudgetRecord(record: Record<string, unknown>): BudgetRow {
   const categoryField = record.category as unknown;
   const categoryValue = Array.isArray(categoryField)
@@ -64,10 +96,16 @@ function normalizeBudgetRecord(record: Record<string, unknown>): BudgetRow {
     ? (accountField[0] as Record<string, unknown> | undefined)
     : (accountField as Record<string, unknown> | undefined);
 
+  const productField = record.product as unknown;
+  const productValue = Array.isArray(productField)
+    ? (productField[0] as Record<string, unknown> | undefined)
+    : (productField as Record<string, unknown> | undefined);
+
   return {
     id: String(record.id ?? ""),
     category_id: record.category_id ? String(record.category_id) : null,
     account_id: record.account_id ? String(record.account_id) : null,
+    product_id: record.product_id ? String(record.product_id) : null,
     period_start: String(record.period_start ?? ""),
     period_end: String(record.period_end ?? ""),
     limit_amount: Number(record.limit_amount ?? 0),
@@ -87,6 +125,12 @@ function normalizeBudgetRecord(record: Record<string, unknown>): BudgetRow {
           type: String(accountValue.type ?? ""),
         }
       : null,
+    product: productValue
+      ? {
+          id: String(productValue.id ?? ""),
+          name: String(productValue.name ?? ""),
+        }
+      : null,
   } satisfies BudgetRow;
 }
 
@@ -95,6 +139,11 @@ async function enrichBudgetWithUsage(
   budget: BudgetRow
 ): Promise<BudgetWithUsage> {
   const limitMinor = Number(budget.limit_amount ?? 0);
+  
+  // Всегда используем текущий месяц для расчёта
+  const currentPeriod = getCurrentMonthPeriod();
+  const periodStart = currentPeriod.start;
+  const periodEnd = currentPeriod.end;
 
   // Если это бюджет для счета (кредитной карты)
   if (budget.account_id && !budget.category_id) {
@@ -103,8 +152,8 @@ async function enrichBudgetWithUsage(
       .select("amount")
       .eq("account_id", budget.account_id)
       .eq("direction", "expense")
-      .gte("occurred_at", startOfDay(budget.period_start))
-      .lte("occurred_at", endOfDay(budget.period_end));
+      .gte("occurred_at", startOfDay(periodStart))
+      .lte("occurred_at", endOfDay(periodEnd));
 
     const transactions = Array.isArray(txRows) ? txRows : [];
     const spentMinor = transactions.reduce((acc, row) => acc + Math.abs(Number((row as { amount?: number }).amount ?? 0)), 0);
@@ -120,14 +169,66 @@ async function enrichBudgetWithUsage(
       id: budget.id,
       category_id: null,
       account_id: budget.account_id,
-      period_start: budget.period_start,
-      period_end: budget.period_end,
+      product_id: null,
+      period_start: periodStart,
+      period_end: periodEnd,
       limit_minor: limitMinor,
       limit_major: limitMinor / 100,
       currency: budget.currency,
       notes: budget.notes,
       category: budget.category,
       account: budget.account,
+      product: null,
+      spent_minor: spentMinor,
+      spent_major: spentMinor / 100,
+      remaining_minor: remainingMinor,
+      remaining_major: remainingMinor / 100,
+      progress: clampedProgress,
+      status,
+    } satisfies BudgetWithUsage;
+  }
+
+  // Если это бюджет для товара
+  if (budget.product_id) {
+    // Получаем сумму по товарам из transaction_items
+    const { data: itemRows } = await supabase
+      .from("transaction_items")
+      .select("total_amount, transaction:transactions!inner(occurred_at, direction)")
+      .eq("product_id", budget.product_id)
+      .gte("transaction.occurred_at", startOfDay(periodStart))
+      .lte("transaction.occurred_at", endOfDay(periodEnd));
+
+    const items = Array.isArray(itemRows) ? itemRows : [];
+    const spentMinor = items.reduce((acc, row) => {
+      const txn = (row as { transaction?: { direction?: string } }).transaction;
+      // Только расходы учитываем
+      if (txn?.direction === "expense") {
+        return acc + Math.abs(Number((row as { total_amount?: number }).total_amount ?? 0));
+      }
+      return acc;
+    }, 0);
+    
+    const remainingMinor = limitMinor - spentMinor;
+    const progressRatio = limitMinor > 0 ? spentMinor / limitMinor : 0;
+    const clampedProgress = Math.max(0, progressRatio);
+    
+    const status: BudgetWithUsage["status"] = 
+      remainingMinor < 0 ? "over" : clampedProgress >= 0.85 ? "warning" : "ok";
+
+    return {
+      id: budget.id,
+      category_id: null,
+      account_id: null,
+      product_id: budget.product_id,
+      period_start: periodStart,
+      period_end: periodEnd,
+      limit_minor: limitMinor,
+      limit_major: limitMinor / 100,
+      currency: budget.currency,
+      notes: budget.notes,
+      category: null,
+      account: null,
+      product: budget.product,
       spent_minor: spentMinor,
       spent_major: spentMinor / 100,
       remaining_minor: remainingMinor,
@@ -143,14 +244,16 @@ async function enrichBudgetWithUsage(
       id: budget.id,
       category_id: null,
       account_id: null,
-      period_start: budget.period_start,
-      period_end: budget.period_end,
+      product_id: null,
+      period_start: periodStart,
+      period_end: periodEnd,
       limit_minor: limitMinor,
       limit_major: limitMinor / 100,
       currency: budget.currency,
       notes: budget.notes,
       category: budget.category,
       account: null,
+      product: null,
       spent_minor: 0,
       spent_major: 0,
       remaining_minor: remainingMinor,
@@ -171,8 +274,8 @@ async function enrichBudgetWithUsage(
       .select("amount")
       .eq("category_id", budget.category_id)
       .eq("direction", "income")
-      .gte("occurred_at", startOfDay(budget.period_start))
-      .lte("occurred_at", endOfDay(budget.period_end));
+      .gte("occurred_at", startOfDay(periodStart))
+      .lte("occurred_at", endOfDay(periodEnd));
     
     // Получаем расходы
     const { data: expenseRows } = await supabase
@@ -180,8 +283,8 @@ async function enrichBudgetWithUsage(
       .select("amount")
       .eq("category_id", budget.category_id)
       .eq("direction", "expense")
-      .gte("occurred_at", startOfDay(budget.period_start))
-      .lte("occurred_at", endOfDay(budget.period_end));
+      .gte("occurred_at", startOfDay(periodStart))
+      .lte("occurred_at", endOfDay(periodEnd));
     
     const incomeTotal = (incomeRows ?? []).reduce((acc, row) => acc + Math.abs(Number((row as { amount?: number }).amount ?? 0)), 0);
     const expenseTotal = (expenseRows ?? []).reduce((acc, row) => acc + Math.abs(Number((row as { amount?: number }).amount ?? 0)), 0);
@@ -197,8 +300,8 @@ async function enrichBudgetWithUsage(
       .select("amount")
       .eq("category_id", budget.category_id)
       .eq("direction", direction)
-      .gte("occurred_at", startOfDay(budget.period_start))
-      .lte("occurred_at", endOfDay(budget.period_end));
+      .gte("occurred_at", startOfDay(periodStart))
+      .lte("occurred_at", endOfDay(periodEnd));
 
     if (txError) throw txError;
 
@@ -229,14 +332,16 @@ async function enrichBudgetWithUsage(
     id: budget.id,
     category_id: budget.category_id,
     account_id: null,
-    period_start: budget.period_start,
-    period_end: budget.period_end,
+    product_id: null,
+    period_start: periodStart,
+    period_end: periodEnd,
     limit_minor: limitMinor,
     limit_major: limitMinor / 100,
     currency: budget.currency,
     notes: budget.notes,
     category: budget.category,
     account: null,
+    product: null,
     spent_minor: spentMinor,
     spent_major: spentMinor / 100,
     remaining_minor: remainingMinor,
@@ -247,7 +352,7 @@ async function enrichBudgetWithUsage(
 }
 
 const commonSelect =
-  "id,category_id,account_id,period_start,period_end,limit_amount,currency,notes,category:categories(id,name,kind),account:accounts(id,name,type)";
+  "id,category_id,account_id,product_id,period_start,period_end,limit_amount,currency,notes,category:categories(id,name,kind),account:accounts(id,name,type),product:product_items(id,name)";
 
 export async function listBudgetsWithUsage(): Promise<BudgetWithUsage[]> {
   const supabase = await createRSCClient();

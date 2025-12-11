@@ -29,6 +29,7 @@ import {
   Settings,
   type LucideIcon,
 } from "lucide-react"
+import type { UserPermissions } from "./tenders-layout"
 
 import {
   Collapsible,
@@ -51,7 +52,29 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-// Навигация для тендеров
+// Права для пунктов меню
+type NavItem = {
+  title: string
+  url: string
+  icon: LucideIcon
+  requiredPermission?: string // Требуемое право для отображения
+  adminOnly?: boolean // Только для админов
+}
+
+type NavSection = {
+  title: string
+  items: NavItem[]
+}
+
+type NavCollapsibleSection = {
+  title: string
+  icon: LucideIcon
+  items: NavItem[]
+  requiredPermission?: string
+  adminOnly?: boolean
+}
+
+// Навигация для тендеров с правами
 const tendersNavigation = {
   main: [
     {
@@ -68,14 +91,15 @@ const tendersNavigation = {
       items: [
         { title: "Задачи", url: "/tenders/tasks", icon: CheckSquare },
         { title: "Реестр тендеров", url: "/tenders/list", icon: List },
-        { title: "Взыскание долгов", url: "/tenders/claims", icon: Gavel },
-        { title: "Логистика", url: "/tenders/logistics", icon: Truck },
+        { title: "Взыскание долгов", url: "/tenders/claims", icon: Gavel, adminOnly: true },
+        { title: "Логистика", url: "/tenders/logistics", icon: Truck, adminOnly: true },
       ],
     },
-  ],
+  ] as NavSection[],
   reports: {
     title: "Отчёты",
     icon: BarChart3,
+    adminOnly: true,
     items: [
       { title: "Сводный отчёт", url: "/tenders/reports/statistics", icon: BarChart3 },
       { title: "Тендерный отдел", url: "/tenders/reports/department", icon: FileText },
@@ -86,10 +110,11 @@ const tendersNavigation = {
       { title: "Банковские гарантии", url: "/tenders/reports/support-line", icon: Shield },
       { title: "Показатели менеджеров", url: "/tenders/reports/manager-performance", icon: UserCircle },
     ],
-  },
+  } as NavCollapsibleSection,
   dictionaries: {
     title: "Справочники",
     icon: Building,
+    adminOnly: true,
     items: [
       { title: "Заказчики", url: "/tenders/dictionaries/customers", icon: Building },
       { title: "Поставщики", url: "/tenders/dictionaries/suppliers", icon: Factory },
@@ -98,31 +123,53 @@ const tendersNavigation = {
       { title: "Типы тендеров", url: "/tenders/dictionaries/types", icon: List },
       { title: "Юр. лица", url: "/tenders/dictionaries/legal-entities", icon: Scale },
     ],
-  },
+  } as NavCollapsibleSection,
   other: [
-    { title: "Сотрудники", url: "/tenders/employees", icon: Users },
-    { title: "Настройки тендеров", url: "/tenders/settings", icon: Settings },
-  ],
+    { title: "Сотрудники", url: "/tenders/employees", icon: Users, adminOnly: true },
+    { title: "Настройки тендеров", url: "/tenders/settings", icon: Settings, adminOnly: true },
+  ] as NavItem[],
 }
+
+// Проверка доступа к пункту меню
+function hasAccessToItem(item: NavItem, userPermissions?: UserPermissions): boolean {
+  if (!userPermissions) return true // Если нет данных - показываем всё
+  
+  // Админы видят всё
+  if (userPermissions.isAdmin || userPermissions.isSuperAdmin) return true
+  
+  // Проверяем adminOnly
+  if (item.adminOnly) return false
+  
+  // Проверяем конкретное право
+  if (item.requiredPermission) {
+    return userPermissions.permissions.includes(item.requiredPermission)
+  }
+  
+  return true
+}
+
 
 interface NavSectionProps {
   title: string
-  items: {
-    title: string
-    url: string
-    icon: LucideIcon
-  }[]
+  items: NavItem[]
+  userPermissions?: UserPermissions
 }
 
-function NavSection({ title, items }: NavSectionProps) {
+function NavSection({ title, items, userPermissions }: NavSectionProps) {
   const pathname = usePathname()
+  
+  // Фильтруем элементы по правам
+  const filteredItems = items.filter(item => hasAccessToItem(item, userPermissions))
+  
+  // Если нет доступных элементов - не показываем секцию
+  if (filteredItems.length === 0) return null
 
   return (
     <SidebarGroup>
       <SidebarGroupLabel>{title}</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
-          {items.map((item) => {
+          {filteredItems.map((item) => {
             const isActive = pathname === item.url || pathname.startsWith(item.url + "/")
             return (
               <SidebarMenuItem key={item.url}>
@@ -144,16 +191,24 @@ function NavSection({ title, items }: NavSectionProps) {
 interface NavCollapsibleProps {
   title: string
   icon: LucideIcon
-  items: {
-    title: string
-    url: string
-    icon: LucideIcon
-  }[]
+  items: NavItem[]
+  userPermissions?: UserPermissions
+  adminOnly?: boolean
 }
 
-function NavCollapsible({ title, icon: Icon, items }: NavCollapsibleProps) {
+function NavCollapsible({ title, icon: Icon, items, userPermissions, adminOnly }: NavCollapsibleProps) {
   const pathname = usePathname()
-  const isActive = items.some((item) => pathname === item.url || pathname.startsWith(item.url + "/"))
+  
+  // Проверяем доступ к секции
+  if (adminOnly && userPermissions && !userPermissions.isAdmin && !userPermissions.isSuperAdmin) {
+    return null
+  }
+  
+  // Фильтруем элементы
+  const filteredItems = items.filter(item => hasAccessToItem(item, userPermissions))
+  if (filteredItems.length === 0) return null
+  
+  const isActive = filteredItems.some((item) => pathname === item.url || pathname.startsWith(item.url + "/"))
 
   return (
     <SidebarGroup>
@@ -169,7 +224,7 @@ function NavCollapsible({ title, icon: Icon, items }: NavCollapsibleProps) {
             </CollapsibleTrigger>
             <CollapsibleContent>
               <SidebarMenuSub>
-                {items.map((item) => {
+                {filteredItems.map((item) => {
                   const isItemActive = pathname === item.url || pathname.startsWith(item.url + "/")
                   return (
                     <SidebarMenuSubItem key={item.url}>
@@ -191,7 +246,14 @@ function NavCollapsible({ title, icon: Icon, items }: NavCollapsibleProps) {
   )
 }
 
-export function TendersSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+interface TendersSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  userPermissions?: UserPermissions
+}
+
+export function TendersSidebar({ userPermissions, ...props }: TendersSidebarProps) {
+  // Проверяем есть ли секция "Прочее" для отображения
+  const otherItems = tendersNavigation.other.filter(item => hasAccessToItem(item, userPermissions))
+  
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -215,7 +277,12 @@ export function TendersSidebar({ ...props }: React.ComponentProps<typeof Sidebar
       <SidebarContent>
         {/* Main Navigation Sections */}
         {tendersNavigation.main.map((section) => (
-          <NavSection key={section.title} title={section.title} items={section.items} />
+          <NavSection 
+            key={section.title} 
+            title={section.title} 
+            items={section.items} 
+            userPermissions={userPermissions}
+          />
         ))}
 
         {/* Reports - Collapsible */}
@@ -223,6 +290,8 @@ export function TendersSidebar({ ...props }: React.ComponentProps<typeof Sidebar
           title={tendersNavigation.reports.title}
           icon={tendersNavigation.reports.icon}
           items={tendersNavigation.reports.items}
+          userPermissions={userPermissions}
+          adminOnly={tendersNavigation.reports.adminOnly}
         />
 
         {/* Dictionaries - Collapsible */}
@@ -230,12 +299,19 @@ export function TendersSidebar({ ...props }: React.ComponentProps<typeof Sidebar
           title={tendersNavigation.dictionaries.title}
           icon={tendersNavigation.dictionaries.icon}
           items={tendersNavigation.dictionaries.items}
+          userPermissions={userPermissions}
+          adminOnly={tendersNavigation.dictionaries.adminOnly}
         />
 
         {/* Other Items */}
-        <NavSection title="Прочее" items={tendersNavigation.other} />
+        {otherItems.length > 0 && (
+          <NavSection 
+            title="Прочее" 
+            items={tendersNavigation.other} 
+            userPermissions={userPermissions}
+          />
+        )}
       </SidebarContent>
-
 
       <SidebarRail />
     </Sidebar>

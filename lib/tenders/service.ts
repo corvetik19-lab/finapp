@@ -1,6 +1,7 @@
 'use server';
 
 import { createRouteClient } from '@/lib/supabase/server';
+import { getCurrentUserPermissions, canViewAllTenders } from '@/lib/permissions/check-permissions';
 import type {
   Tender,
   CreateTenderInput,
@@ -32,6 +33,10 @@ export async function getTenders(
       sort_order = 'desc',
     } = params;
 
+    // Проверяем права пользователя
+    const userPermissions = await getCurrentUserPermissions();
+    const canViewAll = canViewAllTenders(userPermissions);
+
     let query = supabase
       .from('tenders')
       .select(`
@@ -47,6 +52,17 @@ export async function getTenders(
       `, { count: 'exact' })
       .eq('company_id', companyId)
       .is('deleted_at', null);
+
+    // Фильтрация по правам: если нет права view_all, показываем только свои тендеры
+    if (!canViewAll && userPermissions.employeeId) {
+      // Пользователь видит тендеры где он manager, specialist, investor или executor
+      query = query.or(
+        `manager_id.eq.${userPermissions.employeeId},specialist_id.eq.${userPermissions.employeeId},investor_id.eq.${userPermissions.employeeId},executor_id.eq.${userPermissions.employeeId}`
+      );
+    } else if (!canViewAll && !userPermissions.employeeId) {
+      // Нет employee_id и нет права view_all - возвращаем пустой список
+      return { data: [], total: 0, error: null };
+    }
 
     // Применяем фильтры
     if (filters.search) {
@@ -534,7 +550,7 @@ export async function getTenderTypes(
 // ============================================================
 
 /**
- * Получить статистику по тендерам компании
+ * Получить статистику по тендерам компании (с учётом прав пользователя)
  */
 export async function getTenderStats(
   companyId: string
@@ -542,16 +558,57 @@ export async function getTenderStats(
   try {
     const supabase = await createRouteClient();
 
-    const { data, error } = await supabase.rpc('get_company_tender_stats', {
-      p_company_id: companyId,
-    });
+    // Проверяем права пользователя
+    const userPermissions = await getCurrentUserPermissions();
+    const canViewAll = canViewAllTenders(userPermissions);
 
-    if (error) {
-      console.error('Error fetching tender stats:', error);
-      return { data: null, error: error.message };
+    // Если пользователь видит все тендеры - используем RPC
+    if (canViewAll) {
+      const { data, error } = await supabase.rpc('get_company_tender_stats', {
+        p_company_id: companyId,
+      });
+
+      if (error) {
+        console.error('Error fetching tender stats:', error);
+        return { data: null, error: error.message };
+      }
+
+      if (!data || data.length === 0) {
+        return {
+          data: {
+            total_count: 0,
+            active_count: 0,
+            won_count: 0,
+            lost_count: 0,
+            total_nmck: 0,
+            total_contract_price: 0,
+            avg_nmck: 0,
+            conversion_rate: 0,
+          },
+          error: null,
+        };
+      }
+
+      const stats = data[0];
+      const conversionRate =
+        stats.active_count > 0
+          ? (stats.won_count / stats.active_count) * 100
+          : 0;
+      const avgNmck =
+        stats.total_count > 0 ? stats.total_nmck / stats.total_count : 0;
+
+      return {
+        data: {
+          ...stats,
+          avg_nmck: avgNmck,
+          conversion_rate: conversionRate,
+        },
+        error: null,
+      };
     }
 
-    if (!data || data.length === 0) {
+    // Для пользователей с ограниченными правами - вычисляем из отфильтрованных тендеров
+    if (!userPermissions.employeeId) {
       return {
         data: {
           total_count: 0,
@@ -567,17 +624,38 @@ export async function getTenderStats(
       };
     }
 
-    const stats = data[0];
-    const conversionRate =
-      stats.active_count > 0
-        ? (stats.won_count / stats.active_count) * 100
-        : 0;
-    const avgNmck =
-      stats.total_count > 0 ? stats.total_nmck / stats.total_count : 0;
+    // Получаем тендеры пользователя
+    const { data: tenders, error } = await supabase
+      .from('tenders')
+      .select('id, status, nmck, contract_price')
+      .eq('company_id', companyId)
+      .is('deleted_at', null)
+      .or(
+        `manager_id.eq.${userPermissions.employeeId},specialist_id.eq.${userPermissions.employeeId},investor_id.eq.${userPermissions.employeeId},executor_id.eq.${userPermissions.employeeId}`
+      );
+
+    if (error) {
+      console.error('Error fetching user tenders for stats:', error);
+      return { data: null, error: error.message };
+    }
+
+    const totalCount = tenders?.length || 0;
+    const activeCount = tenders?.filter(t => t.status === 'active' || t.status === 'in_progress').length || 0;
+    const wonCount = tenders?.filter(t => t.status === 'won').length || 0;
+    const lostCount = tenders?.filter(t => t.status === 'lost').length || 0;
+    const totalNmck = tenders?.reduce((sum, t) => sum + (t.nmck || 0), 0) || 0;
+    const totalContractPrice = tenders?.reduce((sum, t) => sum + (t.contract_price || 0), 0) || 0;
+    const avgNmck = totalCount > 0 ? totalNmck / totalCount : 0;
+    const conversionRate = activeCount > 0 ? (wonCount / activeCount) * 100 : 0;
 
     return {
       data: {
-        ...stats,
+        total_count: totalCount,
+        active_count: activeCount,
+        won_count: wonCount,
+        lost_count: lostCount,
+        total_nmck: totalNmck,
+        total_contract_price: totalContractPrice,
         avg_nmck: avgNmck,
         conversion_rate: conversionRate,
       },
@@ -603,6 +681,10 @@ export async function getTendersByStage(
   try {
     const supabase = await createRouteClient();
 
+    // Проверяем права пользователя
+    const userPermissions = await getCurrentUserPermissions();
+    const canViewAll = canViewAllTenders(userPermissions);
+
     // Получаем этапы нужной категории
     const { data: stages, error: stagesError } = await supabase
       .from('tender_stages')
@@ -617,8 +699,17 @@ export async function getTendersByStage(
       return { data: {}, stages: [], error: stagesError.message };
     }
 
+    // Если нет права view_all и нет employee_id - возвращаем пустые данные
+    if (!canViewAll && !userPermissions.employeeId) {
+      const grouped: Record<string, Tender[]> = {};
+      (stages || []).forEach((stage) => {
+        grouped[stage.id] = [];
+      });
+      return { data: grouped, stages: stages || [], error: null };
+    }
+
     // Получаем тендеры
-    const { data: tenders, error: tendersError } = await supabase
+    let tendersQuery = supabase
       .from('tenders')
       .select(
         `
@@ -635,8 +726,16 @@ export async function getTendersByStage(
       .in(
         'stage_id',
         stages?.map((s) => s.id) || []
-      )
-      .order('created_at', { ascending: false });
+      );
+
+    // Фильтрация по правам пользователя
+    if (!canViewAll && userPermissions.employeeId) {
+      tendersQuery = tendersQuery.or(
+        `manager_id.eq.${userPermissions.employeeId},specialist_id.eq.${userPermissions.employeeId},investor_id.eq.${userPermissions.employeeId},executor_id.eq.${userPermissions.employeeId}`
+      );
+    }
+
+    const { data: tenders, error: tendersError } = await tendersQuery.order('created_at', { ascending: false });
 
     if (tendersError) {
       console.error('Error fetching tenders:', tendersError);

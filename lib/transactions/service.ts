@@ -37,6 +37,7 @@ export type TransactionSelectItem = {
   direction: TransactionDirection;
   occurred_at: string;
   account_id: string;
+  amount: number; // сумма в копейках
 };
 
 export type ListTransactionsForSelectParams = {
@@ -44,6 +45,9 @@ export type ListTransactionsForSelectParams = {
   search?: string;
   ids?: string[];
   excludeLinked?: boolean;
+  fromDate?: string; // ISO date inclusive
+  toDate?: string;   // ISO date inclusive
+  categoryId?: string; // Фильтр по категории
 };
 
 const transactionSelectDateFormatter = new Intl.DateTimeFormat("ru-RU", {
@@ -128,6 +132,7 @@ function mapTransactionSelectRow(row: TransactionSelectRow): TransactionSelectIt
     direction: row.direction,
     account_id: row.account_id,
     occurred_at: row.occurred_at,
+    amount: row.amount,
   };
 }
 
@@ -139,7 +144,7 @@ async function queryTransactionsForSelect(
   client: SupabaseClientLike,
   params: ListTransactionsForSelectParams = {}
 ): Promise<TransactionSelectItem[]> {
-  const { limit = 20, search, ids, excludeLinked = false } = params;
+  const { limit = 20, search, ids, excludeLinked = false, fromDate, toDate, categoryId } = params;
 
   let query = client
     .from("transactions")
@@ -155,6 +160,19 @@ async function queryTransactionsForSelect(
   if (search && search.trim()) {
     const pattern = `%${search.trim()}%`;
     query = query.or(`counterparty.ilike.${pattern},note.ilike.${pattern}`);
+  }
+
+  // Фильтрация по дате
+  if (fromDate) {
+    query = query.gte("occurred_at", fromDate);
+  }
+  if (toDate) {
+    query = query.lte("occurred_at", toDate);
+  }
+
+  // Фильтрация по категории
+  if (categoryId) {
+    query = query.eq("category_id", categoryId);
   }
 
   let data, error;

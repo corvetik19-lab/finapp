@@ -132,7 +132,7 @@ export default function Calculator({ onResult, onClose, initialValue }: Calculat
   }, [display, expression, onClose]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <Card className="w-[280px] shadow-xl">
+    <Card className="w-[280px] shadow-xl" onMouseDown={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
       <CardHeader className="flex-row items-center justify-between py-3 px-4">
         <CardTitle className="text-base">Калькулятор</CardTitle>
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}><X className="h-4 w-4" /></Button>

@@ -18,7 +18,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -40,8 +39,6 @@ import {
   FileText,
   Loader2,
   AlertCircle,
-  Eye,
-  EyeOff,
   UserPlus,
   Save,
 } from 'lucide-react';
@@ -59,6 +56,15 @@ interface Department {
   id: string;
   name: string;
   color: string;
+}
+
+interface AvailableUser {
+  id: string;
+  email: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  role_in_company: string;
+  role_id: string | null;
 }
 
 interface EmployeeFormModalProps {
@@ -80,11 +86,12 @@ export function EmployeeFormModal({
 }: EmployeeFormModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [createAccount, setCreateAccount] = useState(false);
   const [companyRoles, setCompanyRoles] = useState<CompanyRole[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loadingRoles, setLoadingRoles] = useState(false);
+  const [availableUsers, setAvailableUsers] = useState<AvailableUser[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
   const {
     register,
@@ -131,12 +138,51 @@ export function EmployeeFormModal({
     }
   }, [companyId]);
 
+  const loadAvailableUsers = useCallback(async () => {
+    if (!companyId) return;
+    setLoadingUsers(true);
+    try {
+      const response = await fetch(`/api/users/available?company_id=${companyId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setAvailableUsers(data.users || []);
+      }
+    } catch (err) {
+      console.error('Error loading available users:', err);
+    } finally {
+      setLoadingUsers(false);
+    }
+  }, [companyId]);
+
+  // Обработчик выбора пользователя - автоматически ставит роль из role_id
+  const handleUserSelect = useCallback((userId: string | null) => {
+    setSelectedUserId(userId);
+    
+    if (userId) {
+      const selectedUser = availableUsers.find(u => u.id === userId);
+      if (selectedUser?.role_id) {
+        // Используем role_id напрямую из company_members
+        setValue('role', selectedUser.role_id);
+      }
+    }
+  }, [availableUsers, setValue]);
+
   useEffect(() => {
     if (isOpen && companyId) {
       loadCompanyRoles();
       loadDepartments();
+      if (mode === 'create') {
+        loadAvailableUsers();
+      }
     }
-  }, [isOpen, companyId, loadCompanyRoles, loadDepartments]);
+  }, [isOpen, companyId, mode, loadCompanyRoles, loadDepartments, loadAvailableUsers]);
+  
+  // Сбрасываем выбранного пользователя при закрытии модалки
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedUserId(null);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (mode === 'edit' && employee && isOpen) {
@@ -172,12 +218,19 @@ export function EmployeeFormModal({
       setIsSubmitting(true);
       setError(null);
 
+      // При создании обязательно нужно выбрать пользователя
+      if (mode === 'create' && !selectedUserId) {
+        setError('Необходимо выбрать пользователя для привязки к сотруднику');
+        setIsSubmitting(false);
+        return;
+      }
+
       const isRoleUUID = data.role && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.role);
       
       const payload = {
         ...data,
         role_id: isRoleUUID ? data.role : data.role_id,
-        create_user_account: createAccount,
+        user_id: selectedUserId || undefined,
       };
 
       const url = mode === 'edit' && employee 
@@ -361,7 +414,7 @@ export function EmployeeFormModal({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Не назначен</SelectItem>
-                    {departments.map((dept) => (
+                    {departments.filter(dept => dept.id).map((dept) => (
                       <SelectItem key={dept.id} value={dept.id}>
                         {dept.name}
                       </SelectItem>
@@ -376,16 +429,16 @@ export function EmployeeFormModal({
                   Роль в системе <span className="text-red-500">*</span>
                 </Label>
                 <Select 
-                  value={watch('role') || ''} 
+                  value={watch('role') || undefined} 
                   onValueChange={(v) => setValue('role', v)}
-                  disabled={loadingRoles}
+                  disabled={loadingRoles || (mode === 'create' && !!selectedUserId)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={mode === 'create' && selectedUserId ? 'bg-gray-100 cursor-not-allowed' : ''}>
                     <SelectValue placeholder={loadingRoles ? "Загрузка..." : "Выберите роль"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {companyRoles.length > 0 ? (
-                      companyRoles.map((role) => (
+                    {companyRoles.filter(role => role.id).length > 0 ? (
+                      companyRoles.filter(role => role.id).map((role) => (
                         <SelectItem key={role.id} value={role.id}>
                           <span className="flex items-center gap-2">
                             <span 
@@ -401,9 +454,13 @@ export function EmployeeFormModal({
                     )}
                   </SelectContent>
                 </Select>
-                {selectedRole?.description && (
+                {mode === 'create' && selectedUserId ? (
+                  <p className="text-xs text-blue-600">
+                    Роль устанавливается автоматически из настроек пользователя
+                  </p>
+                ) : selectedRole?.description ? (
                   <p className="text-xs text-gray-500">{selectedRole.description}</p>
-                )}
+                ) : null}
               </div>
 
               <div className="space-y-2">
@@ -451,53 +508,71 @@ export function EmployeeFormModal({
             </div>
           </div>
 
-          {/* Учетная запись */}
+          {/* Привязка к пользователю */}
           {mode === 'create' && (
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
                 <Shield className="h-4 w-4" />
-                Учетная запись
+                Привязка к пользователю
               </h3>
               
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="create_account" 
-                  checked={createAccount}
-                  onCheckedChange={(checked) => setCreateAccount(checked as boolean)}
-                />
-                <Label htmlFor="create_account" className="text-gray-700 cursor-pointer">
-                  Создать учетную запись для входа в систему
+              <div className="space-y-2">
+                <Label className="text-gray-700">
+                  Выберите пользователя <span className="text-red-500">*</span>
                 </Label>
-              </div>
-
-              {createAccount && (
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-gray-700">
-                    Пароль <span className="text-red-500">*</span>
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      {...register('password')}
-                      placeholder="Минимум 8 символов"
-                      className="text-gray-900 pr-10"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-0 top-0 h-full"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
+                <p className="text-xs text-gray-500 mb-2">
+                  Пользователи создаются в Настройки → Пользователи. Здесь показаны только доступные пользователи (не админы и не привязанные к другим сотрудникам).
+                </p>
+                
+                {loadingUsers ? (
+                  <div className="flex items-center gap-2 py-2 text-gray-500">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm">Загрузка пользователей...</span>
                   </div>
-                  {errors.password && (
-                    <p className="text-sm text-red-500">{errors.password.message}</p>
-                  )}
-                </div>
-              )}
+                ) : availableUsers.length === 0 ? (
+                  <div className="py-3 px-4 bg-amber-50 rounded-lg border border-amber-200">
+                    <p className="text-sm text-amber-700 font-medium">
+                      Нет доступных пользователей для привязки
+                    </p>
+                    <p className="text-xs text-amber-600 mt-1">
+                      Сначала создайте пользователя в разделе Настройки → Пользователи
+                    </p>
+                  </div>
+                ) : (
+                  <Select 
+                    value={selectedUserId || ''} 
+                    onValueChange={(v) => handleUserSelect(v || null)}
+                  >
+                    <SelectTrigger className={`text-gray-900 ${!selectedUserId ? 'border-gray-300' : 'border-green-500'}`}>
+                      <SelectValue placeholder="Выберите пользователя..." className="text-gray-900" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white">
+                      {availableUsers.map((user) => {
+                        const displayText = user.full_name 
+                          ? `${user.full_name} (${user.email})` 
+                          : user.email;
+                        return (
+                          <SelectItem 
+                            key={user.id} 
+                            value={user.id} 
+                            className="text-gray-900"
+                            textValue={displayText}
+                          >
+                            {displayText}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                )}
+                
+                {selectedUserId && (
+                  <p className="text-xs text-green-600 flex items-center gap-1">
+                    <Shield className="h-3 w-3" />
+                    Сотрудник будет привязан к учётной записи и сможет входить в систему
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
@@ -525,7 +600,11 @@ export function EmployeeFormModal({
             <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               Отмена
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || (mode === 'create' && availableUsers.length === 0)}
+              title={mode === 'create' && availableUsers.length === 0 ? 'Сначала создайте пользователя в настройках' : undefined}
+            >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

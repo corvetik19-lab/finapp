@@ -22,7 +22,6 @@ import type { CsvNormalizedRow } from "@/lib/csv/import-schema";
 import { buildExportCsv } from "@/lib/csv/export";
 import { z } from "zod";
 import { NextResponse } from "next/server";
-import { checkTransactionAchievements } from "@/lib/gamification/detectors";
 import { createTransactionItems } from "@/lib/transactions/transaction-items-service";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
 import type { TransactionItemInput } from "@/types/transaction";
@@ -282,13 +281,6 @@ export async function createTransaction(formData: FormData) {
 
   await createTransactionService(parsed.data);
 
-  // Проверяем достижения
-  const supabase = await createRouteClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (user) {
-    checkTransactionAchievements(user.id).catch(console.error);
-  }
-
   revalidatePath("/finance/transactions");
   revalidatePath("/finance/cards");
   revalidatePath("/finance/reports");
@@ -320,13 +312,6 @@ export async function createTransactionFromValues(
     // Сохраняем позиции товаров, если они есть
     if (items && items.length > 0 && transaction.id) {
       await createTransactionItems(transaction.id, items);
-    }
-
-    // Проверяем достижения
-    const supabase = await createRouteClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      checkTransactionAchievements(user.id).catch(console.error);
     }
 
     revalidatePath("/finance/transactions");
@@ -683,11 +668,6 @@ export async function duplicateTransactionAction(transactionId: string): Promise
       await createTransactionItems(newTransaction.id, itemsToCreate);
     }
 
-    // Проверяем достижения
-    if (user) {
-      checkTransactionAchievements(user.id).catch(console.error);
-    }
-    
     return { ok: true };
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Не удалось дублировать транзакцию";

@@ -111,6 +111,30 @@ export async function POST(req: Request) {
       }
     }
 
+    // Добавляем пользователя в company_members текущей компании
+    // Получаем company_id текущего пользователя
+    const { data: currentMember } = await supabase
+      .from("company_members")
+      .select("company_id")
+      .eq("user_id", currentUser.id)
+      .single();
+
+    if (currentMember?.company_id) {
+      const { error: memberError } = await adminClient
+        .from("company_members")
+        .insert({
+          user_id: newUser.user.id,
+          company_id: currentMember.company_id,
+          role: "viewer", // Допустимые: admin, manager, specialist, viewer
+          status: "active",
+        });
+
+      if (memberError) {
+        console.error("Failed to add user to company:", memberError);
+        // Не критично, пользователь уже создан
+      }
+    }
+
     // Получаем роль для ответа
     let role_name = null;
     let role_color = null;

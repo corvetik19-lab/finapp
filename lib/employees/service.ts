@@ -4,6 +4,7 @@ import { createRSCClient } from '@/lib/supabase/server';
 
 // Alias для удобства
 const createClient = createRSCClient;
+
 import type {
   Employee,
   CreateEmployeeData,
@@ -117,14 +118,36 @@ export async function getEmployees(
     }
   }
 
-  // Добавляем tenders_count к каждому сотруднику
-  const employeesWithTenders = filteredData.map((emp: Employee) => ({
+  // Получаем last_seen_at для user_id сотрудников
+  const userIds = filteredData
+    .map((e: { user_id?: string | null }) => e.user_id)
+    .filter((id): id is string => !!id);
+  
+  let lastSeenMap: Record<string, string | null> = {};
+  
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, last_seen_at')
+      .in('id', userIds);
+    
+    if (profiles) {
+      lastSeenMap = profiles.reduce((acc: Record<string, string | null>, p: { id: string; last_seen_at: string | null }) => {
+        acc[p.id] = p.last_seen_at;
+        return acc;
+      }, {});
+    }
+  }
+
+  // Добавляем tenders_count и last_seen_at к каждому сотруднику
+  const employeesWithData = filteredData.map((emp: Employee & { user_id?: string | null }) => ({
     ...emp,
     tenders_count: tendersCountMap[emp.id] || 0,
+    last_seen_at: emp.user_id ? lastSeenMap[emp.user_id] || null : null,
   }));
   
   return {
-    data: employeesWithTenders,
+    data: employeesWithData,
     count: filteredData.length,
     page,
     limit,
@@ -211,42 +234,42 @@ export async function getEmployeeTenderStats(employeeId: string) {
 
 /**
  * Создать нового сотрудника
+ * Теперь пользователь выбирается из списка существующих, а не создаётся
  */
 export async function createEmployee(data: CreateEmployeeData) {
   const supabase = await createClient();
   
-  // Если нужно создать учетную запись пользователя
-  let userId: string | undefined;
-  
-  if (data.create_user_account && data.password) {
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: {
-        data: {
-          full_name: data.full_name,
-        },
-      },
-    });
+  // Проверяем, что user_id (если передан) не назначен другому сотруднику
+  if (data.user_id) {
+    const { data: existingEmployee } = await supabase
+      .from('employees')
+      .select('id, full_name')
+      .eq('user_id', data.user_id)
+      .eq('company_id', data.company_id)
+      .maybeSingle();
     
-    if (authError) {
-      console.error('Error creating user account:', authError);
-      throw new Error(`Ошибка создания учетной записи: ${authError.message}`);
+    if (existingEmployee) {
+      throw new Error(`Этот пользователь уже привязан к сотруднику: ${existingEmployee.full_name}`);
     }
-    
-    userId = authData.user?.id;
   }
   
   // Создаем запись сотрудника
   const employeeData = {
     ...data,
-    user_id: userId,
     status: data.status || 'active',
   };
   
   // Удаляем поля, которых нет в таблице
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { create_user_account, password, ...dbData } = employeeData;
+  const { create_user_account, password, role, ...dbData } = employeeData;
+  
+  // Если role - это UUID, то это role_id
+  if (role && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(role)) {
+    (dbData as Record<string, unknown>).role_id = role;
+  } else if (role) {
+    // Иначе это enum значение
+    (dbData as Record<string, unknown>).role = role;
+  }
   
   const result = await supabase
     .from('employees')

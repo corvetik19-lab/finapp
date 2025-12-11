@@ -12,6 +12,7 @@ export type UpcomingPaymentRecord = {
   status: "pending" | "paid" | null;
   paid_at: string | null;
   paid_transaction_id: string | null;
+  category_id: string | null;
 };
 
 export async function loadUpcomingPayments(limit = 10): Promise<UpcomingPaymentRecord[]> {
@@ -26,7 +27,7 @@ export async function loadUpcomingPayments(limit = 10): Promise<UpcomingPaymentR
     let query = supabase
       .from("upcoming_payments")
       .select(`
-        id,name,due_date,amount_minor,currency,account_name,account_id,direction,status,paid_at,paid_transaction_id,
+        id,name,due_date,amount_minor,currency,account_name,account_id,direction,status,paid_at,paid_transaction_id,category_id,
         accounts:account_id(name),
         transactions:paid_transaction_id(account_id,accounts:account_id(name))
       `)
@@ -76,6 +77,7 @@ export async function loadUpcomingPayments(limit = 10): Promise<UpcomingPaymentR
         status: (item.status as "pending" | "paid" | null) ?? "pending",
         paid_at: item.paid_at ?? null,
         paid_transaction_id: item.paid_transaction_id ?? null,
+        category_id: item.category_id ?? null,
       };
     });
   } catch (error) {

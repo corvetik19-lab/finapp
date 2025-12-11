@@ -1,4 +1,5 @@
 import { createRSCClient } from '@/lib/supabase/helpers';
+import { getCurrentUserPermissions, canViewAllTenders } from '@/lib/permissions/check-permissions';
 
 // Types
 export interface DashboardOverview {
@@ -107,6 +108,9 @@ interface TenderRow {
   type: { id: string; name: string } | { id: string; name: string }[] | null;
   submission_deadline: string;
   manager_id: string | null;
+  specialist_id: string | null;
+  investor_id: string | null;
+  executor_id: string | null;
   created_at: string;
 }
 
@@ -125,8 +129,17 @@ function getType(t: TenderRow) {
 export async function getDashboardData(companyId: string): Promise<DashboardData> {
   const supabase = await createRSCClient();
 
+  // Проверяем права пользователя
+  const userPermissions = await getCurrentUserPermissions();
+  const canViewAll = canViewAllTenders(userPermissions);
+
+  // Если нет права view_all и нет employee_id - возвращаем пустые данные
+  if (!canViewAll && !userPermissions.employeeId) {
+    return getEmptyDashboardData();
+  }
+
   // Fetch all tenders with stage info
-  const { data: tenders, error } = await supabase
+  let query = supabase
     .from('tenders')
     .select(`
       id,
@@ -141,11 +154,22 @@ export async function getDashboardData(companyId: string): Promise<DashboardData
       type:tender_types(id, name),
       submission_deadline,
       manager_id,
+      specialist_id,
+      investor_id,
+      executor_id,
       created_at
     `)
     .eq('company_id', companyId)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false });
+    .is('deleted_at', null);
+
+  // Фильтрация по правам пользователя
+  if (!canViewAll && userPermissions.employeeId) {
+    query = query.or(
+      `manager_id.eq.${userPermissions.employeeId},specialist_id.eq.${userPermissions.employeeId},investor_id.eq.${userPermissions.employeeId},executor_id.eq.${userPermissions.employeeId}`
+    );
+  }
+
+  const { data: tenders, error } = await query.order('created_at', { ascending: false });
 
   if (error) {
     console.error('Error fetching tenders for dashboard:', error);
@@ -175,8 +199,8 @@ export async function getDashboardData(companyId: string): Promise<DashboardData
   // Get upcoming deadlines
   const upcomingDeadlines = getUpcomingDeadlines(allTenders);
 
-  // Get task summary
-  const taskSummary = await getTaskSummary(companyId);
+  // Get task summary (фильтруем по правам пользователя)
+  const taskSummary = await getTaskSummary(companyId, canViewAll, userPermissions.employeeId ?? undefined);
 
   return {
     overview,
@@ -433,13 +457,24 @@ function getUpcomingDeadlines(tenders: TenderRow[]): UpcomingDeadline[] {
     .slice(0, 5);
 }
 
-async function getTaskSummary(companyId: string): Promise<TaskSummary> {
+async function getTaskSummary(
+  companyId: string, 
+  canViewAll: boolean = true, 
+  employeeId?: string
+): Promise<TaskSummary> {
   const supabase = await createRSCClient();
 
-  const { data: tasks, error } = await supabase
+  let query = supabase
     .from('tender_tasks')
     .select('id, status, due_date')
     .eq('company_id', companyId);
+
+  // Если пользователь не может видеть все - фильтруем по assigned_to
+  if (!canViewAll && employeeId) {
+    query = query.eq('assigned_to', employeeId);
+  }
+
+  const { data: tasks, error } = await query;
 
   if (error || !tasks) {
     return { total: 0, pending: 0, inProgress: 0, completed: 0, overdue: 0 };

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -13,17 +14,31 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Settings, Building2, HelpCircle, LogOut, ChevronDown } from "lucide-react";
+import EmployeeProfileModal, { EmployeeProfileData } from "@/components/profile/EmployeeProfileModal";
 
 interface UserMenuProps {
   user: {
     email?: string;
     full_name?: string;
     avatar_url?: string;
+    phone?: string;
+    created_at?: string;
   };
+  isAdmin?: boolean;
+  roleName?: string;
+  departmentName?: string;
+  position?: string;
 }
 
-export default function UserMenu({ user }: UserMenuProps) {
+export default function UserMenu({ 
+  user, 
+  isAdmin = false, 
+  roleName,
+  departmentName,
+  position 
+}: UserMenuProps) {
   const router = useRouter();
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const userInitial = user.full_name?.[0] || user.email?.[0] || "U";
 
@@ -35,28 +50,23 @@ export default function UserMenu({ user }: UserMenuProps) {
     }
   };
 
-  const menuItems = [
-    {
-      icon: User,
-      label: "Профиль",
-      href: "/settings/profile",
-    },
-    {
-      icon: Settings,
-      label: "Настройки",
-      href: "/settings",
-    },
-    {
-      icon: Building2,
-      label: "Организация",
-      href: "/settings/organization",
-    },
-    {
-      icon: HelpCircle,
-      label: "Помощь",
-      href: "/help",
-    },
-  ];
+  const handleProfileClick = (e: React.MouseEvent) => {
+    if (!isAdmin) {
+      e.preventDefault();
+      setShowProfileModal(true);
+    }
+  };
+
+  const profileData: EmployeeProfileData = {
+    email: user.email || "",
+    fullName: user.full_name || "",
+    phone: user.phone || "",
+    avatar: user.avatar_url || null,
+    createdAt: user.created_at || "",
+    roleName,
+    departmentName,
+    position,
+  };
 
   return (
     <DropdownMenu>
@@ -100,15 +110,49 @@ export default function UserMenu({ user }: UserMenuProps) {
 
         <DropdownMenuSeparator />
 
-        {/* Menu items */}
-        {menuItems.map((item) => (
-          <DropdownMenuItem key={item.href} asChild>
-            <Link href={item.href} className="flex items-center gap-2 cursor-pointer">
-              <item.icon className="h-4 w-4" />
-              <span>{item.label}</span>
+        {/* Profile - для сотрудников открывает модалку */}
+        <DropdownMenuItem asChild>
+          {isAdmin ? (
+            <Link href="/settings/profile" className="flex items-center gap-2 cursor-pointer">
+              <User className="h-4 w-4" />
+              <span>Профиль</span>
             </Link>
-          </DropdownMenuItem>
-        ))}
+          ) : (
+            <button 
+              onClick={handleProfileClick} 
+              className="flex items-center gap-2 cursor-pointer w-full"
+            >
+              <User className="h-4 w-4" />
+              <span>Профиль</span>
+            </button>
+          )}
+        </DropdownMenuItem>
+
+        {/* Admin only items */}
+        {isAdmin && (
+          <>
+            <DropdownMenuItem asChild>
+              <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
+                <Settings className="h-4 w-4" />
+                <span>Настройки</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/settings/organization" className="flex items-center gap-2 cursor-pointer">
+                <Building2 className="h-4 w-4" />
+                <span>Организация</span>
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
+
+        {/* Help - для всех */}
+        <DropdownMenuItem asChild>
+          <Link href="/help" className="flex items-center gap-2 cursor-pointer">
+            <HelpCircle className="h-4 w-4" />
+            <span>Помощь</span>
+          </Link>
+        </DropdownMenuItem>
 
         <DropdownMenuSeparator />
 
@@ -121,6 +165,15 @@ export default function UserMenu({ user }: UserMenuProps) {
           <span>Выйти</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
+
+      {/* Employee Profile Modal */}
+      {!isAdmin && (
+        <EmployeeProfileModal
+          open={showProfileModal}
+          onOpenChange={setShowProfileModal}
+          profile={profileData}
+        />
+      )}
     </DropdownMenu>
   );
 }

@@ -62,17 +62,25 @@ function getBreadcrumbs(pathname: string) {
   return crumbs
 }
 
-interface TendersLayoutProps {
-  children: React.ReactNode
+export interface UserPermissions {
+  isAdmin: boolean;
+  isSuperAdmin: boolean;
+  permissions: string[];
+  employeeId: string | null;
 }
 
-export function TendersLayout({ children }: TendersLayoutProps) {
+interface TendersLayoutProps {
+  children: React.ReactNode
+  userPermissions?: UserPermissions
+}
+
+export function TendersLayout({ children, userPermissions }: TendersLayoutProps) {
   const pathname = usePathname()
   const breadcrumbs = getBreadcrumbs(pathname)
 
   return (
     <SidebarProvider>
-      <TendersSidebar className="top-16 h-[calc(100svh-4rem)]" />
+      <TendersSidebar className="top-16 h-[calc(100svh-4rem)]" userPermissions={userPermissions} />
       <SidebarInset className="overflow-x-hidden">
         <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4 bg-white">
           <SidebarTrigger className="-ml-1" />

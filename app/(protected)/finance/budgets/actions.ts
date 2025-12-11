@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createRouteClient } from "@/lib/supabase/helpers";
 import { budgetFormSchema } from "@/lib/validation/budget";
-import { checkBudgetAchievements } from "@/lib/gamification/detectors";
+import { getCurrentCompanyId } from "@/lib/platform/organization";
 
 function toObject(formData: FormData) {
   return Object.fromEntries(formData.entries());
@@ -17,11 +17,13 @@ export async function createBudget(formData: FormData) {
   } = await supabase.auth.getUser();
   if (authError || !user) throw authError ?? new Error("Нет пользователя");
 
+  const companyId = await getCurrentCompanyId();
   const raw = toObject(formData);
   
-  // Обрабатываем category_id - может быть category, net_category или acc_account
+  // Обрабатываем category_id - может быть category, net_category, acc_account или prod_product
   let categoryId: string | null = null;
   let accountId: string | null = null;
+  let productId: string | null = null;
   
   const selectedValue = String(raw.category_id || "");
   if (selectedValue.startsWith("net_")) {
@@ -30,6 +32,9 @@ export async function createBudget(formData: FormData) {
   } else if (selectedValue.startsWith("acc_")) {
     // Формат: acc_{accountId} - бюджет для кредитной карты
     accountId = selectedValue.replace("acc_", "");
+  } else if (selectedValue.startsWith("prod_")) {
+    // Формат: prod_{productId} - бюджет для товара
+    productId = selectedValue.replace("prod_", "");
   } else {
     // Обычная категория
     categoryId = selectedValue;
@@ -47,8 +52,10 @@ export async function createBudget(formData: FormData) {
 
   const { error } = await supabase.from("budgets").insert({
     user_id: user.id,
-    category_id: categoryId,
-    account_id: accountId,
+    company_id: companyId,
+    category_id: categoryId || null,
+    account_id: accountId || null,
+    product_id: productId || null,
     period_start: parsed.period_start,
     period_end: parsed.period_end,
     limit_amount: limitMinor,
@@ -56,9 +63,6 @@ export async function createBudget(formData: FormData) {
     notes: raw.notes ? String(raw.notes) : null,
   });
   if (error) throw error;
-
-  // Проверяем достижения по бюджетам
-  checkBudgetAchievements(user.id).catch(console.error);
 
   revalidatePath("/finance/budgets");
 }
@@ -158,4 +162,58 @@ export async function deleteBudget(formData: FormData) {
   console.log("Budget deleted successfully:", { id, deleted_count: count });
 
   revalidatePath("/finance/budgets");
+}
+
+// Получить текущий месяц
+function getCurrentMonthPeriod() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  
+  const formatLocal = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+  
+  return {
+    start: formatLocal(firstDay),
+    end: formatLocal(lastDay),
+  };
+}
+
+// Сбросить все бюджеты на текущий месяц
+export async function resetAllBudgets() {
+  const supabase = await createRouteClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user) throw authError ?? new Error("Нет пользователя");
+
+  const currentPeriod = getCurrentMonthPeriod();
+
+  const { error, count } = await supabase
+    .from("budgets")
+    .update({
+      period_start: currentPeriod.start,
+      period_end: currentPeriod.end,
+    })
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Reset budgets error:", error);
+    throw new Error(`Ошибка сброса: ${error.message}`);
+  }
+
+  console.log("All budgets reset to current month:", { count, period: currentPeriod });
+
+  revalidatePath("/finance/budgets");
+  revalidatePath("/finance/dashboard");
+  
+  return { ok: true, count, period: currentPeriod };
 }

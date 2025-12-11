@@ -23,6 +23,7 @@ function toUpcomingPayment(record: PaymentRecord): UpcomingPayment {
     status: record.status ?? undefined,
     paidAt: record.paid_at ?? null,
     paidTransactionId: record.paid_transaction_id ?? null,
+    categoryId: record.category_id ?? null,
   };
 }
 
@@ -37,6 +38,7 @@ type PaymentRecord = {
   status: "pending" | "paid" | null;
   paid_at: string | null;
   paid_transaction_id: string | null;
+  category_id: string | null;
 };
 
 function getCurrency(payments: UpcomingPayment[]): string {
@@ -50,7 +52,7 @@ export default async function PaymentsPage() {
   let query = supabase
     .from("upcoming_payments")
     .select(`
-      id,name,due_date,amount_minor,currency,account_name,account_id,direction,status,paid_at,paid_transaction_id,
+      id,name,due_date,amount_minor,currency,account_name,account_id,direction,status,paid_at,paid_transaction_id,category_id,
       accounts:account_id(name),
       transactions:paid_transaction_id(account_id,accounts:account_id(name))
     `)

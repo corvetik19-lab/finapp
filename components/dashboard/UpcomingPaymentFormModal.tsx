@@ -21,6 +21,12 @@ type Account = {
   credit_limit?: number | null;
 };
 
+type Category = {
+  id: string;
+  name: string;
+  kind: "income" | "expense";
+};
+
 const getAccountTypeLabel = (account: Account): string => {
   if (account.type === "card") {
     // Различаем дебетовые и кредитные карты
@@ -62,6 +68,7 @@ const DEFAULT_VALUES: Partial<UpcomingPaymentFormInput> = {
   dueDate: new Date().toISOString().slice(0, 10),
   direction: "expense",
   accountName: undefined,
+  categoryId: undefined,
 };
 
 export default function UpcomingPaymentFormModal({
@@ -79,6 +86,7 @@ export default function UpcomingPaymentFormModal({
   unlinkPending = false,
 }: UpcomingPaymentFormModalProps) {
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   const form = useForm<UpcomingPaymentFormInput>({
     resolver: zodResolver(upcomingPaymentFormSchema),
@@ -88,22 +96,31 @@ export default function UpcomingPaymentFormModal({
     },
   });
 
-  // Загружаем список счетов
+  // Загружаем список счетов и категорий
   useEffect(() => {
-    const loadAccounts = async () => {
+    const loadData = async () => {
       try {
-        const response = await fetch("/api/accounts");
-        if (response.ok) {
-          const data = await response.json();
+        const [accountsRes, categoriesRes] = await Promise.all([
+          fetch("/api/accounts"),
+          fetch("/api/categories"),
+        ]);
+        
+        if (accountsRes.ok) {
+          const data = await accountsRes.json();
           setAccounts(data.accounts || []);
         }
+        
+        if (categoriesRes.ok) {
+          const data = await categoriesRes.json();
+          setCategories(data.categories || data || []);
+        }
       } catch (error) {
-        console.error("Failed to load accounts:", error);
+        console.error("Failed to load data:", error);
       }
     };
 
     if (open) {
-      loadAccounts();
+      loadData();
     }
   }, [open]);
 
@@ -115,7 +132,7 @@ export default function UpcomingPaymentFormModal({
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, defaultValues?.id, defaultValues?.dueDate]);
+  }, [open, defaultValues?.id, defaultValues?.dueDate, defaultValues?.categoryId]);
 
   const handleSubmitClick = () => {
     form.handleSubmit((values) => {
@@ -147,12 +164,32 @@ export default function UpcomingPaymentFormModal({
         {error && <div className="text-sm text-destructive p-3 bg-destructive/10 rounded">{error}</div>}
         <form id="upcomingPaymentForm" className="space-y-4" onSubmit={handleFormSubmit} noValidate>
           <input type="hidden" {...form.register("id")} />
+          <input type="hidden" {...form.register("categoryId")} />
           <div className="space-y-2"><Label>Название</Label><Input type="text" placeholder="Например, аренда" {...form.register("name")} autoFocus disabled={pending} />{form.formState.errors.name && <span className="text-sm text-destructive">{form.formState.errors.name.message}</span>}</div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2"><Label>Дата</Label><Input type="date" {...form.register("dueDate")} disabled={pending} />{form.formState.errors.dueDate && <span className="text-sm text-destructive">{form.formState.errors.dueDate.message}</span>}</div>
             <div className="space-y-2"><Label>Сумма</Label><Input type="number" step="0.01" min="0.01" placeholder="Введите сумму" {...form.register("amountMajor")} disabled={pending} />{form.formState.errors.amountMajor && <span className="text-sm text-destructive">{form.formState.errors.amountMajor.message}</span>}</div>
           </div>
           <div className="space-y-2"><Label>Тип</Label><Select onValueChange={(v) => form.setValue("direction", v as "income" | "expense")} defaultValue={form.getValues("direction")} disabled={pending}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="expense">Расход</SelectItem><SelectItem value="income">Доход</SelectItem></SelectContent></Select>{form.formState.errors.direction && <span className="text-sm text-destructive">{form.formState.errors.direction.message}</span>}</div>
+          <div className="space-y-2">
+            <Label>Категория (для фильтрации транзакций)</Label>
+            <Select 
+              value={form.watch("categoryId") ?? "__none__"} 
+              onValueChange={(v) => form.setValue("categoryId", v === "__none__" ? undefined : v)} 
+              disabled={pending}
+            >
+              <SelectTrigger><SelectValue placeholder="Не выбрана" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">Не выбрана</SelectItem>
+                {categories
+                  .filter(c => c.kind === form.watch("direction"))
+                  .map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+            <span className="flex items-center gap-1 text-xs text-muted-foreground"><Info className="h-3 w-3" />При выборе транзакции будут показаны только транзакции этой категории</span>
+          </div>
           {isPaid && hasLinkedTransaction && (
             <div className="space-y-2"><Label>Счёт</Label><Select value={form.watch("accountName") || ""} disabled><SelectTrigger><SelectValue placeholder="Не выбран" /></SelectTrigger><SelectContent>{accounts.map((account) => <SelectItem key={account.id} value={account.name}>{getAccountTypeLabel(account)} — {account.name}</SelectItem>)}</SelectContent></Select><span className="flex items-center gap-1 text-xs text-primary"><Info className="h-3 w-3" />Счёт указан из связанной транзакции</span></div>
           )}

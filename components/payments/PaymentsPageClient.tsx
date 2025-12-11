@@ -1,11 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import UpcomingPaymentsCard, { type UpcomingPayment } from "@/components/dashboard/UpcomingPaymentsCard";
 import { formatMoney } from "@/lib/utils/format";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CalendarDays, CreditCard, Clock, AlertTriangle } from "lucide-react";
+import PaymentTemplatesManager from "./PaymentTemplatesManager";
 
 type PaymentsPageClientProps = {
   payments: UpcomingPayment[];
@@ -39,6 +41,12 @@ function formatDate(iso: string): string {
 }
 
 export default function PaymentsPageClient({ payments, currency }: PaymentsPageClientProps) {
+  const router = useRouter();
+  
+  const handleTemplatesApplied = useCallback(() => {
+    router.refresh();
+  }, [router]);
+
   const today = useMemo(() => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -180,6 +188,9 @@ export default function PaymentsPageClient({ payments, currency }: PaymentsPageC
           </CardContent>
         </Card>
       </div>
+
+      {/* Шаблоны платежей */}
+      <PaymentTemplatesManager onApplied={handleTemplatesApplied} />
 
       {/* Список платежей */}
       <UpcomingPaymentsCard

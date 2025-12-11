@@ -206,13 +206,11 @@ export async function hasUserModeAccess(mode: AppMode): Promise<boolean> {
     return false;
   }
 
-  // 3.     company_members
+  // 3. Проверяем company_members и связанную роль
   const { data: member } = await supabase
     .from('company_members')
-    .select('role, permissions')
+    .select('role, permissions, role_id')
     .eq('user_id', user.id)
-    //    company_id,      
-    //      (  getCurrentOrganization)
     .eq('status', 'active')
     .limit(1)
     .single();
@@ -221,15 +219,34 @@ export async function hasUserModeAccess(mode: AppMode): Promise<boolean> {
     return false;
   }
 
-  //        
+  // Админ имеет полный доступ
   if (member.role === 'admin') {
     return true;
   }
 
-  //  permissions
-  const permissions = member.permissions as unknown as MemberPermissions;
-  const allowedModes = permissions?.allowed_modes;
-  const hasAccess = allowedModes?.includes(mode) || false;
+  // Проверяем permissions из member напрямую
+  const memberPermissions = member.permissions as unknown as MemberPermissions;
+  if (memberPermissions?.allowed_modes?.includes(mode)) {
+    return true;
+  }
+
+  // Если есть role_id - проверяем permissions роли
+  if (member.role_id) {
+    const { data: roleData } = await supabase
+      .from('roles')
+      .select('permissions')
+      .eq('id', member.role_id)
+      .single();
+    
+    if (roleData?.permissions) {
+      const rolePermissions = roleData.permissions as string[];
+      // Проверяем есть ли хоть одно право начинающееся с mode: (например tenders:view)
+      const hasRoleAccess = rolePermissions.some(p => p.startsWith(`${mode}:`));
+      if (hasRoleAccess) {
+        return true;
+      }
+    }
+  }
   
-  return hasAccess;
+  return false;
 }

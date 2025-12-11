@@ -1,4 +1,5 @@
 import { createRSCClient } from '@/lib/supabase/helpers';
+import { getCurrentUserPermissions, canViewAllTenders } from '@/lib/permissions/check-permissions';
 
 export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
 export type TaskPriority = 'low' | 'normal' | 'high' | 'urgent';
@@ -102,6 +103,10 @@ export interface UpdateTaskInput {
 export async function getTasksData(companyId: string, filters?: TaskFilters): Promise<TasksData> {
   const supabase = await createRSCClient();
 
+  // Проверяем права пользователя
+  const userPermissions = await getCurrentUserPermissions();
+  const canViewAll = canViewAllTenders(userPermissions);
+
   let query = supabase
     .from('tender_tasks')
     .select(`
@@ -125,6 +130,11 @@ export async function getTasksData(companyId: string, filters?: TaskFilters): Pr
     `)
     .eq('company_id', companyId)
     .order('created_at', { ascending: false });
+
+  // Фильтрация по правам пользователя - сотрудники видят только свои задачи
+  if (!canViewAll && userPermissions.employeeId) {
+    query = query.eq('assigned_to', userPermissions.employeeId);
+  }
 
   // Apply filters
   if (filters?.status && filters.status !== 'all') {

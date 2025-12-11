@@ -21,7 +21,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Pencil, Trash2, Mail, Phone } from 'lucide-react';
+import { MoreHorizontal, Pencil, Trash2, Mail, Phone, Circle } from 'lucide-react';
+import { isUserOnline, formatLastSeen } from '@/hooks/useOnlineStatus';
 
 interface EmployeeWithRole extends Employee {
   role_data?: {
@@ -31,6 +32,7 @@ interface EmployeeWithRole extends Employee {
     color: string;
   } | null;
   tenders_count?: number;
+  last_seen_at?: string | null;
 }
 
 interface EmployeesTableProps {
@@ -93,6 +95,7 @@ export function EmployeesTable({
             />
           </TableHead>
           <TableHead>Сотрудник</TableHead>
+          <TableHead className="w-24">Онлайн</TableHead>
           <TableHead>Контакты</TableHead>
           <TableHead>Должность</TableHead>
           <TableHead>Роль</TableHead>
@@ -123,6 +126,16 @@ export function EmployeesTable({
                 >
                   {employee.full_name}
                 </Link>
+              </div>
+            </TableCell>
+            <TableCell>
+              <div className="flex items-center gap-2">
+                <Circle
+                  className={`h-2.5 w-2.5 ${isUserOnline(employee.last_seen_at || null) ? 'fill-green-500 text-green-500' : 'fill-gray-300 text-gray-300'}`}
+                />
+                <span className={`text-xs ${isUserOnline(employee.last_seen_at || null) ? 'text-green-600 font-medium' : 'text-muted-foreground'}`}>
+                  {formatLastSeen(employee.last_seen_at || null)}
+                </span>
               </div>
             </TableCell>
             <TableCell>

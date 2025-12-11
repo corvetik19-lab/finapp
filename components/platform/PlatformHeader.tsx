@@ -15,6 +15,9 @@ interface PlatformHeaderProps {
   user?: {
     email?: string;
     full_name?: string;
+    avatar_url?: string;
+    phone?: string;
+    created_at?: string;
   };
   organization?: {
     name: string;
@@ -34,6 +37,9 @@ interface PlatformHeaderProps {
   } | null;
   isSuperAdmin?: boolean;
   isOrgAdmin?: boolean;
+  roleName?: string;
+  departmentName?: string;
+  position?: string;
 }
 
 export default function PlatformHeader({
@@ -45,6 +51,9 @@ export default function PlatformHeader({
   impersonating,
   isSuperAdmin = false,
   isOrgAdmin = false,
+  roleName,
+  departmentName,
+  position,
 }: PlatformHeaderProps) {
   const router = useRouter();
 
@@ -159,7 +168,14 @@ export default function PlatformHeader({
                 user={{
                   email: user.email || '',
                   full_name: user.full_name || '',
+                  avatar_url: user.avatar_url || '',
+                  phone: user.phone || '',
+                  created_at: user.created_at || '',
                 }}
+                isAdmin={isSuperAdmin || isOrgAdmin}
+                roleName={roleName}
+                departmentName={departmentName}
+                position={position}
               />
             )}
           </div>

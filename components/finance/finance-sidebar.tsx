@@ -9,7 +9,6 @@ import {
   CreditCard,
   Wallet,
   PiggyBank,
-  Target,
   Receipt,
   FileBarChart,
   TrendingUp,
@@ -25,8 +24,6 @@ import {
   MessageSquare,
   Lightbulb,
   LineChart,
-  Trophy,
-  Bell,
   FileText,
   type LucideIcon,
 } from "lucide-react"
@@ -68,7 +65,6 @@ const financeNavigation = {
       title: "Планирование",
       items: [
         { title: "Бюджеты", url: "/finance/budgets", icon: PiggyBank },
-        { title: "Цели", url: "/finance/plans", icon: Target },
         { title: "Платежи", url: "/finance/payments", icon: Calendar },
       ],
     },
@@ -95,8 +91,6 @@ const financeNavigation = {
     icon: Zap,
     items: [
       { title: "Чеки", url: "/finance/receipts", icon: Receipt },
-      { title: "Достижения", url: "/achievements", icon: Trophy },
-      { title: "Уведомления", url: "/notifications", icon: Bell },
     ],
   },
   ai: {

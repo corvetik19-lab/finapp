@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { UserPlus, Pencil, Trash2, ShieldCheck, Lock, Users, Eye, EyeOff, Award, Loader2 } from "lucide-react";
+import { UserPlus, Pencil, Trash2, ShieldCheck, Lock, Users, Eye, EyeOff, Award, Loader2, Circle } from "lucide-react";
 import { useToast } from "@/components/toast/ToastContext";
+import { isUserOnline, formatLastSeen } from "@/hooks/useOnlineStatus";
 
 export type UserRecord = {
   id: string;
@@ -21,6 +22,7 @@ export type UserRecord = {
   role_color: string | null;
   created_at: string;
   last_sign_in_at: string | null;
+  last_seen_at: string | null;
   is_admin?: boolean;
 };
 
@@ -261,8 +263,8 @@ export default function UsersManager({ users: initialUsers, roles }: UsersManage
       <div className="flex items-center justify-between"><div><h2 className="text-xl font-bold">Управление пользователями</h2><p className="text-sm text-muted-foreground">Создавайте пользователей и назначайте роли</p></div><Button onClick={() => setShowCreateModal(true)}><UserPlus className="h-4 w-4 mr-1" />Создать пользователя</Button></div>
 
       <div className="border rounded-lg overflow-hidden">
-        <Table><TableHeader><TableRow><TableHead>Пользователь</TableHead><TableHead>Email</TableHead><TableHead>Роль</TableHead><TableHead>Создан</TableHead><TableHead>Посл. вход</TableHead><TableHead className="w-32">Действия</TableHead></TableRow></TableHeader>
-          <TableBody>{users.map(user => <TableRow key={user.id}><TableCell><div className="flex items-center gap-2"><div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium">{getInitials(user.full_name, user.email)}</div><div><span className="font-medium">{user.full_name || "Не указано"}</span>{user.is_admin && <Badge variant="secondary" className="ml-2 text-xs"><ShieldCheck className="h-3 w-3 mr-1" />Админ</Badge>}</div></div></TableCell><TableCell>{user.email}</TableCell><TableCell>{user.role_name ? <Badge style={{ backgroundColor: user.role_color || "#667eea" }}>{user.role_name}</Badge> : user.is_admin ? <Badge className="bg-yellow-500">Полный доступ</Badge> : <span className="text-muted-foreground text-sm">Без роли</span>}</TableCell><TableCell className="text-sm">{formatDate(user.created_at)}</TableCell><TableCell className="text-sm">{formatDate(user.last_sign_in_at)}</TableCell><TableCell><div className="flex gap-1">{!user.is_admin ? <><Button variant="ghost" size="icon" onClick={() => openEditModal(user)} title="Редактировать"><Pencil className="h-4 w-4" /></Button><Button variant="ghost" size="icon" onClick={() => openAssignModal(user)} title="Назначить роль"><Award className="h-4 w-4" /></Button><Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteUser(user)} title="Удалить"><Trash2 className="h-4 w-4" /></Button></> : <span className="flex items-center gap-1 text-xs text-muted-foreground"><Lock className="h-3 w-3" />Защищён</span>}</div></TableCell></TableRow>)}</TableBody>
+        <Table><TableHeader><TableRow><TableHead>Пользователь</TableHead><TableHead className="w-24">Онлайн</TableHead><TableHead>Email</TableHead><TableHead>Роль</TableHead><TableHead>Создан</TableHead><TableHead>Посл. вход</TableHead><TableHead className="w-32">Действия</TableHead></TableRow></TableHeader>
+          <TableBody>{users.map(user => <TableRow key={user.id}><TableCell><div className="flex items-center gap-2"><div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium">{getInitials(user.full_name, user.email)}</div><div><span className="font-medium">{user.full_name || "Не указано"}</span>{user.is_admin && <Badge variant="secondary" className="ml-2 text-xs"><ShieldCheck className="h-3 w-3 mr-1" />Админ</Badge>}</div></div></TableCell><TableCell><div className="flex items-center gap-2"><Circle className={`h-2.5 w-2.5 ${isUserOnline(user.last_seen_at) ? 'fill-green-500 text-green-500' : 'fill-gray-300 text-gray-300'}`} /><span className={`text-xs ${isUserOnline(user.last_seen_at) ? 'text-green-600 font-medium' : 'text-muted-foreground'}`}>{formatLastSeen(user.last_seen_at)}</span></div></TableCell><TableCell>{user.email}</TableCell><TableCell>{user.role_name ? <Badge style={{ backgroundColor: user.role_color || "#667eea" }}>{user.role_name}</Badge> : user.is_admin ? <Badge className="bg-yellow-500">Полный доступ</Badge> : <span className="text-muted-foreground text-sm">Без роли</span>}</TableCell><TableCell className="text-sm">{formatDate(user.created_at)}</TableCell><TableCell className="text-sm">{formatDate(user.last_sign_in_at)}</TableCell><TableCell><div className="flex gap-1">{!user.is_admin ? <><Button variant="ghost" size="icon" onClick={() => openEditModal(user)} title="Редактировать"><Pencil className="h-4 w-4" /></Button><Button variant="ghost" size="icon" onClick={() => openAssignModal(user)} title="Назначить роль"><Award className="h-4 w-4" /></Button><Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteUser(user)} title="Удалить"><Trash2 className="h-4 w-4" /></Button></> : <span className="flex items-center gap-1 text-xs text-muted-foreground"><Lock className="h-3 w-3" />Защищён</span>}</div></TableCell></TableRow>)}</TableBody>
         </Table>
         {users.length === 0 && <div className="text-center py-12"><Users className="h-12 w-12 mx-auto text-muted-foreground mb-2" /><p>Нет пользователей</p></div>}
       </div>
@@ -273,7 +275,7 @@ export default function UsersManager({ users: initialUsers, roles }: UsersManage
           <div className="space-y-1"><Label>Email *</Label><Input type="email" value={createForm.email} onChange={e => setCreateForm({ ...createForm, email: e.target.value })} placeholder="user@example.com" /></div>
           <div className="space-y-1"><Label>Пароль *</Label><div className="relative"><Input type={showCreatePassword ? "text" : "password"} value={createForm.password} onChange={e => setCreateForm({ ...createForm, password: e.target.value })} placeholder="Минимум 6 символов" /><button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" onClick={() => setShowCreatePassword(!showCreatePassword)}>{showCreatePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></div>
           <div className="space-y-1"><Label>Полное имя</Label><Input value={createForm.full_name} onChange={e => setCreateForm({ ...createForm, full_name: e.target.value })} placeholder="Иван Иванов" /></div>
-          <div className="space-y-1"><Label>Роль</Label><Select value={createForm.role_id} onValueChange={v => setCreateForm({ ...createForm, role_id: v })}><SelectTrigger><SelectValue placeholder="Без роли" /></SelectTrigger><SelectContent><SelectItem value="">Без роли</SelectItem>{roles.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}</SelectContent></Select></div>
+          <div className="space-y-1"><Label>Роль</Label><Select value={createForm.role_id || "__none__"} onValueChange={v => setCreateForm({ ...createForm, role_id: v === "__none__" ? "" : v })}><SelectTrigger><SelectValue placeholder="Без роли" /></SelectTrigger><SelectContent><SelectItem value="__none__">Без роли</SelectItem>{roles.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}</SelectContent></Select></div>
         </div>
         <DialogFooter><Button variant="outline" onClick={() => setShowCreateModal(false)} disabled={isSaving}>Отмена</Button><Button onClick={handleCreateUser} disabled={isSaving}>{isSaving ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Создание...</> : 'Создать'}</Button></DialogFooter>
       </DialogContent></Dialog>
@@ -292,7 +294,7 @@ export default function UsersManager({ users: initialUsers, roles }: UsersManage
       <Dialog open={showAssignModal} onOpenChange={setShowAssignModal}><DialogContent><DialogHeader><DialogTitle>Назначить роль</DialogTitle></DialogHeader>
         <div className="space-y-4">
           <p className="text-sm">Пользователь: <strong>{selectedUser?.email}</strong></p>
-          <div className="space-y-1"><Label>Выберите роль</Label><Select value={assignForm.role_id} onValueChange={v => setAssignForm({ role_id: v })}><SelectTrigger><SelectValue placeholder="Без роли" /></SelectTrigger><SelectContent><SelectItem value="">Без роли</SelectItem>{roles.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}</SelectContent></Select></div>
+          <div className="space-y-1"><Label>Выберите роль</Label><Select value={assignForm.role_id || "__none__"} onValueChange={v => setAssignForm({ role_id: v === "__none__" ? "" : v })}><SelectTrigger><SelectValue placeholder="Без роли" /></SelectTrigger><SelectContent><SelectItem value="__none__">Без роли</SelectItem>{roles.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}</SelectContent></Select></div>
         </div>
         <DialogFooter><Button variant="outline" onClick={() => setShowAssignModal(false)} disabled={isSaving}>Отмена</Button><Button onClick={handleAssignRole} disabled={isSaving}>{isSaving ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Сохранение...</> : 'Назначить'}</Button></DialogFooter>
       </DialogContent></Dialog>

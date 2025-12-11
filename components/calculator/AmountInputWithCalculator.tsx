@@ -42,17 +42,28 @@ export default function AmountInputWithCalculator({
 
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
+      
+      // Если калькулятор ref ещё не установлен, не закрываем
+      if (!calculatorRef.current) return;
+      
       // Проверяем что клик не внутри контейнера и не внутри калькулятора
-      if (
-        containerRef.current && !containerRef.current.contains(target) &&
-        calculatorRef.current && !calculatorRef.current.contains(target)
-      ) {
+      const isInsideContainer = containerRef.current?.contains(target);
+      const isInsideCalculator = calculatorRef.current.contains(target);
+      
+      if (!isInsideContainer && !isInsideCalculator) {
         setShowCalculator(false);
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    // Добавляем небольшую задержку, чтобы ref успел установиться
+    const timeoutId = setTimeout(() => {
+      document.addEventListener("mousedown", handleClickOutside);
+    }, 50);
+    
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, [showCalculator]);
 
   const handleCalculatorResult = (result: string) => {
@@ -123,7 +134,13 @@ export default function AmountInputWithCalculator({
           <CalculatorIcon className="h-4 w-4" />
         </Button>
         {showCalculator && typeof window !== 'undefined' && createPortal(
-          <div ref={calculatorRef} style={{ position: 'fixed', top: `${position.top}px`, left: `${position.left}px`, zIndex: 9999 }}>
+          <div 
+            ref={calculatorRef} 
+            style={{ position: 'fixed', top: `${position.top}px`, left: `${position.left}px`, zIndex: 99999, pointerEvents: 'auto' }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
             <Calculator onResult={handleCalculatorResult} onClose={() => setShowCalculator(false)} initialValue={value} />
           </div>,
           document.body

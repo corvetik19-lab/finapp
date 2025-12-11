@@ -8,6 +8,7 @@ const bodySchema = z.object({
   paymentId: z.string().uuid({ message: "Некорректный платёж" }),
   transactionId: z.string().uuid({ message: "Некорректная транзакция" }),
   accountId: z.string().uuid().optional(),
+  amountMinor: z.number().int().positive().optional(), // сумма из транзакции в копейках
 });
 
 export async function POST(req: Request) {
@@ -20,7 +21,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: message }, { status: 400 });
     }
 
-    const { paymentId, transactionId, accountId } = parsed.data;
+    const { paymentId, transactionId, accountId, amountMinor } = parsed.data;
 
     const supabase = await createRouteClient();
     const {
@@ -68,14 +69,22 @@ export async function POST(req: Request) {
 
     const nowIso = new Date().toISOString();
 
+    // Формируем payload для обновления
+    const updatePayload: Record<string, unknown> = {
+      status: "paid",
+      paid_at: nowIso,
+      paid_transaction_id: transactionId,
+      account_id: accountId || null,
+    };
+
+    // Обновляем сумму платежа на сумму транзакции если она передана
+    if (amountMinor !== undefined) {
+      updatePayload.amount_minor = amountMinor;
+    }
+
     const { error: updateError } = await supabase
       .from("upcoming_payments")
-      .update({
-        status: "paid",
-        paid_at: nowIso,
-        paid_transaction_id: transactionId,
-        account_id: accountId || null,
-      })
+      .update(updatePayload)
       .eq("id", paymentId)
       .eq("user_id", user.id);
 

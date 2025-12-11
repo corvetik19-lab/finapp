@@ -27,6 +27,18 @@ const querySchema = z.object({
     .string()
     .optional()
     .transform((value) => value === "true"),
+  fromDate: z
+    .string()
+    .trim()
+    .optional(),
+  toDate: z
+    .string()
+    .trim()
+    .optional(),
+  categoryId: z
+    .string()
+    .uuid()
+    .optional(),
 });
 
 export async function GET(req: Request) {
@@ -44,7 +56,7 @@ export async function GET(req: Request) {
       );
     }
 
-    const { search, limit, ids, excludeLinked } = parsed.data;
+    const { search, limit, ids, excludeLinked, fromDate, toDate, categoryId } = parsed.data;
 
     const supabase = await createRouteClient();
     const {
@@ -65,6 +77,9 @@ export async function GET(req: Request) {
       limit,
       ids,
       excludeLinked,
+      fromDate,
+      toDate,
+      categoryId,
     });
 
     return NextResponse.json({ success: true, items });

@@ -19,7 +19,36 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, List, LayoutGrid, ChevronDown, ChevronUp, Trash2, ExternalLink, Pencil } from 'lucide-react';
+import { 
+  Plus, 
+  Search, 
+  List, 
+  LayoutGrid, 
+  ChevronDown, 
+  ChevronUp, 
+  Trash2, 
+  ExternalLink, 
+  Pencil,
+  CheckCircle2,
+  Circle,
+  Clock,
+  AlertCircle,
+  Flame,
+  ListTodo,
+  Calendar,
+  User,
+  GripVertical,
+  Check,
+  XCircle,
+  Filter
+} from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Props {
   initialData: TasksData;
@@ -29,18 +58,27 @@ interface Props {
   userId: string;
 }
 
-const STATUS_CONFIG: Record<TaskStatus, { label: string; color: string; icon: string }> = {
-  pending: { label: 'Ожидает', color: '#f59e0b', icon: '⏳' },
-  in_progress: { label: 'В работе', color: '#3b82f6', icon: '🔄' },
-  completed: { label: 'Выполнено', color: '#10b981', icon: '✅' },
-  cancelled: { label: 'Отменено', color: '#6b7280', icon: '❌' },
+const STATUS_CONFIG: Record<TaskStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; className: string }> = {
+  pending: { label: 'Ожидает', variant: 'secondary', className: 'bg-amber-100 text-amber-700 hover:bg-amber-100' },
+  in_progress: { label: 'В работе', variant: 'secondary', className: 'bg-blue-100 text-blue-700 hover:bg-blue-100' },
+  completed: { label: 'Выполнено', variant: 'secondary', className: 'bg-green-100 text-green-700 hover:bg-green-100' },
+  cancelled: { label: 'Отменено', variant: 'secondary', className: 'bg-gray-100 text-gray-500 hover:bg-gray-100' },
 };
 
-const PRIORITY_CONFIG: Record<TaskPriority, { label: string; color: string; icon: string }> = {
-  low: { label: 'Низкий', color: '#94a3b8', icon: '🔵' },
-  normal: { label: 'Обычный', color: '#3b82f6', icon: '🟢' },
-  high: { label: 'Высокий', color: '#f59e0b', icon: '🟡' },
-  urgent: { label: 'Срочно', color: '#ef4444', icon: '🔴' },
+const PRIORITY_CONFIG: Record<TaskPriority, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; className: string }> = {
+  low: { label: 'Низкий', variant: 'outline', className: 'border-slate-300 text-slate-500' },
+  normal: { label: 'Обычный', variant: 'outline', className: 'border-blue-300 text-blue-600' },
+  high: { label: 'Высокий', variant: 'outline', className: 'border-amber-400 text-amber-600' },
+  urgent: { label: 'Срочно', variant: 'destructive', className: '' },
+};
+
+const StatusIcon = ({ status }: { status: TaskStatus }) => {
+  switch (status) {
+    case 'pending': return <Clock className="h-4 w-4 text-amber-500" />;
+    case 'in_progress': return <Circle className="h-4 w-4 text-blue-500" />;
+    case 'completed': return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+    case 'cancelled': return <XCircle className="h-4 w-4 text-gray-400" />;
+  }
 };
 
 type ViewMode = 'list' | 'board' | 'calendar';
@@ -335,70 +373,170 @@ export default function TasksClient({ initialData, employees, tenders, companyId
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">✅ Задачи</h1>
-          <p className="text-gray-500 mt-1">Управление задачами по тендерам</p>
+          <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
+            <ListTodo className="h-6 w-6 text-primary" />
+            Задачи
+          </h1>
+          <p className="text-muted-foreground mt-1">Управление задачами по тендерам</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            {(['list', 'board'] as ViewMode[]).map(mode => (
-              <Button key={mode} variant={viewMode === mode ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode(mode)}>
-                {mode === 'list' ? <><List className="h-4 w-4 mr-1" />Список</> : <><LayoutGrid className="h-4 w-4 mr-1" />Доска</>}
-              </Button>
-            ))}
+        <div className="flex items-center gap-2">
+          <div className="flex border rounded-lg p-1">
+            <Button 
+              variant={viewMode === 'list' ? 'secondary' : 'ghost'} 
+              size="sm" 
+              onClick={() => setViewMode('list')}
+              className="gap-1.5"
+            >
+              <List className="h-4 w-4" />
+              <span className="hidden sm:inline">Список</span>
+            </Button>
+            <Button 
+              variant={viewMode === 'board' ? 'secondary' : 'ghost'} 
+              size="sm" 
+              onClick={() => setViewMode('board')}
+              className="gap-1.5"
+            >
+              <LayoutGrid className="h-4 w-4" />
+              <span className="hidden sm:inline">Доска</span>
+            </Button>
           </div>
-          <Button onClick={() => setShowCreateModal(true)}><Plus className="h-4 w-4 mr-1" />Создать задачу</Button>
+          <Button onClick={() => setShowCreateModal(true)} className="gap-1.5">
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Создать задачу</span>
+          </Button>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <Card><CardContent className="p-3 flex items-center gap-3"><span className="text-2xl">📋</span><div><div className="text-xl font-bold">{stats.total}</div><div className="text-xs text-gray-500">Всего</div></div></CardContent></Card>
-        <Card className="border-l-4 border-l-amber-400"><CardContent className="p-3 flex items-center gap-3"><span className="text-2xl">⏳</span><div><div className="text-xl font-bold text-amber-600">{stats.pending}</div><div className="text-xs text-gray-500">Ожидают</div></div></CardContent></Card>
-        <Card className="border-l-4 border-l-blue-400"><CardContent className="p-3 flex items-center gap-3"><span className="text-2xl">🔄</span><div><div className="text-xl font-bold text-blue-600">{stats.inProgress}</div><div className="text-xs text-gray-500">В работе</div></div></CardContent></Card>
-        <Card className="border-l-4 border-l-green-400"><CardContent className="p-3 flex items-center gap-3"><span className="text-2xl">✅</span><div><div className="text-xl font-bold text-green-600">{stats.completed}</div><div className="text-xs text-gray-500">Выполнено</div></div></CardContent></Card>
-        <Card className="border-l-4 border-l-red-400"><CardContent className="p-3 flex items-center gap-3"><span className="text-2xl">🔥</span><div><div className="text-xl font-bold text-red-600">{stats.overdue}</div><div className="text-xs text-gray-500">Просрочено</div></div></CardContent></Card>
-        <Card className="border-l-4 border-l-red-600"><CardContent className="p-3 flex items-center gap-3"><span className="text-2xl">🔴</span><div><div className="text-xl font-bold text-red-700">{stats.highPriority}</div><div className="text-xs text-gray-500">Срочные</div></div></CardContent></Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <ListTodo className="h-5 w-5 text-muted-foreground" />
+              <span className="text-2xl font-bold">{stats.total}</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Всего задач</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <Clock className="h-5 w-5 text-amber-500" />
+              <span className="text-2xl font-bold text-amber-600">{stats.pending}</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Ожидают</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <Circle className="h-5 w-5 text-blue-500" />
+              <span className="text-2xl font-bold text-blue-600">{stats.inProgress}</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">В работе</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              <span className="text-2xl font-bold text-green-600">{stats.completed}</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Выполнено</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <Flame className="h-5 w-5 text-red-500" />
+              <span className="text-2xl font-bold text-red-600">{stats.overdue}</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Просрочено</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <AlertCircle className="h-5 w-5 text-red-600" />
+              <span className="text-2xl font-bold text-red-700">{stats.highPriority}</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Срочные</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-3 items-start md:items-center">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input type="text" placeholder="Поиск задач..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9" />
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as FilterStatus)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
-            <option value="active">Активные</option>
-            <option value="all">Все статусы</option>
-            <option value="pending">Ожидают</option>
-            <option value="in_progress">В работе</option>
-            <option value="completed">Выполнено</option>
-            <option value="cancelled">Отменено</option>
-          </select>
-          <select value={filterPriority} onChange={e => setFilterPriority(e.target.value as TaskPriority | 'all')} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
-            <option value="all">Все приоритеты</option>
-            <option value="urgent">🔴 Срочно</option>
-            <option value="high">🟡 Высокий</option>
-            <option value="normal">🟢 Обычный</option>
-            <option value="low">🔵 Низкий</option>
-          </select>
-          <select value={filterAssignee} onChange={e => setFilterAssignee(e.target.value)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
-            <option value="all">Все исполнители</option>
-            {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.full_name}</option>)}
-          </select>
-        </div>
-      </div>
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row gap-3 items-start md:items-center">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                type="text" 
+                placeholder="Поиск задач..." 
+                value={searchQuery} 
+                onChange={e => setSearchQuery(e.target.value)} 
+                className="pl-9" 
+              />
+            </div>
+            <div className="flex gap-2 flex-wrap items-center">
+              <Filter className="h-4 w-4 text-muted-foreground hidden md:block" />
+              <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value as FilterStatus)}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Статус" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Активные</SelectItem>
+                  <SelectItem value="all">Все статусы</SelectItem>
+                  <SelectItem value="pending">Ожидают</SelectItem>
+                  <SelectItem value="in_progress">В работе</SelectItem>
+                  <SelectItem value="completed">Выполнено</SelectItem>
+                  <SelectItem value="cancelled">Отменено</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterPriority} onValueChange={(value) => setFilterPriority(value as TaskPriority | 'all')}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Приоритет" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все приоритеты</SelectItem>
+                  <SelectItem value="urgent">Срочно</SelectItem>
+                  <SelectItem value="high">Высокий</SelectItem>
+                  <SelectItem value="normal">Обычный</SelectItem>
+                  <SelectItem value="low">Низкий</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterAssignee} onValueChange={setFilterAssignee}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Исполнитель" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все исполнители</SelectItem>
+                  {employees.map(emp => (
+                    <SelectItem key={emp.id} value={emp.id}>{emp.full_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Task List View */}
       {viewMode === 'list' && (
         <div className="space-y-3">
           {filteredTasks.length === 0 ? (
-            <Card className="py-12 text-center">
-              <CardContent>
-                <span className="text-5xl">📝</span>
-                <h3 className="text-lg font-semibold mt-4">Нет задач</h3>
-                <p className="text-gray-500 mt-1">Создайте первую задачу для начала работы</p>
-                <Button className="mt-4" onClick={() => setShowCreateModal(true)}><Plus className="h-4 w-4 mr-1" />Создать задачу</Button>
+            <Card>
+              <CardContent className="py-12 flex flex-col items-center justify-center text-center">
+                <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <ListTodo className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold">Нет задач</h3>
+                <p className="text-muted-foreground mt-1 mb-4">Создайте первую задачу для начала работы</p>
+                <Button onClick={() => setShowCreateModal(true)} className="gap-1.5">
+                  <Plus className="h-4 w-4" />
+                  Создать задачу
+                </Button>
               </CardContent>
             </Card>
           ) : (
@@ -408,50 +546,87 @@ export default function TasksClient({ initialData, employees, tenders, companyId
               const isExpanded = expandedTasks.has(task.id);
               const checklistProgress = getChecklistProgress(task.checklist);
               return (
-                <Card key={task.id} className={`${overdue ? 'border-l-4 border-l-red-500 bg-red-50/50' : dueToday ? 'border-l-4 border-l-amber-500 bg-amber-50/50' : ''}`}>
+                <Card key={task.id} className={`transition-colors ${overdue ? 'border-destructive/50 bg-destructive/5' : dueToday ? 'border-amber-200 bg-amber-50/30' : 'hover:bg-muted/50'}`}>
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
-                      <button className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 mt-1 transition-colors ${task.status === 'completed' ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 hover:border-green-500'}`} onClick={() => handleStatusChange(task, task.status === 'completed' ? 'pending' : 'completed')}>
-                        {task.status === 'completed' && '✓'}
+                      <button 
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${task.status === 'completed' ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/30 hover:border-primary'}`} 
+                        onClick={() => handleStatusChange(task, task.status === 'completed' ? 'pending' : 'completed')}
+                      >
+                        {task.status === 'completed' && <Check className="h-3 w-3" />}
                       </button>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2 flex-wrap">
-                          <h3 className={`font-medium ${task.status === 'completed' ? 'line-through text-gray-400' : ''}`}>{task.title}</h3>
-                          <div className="flex items-center gap-1 flex-wrap">
+                          <h3 className={`font-medium ${task.status === 'completed' ? 'line-through text-muted-foreground' : ''}`}>{task.title}</h3>
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             {overdue && <Badge variant="destructive" className="text-xs">Просрочено</Badge>}
-                            {dueToday && !overdue && <Badge className="text-xs bg-amber-500">Сегодня</Badge>}
-                            <Badge className="text-xs text-white" style={{ backgroundColor: PRIORITY_CONFIG[task.priority].color }}>{PRIORITY_CONFIG[task.priority].icon} {PRIORITY_CONFIG[task.priority].label}</Badge>
-                            <Badge className="text-xs text-white" style={{ backgroundColor: STATUS_CONFIG[task.status].color }}>{STATUS_CONFIG[task.status].label}</Badge>
+                            {dueToday && !overdue && <Badge className="text-xs bg-amber-100 text-amber-700 hover:bg-amber-100">Сегодня</Badge>}
+                            <Badge variant={PRIORITY_CONFIG[task.priority].variant} className={`text-xs ${PRIORITY_CONFIG[task.priority].className}`}>
+                              {PRIORITY_CONFIG[task.priority].label}
+                            </Badge>
+                            <Badge variant="secondary" className={`text-xs ${STATUS_CONFIG[task.status].className}`}>
+                              {STATUS_CONFIG[task.status].label}
+                            </Badge>
                           </div>
                         </div>
-                        {task.description && <p className="text-sm text-gray-500 mt-1">{task.description}</p>}
+                        {task.description && <p className="text-sm text-muted-foreground mt-1.5 line-clamp-2">{task.description}</p>}
                         {checklistProgress && (
-                          <div className="flex items-center gap-2 mt-2">
-                            <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden"><div className="h-full bg-green-500 transition-all" style={{ width: `${checklistProgress.percent}%` }} /></div>
-                            <span className="text-xs text-gray-500">{checklistProgress.completed}/{checklistProgress.total}</span>
+                          <div className="flex items-center gap-2 mt-3">
+                            <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                              <div className="h-full bg-primary transition-all" style={{ width: `${checklistProgress.percent}%` }} />
+                            </div>
+                            <span className="text-xs text-muted-foreground">{checklistProgress.completed}/{checklistProgress.total}</span>
                           </div>
                         )}
-                        <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 flex-wrap">
-                          {task.due_date && <span className={overdue ? 'text-red-600 font-medium' : ''}>📅 {formatDateTime(task.due_date, task.due_time)}</span>}
-                          {task.assignee && <span>👤 {task.assignee.full_name}</span>}
-                          {task.tender && <Link href={`/tenders/${task.tender.id}`} className="text-blue-600 hover:underline flex items-center gap-1"><ExternalLink className="h-3 w-3" />{task.tender.customer?.substring(0, 30)}...</Link>}
-                          {task.tags?.map(tag => <span key={tag} className="bg-gray-100 px-2 py-0.5 rounded">#{tag}</span>)}
+                        <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground flex-wrap">
+                          {task.due_date && (
+                            <span className={`flex items-center gap-1 ${overdue ? 'text-destructive font-medium' : ''}`}>
+                              <Calendar className="h-3.5 w-3.5" />
+                              {formatDateTime(task.due_date, task.due_time)}
+                            </span>
+                          )}
+                          {task.assignee && (
+                            <span className="flex items-center gap-1">
+                              <User className="h-3.5 w-3.5" />
+                              {task.assignee.full_name}
+                            </span>
+                          )}
+                          {task.tender && (
+                            <Link href={`/tenders/${task.tender.id}`} className="text-primary hover:underline flex items-center gap-1">
+                              <ExternalLink className="h-3 w-3" />
+                              {task.tender.customer?.substring(0, 30)}...
+                            </Link>
+                          )}
+                          {task.tags?.map(tag => (
+                            <span key={tag} className="bg-muted px-2 py-0.5 rounded-md">#{tag}</span>
+                          ))}
                         </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        {task.checklist.length > 0 && <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleTaskExpanded(task.id)}>{isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</Button>}
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingTask(task)} title="Редактировать"><Pencil className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleDeleteTask(task.id)} title="Удалить"><Trash2 className="h-4 w-4" /></Button>
+                      <div className="flex items-center gap-0.5">
+                        {task.checklist.length > 0 && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleTaskExpanded(task.id)}>
+                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingTask(task)} title="Редактировать">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDeleteTask(task.id)} title="Удалить">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                     {isExpanded && task.checklist.length > 0 && (
-                      <div className="mt-3 pt-3 border-t space-y-2">
+                      <div className="mt-4 pt-4 border-t space-y-2">
                         {task.checklist.map(item => (
                           <div key={item.id} className="flex items-center gap-2">
-                            <button className={`w-5 h-5 rounded border flex items-center justify-center text-xs transition-colors ${item.completed ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 hover:border-green-500'}`} onClick={() => handleChecklistItemToggle(task, item.id)}>
-                              {item.completed && '✓'}
+                            <button 
+                              className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${item.completed ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/30 hover:border-primary'}`} 
+                              onClick={() => handleChecklistItemToggle(task, item.id)}
+                            >
+                              {item.completed && <Check className="h-2.5 w-2.5" />}
                             </button>
-                            <span className={`text-sm ${item.completed ? 'line-through text-gray-400' : ''}`}>{item.text}</span>
+                            <span className={`text-sm ${item.completed ? 'line-through text-muted-foreground' : ''}`}>{item.text}</span>
                           </div>
                         ))}
                       </div>
@@ -468,66 +643,81 @@ export default function TasksClient({ initialData, employees, tenders, companyId
       {viewMode === 'board' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {(['pending', 'in_progress', 'completed'] as TaskStatus[]).map(status => (
-            <div 
+            <Card 
               key={status} 
-              className={`bg-gray-50 rounded-lg min-h-[400px] ${dragOverColumn === status ? 'ring-2 ring-blue-400' : ''}`}
+              className={`min-h-[400px] transition-all ${dragOverColumn === status ? 'ring-2 ring-primary' : ''}`}
               onDragOver={(e) => handleDragOver(e, status)}
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, status)}
             >
-              <div className="p-3 border-t-4 rounded-t-lg flex items-center gap-2" style={{ borderTopColor: STATUS_CONFIG[status].color }}>
-                <span>{STATUS_CONFIG[status].icon}</span>
+              <div className="p-3 border-b flex items-center gap-2">
+                <StatusIcon status={status} />
                 <h3 className="font-medium flex-1">{STATUS_CONFIG[status].label}</h3>
-                <Badge variant="secondary">{tasksByStatus[status].length}</Badge>
+                <Badge variant="secondary" className="rounded-full">{tasksByStatus[status].length}</Badge>
               </div>
-              <div className="p-2 space-y-2">
+              <CardContent className="p-2 space-y-2">
                 {tasksByStatus[status].map(task => {
                   const overdue = isOverdue(task);
                   const checklistProgress = getChecklistProgress(task.checklist);
                   const isCardExpanded = expandedBoardCards.has(task.id);
                   const hasChecklist = task.checklist && task.checklist.length > 0;
                   return (
-                    <Card
+                    <div
                       key={task.id}
-                      className={`cursor-grab ${overdue ? 'border-l-4 border-l-red-500' : ''} ${draggedTask?.id === task.id ? 'opacity-50' : ''}`}
+                      className={`p-3 rounded-lg border bg-card cursor-grab transition-all hover:shadow-sm ${overdue ? 'border-destructive/50 bg-destructive/5' : ''} ${draggedTask?.id === task.id ? 'opacity-50' : ''}`}
                       draggable
                       onDragStart={(e) => handleDragStart(e, task)}
                       onDragEnd={handleDragEnd}
                     >
-                      <CardContent className="p-3">
-                        <div className="flex items-start gap-2">
-                          <span className="w-2 h-2 rounded-full mt-2 shrink-0" style={{ backgroundColor: PRIORITY_CONFIG[task.priority].color }} />
-                          <h4 className="font-medium text-sm flex-1">{task.title}</h4>
-                          <span className="text-gray-400 cursor-grab">⋮⋮</span>
-                        </div>
-                        {task.description && !isCardExpanded && <p className="text-xs text-gray-500 mt-1 line-clamp-2">{task.description.substring(0, 60)}...</p>}
-                        {hasChecklist && (
-                          <div className="flex items-center gap-2 mt-2 cursor-pointer" onClick={() => toggleBoardCardExpanded(task.id)}>
-                            <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden"><div className="h-full bg-green-500" style={{ width: `${checklistProgress?.percent || 0}%` }} /></div>
-                            <span className="text-xs text-gray-500">{checklistProgress?.completed}/{checklistProgress?.total}</span>
-                            {isCardExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                      <div className="flex items-start gap-2">
+                        <Badge variant={PRIORITY_CONFIG[task.priority].variant} className={`text-[10px] px-1.5 py-0 h-5 ${PRIORITY_CONFIG[task.priority].className}`}>
+                          {PRIORITY_CONFIG[task.priority].label}
+                        </Badge>
+                        <h4 className="font-medium text-sm flex-1 line-clamp-2">{task.title}</h4>
+                        <GripVertical className="h-4 w-4 text-muted-foreground/50 cursor-grab shrink-0" />
+                      </div>
+                      {task.description && !isCardExpanded && (
+                        <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{task.description}</p>
+                      )}
+                      {hasChecklist && (
+                        <div className="flex items-center gap-2 mt-2 cursor-pointer" onClick={() => toggleBoardCardExpanded(task.id)}>
+                          <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
+                            <div className="h-full bg-primary transition-all" style={{ width: `${checklistProgress?.percent || 0}%` }} />
                           </div>
-                        )}
-                        {isCardExpanded && hasChecklist && (
-                          <div className="mt-2 space-y-1">
-                            {task.checklist.map(item => (
-                              <div key={item.id} className="flex items-center gap-2 text-xs cursor-pointer" onClick={(e) => { e.stopPropagation(); handleChecklistItemToggle(task, item.id); }}>
-                                <span className={`w-4 h-4 rounded border flex items-center justify-center ${item.completed ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'}`}>{item.completed ? '✓' : ''}</span>
-                                <span className={item.completed ? 'line-through text-gray-400' : ''}>{item.text}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
-                          {task.due_date && <span className={overdue ? 'text-red-600' : ''}>📅 {formatDate(task.due_date)}</span>}
-                          {task.assignee && <span className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">{task.assignee.full_name.split(' ').map(n => n[0]).join('')}</span>}
+                          <span className="text-xs text-muted-foreground">{checklistProgress?.completed}/{checklistProgress?.total}</span>
+                          {isCardExpanded ? <ChevronUp className="h-3 w-3 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 text-muted-foreground" />}
                         </div>
-                      </CardContent>
-                    </Card>
+                      )}
+                      {isCardExpanded && hasChecklist && (
+                        <div className="mt-2 space-y-1">
+                          {task.checklist.map(item => (
+                            <div key={item.id} className="flex items-center gap-2 text-xs cursor-pointer" onClick={(e) => { e.stopPropagation(); handleChecklistItemToggle(task, item.id); }}>
+                              <span className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${item.completed ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/30'}`}>
+                                {item.completed && <Check className="h-2.5 w-2.5" />}
+                              </span>
+                              <span className={item.completed ? 'line-through text-muted-foreground' : ''}>{item.text}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
+                        {task.due_date ? (
+                          <span className={`flex items-center gap-1 ${overdue ? 'text-destructive font-medium' : ''}`}>
+                            <Calendar className="h-3 w-3" />
+                            {formatDate(task.due_date)}
+                          </span>
+                        ) : <span />}
+                        {task.assignee && (
+                          <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-medium">
+                            {task.assignee.full_name.split(' ').map(n => n[0]).join('')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   );
                 })}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
@@ -643,15 +833,31 @@ function TaskModal({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Статус</Label>
-              <select value={status} onChange={e => setStatus(e.target.value as TaskStatus)} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm">
-                {Object.entries(STATUS_CONFIG).map(([key, cfg]) => <option key={key} value={key}>{cfg.icon} {cfg.label}</option>)}
-              </select>
+              <Select value={status} onValueChange={(value) => setStatus(value as TaskStatus)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Ожидает</SelectItem>
+                  <SelectItem value="in_progress">В работе</SelectItem>
+                  <SelectItem value="completed">Выполнено</SelectItem>
+                  <SelectItem value="cancelled">Отменено</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>Приоритет</Label>
-              <select value={priority} onChange={e => setPriority(e.target.value as TaskPriority)} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm">
-                {Object.entries(PRIORITY_CONFIG).map(([key, cfg]) => <option key={key} value={key}>{cfg.icon} {cfg.label}</option>)}
-              </select>
+              <Select value={priority} onValueChange={(value) => setPriority(value as TaskPriority)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Низкий</SelectItem>
+                  <SelectItem value="normal">Обычный</SelectItem>
+                  <SelectItem value="high">Высокий</SelectItem>
+                  <SelectItem value="urgent">Срочно</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -667,17 +873,31 @@ function TaskModal({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Исполнитель</Label>
-              <select value={assignedTo} onChange={e => setAssignedTo(e.target.value)} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm">
-                <option value="">Не назначен</option>
-                {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.full_name}</option>)}
-              </select>
+              <Select value={assignedTo || "_none"} onValueChange={(value) => setAssignedTo(value === "_none" ? "" : value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Не назначен" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none">Не назначен</SelectItem>
+                  {employees.map(emp => (
+                    <SelectItem key={emp.id} value={emp.id}>{emp.full_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>Тендер</Label>
-              <select value={tenderId} onChange={e => setTenderId(e.target.value)} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm">
-                <option value="">Без тендера</option>
-                {tenders.map(t => <option key={t.id} value={t.id}>{t.customer?.substring(0, 40)}</option>)}
-              </select>
+              <Select value={tenderId || "_none"} onValueChange={(value) => setTenderId(value === "_none" ? "" : value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Без тендера" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none">Без тендера</SelectItem>
+                  {tenders.map(t => (
+                    <SelectItem key={t.id} value={t.id}>{t.customer?.substring(0, 40)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div className="space-y-2">
@@ -686,16 +906,34 @@ function TaskModal({
           </div>
           <div className="space-y-2">
             <Label>Подзадачи</Label>
-            <div className="space-y-2 p-3 bg-gray-50 rounded-lg">
+            <div className="space-y-2 p-3 bg-muted/50 rounded-lg border">
+              {checklist.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-2">Нет подзадач</p>
+              )}
               {checklist.map(item => (
-                <div key={item.id} className="flex items-center justify-between bg-white p-2 rounded border">
+                <div key={item.id} className="flex items-center justify-between bg-background p-2.5 rounded-md border">
                   <span className="text-sm">{item.text}</span>
-                  <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleRemoveChecklistItem(item.id)}><Trash2 className="h-3 w-3" /></Button>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10" 
+                    onClick={() => handleRemoveChecklistItem(item.id)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               ))}
-              <div className="flex gap-2">
-                <Input value={newChecklistItem} onChange={e => setNewChecklistItem(e.target.value)} placeholder="Добавить подзадачу..." onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddChecklistItem())} />
-                <Button type="button" variant="outline" size="icon" onClick={handleAddChecklistItem}><Plus className="h-4 w-4" /></Button>
+              <div className="flex gap-2 pt-1">
+                <Input 
+                  value={newChecklistItem} 
+                  onChange={e => setNewChecklistItem(e.target.value)} 
+                  placeholder="Добавить подзадачу..." 
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddChecklistItem())} 
+                />
+                <Button type="button" variant="outline" size="icon" onClick={handleAddChecklistItem}>
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </div>

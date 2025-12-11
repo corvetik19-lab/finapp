@@ -97,7 +97,6 @@ const MODE_MENUS: ModeMenuConfig = {
         { key: 'custom-reports', label: 'Свои отчёты', icon: 'description', href: '/finance/reports/custom' },
       ]
     },
-    { key: 'achievements', label: 'Достижения', icon: 'emoji_events', href: '/achievements' },
     {
       key: 'ai',
       label: 'AI',
@@ -108,7 +107,6 @@ const MODE_MENUS: ModeMenuConfig = {
         { key: 'ai-analytics', label: 'AI Аналитика', icon: 'auto_graph', href: '/ai-analytics' },
       ]
     },
-    { key: 'notifications', label: 'Уведомления', icon: 'notifications_active', href: '/notifications' },
     { key: 'settings', label: 'Настройки режима', icon: 'tune', href: '/finance/settings' },
   ],
 

@@ -55,9 +55,15 @@ export default async function UsersSettingsPage() {
     .select("user_id, role_id, roles(name, color)")
     .returns<Array<{user_id: string; role_id: string; roles: {name: string; color: string} | null}>>();
 
+  // Получаем профили для last_seen_at
+  const { data: profilesData } = await supabase
+    .from("profiles")
+    .select("id, last_seen_at");
+
   // Формируем список пользователей с ролями
   const users = usersData.map(u => {
     const userRole = userRolesData?.find(ur => ur.user_id === u.id);
+    const profile = profilesData?.find(p => p.id === u.id);
     const isAdmin = u.id === user?.id;
     return {
       id: u.id,
@@ -68,6 +74,7 @@ export default async function UsersSettingsPage() {
       role_color: userRole?.roles?.color || null,
       created_at: u.created_at,
       last_sign_in_at: u.last_sign_in_at ?? null,
+      last_seen_at: profile?.last_seen_at ?? null,
       is_admin: isAdmin,
     };
   });

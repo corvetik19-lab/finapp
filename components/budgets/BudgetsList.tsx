@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Pencil, Trash2, Save, X, CreditCard } from "lucide-react";
+import { Pencil, Trash2, Save, X, CreditCard, Package } from "lucide-react";
 
 type Category = {
   id: string;
@@ -115,7 +115,8 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
 
   // Группируем бюджеты
   const incomeBudgets = budgets.filter(b => b.category?.kind === "income" || b.category?.kind === "both");
-  const expenseBudgets = budgets.filter(b => b.category?.kind === "expense" || b.account_id); // Кредитные карты тоже в расходах
+  const expenseBudgets = budgets.filter(b => (b.category?.kind === "expense" || b.account_id) && !b.product_id); // Кредитные карты тоже в расходах
+  const productBudgets = budgets.filter(b => b.product_id); // Бюджеты по товарам
 
   const renderBudget = (budget: BudgetWithUsage) => {
     const isEditing = editingId === budget.id;
@@ -134,7 +135,12 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-base font-medium">
-                {budget.account_id ? (
+                {budget.product_id ? (
+                  <span className="flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    {budget.product?.name ?? "Товар"}
+                  </span>
+                ) : budget.account_id ? (
                   <span className="flex items-center gap-2">
                     <CreditCard className="h-4 w-4" />
                     {budget.account?.name ?? "Кредитная карта"}
@@ -278,6 +284,7 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
   // Считаем итоговые суммы
   const totalIncomeLimit = incomeBudgets.reduce((sum, b) => sum + b.limit_minor, 0);
   const totalExpenseLimit = expenseBudgets.reduce((sum, b) => sum + b.limit_minor, 0);
+  const totalProductLimit = productBudgets.reduce((sum, b) => sum + b.limit_minor, 0);
 
   return (
     <div className="space-y-6">
@@ -309,6 +316,22 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             {expenseBudgets.map(renderBudget)}
+          </div>
+        </div>
+      )}
+
+      {productBudgets.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              📦 Товары
+            </h3>
+            <span className="text-sm font-medium text-blue-600">
+              {formatMoney(totalProductLimit, 'RUB')}
+            </span>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {productBudgets.map(renderBudget)}
           </div>
         </div>
       )}

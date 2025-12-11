@@ -121,7 +121,10 @@ export interface CreateEmployeeData {
   work_schedule?: string | null;
   notes?: string | null;
   
-  // Для создания учетной записи
+  // Привязка к существующему пользователю
+  user_id?: string | null;
+  
+  // Устаревшие поля (для обратной совместимости)
   create_user_account?: boolean;
   password?: string | null;
 }

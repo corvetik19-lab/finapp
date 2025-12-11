@@ -290,10 +290,10 @@ export function QuickPresetsManager() {
 
               <div className="space-y-2">
                 <Label>Счёт по умолчанию</Label>
-                <Select value={formData.account_id || ""} onValueChange={(v) => setFormData({ ...formData, account_id: v || null })}>
+                <Select value={formData.account_id || "__none__"} onValueChange={(v) => setFormData({ ...formData, account_id: v === "__none__" ? null : v })}>
                   <SelectTrigger><SelectValue placeholder="Не выбран" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Не выбран</SelectItem>
+                    <SelectItem value="__none__">Не выбран</SelectItem>
                     {accounts.map((acc) => <SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>)}
                   </SelectContent>
                 </Select>

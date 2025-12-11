@@ -27,6 +27,11 @@ export const upcomingPaymentFormSchema = z.object({
   amountMajor: z.coerce.number().gt(0, "Сумма должна быть больше нуля"),
   direction: z.enum(["income", "expense"] as const),
   accountName: optionalText(120, "Слишком длинное название счёта"),
+  categoryId: z
+    .string()
+    .optional()
+    .transform((val) => (val && val.length > 0 ? val : undefined))
+    .pipe(z.string().uuid().optional()),
 });
 
 export type UpcomingPaymentFormInput = z.input<typeof upcomingPaymentFormSchema>;
