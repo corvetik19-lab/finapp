@@ -38,19 +38,20 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
     // Проверяем глобальную роль и получаем данные профиля
     const { data: profile, error } = await adminSupabase
       .from('profiles')
-      .select('global_role, phone, avatar_url, created_at')
+      .select('global_role, avatar_url, updated_at')
       .eq('id', user.id)
       .single();
 
     if (!error && profile) {
       isSuperAdmin = profile.global_role === 'super_admin';
-      userPhone = profile.phone || undefined;
+      // Админ глобально тоже считается админом организации
+      isOrgAdmin = profile.global_role === 'admin' || profile.global_role === 'super_admin';
       userAvatarUrl = profile.avatar_url || undefined;
-      userCreatedAt = profile.created_at || undefined;
+      userCreatedAt = profile.updated_at || undefined;
     }
 
-    // Проверяем роль в текущей организации
-    if (organization) {
+    // Проверяем роль в текущей организации (добавляем права, не убираем)
+    if (organization && !isOrgAdmin) {
       const { data: member } = await adminSupabase
         .from('organization_members')
         .select('role')
@@ -58,8 +59,8 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
         .eq('user_id', user.id)
         .single();
 
-      if (member) {
-        isOrgAdmin = member.role === 'admin' || member.role === 'owner';
+      if (member && (member.role === 'admin' || member.role === 'owner')) {
+        isOrgAdmin = true;
       }
     }
 

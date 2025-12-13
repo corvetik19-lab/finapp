@@ -27,6 +27,12 @@ import {
   Landmark,
   Factory,
   Settings,
+  MessageSquare,
+  Video,
+  Kanban,
+  Target,
+  CalendarDays,
+  UsersRound,
   type LucideIcon,
 } from "lucide-react"
 import type { UserPermissions } from "./tenders-layout"
@@ -122,6 +128,20 @@ const tendersNavigation = {
       { title: "Банки", url: "/tenders/dictionaries/banks", icon: Landmark },
       { title: "Типы тендеров", url: "/tenders/dictionaries/types", icon: List },
       { title: "Юр. лица", url: "/tenders/dictionaries/legal-entities", icon: Scale },
+    ],
+  } as NavCollapsibleSection,
+  teamwork: {
+    title: "Командная работа",
+    icon: UsersRound,
+    items: [
+      { title: "Обзор", url: "/tenders/team", icon: UsersRound },
+      { title: "Чат", url: "/tenders/team/chat", icon: MessageSquare },
+      { title: "Конференции", url: "/tenders/team/conferences", icon: Video },
+      { title: "Канбан-доски", url: "/tenders/team/boards", icon: Kanban },
+      { title: "Спринты", url: "/tenders/team/sprints", icon: Target, adminOnly: true },
+      { title: "Загрузка команды", url: "/tenders/team/workload", icon: Users, adminOnly: true },
+      { title: "Календарь занятости", url: "/tenders/team/calendar", icon: CalendarDays, adminOnly: true },
+      { title: "Аналитика", url: "/tenders/team/analytics", icon: BarChart3, adminOnly: true },
     ],
   } as NavCollapsibleSection,
   other: [
@@ -301,6 +321,14 @@ export function TendersSidebar({ userPermissions, ...props }: TendersSidebarProp
           items={tendersNavigation.dictionaries.items}
           userPermissions={userPermissions}
           adminOnly={tendersNavigation.dictionaries.adminOnly}
+        />
+
+        {/* Team Work - Collapsible */}
+        <NavCollapsible
+          title={tendersNavigation.teamwork.title}
+          icon={tendersNavigation.teamwork.icon}
+          items={tendersNavigation.teamwork.items}
+          userPermissions={userPermissions}
         />
 
         {/* Other Items */}
