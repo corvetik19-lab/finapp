@@ -101,8 +101,8 @@ export interface Investment {
   source?: InvestmentSource;
   tender?: {
     id: string;
-    name: string;
-    registry_number: string;
+    subject: string;
+    purchase_number: string;
   };
 }
 
@@ -314,12 +314,9 @@ export interface InvestorInvestmentView {
   transactions: InvestmentTransaction[];
   tender?: {
     id: string;
-    name: string;
-    registry_number: string;
+    subject: string;
+    purchase_number: string;
     status: string;
-    start_date: string;
-    end_date: string;
-    contract_amount: number;
   };
 }
 

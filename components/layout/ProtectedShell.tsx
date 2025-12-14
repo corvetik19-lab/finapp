@@ -25,6 +25,7 @@ export default function ProtectedShell({ children, activeOrganization }: Protect
   const pathname = usePathname();
   const isAiChatPage = pathname === "/ai-chat";
   const isTendersPage = pathname.startsWith("/tenders");
+  const isInvestorsPage = pathname.startsWith("/investors");
   const isFinancePage = pathname.startsWith("/finance");
   const isAdminPage = pathname.startsWith("/admin");
   const isSuperadminPage = pathname.startsWith("/superadmin");
@@ -32,7 +33,7 @@ export default function ProtectedShell({ children, activeOrganization }: Protect
   const [isExiting, setIsExiting] = useState(false);
   
   // Страницы с собственным sidebar
-  const hasOwnSidebar = isTendersPage || isFinancePage || isAdminPage || isSuperadminPage || isSettingsPage;
+  const hasOwnSidebar = isTendersPage || isInvestorsPage || isFinancePage || isAdminPage || isSuperadminPage || isSettingsPage;
 
   const handleExitOrganization = async () => {
     if (isExiting) return;

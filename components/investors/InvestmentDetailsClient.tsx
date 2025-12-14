@@ -332,7 +332,7 @@ export function InvestmentDetailsClient({ investment, transactions, schedule }: 
                 {investment.tender && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Тендер:</span>
-                    <span>{investment.tender.name}</span>
+                    <span>{investment.tender.subject}</span>
                   </div>
                 )}
                 {investment.purpose && (

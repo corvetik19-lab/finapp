@@ -113,7 +113,7 @@ export function SupplierCard({
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       {/* Заголовок */}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">

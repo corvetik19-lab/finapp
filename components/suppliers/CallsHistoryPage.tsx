@@ -126,7 +126,7 @@ export function CallsHistoryPage({ calls, suppliers }: CallsHistoryPageProps) {
   }, [calls]);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">История звонков</h1>
         <p className="text-muted-foreground">

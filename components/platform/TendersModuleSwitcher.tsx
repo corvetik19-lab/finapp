@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Factory, Receipt, FileText } from "lucide-react";
+import { Factory, Receipt, FileText, PiggyBank } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TendersModule {
@@ -39,13 +39,21 @@ const TENDERS_MODULES: TendersModule[] = [
     href: "/tenders/accounting",
     description: "Документы и учёт",
   },
+  {
+    key: "investors",
+    name: "Инвесторы",
+    icon: <PiggyBank className="h-4 w-4" />,
+    color: "#8B5CF6",
+    href: "/investors",
+    description: "Управление инвестициями",
+  },
 ];
 
 export function TendersModuleSwitcher() {
   const pathname = usePathname();
 
-  // Показываем только если находимся в режиме Тендеры
-  if (!pathname.startsWith("/tenders")) {
+  // Показываем только если находимся в режиме Тендеры или Инвесторы
+  if (!pathname.startsWith("/tenders") && !pathname.startsWith("/investors")) {
     return null;
   }
 
@@ -53,6 +61,7 @@ export function TendersModuleSwitcher() {
   const getActiveModule = () => {
     if (pathname.startsWith("/tenders/suppliers")) return "suppliers";
     if (pathname.startsWith("/tenders/accounting")) return "accounting";
+    if (pathname.startsWith("/investors")) return "investors";
     return "tenders";
   };
 

@@ -42,7 +42,7 @@ export function InvestmentsPage({ investments, sources }: InvestmentsPageProps) 
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Инвестиции</h1>
@@ -135,7 +135,7 @@ export function InvestmentsPage({ investments, sources }: InvestmentsPageProps) 
                     <TableCell>
                       <div>{inv.source?.name || "—"}</div>
                       {inv.tender && (
-                        <div className="text-xs text-muted-foreground">→ {inv.tender.name}</div>
+                        <div className="text-xs text-muted-foreground">→ {inv.tender.subject}</div>
                       )}
                     </TableCell>
                     <TableCell className="text-right">

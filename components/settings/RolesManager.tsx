@@ -29,8 +29,38 @@ type RolesManagerProps = {
   companyId?: string | null;
 };
 
-// Только права связанные с тендерами (роли только для режима тендеров)
+// Права для всех модулей платформы
 const AVAILABLE_PERMISSIONS = [
+  // --- Финансы ---
+  { id: "finance:view", label: "Доступ к модулю Финансы", category: "Финансы" },
+  { id: "finance:create", label: "Создание транзакций", category: "Финансы" },
+  { id: "finance:edit", label: "Редактирование транзакций", category: "Финансы" },
+  { id: "finance:delete", label: "Удаление транзакций", category: "Финансы" },
+  { id: "finance:reports", label: "Просмотр отчётов", category: "Финансы" },
+  { id: "finance:budgets", label: "Управление бюджетами", category: "Финансы" },
+  { id: "finance:categories", label: "Управление категориями", category: "Финансы" },
+  { id: "finance:accounts", label: "Управление счетами", category: "Финансы" },
+  { id: "finance:import", label: "Импорт данных", category: "Финансы" },
+  { id: "finance:export", label: "Экспорт данных", category: "Финансы" },
+
+  // --- Инвестиции ---
+  { id: "investments:view", label: "Доступ к модулю Инвестиции", category: "Инвестиции" },
+  { id: "investments:create", label: "Создание операций", category: "Инвестиции" },
+  { id: "investments:edit", label: "Редактирование операций", category: "Инвестиции" },
+  { id: "investments:delete", label: "Удаление операций", category: "Инвестиции" },
+  { id: "investments:portfolio", label: "Управление портфелем", category: "Инвестиции" },
+  { id: "investments:analytics", label: "Аналитика доходности", category: "Инвестиции" },
+  { id: "investments:dividends", label: "Учёт дивидендов", category: "Инвестиции" },
+  { id: "investments:reports", label: "Отчёты по инвестициям", category: "Инвестиции" },
+
+  // --- Личные ---
+  { id: "personal:view", label: "Доступ к модулю Личные", category: "Личные" },
+  { id: "personal:notes", label: "Заметки", category: "Личные" },
+  { id: "personal:tasks", label: "Задачи", category: "Личные" },
+  { id: "personal:bookmarks", label: "Закладки", category: "Личные" },
+  { id: "personal:prompts", label: "Промпты AI", category: "Личные" },
+  { id: "personal:fitness", label: "Фитнес-трекер", category: "Личные" },
+
   // --- Тендеры: Общие ---
   { id: "tenders:view", label: "Доступ к модулю", category: "Тендеры: Общие" },
   { id: "tenders:view_all", label: "Просмотр всех тендеров", category: "Тендеры: Общие" },
@@ -103,12 +133,22 @@ const ROLE_COLORS = [
   "#a8edea", "#ff6b6b", "#4ecdc4", "#95e1d3"
 ];
 
-// Предустановленные шаблоны ролей для тендерного отдела
+// Предустановленные шаблоны ролей
 const ROLE_PRESETS = [
   {
-    name: "Администратор тендеров",
-    description: "Полный доступ ко всем функциям тендерного модуля",
+    name: "Администратор организации",
+    description: "Полный доступ ко всем модулям и функциям",
     permissions: [
+      // Финансы
+      "finance:view", "finance:create", "finance:edit", "finance:delete",
+      "finance:reports", "finance:budgets", "finance:categories", "finance:accounts",
+      "finance:import", "finance:export",
+      // Инвестиции
+      "investments:view", "investments:create", "investments:edit", "investments:delete",
+      "investments:portfolio", "investments:analytics", "investments:dividends", "investments:reports",
+      // Личные
+      "personal:view", "personal:notes", "personal:tasks", "personal:bookmarks", "personal:prompts", "personal:fitness",
+      // Тендеры
       "tenders:view", "tenders:view_all", "tenders:create", "tenders:edit", "tenders:delete",
       "tenders:import", "tenders:export",
       "tenders:stages", "tenders:stages:move_forward", "tenders:stages:move_backward", 
@@ -120,7 +160,35 @@ const ROLE_PRESETS = [
       "tenders:auction:view", "tenders:auction:participate", "tenders:auction:set_result",
       "tenders:contract:view", "tenders:contract:create", "tenders:contract:edit", "tenders:contract:sign", "tenders:contract:close",
       "tenders:assign:manager", "tenders:assign:specialist", "tenders:assign:calculator", "tenders:assign:reviewer", "tenders:assign:executor",
-      "tenders:analytics:view", "tenders:analytics:reports", "tenders:analytics:kpi", "tenders:analytics:finance"
+      "tenders:analytics:view", "tenders:analytics:reports", "tenders:analytics:kpi", "tenders:analytics:finance",
+      // Администрирование
+      "employees:view", "employees:view_all", "employees:create", "employees:edit", "employees:delete",
+      "users:manage", "roles:manage", "org:settings", "audit:view"
+    ],
+    color: "#e11d48"
+  },
+  {
+    name: "Администратор тендеров",
+    description: "Полный доступ ко всем функциям тендерного модуля",
+    permissions: [
+      // Финансы и Инвестиции (просмотр)
+      "finance:view", "finance:reports", "investments:view", "investments:reports", "personal:view",
+      // Тендеры (полный доступ)
+      "tenders:view", "tenders:view_all", "tenders:create", "tenders:edit", "tenders:delete",
+      "tenders:import", "tenders:export",
+      "tenders:stages", "tenders:stages:move_forward", "tenders:stages:move_backward", 
+      "tenders:stages:archive", "tenders:stages:restore",
+      "tenders:calc:view", "tenders:calc:create", "tenders:calc:edit", "tenders:calc:approve",
+      "tenders:calc:set_price", "tenders:calc:view_margin",
+      "tenders:docs:view", "tenders:docs:upload", "tenders:docs:delete", "tenders:docs:download", "tenders:docs:sign",
+      "tenders:review:view", "tenders:review:approve", "tenders:review:reject", "tenders:review:comment", "tenders:review:return",
+      "tenders:auction:view", "tenders:auction:participate", "tenders:auction:set_result",
+      "tenders:contract:view", "tenders:contract:create", "tenders:contract:edit", "tenders:contract:sign", "tenders:contract:close",
+      "tenders:assign:manager", "tenders:assign:specialist", "tenders:assign:calculator", "tenders:assign:reviewer", "tenders:assign:executor",
+      "tenders:analytics:view", "tenders:analytics:reports", "tenders:analytics:kpi", "tenders:analytics:finance",
+      // Сотрудники
+      "employees:view", "employees:view_all", "employees:create", "employees:edit", "employees:delete",
+      "users:manage", "roles:manage", "org:settings", "audit:view"
     ],
     color: "#667eea"
   },

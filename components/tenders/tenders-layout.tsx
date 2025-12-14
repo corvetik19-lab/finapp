@@ -5,6 +5,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { TendersSidebar } from "./tenders-sidebar"
 import { SuppliersSidebar } from "@/components/suppliers/suppliers-sidebar"
 import { AccountingSidebar } from "@/components/accounting/accounting-sidebar"
+import { InvestorsSidebar } from "@/components/investors/layout/InvestorsSidebar"
 import { Separator } from "@/components/ui/separator"
 import {
   Breadcrumb,
@@ -69,6 +70,15 @@ const breadcrumbTitles: Record<string, string> = {
   "/tenders/accounting/kudir": "КУДиР",
   "/tenders/accounting/reports": "Отчёты",
   "/tenders/accounting/settings": "Настройки",
+  // Investors
+  "/investors": "Инвесторы",
+  "/investors/sources": "Источники",
+  "/investors/investments": "Инвестиции",
+  "/investors/investments/new": "Новая инвестиция",
+  "/investors/returns": "График возвратов",
+  "/investors/reports": "Отчёты",
+  "/investors/access": "Доступ инвесторов",
+  "/investors/settings": "Настройки",
 }
 
 function getBreadcrumbs(pathname: string) {
@@ -104,6 +114,7 @@ export function TendersLayout({ children, userPermissions }: TendersLayoutProps)
   // Определяем какой sidebar показывать
   const isSuppliers = pathname.startsWith("/tenders/suppliers")
   const isAccounting = pathname.startsWith("/tenders/accounting")
+  const isInvestors = pathname.startsWith("/investors")
 
   const renderSidebar = () => {
     if (isSuppliers) {
@@ -111,6 +122,9 @@ export function TendersLayout({ children, userPermissions }: TendersLayoutProps)
     }
     if (isAccounting) {
       return <AccountingSidebar userPermissions={userPermissions} />
+    }
+    if (isInvestors) {
+      return <InvestorsSidebar className="top-16 h-[calc(100svh-4rem)]" />
     }
     return <TendersSidebar className="top-16 h-[calc(100svh-4rem)]" userPermissions={userPermissions} />
   }
@@ -140,7 +154,7 @@ export function TendersLayout({ children, userPermissions }: TendersLayoutProps)
           </Breadcrumb>
         </header>
         <main className="flex-1 overflow-hidden bg-white">
-          <div className="h-full overflow-y-auto overflow-x-hidden px-4 py-2">
+          <div className="h-full overflow-y-auto overflow-x-hidden px-4 py-4">
             {children}
           </div>
         </main>

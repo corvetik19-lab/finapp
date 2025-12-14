@@ -1,7 +1,8 @@
-"use client";
+"use client"
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import * as React from "react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import {
   LayoutDashboard,
   Building2,
@@ -10,75 +11,119 @@ import {
   BarChart3,
   Users,
   Settings,
-  ArrowLeft,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
+  PiggyBank,
+  type LucideIcon,
+} from "lucide-react"
 
-const menuItems = [
-  { href: "/investors", label: "Дашборд", icon: LayoutDashboard },
-  { href: "/investors/sources", label: "Источники", icon: Building2 },
-  { href: "/investors/investments", label: "Инвестиции", icon: FileText },
-  { href: "/investors/returns", label: "График возвратов", icon: CalendarClock },
-  { href: "/investors/reports", label: "Отчёты", icon: BarChart3 },
-  { href: "/investors/access", label: "Доступ инвесторов", icon: Users },
-  { href: "/investors/settings", label: "Настройки", icon: Settings },
-];
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+} from "@/components/ui/sidebar"
 
-export function InvestorsSidebar() {
-  const pathname = usePathname();
+type NavItem = {
+  title: string
+  url: string
+  icon: LucideIcon
+}
 
-  const isActive = (href: string) => {
-    if (href === "/investors") return pathname === "/investors";
-    return pathname.startsWith(href);
-  };
+type NavSection = {
+  title: string
+  items: NavItem[]
+}
+
+const investorsNavigation: NavSection[] = [
+  {
+    title: "Управление",
+    items: [
+      { title: "Дашборд", url: "/investors", icon: LayoutDashboard },
+      { title: "Источники", url: "/investors/sources", icon: Building2 },
+      { title: "Инвестиции", url: "/investors/investments", icon: FileText },
+    ],
+  },
+  {
+    title: "Аналитика",
+    items: [
+      { title: "График возвратов", url: "/investors/returns", icon: CalendarClock },
+      { title: "Отчёты", url: "/investors/reports", icon: BarChart3 },
+    ],
+  },
+  {
+    title: "Настройки",
+    items: [
+      { title: "Доступ инвесторов", url: "/investors/access", icon: Users },
+      { title: "Настройки", url: "/investors/settings", icon: Settings },
+    ],
+  },
+]
+
+function NavSectionComponent({ section }: { section: NavSection }) {
+  const pathname = usePathname()
 
   return (
-    <aside className="w-64 border-r bg-card flex flex-col h-full">
-      <div className="p-4 border-b">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">💰</span>
-          <span className="font-semibold text-lg">Инвесторы</span>
-        </div>
-      </div>
-
-      <ScrollArea className="flex-1 py-2">
-        <nav className="flex flex-col gap-1 px-2">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.href);
-
+    <SidebarGroup>
+      <SidebarGroupLabel>{section.title}</SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {section.items.map((item) => {
+            const isActive = item.url === "/investors" 
+              ? pathname === "/investors"
+              : pathname === item.url || pathname.startsWith(item.url + "/")
             return (
-              <Button
-                key={item.href}
-                variant={active ? "secondary" : "ghost"}
-                className={cn(
-                  "w-full justify-start gap-3",
-                  active && "bg-secondary font-medium"
-                )}
-                asChild
-              >
-                <Link href={item.href}>
-                  <Icon className="h-4 w-4" />
-                  {item.label}
-                </Link>
-              </Button>
-            );
+              <SidebarMenuItem key={item.url}>
+                <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
+                  <Link href={item.url}>
+                    <item.icon className="size-4" />
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
           })}
-        </nav>
-      </ScrollArea>
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  )
+}
 
-      <Separator />
-      <div className="p-2">
-        <Button variant="ghost" className="w-full justify-start gap-2 text-muted-foreground" asChild>
-          <Link href="/dashboard">
-            <ArrowLeft className="h-4 w-4" />
-            Вернуться в панель
-          </Link>
-        </Button>
-      </div>
-    </aside>
-  );
+export function InvestorsSidebar(props: React.ComponentProps<typeof Sidebar>) {
+  return (
+    <Sidebar collapsible="icon" {...props}>
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" asChild>
+              <Link href="/investors">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-purple-600 text-white">
+                  <PiggyBank className="size-4" />
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">Инвесторы</span>
+                  <span className="truncate text-xs text-muted-foreground">Управление финансированием</span>
+                </div>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+
+      <SidebarContent>
+        {investorsNavigation.map((section) => (
+          <NavSectionComponent 
+            key={section.title} 
+            section={section}
+          />
+        ))}
+      </SidebarContent>
+
+      <SidebarRail />
+    </Sidebar>
+  )
 }
