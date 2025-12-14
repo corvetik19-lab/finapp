@@ -2,96 +2,11 @@
 
 import { createRSCClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
+import type { TaxType, TaxPaymentStatus, TaxPayment, TaxCalendarEntry } from "./tax-calendar-types";
+import { TAX_DEADLINES } from "./tax-calendar-types";
 
-// Типы налоговых платежей
-export type TaxType = 
-  | "usn"           // УСН
-  | "usn_advance"   // Авансовые платежи УСН
-  | "ndfl"          // НДФЛ
-  | "nds"           // НДС
-  | "insurance"     // Страховые взносы
-  | "property"      // Налог на имущество
-  | "transport"     // Транспортный налог
-  | "land"          // Земельный налог
-  | "patent"        // Патент
-  | "other";        // Прочие
-
-export type TaxPaymentStatus = "pending" | "paid" | "overdue" | "cancelled";
-
-export interface TaxPayment {
-  id: string;
-  companyId: string;
-  taxType: TaxType;
-  taxName: string;
-  period: string;          // "2024-Q1", "2024-01", "2024"
-  dueDate: string;         // Срок оплаты
-  amount: number | null;   // Сумма в копейках
-  calculatedAmount: number | null; // Рассчитанная сумма
-  paidAmount: number;      // Оплаченная сумма
-  paidDate: string | null;
-  status: TaxPaymentStatus;
-  notes: string | null;
-  documentId: string | null; // Связь с платёжным документом
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface TaxCalendarEntry {
-  id: string;
-  taxType: TaxType;
-  taxName: string;
-  period: string;
-  dueDate: string;
-  amount: number | null;
-  status: TaxPaymentStatus;
-  daysUntilDue: number;
-  isOverdue: boolean;
-  paidAmount: number;
-}
-
-// Стандартные сроки налогов для РФ
-const TAX_DEADLINES: Record<TaxType, { name: string; deadlines: string[] }> = {
-  usn: {
-    name: "УСН (годовой)",
-    deadlines: ["04-28"], // До 28 апреля следующего года (для ООО)
-  },
-  usn_advance: {
-    name: "УСН (авансовый платёж)",
-    deadlines: ["04-28", "07-28", "10-28"], // Ежеквартально до 28 числа
-  },
-  ndfl: {
-    name: "НДФЛ",
-    deadlines: ["01-28", "02-28", "03-28", "04-28", "05-28", "06-28", "07-28", "08-28", "09-28", "10-28", "11-28", "12-28"],
-  },
-  nds: {
-    name: "НДС",
-    deadlines: ["01-28", "02-28", "03-28", "04-28", "05-28", "06-28", "07-28", "08-28", "09-28", "10-28", "11-28", "12-28"],
-  },
-  insurance: {
-    name: "Страховые взносы",
-    deadlines: ["01-28", "02-28", "03-28", "04-28", "05-28", "06-28", "07-28", "08-28", "09-28", "10-28", "11-28", "12-28"],
-  },
-  property: {
-    name: "Налог на имущество",
-    deadlines: ["02-28"], // Обычно раз в год
-  },
-  transport: {
-    name: "Транспортный налог",
-    deadlines: ["02-28"], // Раз в год
-  },
-  land: {
-    name: "Земельный налог",
-    deadlines: ["02-28"], // Раз в год
-  },
-  patent: {
-    name: "Патент",
-    deadlines: [], // Индивидуально
-  },
-  other: {
-    name: "Прочие налоги",
-    deadlines: [],
-  },
-};
+// Re-export types for consumers
+export type { TaxType, TaxPaymentStatus, TaxPayment, TaxCalendarEntry };
 
 // Получить календарь налогов на год
 export async function getTaxCalendar(year: number): Promise<TaxCalendarEntry[]> {
@@ -452,5 +367,4 @@ export async function getTaxStatistics(year: number): Promise<{
   return { totalDue, totalPaid, pendingCount, overdueCount, paidCount };
 }
 
-// Экспорт констант
-export { TAX_DEADLINES };
+// Constants are exported from ./tax-calendar-types.ts

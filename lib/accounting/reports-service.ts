@@ -635,11 +635,11 @@ export async function getTenderReport(filters: ReportFilters): Promise<TenderRep
 }
 
 // Вспомогательные функции для периодов
-export function getDateRangeForPeriod(
+export async function getDateRangeForPeriod(
   period: ReportPeriod,
   customFrom?: string,
   customTo?: string
-): { dateFrom: string; dateTo: string } {
+): Promise<{ dateFrom: string; dateTo: string }> {
   const now = new Date();
 
   switch (period) {

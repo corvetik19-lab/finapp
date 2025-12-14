@@ -253,7 +253,7 @@ export async function getCashBalance(): Promise<{ balance: number; lastDate?: st
 // Сумма прописью
 // ============================================
 
-export function amountToWords(kopeks: number): string {
+export async function amountToWords(kopeks: number): Promise<string> {
   const rubles = Math.floor(kopeks / 100);
   const kop = kopeks % 100;
   

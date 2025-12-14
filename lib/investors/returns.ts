@@ -179,13 +179,21 @@ export async function getUpcomingPayments(days: number = 30): Promise<Investment
 /**
  * Расчёт пени за просрочку
  */
-export function calculatePenalty(
+function calculatePenaltyInternal(
   amount: number,
   daysOverdue: number,
   penaltyRate: number = 0.1 // 0.1% в день по умолчанию
 ): number {
   if (daysOverdue <= 0) return 0;
   return Math.round(amount * (penaltyRate / 100) * daysOverdue);
+}
+
+export async function calculatePenalty(
+  amount: number,
+  daysOverdue: number,
+  penaltyRate: number = 0.1
+): Promise<number> {
+  return calculatePenaltyInternal(amount, daysOverdue, penaltyRate);
 }
 
 /**

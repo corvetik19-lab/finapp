@@ -33,16 +33,44 @@ import {
   CheckCircle2,
   X,
 } from "lucide-react";
-import {
+import type {
   DocumentFormType,
   DocumentFormData,
   DocumentItem,
   DocumentStatus,
+} from "@/lib/accounting/document-forms-types";
+import {
   DOCUMENT_TYPE_NAMES,
   DOCUMENT_STATUS_NAMES,
-  calculateItemTotals,
-  calculateDocumentTotals,
-} from "@/lib/accounting/document-forms-service";
+} from "@/lib/accounting/document-forms-types";
+
+// Local sync calculation functions for client-side use
+function calculateItemTotalsLocal(
+  quantity: number,
+  price: number,
+  vatRate: number
+): { vatAmount: number; totalAmount: number } {
+  const baseAmount = quantity * price;
+  const vatAmount = Math.round(baseAmount * vatRate / 100);
+  const totalAmount = baseAmount + vatAmount;
+  return { vatAmount, totalAmount };
+}
+
+function calculateDocumentTotalsLocal(
+  items: DocumentItem[]
+): { subtotalAmount: number; vatAmount: number; totalAmount: number } {
+  let subtotalAmount = 0;
+  let vatAmount = 0;
+  let totalAmount = 0;
+
+  for (const item of items) {
+    subtotalAmount += item.quantity * item.price;
+    vatAmount += item.vatAmount;
+    totalAmount += item.totalAmount;
+  }
+
+  return { subtotalAmount, vatAmount, totalAmount };
+}
 
 interface CounterpartyOption {
   id: string;
@@ -140,7 +168,7 @@ export function UniversalDocumentForm({
 
   // Пересчёт итогов при изменении позиций
   useEffect(() => {
-    const newTotals = calculateDocumentTotals(items);
+    const newTotals = calculateDocumentTotalsLocal(items);
     setTotals(newTotals);
   }, [items]);
 
@@ -190,7 +218,7 @@ export function UniversalDocumentForm({
         }
 
         // Пересчитываем суммы
-        const { vatAmount, totalAmount } = calculateItemTotals(
+        const { vatAmount, totalAmount } = calculateItemTotalsLocal(
           item.quantity,
           item.price,
           item.vatRate

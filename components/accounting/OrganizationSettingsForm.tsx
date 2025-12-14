@@ -24,14 +24,16 @@ import {
   Loader2,
   Search,
 } from "lucide-react";
-import {
+import type {
   OrganizationSettings,
   OrganizationType,
   TaxSystem,
+} from "@/lib/accounting/settings-types";
+import {
   ORGANIZATION_TYPES,
   TAX_SYSTEMS,
   VAT_RATES,
-} from "@/lib/accounting/settings-service";
+} from "@/lib/accounting/settings-types";
 
 interface OrganizationSettingsFormProps {
   initialSettings?: OrganizationSettings | null;

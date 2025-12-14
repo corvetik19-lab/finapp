@@ -38,12 +38,9 @@ import {
   Lock,
 } from "lucide-react";
 import { useToast } from "@/components/toast/ToastContext";
-import {
-  generateContract,
-  CONTRACT_TYPES,
-  type ContractTemplate,
-  type GeneratedContract,
-} from "@/lib/accounting/documents/contract-templates";
+import { generateContract } from "@/lib/accounting/documents/contract-templates";
+import type { ContractTemplate, GeneratedContract } from "@/lib/accounting/documents/contract-templates-types";
+import { CONTRACT_TYPES } from "@/lib/accounting/documents/contract-templates-types";
 import type { AccountingCounterparty } from "@/lib/accounting/types";
 
 interface ContractTemplatesPageProps {

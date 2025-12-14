@@ -2,55 +2,10 @@
 
 import { createRSCClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
+import type { TenderExpense, TenderExpenseSummary } from "./tender-expenses-types";
 
-// ============================================
-// Типы для расходов по тендерам
-// ============================================
-
-export interface TenderExpense {
-  id: string;
-  tender_id: string;
-  company_id: string;
-  
-  // Источник расхода
-  source_type: "document" | "transaction" | "manual";
-  document_id?: string;
-  transaction_id?: string;
-  
-  // Данные
-  expense_date: string;
-  description: string;
-  amount: number;
-  
-  // Категория расхода
-  category: "materials" | "services" | "logistics" | "salary" | "overhead" | "other";
-  
-  // Контрагент
-  counterparty_id?: string;
-  counterparty_name?: string;
-  
-  created_at: string;
-  updated_at: string;
-}
-
-export interface TenderExpenseSummary {
-  tender_id: string;
-  purchase_number: string;
-  subject: string;
-  contract_price: number;
-  
-  // Расходы по категориям
-  materials: number;
-  services: number;
-  logistics: number;
-  salary: number;
-  overhead: number;
-  other: number;
-  
-  total_expenses: number;
-  gross_profit: number;
-  margin_percent: number;
-}
+// Re-export types for consumers
+export type { TenderExpense, TenderExpenseSummary };
 
 // ============================================
 // CRUD операции
@@ -387,11 +342,4 @@ function categorizeDocument(docType: string): TenderExpense["category"] {
   return mapping[docType] || "other";
 }
 
-export const EXPENSE_CATEGORIES: { value: TenderExpense["category"]; label: string }[] = [
-  { value: "materials", label: "Материалы" },
-  { value: "services", label: "Услуги" },
-  { value: "logistics", label: "Логистика" },
-  { value: "salary", label: "Зарплата" },
-  { value: "overhead", label: "Накладные" },
-  { value: "other", label: "Прочее" },
-];
+// Константы экспортируются из ./tender-expenses-types.ts

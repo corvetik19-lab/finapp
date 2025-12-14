@@ -42,10 +42,9 @@ import {
   addTenderExpense,
   deleteTenderExpense,
   getTenderExpenseSummary,
-  EXPENSE_CATEGORIES,
-  type TenderExpense,
-  type TenderExpenseSummary,
 } from "@/lib/accounting/tender-expenses";
+import type { TenderExpense, TenderExpenseSummary } from "@/lib/accounting/tender-expenses-types";
+import { EXPENSE_CATEGORIES } from "@/lib/accounting/tender-expenses-types";
 
 interface TenderExpensesPanelProps {
   tenderId: string;

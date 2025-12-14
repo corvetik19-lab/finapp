@@ -2,75 +2,10 @@
 
 import { createRSCClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
+import type { DocumentFormType, DocumentStatus, DocumentItem, DocumentFormData } from "./document-forms-types";
 
-// Типы документов
-export type DocumentFormType = 
-  | "invoice"           // Счёт на оплату
-  | "act"               // Акт выполненных работ
-  | "invoice_factura"   // Счёт-фактура
-  | "upd"               // Универсальный передаточный документ
-  | "waybill"           // Товарная накладная (ТОРГ-12)
-  | "payment_order"     // Платёжное поручение
-  | "contract";         // Договор
-
-export type DocumentStatus = "draft" | "issued" | "paid" | "cancelled";
-
-// Позиция документа
-export interface DocumentItem {
-  id?: string;
-  name: string;
-  description?: string;
-  unit: string;
-  quantity: number;
-  price: number;           // В копейках
-  vatRate: number;         // 0, 10, 20
-  vatAmount: number;       // В копейках
-  totalAmount: number;     // В копейках (с НДС)
-}
-
-// Данные документа
-export interface DocumentFormData {
-  id?: string;
-  documentType: DocumentFormType;
-  documentNumber: string;
-  documentDate: string;
-  
-  // Контрагент
-  counterpartyId?: string;
-  counterpartyName: string;
-  counterpartyInn?: string;
-  counterpartyKpp?: string;
-  counterpartyAddress?: string;
-  counterpartyBank?: string;
-  counterpartyBik?: string;
-  counterpartyAccount?: string;
-  
-  // Позиции
-  items: DocumentItem[];
-  
-  // Суммы
-  subtotalAmount: number;  // Без НДС
-  vatAmount: number;       // Сумма НДС
-  totalAmount: number;     // Итого с НДС
-  
-  // Дополнительно
-  status: DocumentStatus;
-  notes?: string;
-  paymentDueDate?: string;
-  paymentDate?: string;
-  tenderId?: string;
-  
-  // Для счёт-фактуры
-  correctionNumber?: string;
-  correctionDate?: string;
-  
-  // Для договора
-  contractNumber?: string;
-  contractDate?: string;
-  contractSubject?: string;
-  contractStartDate?: string;
-  contractEndDate?: string;
-}
+// Re-export types for consumers (constants must be imported from document-forms-types.ts directly)
+export type { DocumentFormType, DocumentStatus, DocumentItem, DocumentFormData };
 
 // Получить данные организации для документа
 export async function getOrganizationForDocument(): Promise<{
@@ -493,20 +428,20 @@ export async function getDocumentForForm(
 }
 
 // Вспомогательные функции для расчётов
-export function calculateItemTotals(
+export async function calculateItemTotals(
   quantity: number,
   price: number,
   vatRate: number
-): { vatAmount: number; totalAmount: number } {
+): Promise<{ vatAmount: number; totalAmount: number }> {
   const baseAmount = quantity * price;
   const vatAmount = Math.round(baseAmount * vatRate / 100);
   const totalAmount = baseAmount + vatAmount;
   return { vatAmount, totalAmount };
 }
 
-export function calculateDocumentTotals(
+export async function calculateDocumentTotals(
   items: DocumentItem[]
-): { subtotalAmount: number; vatAmount: number; totalAmount: number } {
+): Promise<{ subtotalAmount: number; vatAmount: number; totalAmount: number }> {
   let subtotalAmount = 0;
   let vatAmount = 0;
   let totalAmount = 0;
@@ -520,20 +455,3 @@ export function calculateDocumentTotals(
   return { subtotalAmount, vatAmount, totalAmount };
 }
 
-// Названия документов
-export const DOCUMENT_TYPE_NAMES: Record<DocumentFormType, string> = {
-  invoice: "Счёт на оплату",
-  act: "Акт выполненных работ",
-  invoice_factura: "Счёт-фактура",
-  upd: "УПД",
-  waybill: "Товарная накладная",
-  payment_order: "Платёжное поручение",
-  contract: "Договор",
-};
-
-export const DOCUMENT_STATUS_NAMES: Record<DocumentStatus, string> = {
-  draft: "Черновик",
-  issued: "Выставлен",
-  paid: "Оплачен",
-  cancelled: "Отменён",
-};

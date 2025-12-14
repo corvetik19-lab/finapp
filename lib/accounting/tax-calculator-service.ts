@@ -2,57 +2,11 @@
 
 import { createRSCClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
+import type { Usn6Result, Usn15Result, VatResult, IpInsuranceResult, EmployeeInsuranceResult } from "./tax-calculator-types";
+import { TAX_CONSTANTS_2024 } from "./tax-calculator-types";
 
-// Константы для расчётов 2024 года
-const TAX_CONSTANTS_2024 = {
-  // УСН
-  usn6Rate: 6, // %
-  usn15Rate: 15, // %
-  usn15MinRate: 1, // Минимальный налог 1%
-  
-  // НДС
-  vat20Rate: 20, // %
-  vat10Rate: 10, // %
-  vat0Rate: 0, // %
-  
-  // Страховые взносы ИП
-  ipFixedPension: 4943700, // 49 437 руб в копейках
-  ipFixedMedical: 2940300, // 29 403 руб в копейках (включено в единый платёж)
-  ipFixedTotal: 4943700, // Единый платёж с 2024
-  ipExcessRate: 1, // 1% с дохода свыше 300 000
-  ipExcessThreshold: 30000000, // 300 000 руб в копейках
-  ipMaxPension: 27747800, // Максимум пенсионных взносов
-  
-  // Страховые взносы за сотрудников
-  employeePensionRate: 22, // %
-  employeeMedicalRate: 5.1, // %
-  employeeSocialRate: 2.9, // %
-  employeeTotalRate: 30, // % (единый тариф)
-  employeeReducedRate: 15, // % (пониженный для МСП свыше МРОТ)
-  mrot: 1916600, // МРОТ 2024 - 19 166 руб в копейках
-  
-  // Лимиты УСН
-  usnIncomeLimit: 25100000000, // 251 млн руб в копейках
-  usnEmployeeLimit: 130, // Человек
-};
-
-// Результат расчёта УСН 6%
-export interface Usn6Result {
-  income: number;
-  taxBase: number;
-  taxCalculated: number;
-  insuranceDeduction: number; // Вычет страховых взносов
-  taxToPay: number;
-  effectiveRate: number;
-  quarters: {
-    quarter: number;
-    income: number;
-    taxCalculated: number;
-    insuranceDeduction: number;
-    advancePayment: number;
-    paidAdvances: number;
-  }[];
-}
+// Re-export types for consumers
+export type { Usn6Result, Usn15Result, VatResult, IpInsuranceResult, EmployeeInsuranceResult };
 
 // Расчёт УСН 6% (Доходы)
 export async function calculateUsn6(
@@ -189,27 +143,6 @@ function emptyUsn6Result(): Usn6Result {
   };
 }
 
-// Результат расчёта УСН 15%
-export interface Usn15Result {
-  income: number;
-  expenses: number;
-  taxBase: number;
-  taxCalculated: number;
-  minTax: number;
-  taxToPay: number;
-  isMinTax: boolean;
-  effectiveRate: number;
-  quarters: {
-    quarter: number;
-    income: number;
-    expenses: number;
-    taxBase: number;
-    taxCalculated: number;
-    advancePayment: number;
-    paidAdvances: number;
-  }[];
-}
-
 // Расчёт УСН 15% (Доходы минус расходы)
 export async function calculateUsn15(year: number): Promise<Usn15Result> {
   const supabase = await createRSCClient();
@@ -335,21 +268,6 @@ function emptyUsn15Result(): Usn15Result {
   };
 }
 
-// Результат расчёта НДС
-export interface VatResult {
-  outputVat: number; // НДС к начислению
-  inputVat: number;  // НДС к вычету
-  vatToPay: number;  // НДС к уплате
-  vatToRefund: number; // НДС к возмещению
-  documents: {
-    type: "output" | "input";
-    documentNumber: string;
-    counterpartyName: string;
-    amount: number;
-    vatAmount: number;
-  }[];
-}
-
 // Расчёт НДС
 export async function calculateVat(
   year: number,
@@ -427,20 +345,6 @@ export async function calculateVat(
   };
 }
 
-// Результат расчёта страховых взносов ИП
-export interface IpInsuranceResult {
-  fixedContributions: number;
-  excessContributions: number;
-  totalContributions: number;
-  income: number;
-  excessIncome: number;
-  deadlines: {
-    type: string;
-    amount: number;
-    dueDate: string;
-  }[];
-}
-
 // Расчёт страховых взносов ИП
 export async function calculateIpInsurance(year: number): Promise<IpInsuranceResult> {
   const supabase = await createRSCClient();
@@ -497,26 +401,6 @@ export async function calculateIpInsurance(year: number): Promise<IpInsuranceRes
       },
     ],
   };
-}
-
-// Результат расчёта взносов за сотрудников
-export interface EmployeeInsuranceResult {
-  employees: {
-    name: string;
-    salary: number;
-    pensionContribution: number;
-    medicalContribution: number;
-    socialContribution: number;
-    totalContribution: number;
-  }[];
-  totals: {
-    totalSalary: number;
-    totalPension: number;
-    totalMedical: number;
-    totalSocial: number;
-    totalContributions: number;
-  };
-  monthlyTotal: number;
 }
 
 // Расчёт страховых взносов за сотрудников (упрощённый)
@@ -579,5 +463,4 @@ export async function calculateEmployeeInsurance(
   };
 }
 
-// Экспорт констант
-export { TAX_CONSTANTS_2024 };
+// Constants are exported from ./tax-calculator-types.ts
