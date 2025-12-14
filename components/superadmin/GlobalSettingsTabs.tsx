@@ -15,14 +15,21 @@ import {
   Database,
   Plus,
   CheckCircle,
-  XCircle
+  XCircle,
+  ChevronRight
 } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { GlobalModesManager } from "./GlobalModesManager";
+import { GlobalRolesManager } from "./GlobalRolesManager";
 import { OrganizationsList } from "@/components/admin/organizations-list";
 import { CreateOrganizationModal } from "@/components/admin/create-organization-modal";
 import type { AppModeKey } from "@/lib/platform/modes-config";
 import type { Organization } from "@/lib/auth/types";
-import type { AdminAuthUser } from "@/lib/admin/users";
+import type { UserWithOrganizations } from "@/lib/admin/users";
 
 interface ModeInfo {
   key: string;
@@ -31,18 +38,42 @@ interface ModeInfo {
   description: string;
 }
 
+interface RoleConfig {
+  id: string;
+  role_key: string;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  allowed_modules: string[];
+  sort_order: number;
+  is_active: boolean;
+}
+
 interface GlobalSettingsTabsProps {
   enabledModes: AppModeKey[];
   allModes: readonly ModeInfo[];
   organizations: Organization[];
-  users: AdminAuthUser[];
+  users: UserWithOrganizations[];
+  roles?: RoleConfig[];
 }
+
+const ROLE_LABELS: Record<string, string> = {
+  super_admin: "Супер-админ",
+  admin: "Админ",
+  manager: "Менеджер",
+  accountant: "Бухгалтер",
+  supplier_manager: "Менеджер поставщиков",
+  specialist: "Специалист",
+  viewer: "Наблюдатель",
+};
 
 export function GlobalSettingsTabs({ 
   enabledModes, 
   allModes, 
   organizations, 
-  users 
+  users,
+  roles = []
 }: GlobalSettingsTabsProps) {
   const [activeTab, setActiveTab] = useState("modes");
 
@@ -166,39 +197,136 @@ export function GlobalSettingsTabs({
               Пользователи платформы
             </CardTitle>
             <CardDescription>
-              Все зарегистрированные пользователи системы
+              Все зарегистрированные пользователи с их организациями
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="rounded-lg border">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Email</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Имя</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Роль</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.slice(0, 20).map((user) => (
-                    <tr key={user.id} className="border-b last:border-0 hover:bg-muted/30">
-                      <td className="py-3 px-4 text-sm">{user.email || "—"}</td>
-                      <td className="py-3 px-4 text-sm">{user.full_name || "—"}</td>
-                      <td className="py-3 px-4 text-sm">
-                        <Badge variant={user.global_role === "super_admin" ? "default" : "secondary"}>
-                          {user.global_role || "user"}
-                        </Badge>
-                      </td>
-                    </tr>
+          <CardContent className="space-y-6">
+            {/* Группировка по организациям */}
+            {(() => {
+              // Группируем пользователей по организациям
+              const orgUsers = new Map<string, { org: { id: string; name: string }; users: typeof users }>();
+              const noOrgUsers: typeof users = [];
+
+              users.forEach(user => {
+                if (user.organizations.length === 0) {
+                  noOrgUsers.push(user);
+                } else {
+                  user.organizations.forEach(org => {
+                    if (!orgUsers.has(org.id)) {
+                      orgUsers.set(org.id, { org, users: [] });
+                    }
+                    orgUsers.get(org.id)!.users.push(user);
+                  });
+                }
+              });
+
+              return (
+                <>
+                  {/* Пользователи по организациям */}
+                  {Array.from(orgUsers.values()).map(({ org, users: orgMembers }) => (
+                    <Collapsible key={org.id} defaultOpen={false} className="space-y-2">
+                      <CollapsibleTrigger className="flex items-center gap-2 w-full hover:bg-muted/50 rounded-lg p-2 -ml-2 transition-colors group">
+                        <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
+                        <Building2 className="h-5 w-5 text-blue-500" />
+                        <h3 className="font-semibold text-base">{org.name}</h3>
+                        <Badge variant="outline" className="ml-2">{orgMembers.length}</Badge>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="rounded-lg border ml-6">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="border-b bg-muted/50">
+                                <th className="text-left py-2 px-4 text-xs font-semibold text-muted-foreground uppercase">Пользователь</th>
+                                <th className="text-left py-2 px-4 text-xs font-semibold text-muted-foreground uppercase">Роль в орг.</th>
+                                <th className="text-left py-2 px-4 text-xs font-semibold text-muted-foreground uppercase">Глобальная роль</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {orgMembers.map((user) => {
+                                const userOrgRole = user.organizations.find(o => o.id === org.id)?.role;
+                                return (
+                                  <tr key={user.id} className="border-b last:border-0 hover:bg-muted/30">
+                                    <td className="py-2 px-4">
+                                      <div className="flex flex-col">
+                                        <span className="text-sm font-medium">{user.full_name || "Без имени"}</span>
+                                        <span className="text-xs text-muted-foreground">{user.email}</span>
+                                      </div>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                      <Badge variant="outline" className="text-xs">
+                                        {ROLE_LABELS[userOrgRole || ""] || userOrgRole || "—"}
+                                      </Badge>
+                                    </td>
+                                    <td className="py-2 px-4">
+                                      {user.global_role === "super_admin" ? (
+                                        <Badge className="bg-purple-500 text-xs">
+                                          👑 Супер-админ
+                                        </Badge>
+                                      ) : (
+                                        <Badge variant="secondary" className="text-xs">
+                                          {user.global_role || "user"}
+                                        </Badge>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   ))}
-                </tbody>
-              </table>
-              {users.length > 20 && (
-                <div className="p-3 text-center text-sm text-muted-foreground border-t">
-                  Показано 20 из {users.length} пользователей
-                </div>
-              )}
-            </div>
+
+                  {/* Пользователи без организации */}
+                  {noOrgUsers.length > 0 && (
+                    <Collapsible defaultOpen={false} className="space-y-2">
+                      <CollapsibleTrigger className="flex items-center gap-2 w-full hover:bg-muted/50 rounded-lg p-2 -ml-2 transition-colors group">
+                        <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
+                        <Users className="h-5 w-5 text-gray-400" />
+                        <h3 className="font-semibold text-base text-muted-foreground">Без организации</h3>
+                        <Badge variant="outline" className="ml-2">{noOrgUsers.length}</Badge>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="rounded-lg border ml-6 border-dashed">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="border-b bg-muted/30">
+                                <th className="text-left py-2 px-4 text-xs font-semibold text-muted-foreground uppercase">Пользователь</th>
+                                <th className="text-left py-2 px-4 text-xs font-semibold text-muted-foreground uppercase">Глобальная роль</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {noOrgUsers.map((user) => (
+                                <tr key={user.id} className="border-b last:border-0 hover:bg-muted/30">
+                                  <td className="py-2 px-4">
+                                    <div className="flex flex-col">
+                                      <span className="text-sm font-medium">{user.full_name || "Без имени"}</span>
+                                      <span className="text-xs text-muted-foreground">{user.email}</span>
+                                    </div>
+                                  </td>
+                                  <td className="py-2 px-4">
+                                    {user.global_role === "super_admin" ? (
+                                      <Badge className="bg-purple-500 text-xs">
+                                        👑 Супер-админ
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant="secondary" className="text-xs">
+                                        {user.global_role || "user"}
+                                      </Badge>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
+                </>
+              );
+            })()}
           </CardContent>
         </Card>
       </TabsContent>
@@ -212,41 +340,11 @@ export function GlobalSettingsTabs({
               Роли и права доступа
             </CardTitle>
             <CardDescription>
-              Управление ролями и разрешениями пользователей
+              Управление ролями и доступом к модулям платформы
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="grid gap-4">
-                {[
-                  { name: "Супер-администратор", key: "super_admin", description: "Полный доступ ко всей платформе и глобальным настройкам", color: "purple", hasSettings: true },
-                  { name: "Администратор организации", key: "org_admin", description: "Управление организацией, сотрудниками и настройками организации", color: "blue", hasSettings: true },
-                  { name: "Менеджер", key: "manager", description: "Работа с тендерами и отчётами. Нет доступа к настройкам", color: "green", hasSettings: false },
-                  { name: "Специалист", key: "specialist", description: "Выполнение задач по тендерам. Нет доступа к настройкам", color: "amber", hasSettings: false },
-                  { name: "Наблюдатель", key: "viewer", description: "Только просмотр информации. Нет доступа к настройкам", color: "gray", hasSettings: false },
-                ].map((role) => (
-                  <div key={role.key} className="flex items-center justify-between p-4 rounded-lg border">
-                    <div className="flex items-center gap-3">
-                      <div className={`h-10 w-10 rounded-lg bg-${role.color}-100 flex items-center justify-center`}>
-                        <Shield className={`h-5 w-5 text-${role.color}-600`} />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{role.name}</span>
-                          {role.hasSettings && (
-                            <Badge variant="secondary" className="text-xs">
-                              ⚙️ Настройки
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="text-sm text-muted-foreground">{role.description}</div>
-                      </div>
-                    </div>
-                    <Badge variant="outline">{role.key}</Badge>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <GlobalRolesManager roles={roles} />
           </CardContent>
         </Card>
       </TabsContent>

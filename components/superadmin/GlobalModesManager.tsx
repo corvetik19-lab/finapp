@@ -4,7 +4,6 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateEnabledModes } from "@/lib/platform/platform-settings";
 import type { AppModeKey } from "@/lib/platform/modes-config";
-import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/toast/ToastContext";
@@ -93,48 +92,81 @@ export function GlobalModesManager({ allModes, enabledModes }: GlobalModesManage
       </div>
 
       {/* Список режимов */}
-      <div className="grid gap-4">
+      <div className="grid gap-3">
         {allModes.map((mode) => {
           const isEnabled = modes.has(mode.key);
           const isLast = modes.size === 1 && isEnabled;
+
+          // Цвета для каждого режима
+          const modeColors: Record<string, string> = {
+            finance: "#8B5CF6",
+            tenders: "#F59E0B", 
+            personal: "#EC4899",
+            investments: "#10B981",
+          };
+          const color = modeColors[mode.key] || "#6366F1";
 
           return (
             <div
               key={mode.key}
               className={cn(
-                "flex items-center justify-between p-4 rounded-xl border transition-all",
+                "relative flex items-center justify-between p-4 rounded-xl border-2 transition-all cursor-pointer group",
                 isEnabled
-                  ? "bg-gradient-to-r from-primary/5 to-transparent border-primary/20"
-                  : "bg-muted/30 border-muted"
+                  ? "bg-white dark:bg-zinc-900 shadow-md hover:shadow-lg"
+                  : "bg-gray-50 dark:bg-zinc-800/50 hover:bg-gray-100 dark:hover:bg-zinc-800"
               )}
+              style={{
+                borderColor: isEnabled ? color : "transparent",
+              }}
+              onClick={() => toggleMode(mode.key)}
             >
-              <div className="flex items-center gap-4">
+              {/* Индикатор активности слева */}
+              <div
+                className={cn(
+                  "absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full transition-all",
+                  isEnabled ? "opacity-100" : "opacity-0"
+                )}
+                style={{ backgroundColor: color }}
+              />
+
+              <div className="flex items-center gap-4 pl-2">
                 <div
                   className={cn(
-                    "w-12 h-12 rounded-xl flex items-center justify-center text-2xl transition-all",
+                    "w-12 h-12 rounded-xl flex items-center justify-center text-2xl transition-all shadow-sm",
                     isEnabled
-                      ? "bg-primary/10"
-                      : "bg-muted grayscale opacity-50"
+                      ? "scale-100"
+                      : "scale-90 grayscale opacity-60"
                   )}
+                  style={{
+                    backgroundColor: isEnabled ? `${color}15` : undefined,
+                  }}
                 >
                   {mode.icon}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <span className={cn(
-                      "font-semibold",
+                      "font-semibold text-base",
                       !isEnabled && "text-muted-foreground"
                     )}>
                       {mode.label}
                     </span>
                     {isEnabled && (
-                      <Badge variant="secondary" className="text-xs">
-                        Включён
+                      <Badge 
+                        className="text-xs text-white"
+                        style={{ backgroundColor: color }}
+                      >
+                        ✓ Активен
+                      </Badge>
+                    )}
+                    {!isEnabled && (
+                      <Badge variant="outline" className="text-xs text-gray-400">
+                        Отключён
                       </Badge>
                     )}
                   </div>
                   <p className={cn(
-                    "text-sm",
+                    "text-sm mt-0.5",
                     isEnabled ? "text-muted-foreground" : "text-muted-foreground/50"
                   )}>
                     {mode.description}
@@ -144,15 +176,30 @@ export function GlobalModesManager({ allModes, enabledModes }: GlobalModesManage
 
               <div className="flex items-center gap-3">
                 {isLast && (
-                  <span className="text-xs text-amber-600">
-                    Последний активный
-                  </span>
+                  <Badge variant="outline" className="text-xs text-amber-600 border-amber-300 bg-amber-50">
+                    ⚠️ Последний
+                  </Badge>
                 )}
-                <Switch
-                  checked={isEnabled}
-                  onCheckedChange={() => toggleMode(mode.key)}
-                  disabled={isPending}
-                />
+                <div 
+                  className={cn(
+                    "w-14 h-8 rounded-full flex items-center transition-all p-1",
+                    isEnabled 
+                      ? "justify-end" 
+                      : "justify-start bg-gray-200 dark:bg-zinc-700"
+                  )}
+                  style={{
+                    backgroundColor: isEnabled ? color : undefined,
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleMode(mode.key);
+                  }}
+                >
+                  <div className={cn(
+                    "w-6 h-6 rounded-full bg-white shadow-md transition-transform",
+                    isEnabled ? "scale-100" : "scale-90"
+                  )} />
+                </div>
               </div>
             </div>
           );

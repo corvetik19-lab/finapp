@@ -3,6 +3,8 @@
 import * as React from "react"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { TendersSidebar } from "./tenders-sidebar"
+import { SuppliersSidebar } from "@/components/suppliers/suppliers-sidebar"
+import { AccountingSidebar } from "@/components/accounting/accounting-sidebar"
 import { Separator } from "@/components/ui/separator"
 import {
   Breadcrumb,
@@ -46,6 +48,27 @@ const breadcrumbTitles: Record<string, string> = {
   "/tenders/dictionaries/legal-entities": "Юр. лица",
   "/tenders/dictionaries/banks": "Банки",
   "/tenders/dictionaries/suppliers": "Поставщики",
+  // Suppliers
+  "/tenders/suppliers": "Поставщики",
+  "/tenders/suppliers/categories": "Категории",
+  "/tenders/suppliers/calls": "История звонков",
+  "/tenders/suppliers/settings": "Настройки телефонии",
+  "/tenders/suppliers/compare": "Сравнение поставщиков",
+  "/tenders/suppliers/dashboard": "Аналитика поставщиков",
+  "/tenders/suppliers/map": "Карта поставщиков",
+  "/tenders/suppliers/duplicates": "Дубликаты",
+  // Accounting
+  "/tenders/accounting": "Бухгалтерия",
+  "/tenders/accounting/documents": "Документы",
+  "/tenders/accounting/counterparties": "Контрагенты",
+  "/tenders/accounting/bank-accounts": "Банковские счета",
+  "/tenders/accounting/bank-integrations": "Банк-интеграции",
+  "/tenders/accounting/taxes": "Налоги",
+  "/tenders/accounting/taxes/calendar": "Календарь налогов",
+  "/tenders/accounting/taxes/calculators": "Калькуляторы",
+  "/tenders/accounting/kudir": "КУДиР",
+  "/tenders/accounting/reports": "Отчёты",
+  "/tenders/accounting/settings": "Настройки",
 }
 
 function getBreadcrumbs(pathname: string) {
@@ -78,9 +101,23 @@ export function TendersLayout({ children, userPermissions }: TendersLayoutProps)
   const pathname = usePathname()
   const breadcrumbs = getBreadcrumbs(pathname)
 
+  // Определяем какой sidebar показывать
+  const isSuppliers = pathname.startsWith("/tenders/suppliers")
+  const isAccounting = pathname.startsWith("/tenders/accounting")
+
+  const renderSidebar = () => {
+    if (isSuppliers) {
+      return <SuppliersSidebar userPermissions={userPermissions} />
+    }
+    if (isAccounting) {
+      return <AccountingSidebar userPermissions={userPermissions} />
+    }
+    return <TendersSidebar className="top-16 h-[calc(100svh-4rem)]" userPermissions={userPermissions} />
+  }
+
   return (
     <SidebarProvider>
-      <TendersSidebar className="top-16 h-[calc(100svh-4rem)]" userPermissions={userPermissions} />
+      {renderSidebar()}
       <SidebarInset className="overflow-x-hidden">
         <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4 bg-white">
           <SidebarTrigger className="-ml-1" />

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ModeSwitcher from "./ModeSwitcher";
+import { TendersModuleSwitcher } from "./TendersModuleSwitcher";
 import UserMenu from "./UserMenu";
 import NotificationCenter from "./NotificationCenter";
 import OrganizationSwitcher from "./OrganizationSwitcher";
@@ -97,6 +98,9 @@ export default function PlatformHeader({
             allowedModes={organization?.allowed_modes} 
             globalEnabledModes={globalEnabledModes}
           />
+
+          {/* Tenders Module Switcher - показывается только в режиме Тендеры */}
+          <TendersModuleSwitcher />
 
           {/* Greeting - Hidden on mobile */}
           <div className="hidden lg:block text-sm text-gray-600">

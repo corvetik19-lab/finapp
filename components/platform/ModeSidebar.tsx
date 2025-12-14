@@ -142,6 +142,22 @@ const MODE_MENUS: ModeMenuConfig = {
     { key: 'logistics', label: 'Логистика', icon: 'local_shipping', href: '/tenders/logistics' },
     { key: 'employees', label: 'Сотрудники', icon: 'people', href: '/tenders/employees' },
     {
+      key: 'accounting',
+      label: 'Бухгалтерия',
+      icon: 'account_balance',
+      children: [
+        { key: 'accounting-dashboard', label: 'Обзор', icon: 'dashboard', href: '/tenders/accounting' },
+        { key: 'accounting-bank-accounts', label: 'Расчётные счета', icon: 'account_balance', href: '/tenders/accounting/bank-accounts' },
+        { key: 'accounting-documents', label: 'Документы', icon: 'description', href: '/tenders/accounting/documents' },
+        { key: 'accounting-kudir', label: 'КУДиР', icon: 'menu_book', href: '/tenders/accounting/kudir' },
+        { key: 'accounting-taxes', label: 'Налоги', icon: 'account_balance_wallet', href: '/tenders/accounting/taxes' },
+        { key: 'accounting-calendar', label: 'Календарь платежей', icon: 'calendar_month', href: '/tenders/accounting/taxes/calendar' },
+        { key: 'accounting-counterparties', label: 'Контрагенты', icon: 'people', href: '/tenders/accounting/counterparties' },
+        { key: 'accounting-reports', label: 'Отчёты', icon: 'assessment', href: '/tenders/accounting/reports' },
+        { key: 'accounting-settings', label: 'Настройки', icon: 'settings', href: '/tenders/accounting/settings' },
+      ]
+    },
+    {
       key: 'reports',
       label: 'Отчёты',
       icon: 'assessment',

@@ -33,6 +33,8 @@ import {
   Target,
   CalendarDays,
   UsersRound,
+  MapPin,
+  Copy,
   type LucideIcon,
 } from "lucide-react"
 import type { UserPermissions } from "./tenders-layout"
@@ -102,6 +104,37 @@ const tendersNavigation = {
       ],
     },
   ] as NavSection[],
+  // Модуль "Поставщики"
+  suppliers: {
+    title: "Поставщики",
+    icon: Factory,
+    items: [
+      { title: "Все поставщики", url: "/tenders/suppliers", icon: Factory },
+      { title: "Категории", url: "/tenders/suppliers/categories", icon: List },
+      { title: "Сравнение", url: "/tenders/suppliers/compare", icon: Scale },
+      { title: "Аналитика", url: "/tenders/suppliers/dashboard", icon: BarChart3 },
+      { title: "Карта", url: "/tenders/suppliers/map", icon: MapPin },
+      { title: "Дубликаты", url: "/tenders/suppliers/duplicates", icon: Copy },
+      { title: "История звонков", url: "/tenders/suppliers/calls", icon: Users },
+      { title: "Настройки телефонии", url: "/tenders/suppliers/settings", icon: Settings, adminOnly: true },
+    ],
+  } as NavCollapsibleSection,
+  // Модуль "Бухгалтерия"
+  accounting: {
+    title: "Бухгалтерия",
+    icon: Receipt,
+    items: [
+      { title: "Обзор", url: "/tenders/accounting", icon: Receipt },
+      { title: "Документы", url: "/tenders/accounting/documents", icon: FileText },
+      { title: "Контрагенты", url: "/tenders/accounting/counterparties", icon: Users },
+      { title: "Банковские счета", url: "/tenders/accounting/bank-accounts", icon: Landmark },
+      { title: "Банк-интеграции", url: "/tenders/accounting/bank-integrations", icon: Globe },
+      { title: "Налоги", url: "/tenders/accounting/taxes", icon: TrendingUp },
+      { title: "КУДиР", url: "/tenders/accounting/kudir", icon: FileText },
+      { title: "Отчёты", url: "/tenders/accounting/reports", icon: BarChart3 },
+      { title: "Настройки", url: "/tenders/accounting/settings", icon: Settings, adminOnly: true },
+    ],
+  } as NavCollapsibleSection,
   reports: {
     title: "Отчёты",
     icon: BarChart3,

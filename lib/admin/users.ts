@@ -55,6 +55,103 @@ export async function getAllAuthUsers(): Promise<AdminAuthUser[]> {
     }));
 }
 
+export interface UserWithOrganizations extends AdminAuthUser {
+    organizations: {
+        id: string;
+        name: string;
+        role: string;
+    }[];
+}
+
+export async function getUsersWithOrganizations(): Promise<UserWithOrganizations[]> {
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!serviceKey) {
+        console.error('SUPABASE_SERVICE_ROLE_KEY is not set');
+        return [];
+    }
+
+    const adminClient = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        serviceKey,
+        {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false,
+            },
+        }
+    );
+
+    // Получаем всех пользователей
+    const { data: { users }, error } = await adminClient.auth.admin.listUsers();
+
+    if (error) {
+        console.error('Error listing users:', error);
+        return [];
+    }
+
+    // Получаем профили
+    const { data: profiles } = await adminClient
+        .from('profiles')
+        .select('id, global_role')
+        .in('id', users.map(u => u.id));
+
+    const profileMap = new Map(profiles?.map(p => [p.id, p.global_role]));
+
+    // Получаем членство в компаниях
+    const { data: memberships } = await adminClient
+        .from('company_members')
+        .select(`
+            user_id,
+            role,
+            company:companies(
+                id,
+                name,
+                organization:organizations(id, name)
+            )
+        `)
+        .eq('status', 'active');
+
+    // Группируем членства по пользователям
+    const membershipMap = new Map<string, { id: string; name: string; role: string }[]>();
+    
+    memberships?.forEach(m => {
+        if (!m.user_id || !m.company) return;
+        
+        const companyData = m.company as unknown;
+        const companyObj = Array.isArray(companyData) ? companyData[0] : companyData;
+        if (!companyObj || typeof companyObj !== 'object') return;
+        const company = companyObj as { id: string; name: string; organization?: unknown };
+        const orgData = company.organization;
+        const org = Array.isArray(orgData) ? orgData[0] : orgData;
+        const orgTyped = org as { id: string; name: string } | undefined;
+        const orgName = orgTyped?.name || company.name;
+        const orgId = orgTyped?.id || company.id;
+        
+        if (!membershipMap.has(m.user_id)) {
+            membershipMap.set(m.user_id, []);
+        }
+        
+        // Проверяем что организация ещё не добавлена
+        const existing = membershipMap.get(m.user_id)!;
+        if (!existing.find(o => o.id === orgId)) {
+            existing.push({
+                id: orgId,
+                name: orgName,
+                role: m.role,
+            });
+        }
+    });
+
+    return users.map(u => ({
+        id: u.id,
+        email: u.email,
+        full_name: u.user_metadata?.full_name,
+        global_role: profileMap.get(u.id),
+        organizations: membershipMap.get(u.id) || [],
+    }));
+}
+
 export async function getUsers(query?: string) {
     const supabase = await createRouteClient();
 

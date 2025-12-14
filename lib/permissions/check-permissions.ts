@@ -5,6 +5,7 @@ export interface UserPermissions {
   isSuperAdmin: boolean;
   permissions: string[];
   employeeId: string | null;
+  role: string | null;
 }
 
 /**
@@ -19,6 +20,7 @@ export async function getCurrentUserPermissions(): Promise<UserPermissions> {
       isSuperAdmin: false,
       permissions: [],
       employeeId: null,
+      role: null,
     };
   }
 
@@ -48,6 +50,7 @@ export async function getCurrentUserPermissions(): Promise<UserPermissions> {
       isSuperAdmin,
       permissions: [],
       employeeId: null,
+      role: isSuperAdmin ? 'super_admin' : null,
     };
   }
 
@@ -82,6 +85,7 @@ export async function getCurrentUserPermissions(): Promise<UserPermissions> {
     isSuperAdmin,
     permissions,
     employeeId: employee?.id || null,
+    role: member.role,
   };
 }
 

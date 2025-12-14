@@ -2,7 +2,8 @@ import { getEnabledModes } from "@/lib/platform/platform-settings";
 import { ALL_MODES } from "@/lib/platform/modes-config";
 import { GlobalSettingsTabs } from "@/components/superadmin/GlobalSettingsTabs";
 import { getOrganizations } from '@/lib/admin/organizations';
-import { getAllAuthUsers } from '@/lib/admin/users';
+import { getUsersWithOrganizations } from '@/lib/admin/users';
+import { getRoleConfigs } from '@/lib/admin/roles';
 import { Settings } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,8 @@ export const dynamic = "force-dynamic";
 export default async function SuperAdminSettingsPage() {
   const enabledModes = await getEnabledModes();
   const organizations = await getOrganizations();
-  const users = await getAllAuthUsers();
+  const users = await getUsersWithOrganizations();
+  const roles = await getRoleConfigs();
 
   return (
     <div className="space-y-6">
@@ -29,6 +31,7 @@ export default async function SuperAdminSettingsPage() {
         allModes={ALL_MODES}
         organizations={organizations}
         users={users}
+        roles={roles}
       />
     </div>
   );
