@@ -4,6 +4,7 @@ import { createRouteClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Organization } from '@/lib/auth/types';
 import { createClient } from '@supabase/supabase-js';
+import { logger } from "@/lib/logger";
 
 export async function getOrganizations() {
     const supabase = createClient(
@@ -23,7 +24,7 @@ export async function getOrganizations() {
         .order('created_at', { ascending: false });
 
     if (error) {
-        console.error('Error fetching organizations:', error);
+        logger.error('Error fetching organizations:', error);
         throw new Error('Failed to fetch organizations');
     }
 
@@ -58,7 +59,7 @@ export async function createOrganization(formData: FormData) {
             allowedModes = JSON.parse(allowedModesJson);
         }
     } catch (e) {
-        console.error('Error parsing allowed_modes:', e);
+        logger.error('Error parsing allowed_modes:', e);
     }
 
     if (!name) throw new Error('Name is required');
@@ -93,7 +94,7 @@ export async function createOrganization(formData: FormData) {
         .single();
         
     if (createCompanyError) {
-        console.error('Error creating company:', createCompanyError);
+        logger.error('Error creating company:', createCompanyError);
     } else if (newCompany && ownerId) {
         // Получаем email владельца
         const { data: ownerProfile } = await supabase
@@ -187,7 +188,7 @@ export async function joinOrganizationAsAdmin(orgId: string) {
             .single();
             
         if (createError) {
-            console.error('Error creating company:', createError);
+            logger.error('Error creating company:', createError);
             throw new Error('Failed to create company structure');
         }
         companyId = newCompany.id;

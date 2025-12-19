@@ -61,6 +61,16 @@ const AVAILABLE_PERMISSIONS = [
   { id: "personal:prompts", label: "Промпты AI", category: "Личные" },
   { id: "personal:fitness", label: "Фитнес-трекер", category: "Личные" },
 
+  // --- ИИ Студия ---
+  { id: "ai-studio:view", label: "Доступ к ИИ Студии", category: "ИИ Студия" },
+  { id: "ai-studio:chat", label: "Gemini Чат", category: "ИИ Студия" },
+  { id: "ai-studio:assistants", label: "GPT Ассистенты", category: "ИИ Студия" },
+  { id: "ai-studio:images", label: "Генерация изображений", category: "ИИ Студия" },
+  { id: "ai-studio:video", label: "Генерация видео", category: "ИИ Студия" },
+  { id: "ai-studio:audio", label: "Генерация аудио/речи", category: "ИИ Студия" },
+  { id: "ai-studio:tools", label: "ИИ инструменты", category: "ИИ Студия" },
+  { id: "ai-studio:kie", label: "Kie.ai Market", category: "ИИ Студия" },
+
   // --- Тендеры: Общие ---
   { id: "tenders:view", label: "Доступ к модулю", category: "Тендеры: Общие" },
   { id: "tenders:view_all", label: "Просмотр всех тендеров", category: "Тендеры: Общие" },
@@ -269,6 +279,24 @@ const ROLE_PRESETS = [
       "tenders:analytics:view"
     ],
     color: "#64748b"
+  },
+  {
+    name: "ИИ Специалист",
+    description: "Полный доступ к ИИ Студии",
+    permissions: [
+      "ai-studio:view", "ai-studio:chat", "ai-studio:assistants",
+      "ai-studio:images", "ai-studio:video", "ai-studio:audio",
+      "ai-studio:tools", "ai-studio:kie"
+    ],
+    color: "#A855F7"
+  },
+  {
+    name: "ИИ Наблюдатель",
+    description: "Только просмотр и чат в ИИ Студии",
+    permissions: [
+      "ai-studio:view", "ai-studio:chat"
+    ],
+    color: "#8B5CF6"
   }
 ];
 
@@ -493,7 +521,7 @@ export default function RolesManager({ roles: initialRoles, companyId }: RolesMa
           <div className="space-y-1"><Label>Название *</Label><Input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Менеджер, Бухгалтер" /></div>
           <div className="space-y-1"><Label>Описание</Label><Textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="Краткое описание роли" rows={2} /></div>
           <div className="space-y-1"><Label>Цвет</Label><div className="flex gap-2 flex-wrap">{ROLE_COLORS.map(c => <button key={c} type="button" className={`w-6 h-6 rounded-full border-2 ${formData.color === c ? 'border-foreground' : 'border-transparent'}`} style={{ backgroundColor: c }} onClick={() => setFormData({ ...formData, color: c })} />)}</div></div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted p-2 rounded"><Gavel className="h-4 w-4" />Все роли относятся к режиму <strong>Тендеры</strong></div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted p-2 rounded"><Gavel className="h-4 w-4" />Роли могут включать права для разных модулей: <strong>Тендеры, Финансы, ИИ Студия</strong> и др.</div>
           <div><div className="flex items-center justify-between mb-2"><Label>Разрешения *</Label><div className="flex items-center gap-2"><Button variant="outline" size="sm" onClick={allPermissionsSelected ? deselectAllPermissions : selectAllPermissions}>{allPermissionsSelected ? <><Square className="h-4 w-4 mr-1" />Снять все</> : <><CheckSquare className="h-4 w-4 mr-1" />Выбрать все</>}</Button><span className="text-xs text-muted-foreground">{selectedAvailableCount}/{AVAILABLE_PERMISSIONS.length}</span></div></div><div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-64 overflow-y-auto">{Object.entries(permissionsByCategory).map(([category, perms]) => { const categoryPerms = perms.map(p => p.id); const allCategorySelected = categoryPerms.every(p => formData.permissions.includes(p)); return (<div key={category} className="border rounded p-2"><div className="flex items-center justify-between mb-2"><span className="text-sm font-medium">{category}</span><button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => selectCategoryPermissions(category)}>{allCategorySelected ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}</button></div>{perms.map(perm => <label key={perm.id} className="flex items-center gap-2 text-sm py-1 cursor-pointer"><Checkbox checked={formData.permissions.includes(perm.id)} onCheckedChange={() => togglePermission(perm.id)} />{perm.label}</label>)}</div>); })}</div></div>
         </div>
         <DialogFooter className="flex justify-between"><div>{editingRole && (editingRole.is_system || editingRole.is_default) && <Button variant="outline" onClick={handleResetToDefault} disabled={isSaving}><RotateCcw className="h-4 w-4 mr-1" />Сбросить права</Button>}</div><div className="flex gap-2"><Button variant="outline" onClick={() => setShowModal(false)} disabled={isSaving}>Отмена</Button><Button onClick={handleSave} disabled={isSaving}>{isSaving ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Сохранение...</> : editingRole ? 'Сохранить' : 'Создать'}</Button></div></DialogFooter>

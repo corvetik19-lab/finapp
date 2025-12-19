@@ -1,6 +1,7 @@
 'use server';
 
 import { createRSCClient } from '@/lib/supabase/server';
+import { logger } from "@/lib/logger";
 
 export interface SummaryReportData {
   // Общая статистика
@@ -147,7 +148,7 @@ export async function getSummaryReportData(
   const { data: tenders, error } = await baseQuery;
 
   if (error || !tenders) {
-    console.error('Error fetching tenders for summary:', error);
+    logger.error('Error fetching tenders for summary:', error);
     return getEmptyReport();
   }
 

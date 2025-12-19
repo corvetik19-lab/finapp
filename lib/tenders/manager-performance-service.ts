@@ -1,4 +1,5 @@
 import { createRSCClient } from '@/lib/supabase/helpers';
+import { logger } from "@/lib/logger";
 
 // Интерфейсы для отчёта по показателям менеджеров
 export interface ManagerPerformance {
@@ -127,7 +128,7 @@ export async function getManagerPerformanceReportData(
   const { data: tenders, error } = await query;
 
   if (error) {
-    console.error('Error fetching tenders for manager performance:', error);
+    logger.error('Error fetching tenders for manager performance:', error);
     return getEmptyReport();
   }
 

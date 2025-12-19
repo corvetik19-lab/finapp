@@ -11,6 +11,13 @@ import type {
   TenderStage,
   TenderType,
 } from './types';
+import type { TenderCommentRow, TenderTaskRow } from '@/types/supabase';
+import { logger } from "@/lib/logger";
+
+type TenderWithRelationsRaw = Tender & {
+  tender_comments?: TenderCommentRow[];
+  tender_tasks?: TenderTaskRow[];
+};
 
 // ============================================================
 // CRUD ОПЕРАЦИИ ДЛЯ ТЕНДЕРОВ
@@ -130,7 +137,7 @@ export async function getTenders(
     const { data, error, count } = await query;
 
     if (error) {
-      console.error('Error fetching tenders:', error);
+      logger.error('Error fetching tenders:', error);
       return { data: [], total: 0, error: error.message };
     }
 
@@ -154,7 +161,7 @@ export async function getTenders(
 
     return { data: tenders as Tender[], total: count || 0, error: null };
   } catch (error) {
-    console.error('Error in getTenders:', error);
+    logger.error('Error in getTenders:', error);
     return { data: [], total: 0, error: 'Ошибка при загрузке тендеров' };
   }
 }
@@ -187,13 +194,13 @@ export async function getTenderById(
       .single();
 
     if (error) {
-      console.error('Error fetching tender:', error);
+      logger.error('Error fetching tender:', error);
       return { data: null, error: error.message };
     }
 
     return { data, error: null };
   } catch (error) {
-    console.error('Error in getTenderById:', error);
+    logger.error('Error in getTenderById:', error);
     return { data: null, error: 'Ошибка при загрузке тендера' };
   }
 }
@@ -226,7 +233,7 @@ export async function createTender(
       .maybeSingle();
 
     if (checkError) {
-      console.error('Error checking tender uniqueness:', checkError);
+      logger.error('Error checking tender uniqueness:', checkError);
       return { data: null, error: 'Ошибка при проверке уникальности номера' };
     }
 
@@ -289,13 +296,13 @@ export async function createTender(
       .single();
 
     if (error) {
-      console.error('Error creating tender:', error);
+      logger.error('Error creating tender:', error);
       return { data: null, error: error.message };
     }
 
     return { data, error: null };
   } catch (error) {
-    console.error('Error in createTender:', error);
+    logger.error('Error in createTender:', error);
     return { data: null, error: 'Ошибка при создании тендера' };
   }
 }
@@ -331,7 +338,7 @@ export async function updateTender(
       .single();
 
     if (error) {
-      console.error('Error updating tender:', error);
+      logger.error('Error updating tender:', error);
       return { data: null, error: error.message };
     }
 
@@ -367,14 +374,14 @@ export async function updateTender(
               }))
             );
 
-          if (historyError) console.error('Error logging history:', historyError);
+          if (historyError) logger.error('Error logging history:', historyError);
         }
       }
     }
 
     return { data, error: null };
   } catch (error) {
-    console.error('Error in updateTender:', error);
+    logger.error('Error in updateTender:', error);
     return { data: null, error: 'Ошибка при обновлении тендера' };
   }
 }
@@ -394,13 +401,13 @@ export async function deleteTender(
       .eq('id', tenderId);
 
     if (error) {
-      console.error('Error deleting tender:', error);
+      logger.error('Error deleting tender:', error);
       return { success: false, error: error.message };
     }
 
     return { success: true, error: null };
   } catch (error) {
-    console.error('Error in deleteTender:', error);
+    logger.error('Error in deleteTender:', error);
     return { success: false, error: 'Ошибка при удалении тендера' };
   }
 }
@@ -423,7 +430,7 @@ export async function updateTenderStage(
       .eq('id', tenderId);
 
     if (error) {
-      console.error('Error updating tender stage:', error);
+      logger.error('Error updating tender stage:', error);
       return { success: false, error: error.message };
     }
 
@@ -438,13 +445,13 @@ export async function updateTenderStage(
         .limit(1);
 
       if (historyError) {
-        console.error('Error updating history comment:', historyError);
+        logger.error('Error updating history comment:', historyError);
       }
     }
 
     return { success: true, error: null };
   } catch (error) {
-    console.error('Error in updateTenderStage:', error);
+    logger.error('Error in updateTenderStage:', error);
     return { success: false, error: 'Ошибка при изменении этапа' };
   }
 }
@@ -480,13 +487,13 @@ export async function getTenderStages(
     const { data, error } = await query;
 
     if (error) {
-      console.error('Error fetching tender stages:', error);
+      logger.error('Error fetching tender stages:', error);
       return { data: [], error: error.message };
     }
 
     return { data: data || [], error: null };
   } catch (error) {
-    console.error('Error in getTenderStages:', error);
+    logger.error('Error in getTenderStages:', error);
     return { data: [], error: 'Ошибка при загрузке этапов' };
   }
 }
@@ -521,7 +528,7 @@ export async function getTenderTypes(
     const { data, error } = await query;
 
     if (error) {
-      console.error('Error fetching tender types:', error);
+      logger.error('Error fetching tender types:', error);
       return { data: [], error: error.message };
     }
 
@@ -540,7 +547,7 @@ export async function getTenderTypes(
 
     return { data: typesWithMethods, error: null };
   } catch (error) {
-    console.error('Error in getTenderTypes:', error);
+    logger.error('Error in getTenderTypes:', error);
     return { data: [], error: 'Ошибка при загрузке типов' };
   }
 }
@@ -569,7 +576,7 @@ export async function getTenderStats(
       });
 
       if (error) {
-        console.error('Error fetching tender stats:', error);
+        logger.error('Error fetching tender stats:', error);
         return { data: null, error: error.message };
       }
 
@@ -635,7 +642,7 @@ export async function getTenderStats(
       );
 
     if (error) {
-      console.error('Error fetching user tenders for stats:', error);
+      logger.error('Error fetching user tenders for stats:', error);
       return { data: null, error: error.message };
     }
 
@@ -662,7 +669,7 @@ export async function getTenderStats(
       error: null,
     };
   } catch (error) {
-    console.error('Error in getTenderStats:', error);
+    logger.error('Error in getTenderStats:', error);
     return { data: null, error: 'Ошибка при загрузке статистики' };
   }
 }
@@ -695,7 +702,7 @@ export async function getTendersByStage(
       .order('order_index');
 
     if (stagesError) {
-      console.error('Error fetching stages:', stagesError);
+      logger.error('Error fetching stages:', stagesError);
       return { data: {}, stages: [], error: stagesError.message };
     }
 
@@ -738,25 +745,21 @@ export async function getTendersByStage(
     const { data: tenders, error: tendersError } = await tendersQuery.order('created_at', { ascending: false });
 
     if (tendersError) {
-      console.error('Error fetching tenders:', tendersError);
+      logger.error('Error fetching tenders:', tendersError);
       return { data: {}, stages: stages || [], error: tendersError.message };
     }
 
     // Обрабатываем данные для добавления last_comment и next_task
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const processedTenders = (tenders || []).map((t: any) => {
+    const processedTenders = (tenders as TenderWithRelationsRaw[] || []).map((t) => {
       // Получаем последний комментарий
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const lastComment = t.tender_comments?.sort((a: any, b: any) =>
+      const lastComment = t.tender_comments?.sort((a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       )[0];
 
       // Получаем следующую задачу (не выполненную, с ближайшим дедлайном)
       const nextTask = t.tender_tasks
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ?.filter((task: any) => task.status !== 'completed')
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ?.sort((a: any, b: any) => {
+        ?.filter((task) => task.status !== 'completed')
+        ?.sort((a, b) => {
           if (!a.due_date) return 1;
           if (!b.due_date) return -1;
           return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
@@ -765,7 +768,7 @@ export async function getTendersByStage(
       return {
         ...t,
         last_comment: lastComment ? { content: lastComment.content, created_at: lastComment.created_at } : undefined,
-        next_task: nextTask ? { title: nextTask.title, due_date: nextTask.due_date } : undefined,
+        next_task: nextTask ? { title: nextTask.title, due_date: nextTask.due_date || '' } : undefined,
         tender_comments: undefined, // Очищаем лишние данные
         tender_tasks: undefined,
       };
@@ -779,7 +782,7 @@ export async function getTendersByStage(
 
     return { data: grouped, stages: stages || [], error: null };
   } catch (error) {
-    console.error('Error in getTendersByStage:', error);
+    logger.error('Error in getTendersByStage:', error);
     return { data: {}, stages: [], error: 'Ошибка при загрузке тендеров' };
   }
 }
@@ -808,7 +811,7 @@ export async function getTenderHistory(tenderId: string) {
       .eq('tender_id', tenderId);
 
     if (stageError) {
-      console.error('Error fetching tender stage history:', stageError);
+      logger.error('Error fetching tender stage history:', stageError);
       // Не прерываем, попробуем получить хотя бы историю полей
     }
 
@@ -819,7 +822,7 @@ export async function getTenderHistory(tenderId: string) {
       .eq('tender_id', tenderId);
 
     if (fieldError) {
-      console.error('Error fetching tender field history:', fieldError);
+      logger.error('Error fetching tender field history:', fieldError);
     }
 
     // 3. Собираем ID пользователей для получения информации о них
@@ -863,7 +866,7 @@ export async function getTenderHistory(tenderId: string) {
 
     return { data: combinedHistory, error: null };
   } catch (error) {
-    console.error('Error in getTenderHistory:', error);
+    logger.error('Error in getTenderHistory:', error);
     return { data: [], error: 'Ошибка при загрузке истории' };
   }
 }

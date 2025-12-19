@@ -1,5 +1,6 @@
 import { createRSCClient } from "@/lib/supabase/helpers";
 import type { Permission } from "./permissions";
+import { logger } from "@/lib/logger";
 
 /**
  * Получает права доступа текущего пользователя на сервере
@@ -25,7 +26,7 @@ export async function getServerPermissions(): Promise<Permission[]> {
     // Если таблица user_roles не существует или у пользователя нет роли,
     // даём полный доступ (все пользователи - администраторы по умолчанию)
     if (roleError || !userRole) {
-      console.log("No role found for user, granting admin access");
+      logger.debug("No role found for user, granting admin access");
       return ["admin:all"];
     }
 
@@ -36,16 +37,15 @@ export async function getServerPermissions(): Promise<Permission[]> {
       permissions = userRole.roles.permissions || [];
     }
 
-    console.log("User permissions loaded:", {
+    logger.debug("User permissions loaded", {
       userId: user.id,
       roleId: userRole.role_id,
-      permissions: permissions,
       permissionsCount: permissions.length
     });
 
     // Если у роли нет прав, даём базовый доступ к дашборду
     if (permissions.length === 0) {
-      console.log("Role has no permissions, granting basic dashboard access");
+      logger.debug("Role has no permissions, granting basic dashboard access");
       permissions = ["dashboard:view"];
     }
 
@@ -59,14 +59,14 @@ export async function getServerPermissions(): Promise<Permission[]> {
     const isFirstUser = allUsers?.[0]?.user_id === user.id;
     
     if (isFirstUser) {
-      console.log("User is first user, granting admin access");
+      logger.debug("User is first user, granting admin access");
       permissions = ["admin:all", ...permissions];
     }
 
-    console.log("Final permissions:", permissions);
+    logger.debug("Final permissions", { count: permissions.length });
     return permissions;
   } catch (error) {
-    console.error("Error loading permissions:", error);
+    logger.error("Error loading permissions", { error });
     // В случае ошибки даём полный доступ
     return ["admin:all"];
   }

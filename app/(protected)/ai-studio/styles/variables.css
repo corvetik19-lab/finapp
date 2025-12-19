@@ -1,0 +1,127 @@
+/* AI Studio - Дизайн-система в стиле GPTunnel (светлая тема) */
+
+:root {
+  /* ═══════════════════════════════════════════════════════════════
+     ФОНЫ
+     ═══════════════════════════════════════════════════════════════ */
+  --ai-bg-primary: #ffffff;
+  --ai-bg-secondary: #f9f9fa;
+  --ai-bg-tertiary: #f5f5f5;
+  --ai-bg-sidebar: #ffffff;
+  --ai-bg-card: #ffffff;
+  --ai-bg-hover: #f5f5f5;
+  --ai-bg-active: #f0f0f0;
+  --ai-bg-input: #ffffff;
+  
+  /* ═══════════════════════════════════════════════════════════════
+     ГРАНИЦЫ
+     ═══════════════════════════════════════════════════════════════ */
+  --ai-border-light: #e5e5e5;
+  --ai-border-medium: #d4d4d4;
+  --ai-border-dark: #c4c4c4;
+  --ai-border-input: #e0e0e0;
+  --ai-border-focus: #ff6b35;
+  
+  /* ═══════════════════════════════════════════════════════════════
+     ТЕКСТ
+     ═══════════════════════════════════════════════════════════════ */
+  --ai-text-primary: #1a1a1a;
+  --ai-text-secondary: #666666;
+  --ai-text-muted: #999999;
+  --ai-text-placeholder: #b3b3b3;
+  --ai-text-inverse: #ffffff;
+  
+  /* ═══════════════════════════════════════════════════════════════
+     АКЦЕНТЫ (оранжевый как на GPTunnel)
+     ═══════════════════════════════════════════════════════════════ */
+  --ai-accent-primary: #ff6b35;
+  --ai-accent-hover: #e55a2b;
+  --ai-accent-active: #cc4f24;
+  --ai-accent-light: rgba(255, 107, 53, 0.1);
+  --ai-accent-lighter: rgba(255, 107, 53, 0.05);
+  
+  /* Альтернативные акценты */
+  --ai-accent-blue: #3b82f6;
+  --ai-accent-purple: #8b5cf6;
+  --ai-accent-green: #22c55e;
+  
+  /* ═══════════════════════════════════════════════════════════════
+     СТАТУСЫ
+     ═══════════════════════════════════════════════════════════════ */
+  --ai-success: #22c55e;
+  --ai-success-light: rgba(34, 197, 94, 0.1);
+  --ai-warning: #f59e0b;
+  --ai-warning-light: rgba(245, 158, 11, 0.1);
+  --ai-error: #ef4444;
+  --ai-error-light: rgba(239, 68, 68, 0.1);
+  --ai-info: #3b82f6;
+  --ai-info-light: rgba(59, 130, 246, 0.1);
+  
+  /* ═══════════════════════════════════════════════════════════════
+     ТЕНИ
+     ═══════════════════════════════════════════════════════════════ */
+  --ai-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ai-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --ai-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --ai-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --ai-shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.16);
+  
+  /* ═══════════════════════════════════════════════════════════════
+     СКРУГЛЕНИЯ
+     ═══════════════════════════════════════════════════════════════ */
+  --ai-radius-xs: 4px;
+  --ai-radius-sm: 8px;
+  --ai-radius-md: 12px;
+  --ai-radius-lg: 16px;
+  --ai-radius-xl: 20px;
+  --ai-radius-full: 9999px;
+  
+  /* ═══════════════════════════════════════════════════════════════
+     РАЗМЕРЫ
+     ═══════════════════════════════════════════════════════════════ */
+  --ai-sidebar-width: 280px;
+  --ai-sidebar-collapsed: 72px;
+  --ai-header-height: 64px;
+  --ai-input-height: 44px;
+  --ai-button-height: 40px;
+  
+  /* ═══════════════════════════════════════════════════════════════
+     ТИПОГРАФИКА
+     ═══════════════════════════════════════════════════════════════ */
+  --ai-font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --ai-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  
+  --ai-text-xs: 12px;
+  --ai-text-sm: 14px;
+  --ai-text-base: 16px;
+  --ai-text-lg: 18px;
+  --ai-text-xl: 20px;
+  --ai-text-2xl: 24px;
+  --ai-text-3xl: 30px;
+  --ai-text-4xl: 36px;
+  
+  --ai-font-normal: 400;
+  --ai-font-medium: 500;
+  --ai-font-semibold: 600;
+  --ai-font-bold: 700;
+  
+  --ai-line-height-tight: 1.25;
+  --ai-line-height-normal: 1.5;
+  --ai-line-height-relaxed: 1.75;
+  
+  /* ═══════════════════════════════════════════════════════════════
+     ПЕРЕХОДЫ
+     ═══════════════════════════════════════════════════════════════ */
+  --ai-transition-fast: 150ms ease;
+  --ai-transition-normal: 200ms ease;
+  --ai-transition-slow: 300ms ease;
+  
+  /* ═══════════════════════════════════════════════════════════════
+     Z-INDEX
+     ═══════════════════════════════════════════════════════════════ */
+  --ai-z-dropdown: 100;
+  --ai-z-sticky: 200;
+  --ai-z-modal: 300;
+  --ai-z-popover: 400;
+  --ai-z-tooltip: 500;
+}

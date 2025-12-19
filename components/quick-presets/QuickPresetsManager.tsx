@@ -78,10 +78,7 @@ export function QuickPresetsManager() {
       const supabase = getSupabaseClient();
       const { data: { user } } = await supabase.auth.getUser();
       
-      console.log("[QuickPresets] Loading accounts for user:", user?.id);
-      
       if (!user) {
-        console.error("User not authenticated");
         return;
       }
 
@@ -92,7 +89,6 @@ export function QuickPresetsManager() {
         .order("name", { ascending: true });
 
       if (error) throw error;
-      console.log("[QuickPresets] Loaded accounts:", data?.length, data);
       setAccounts(data || []);
     } catch (error) {
       console.error("Error loading accounts:", error);

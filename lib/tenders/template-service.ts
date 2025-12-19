@@ -1,4 +1,5 @@
 import { TenderStageTemplate } from './types';
+import { logger } from "@/lib/logger";
 
 export async function loadStageTemplates(companyId?: string): Promise<TenderStageTemplate[]> {
   try {
@@ -11,7 +12,7 @@ export async function loadStageTemplates(companyId?: string): Promise<TenderStag
     const result = await response.json();
     return result.data || [];
   } catch (error) {
-    console.error('Error loading templates:', error);
+    logger.error('Error loading templates:', error);
     return [];
   }
 }

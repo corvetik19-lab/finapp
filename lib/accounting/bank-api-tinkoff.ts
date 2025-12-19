@@ -4,6 +4,7 @@ import { createRSCClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
 import { ensureValidToken } from "./bank-oauth";
 import { OperationType } from "./bank-types";
+import { logger } from "@/lib/logger";
 
 const TINKOFF_API_BASE = "https://business.tinkoff.ru/openapi/api/v1";
 const TINKOFF_SANDBOX_BASE = "https://business.tinkoff.ru/openapi/sandbox/api/v1";
@@ -71,14 +72,14 @@ export async function fetchTinkoffAccounts(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Tinkoff API error:", errorText);
+      logger.error("Tinkoff API error:", errorText);
       return { success: false, error: "Failed to fetch accounts" };
     }
 
     const data = await response.json();
     return { success: true, accounts: data };
   } catch (error) {
-    console.error("Tinkoff API network error:", error);
+    logger.error("Tinkoff API network error:", error);
     return { success: false, error: "Network error" };
   }
 }
@@ -121,14 +122,14 @@ export async function fetchTinkoffStatements(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Tinkoff API error:", errorText);
+      logger.error("Tinkoff API error:", errorText);
       return { success: false, error: "Failed to fetch statements" };
     }
 
     const data = await response.json();
     return { success: true, operations: data.operations || [] };
   } catch (error) {
-    console.error("Tinkoff API network error:", error);
+    logger.error("Tinkoff API network error:", error);
     return { success: false, error: "Network error" };
   }
 }

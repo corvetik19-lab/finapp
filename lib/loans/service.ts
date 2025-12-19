@@ -1,6 +1,7 @@
 import { createRSCClient } from "@/lib/supabase/helpers";
 import type { Loan, LoanRecord, LoanSummary } from "./types";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
+import { logger } from "@/lib/logger";
 
 // Конвертация записи БД в Loan объект
 export function mapLoanRecord(record: LoanRecord): Loan {
@@ -69,7 +70,7 @@ export async function loadLoans(): Promise<Loan[]> {
   const { data, error } = await query;
 
   if (error) {
-    console.error("Failed to load loans:", error);
+    logger.error("Failed to load loans:", error);
     return [];
   }
 

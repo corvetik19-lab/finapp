@@ -1,0 +1,226 @@
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 300px;
+  color: #9ca3af;
+}
+
+.loading .material-icons {
+  font-size: 48px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.header {
+  margin-bottom: 32px;
+}
+
+.header h1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.header h1 .material-icons {
+  font-size: 28px;
+  color: #a78bfa;
+}
+
+.header p {
+  color: #9ca3af;
+  margin: 0;
+}
+
+/* Stats Grid */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.statCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+.statIcon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+  border-radius: 12px;
+}
+
+.statIcon .material-icons {
+  font-size: 24px;
+  color: #a78bfa;
+}
+
+.statContent {
+  flex: 1;
+}
+
+.statValue {
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.statLabel {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* History Section */
+.historySection {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.historySection h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 20px 0;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  text-align: center;
+  color: #9ca3af;
+}
+
+.emptyState .material-icons {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.emptyState p {
+  font-size: 16px;
+  margin: 0 0 8px 0;
+}
+
+.emptyState span {
+  font-size: 13px;
+}
+
+/* Logs List */
+.logsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.logItem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.logItem:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.logIcon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(102, 126, 234, 0.15);
+  border-radius: 8px;
+}
+
+.logIcon .material-icons {
+  font-size: 20px;
+  color: #a78bfa;
+}
+
+.logContent {
+  flex: 1;
+}
+
+.logHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.logFeature {
+  font-weight: 500;
+  color: #fff;
+}
+
+.logModel {
+  font-size: 12px;
+  color: #9ca3af;
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.logMeta {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.logMeta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.logMeta .material-icons {
+  font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .logMeta {
+    flex-direction: column;
+    gap: 4px;
+  }
+}

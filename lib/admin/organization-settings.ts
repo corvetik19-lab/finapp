@@ -1,6 +1,7 @@
 "use server";
 
 import { createRouteClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 /**
  * Обновить список режимов для организации (для админа организации)
@@ -52,7 +53,7 @@ export async function updateOrganizationModes(
     .eq("id", organizationId);
 
   if (error) {
-    console.error("Error updating organization modes:", error);
+    logger.error("Error updating organization modes:", error);
     return { ok: false, error: error.message };
   }
 
@@ -72,7 +73,7 @@ export async function getOrganizationSettings(organizationId: string) {
     .single();
 
   if (error) {
-    console.error("Error fetching organization settings:", error);
+    logger.error("Error fetching organization settings:", error);
     return null;
   }
 

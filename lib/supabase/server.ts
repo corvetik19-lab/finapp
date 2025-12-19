@@ -2,13 +2,14 @@ import { cookies } from "next/headers";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import type { SupabaseClient, User, AuthError } from "@supabase/supabase-js";
 import { cache } from "react";
+import { logger } from "@/lib/logger";
 
 // Server Component client (read-only cookies)
 export async function createRSCClient(): Promise<SupabaseClient> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !anon) {
-    console.error("❌ Supabase env vars missing! URL:", !!url, "ANON:", !!anon);
+    logger.error("Supabase env vars missing", { hasUrl: !!url, hasAnon: !!anon });
     const stub = {
       auth: {
         async getUser(): Promise<{ data: { user: User | null }; error: AuthError | null }> {
@@ -25,11 +26,12 @@ export async function createRSCClient(): Promise<SupabaseClient> {
       get(name: string) {
         return store.get(name)?.value;
       },
-      // No-op writes in RSC
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      set(_name: string, _value: string, _options: CookieOptions) {},
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      remove(_name: string, _options: CookieOptions) {},
+      set() {
+        // No-op in RSC (read-only context)
+      },
+      remove() {
+        // No-op in RSC (read-only context)
+      },
     },
   });
 }

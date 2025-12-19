@@ -8,6 +8,34 @@ import {
 } from '@/lib/employees/service';
 import { updateEmployeeSchema } from '@/lib/employees/validation';
 
+// Helper to check if employee is a super_admin (protected from editing)
+// Checks both by user_id and by email
+async function isSuperAdminEmployee(supabase: SupabaseClient, employeeUserId?: string, employeeEmail?: string): Promise<boolean> {
+  // Check by user_id
+  if (employeeUserId) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('global_role')
+      .eq('id', employeeUserId)
+      .single();
+    
+    if (profile?.global_role === 'super_admin') return true;
+  }
+  
+  // Check by email
+  if (employeeEmail) {
+    const { data: profileByEmail } = await supabase
+      .from('profiles')
+      .select('global_role')
+      .eq('email', employeeEmail.toLowerCase())
+      .single();
+    
+    if (profileByEmail?.global_role === 'super_admin') return true;
+  }
+  
+  return false;
+}
+
 // Helper to check permissions (Same logic as in main route)
 async function checkPermissions(supabase: SupabaseClient, targetCompanyId: string) {
   const { data: { user } } = await supabase.auth.getUser();
@@ -21,7 +49,7 @@ async function checkPermissions(supabase: SupabaseClient, targetCompanyId: strin
     .single();
 
   if (profile?.global_role === 'super_admin' || profile?.global_role === 'admin') {
-    return { user, isGlobalAdmin: true };
+    return { user, isGlobalAdmin: true, isSuperAdmin: profile?.global_role === 'super_admin' };
   }
 
   // 2. If not global admin, check company membership and role
@@ -46,7 +74,7 @@ async function checkPermissions(supabase: SupabaseClient, targetCompanyId: strin
     return { error: 'Недостаточно прав (требуется роль администратора компании)', status: 403 };
   }
 
-  return { user, member, isGlobalAdmin: false };
+  return { user, member, isGlobalAdmin: false, isSuperAdmin: false };
 }
 
 /**
@@ -67,9 +95,14 @@ export async function GET(
 
     // Check permissions
     const perm = await checkPermissions(supabase, employee.company_id);
-    // Allow viewing if it's the user themselves? (Optional improvement later)
     if (perm.error) {
       return NextResponse.json({ error: perm.error }, { status: perm.status });
+    }
+
+    // Hide super_admin from non-super_admin users
+    const isTargetSuperAdmin = await isSuperAdminEmployee(supabase, employee.user_id, employee.email);
+    if (isTargetSuperAdmin && !perm.isSuperAdmin) {
+      return NextResponse.json({ error: 'Сотрудник не найден' }, { status: 404 });
     }
 
     return NextResponse.json(employee);
@@ -103,6 +136,12 @@ export async function PATCH(
     const perm = await checkPermissions(supabase, employee.company_id);
     if (perm.error) {
       return NextResponse.json({ error: perm.error }, { status: perm.status });
+    }
+    
+    // Check if trying to edit a super_admin (only super_admin can edit themselves)
+    const isTargetSuperAdmin = await isSuperAdminEmployee(supabase, employee.user_id, employee.email);
+    if (isTargetSuperAdmin && !perm.isSuperAdmin) {
+      return NextResponse.json({ error: 'Нельзя редактировать супер-администратора' }, { status: 403 });
     }
     
     // 2. Validation
@@ -147,6 +186,12 @@ export async function DELETE(
     const perm = await checkPermissions(supabase, employee.company_id);
     if (perm.error) {
       return NextResponse.json({ error: perm.error }, { status: perm.status });
+    }
+
+    // Check if trying to delete a super_admin (forbidden)
+    const isTargetSuperAdmin = await isSuperAdminEmployee(supabase, employee.user_id, employee.email);
+    if (isTargetSuperAdmin) {
+      return NextResponse.json({ error: 'Нельзя удалить супер-администратора' }, { status: 403 });
     }
 
     await deleteEmployee(id);

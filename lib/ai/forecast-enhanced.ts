@@ -6,6 +6,7 @@
  */
 
 import { SupabaseClient } from "@supabase/supabase-js";
+import { logger } from "@/lib/logger";
 
 interface Transaction {
   amount: number;
@@ -245,11 +246,12 @@ function generateReasoning(trend: string, months: number, confidence: number): s
  * @param _history - Исторические данные (планируется использовать для AI-анализа)
  */
 export async function generateAIAdvice(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _forecast: ForecastResult,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _history: MonthlyData[]
 ): Promise<string[]> {
+  // Параметры планируются к использованию для AI-анализа
+  void _forecast;
+  void _history;
   // Fallback советы (временно отключаем AI из-за проблем с кодировкой кириллицы)
   const fallbackAdvice = [
     "Следите за категориями с растущими тратами",
@@ -296,7 +298,7 @@ ${topCategories.map(c => `- ${c.category}: ${(c.predicted / 100).toFixed(0)}₽ 
 
     return advice.length > 0 ? advice : fallbackAdvice;
   } catch (error) {
-    console.error("AI advice error:", error);
+    logger.error("AI advice error:", error);
     return fallbackAdvice;
   }
   */

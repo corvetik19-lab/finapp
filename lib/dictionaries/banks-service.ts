@@ -3,6 +3,7 @@
 import { createRSCClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
 import { Bank, BankInput } from "@/types/bank";
+import { logger } from "@/lib/logger";
 
 export async function getBanks(): Promise<Bank[]> {
   const supabase = await createRSCClient();
@@ -17,7 +18,7 @@ export async function getBanks(): Promise<Bank[]> {
     .order("name");
 
   if (error) {
-    console.error("Error fetching banks:", error);
+    logger.error("Error fetching banks:", error);
     return [];
   }
 
@@ -39,7 +40,7 @@ export async function getBanksStats(): Promise<{
     .eq("company_id", companyId);
 
   if (error) {
-    console.error("Error fetching banks stats:", error);
+    logger.error("Error fetching banks stats:", error);
     return { total: 0, active: 0 };
   }
 
@@ -82,7 +83,7 @@ export async function createBank(
     .single();
 
   if (error) {
-    console.error("Error creating bank:", error);
+    logger.error("Error creating bank:", error);
     return { success: false, error: error.message };
   }
 
@@ -124,7 +125,7 @@ export async function updateBank(
     .single();
 
   if (error) {
-    console.error("Error updating bank:", error);
+    logger.error("Error updating bank:", error);
     return { success: false, error: error.message };
   }
 
@@ -148,7 +149,7 @@ export async function deleteBank(
     .eq("company_id", companyId);
 
   if (error) {
-    console.error("Error deleting bank:", error);
+    logger.error("Error deleting bank:", error);
     return { success: false, error: error.message };
   }
 
@@ -184,7 +185,7 @@ export async function toggleBankActive(
     .eq("company_id", companyId);
 
   if (error) {
-    console.error("Error toggling bank active:", error);
+    logger.error("Error toggling bank active:", error);
     return { success: false, error: error.message };
   }
 

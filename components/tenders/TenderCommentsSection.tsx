@@ -62,6 +62,7 @@ export function TenderCommentsSection({ tenderId, onCountChange }: TenderComment
     fileName: string;
     mimeType: string;
   } | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const newCommentFormRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -75,8 +76,13 @@ export function TenderCommentsSection({ tenderId, onCountChange }: TenderComment
       const response = await fetch(`/api/tenders/${tenderId}/comments`);
       if (!response.ok) throw new Error('Failed to load comments');
       
-      const { data } = await response.json();
+      const { data, currentUserId: userId } = await response.json();
       setComments(data || []);
+      
+      // Устанавливаем ID текущего пользователя
+      if (userId) {
+        setCurrentUserId(userId);
+      }
       
       // Уведомляем родителя о количестве комментариев
       if (onCountChange) {
@@ -381,14 +387,16 @@ export function TenderCommentsSection({ tenderId, onCountChange }: TenderComment
                         ({(attachment.file_size / 1024).toFixed(1)} КБ)
                       </span>
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleAttachmentDelete(comment.id, attachment.id)}
-                      className="text-gray-400 hover:text-red-500"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                    {currentUserId === comment.author_id && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleAttachmentDelete(comment.id, attachment.id)}
+                        className="text-gray-400 hover:text-red-500"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -411,19 +419,23 @@ export function TenderCommentsSection({ tenderId, onCountChange }: TenderComment
                   Ответить
                 </Button>
               )}
-              <Button variant="ghost" size="sm" onClick={() => handleEdit(comment)}>
-                <Pencil className="h-4 w-4 mr-1" />
-                Редактировать
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleDelete(comment.id)}
-                className="text-red-500 hover:text-red-600 hover:bg-red-50"
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                Удалить
-              </Button>
+              {currentUserId === comment.author_id && (
+                <Button variant="ghost" size="sm" onClick={() => handleEdit(comment)}>
+                  <Pencil className="h-4 w-4 mr-1" />
+                  Редактировать
+                </Button>
+              )}
+              {currentUserId === comment.author_id && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDelete(comment.id)}
+                  className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Удалить
+                </Button>
+              )}
             </div>
           </>
         )}

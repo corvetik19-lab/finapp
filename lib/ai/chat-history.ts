@@ -1,5 +1,6 @@
 import { createRouteClient } from "@/lib/supabase/helpers";
 import type { AiChat, AiMessage } from "./chat-types";
+import { logger } from "@/lib/logger";
 
 export type { AiChat, AiMessage };
 
@@ -16,7 +17,7 @@ export async function getUserChats(): Promise<AiChat[]> {
     .order("updated_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching chats:", error);
+    logger.error("Error fetching chats:", error);
     return [];
   }
 
@@ -36,7 +37,7 @@ export async function getChatMessages(chatId: string): Promise<AiMessage[]> {
     .order("created_at", { ascending: true });
 
   if (error) {
-    console.error("Error fetching messages:", error);
+    logger.error("Error fetching messages:", error);
     return [];
   }
 
@@ -63,7 +64,7 @@ export async function createChat(model: string = "openai/gpt-4o-mini"): Promise<
     .single();
 
   if (error) {
-    console.error("Error creating chat:", error);
+    logger.error("Error creating chat:", error);
     return null;
   }
 
@@ -93,7 +94,7 @@ export async function saveMessage(
     });
 
   if (error) {
-    console.error("Error saving message:", error);
+    logger.error("Error saving message:", error);
     return false;
   }
 
@@ -112,7 +113,7 @@ export async function updateChatTitle(chatId: string, title: string): Promise<bo
     .eq("id", chatId);
 
   if (error) {
-    console.error("Error updating chat title:", error);
+    logger.error("Error updating chat title:", error);
     return false;
   }
 
@@ -132,7 +133,7 @@ export async function deleteChat(chatId: string): Promise<boolean> {
     .eq("id", chatId);
 
   if (error) {
-    console.error("Error deleting chat:", error);
+    logger.error("Error deleting chat:", error);
     return false;
   }
 

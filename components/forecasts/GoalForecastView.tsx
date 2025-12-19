@@ -108,8 +108,8 @@ export default function GoalForecastView() {
       },
       tooltip: {
         callbacks: {
-          label: (context: { dataset: { label?: string }; parsed: { y: number } }) => {
-            return `${context.dataset.label}: ${context.parsed.y.toLocaleString("ru-RU")} ₽`;
+          label: (context: { dataset: { label?: string }; parsed: { y: number | null } }) => {
+            return `${context.dataset.label}: ${(context.parsed.y ?? 0).toLocaleString("ru-RU")} ₽`;
           },
         },
       },

@@ -41,7 +41,7 @@ const NAV_ITEMS = [
     items: [
       { href: "/admin/settings/organization", icon: "business", label: "Моя организация" },
       { href: "/admin/settings/modes", icon: "modes", label: "Режимы" },
-      { href: "/admin/settings/users", icon: "people", label: "Сотрудники" },
+      { href: "/admin/settings/users", icon: "people", label: "Пользователи" },
       { href: "/admin/settings/roles", icon: "admin_panel_settings", label: "Роли и права" },
     ],
   },

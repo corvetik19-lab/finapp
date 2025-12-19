@@ -41,8 +41,9 @@ export default function ReportChart({
     // Данные для графика
     const chartData = prepareChartData(data, type);
 
-    // Создаём новый график
-    chartRef.current = new Chart(ctx, {
+    // Создаём новый график (Chart.js types are strict for dynamic chart types)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const config: any = {
       type,
       data: chartData,
       options: {
@@ -54,7 +55,7 @@ export default function ReportChart({
           },
           tooltip: {
             callbacks: {
-              label: function (context) {
+              label: function (context: { label?: string; parsed: { y: number | null } }) {
                 let label = context.label || "";
                 if (label) {
                   label += ": ";
@@ -73,7 +74,7 @@ export default function ReportChart({
                 y: {
                   beginAtZero: true,
                   ticks: {
-                    callback: function (value) {
+                    callback: function (value: string | number) {
                       return formatCurrency(Number(value));
                     },
                   },
@@ -81,7 +82,8 @@ export default function ReportChart({
               }
             : undefined,
       },
-    });
+    };
+    chartRef.current = new Chart(ctx, config);
 
     return () => {
       if (chartRef.current) {

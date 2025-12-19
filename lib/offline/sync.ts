@@ -1,5 +1,6 @@
 import { offlineQueue, PendingOperation } from "./queue";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { logger } from "@/lib/logger";
 
 /**
  * Сервис синхронизации офлайн-операций
@@ -16,7 +17,7 @@ class SyncService {
 
     // Синхронизировать при появлении интернета
     window.addEventListener("online", () => {
-      console.log("[Sync] Internet connection restored, starting sync...");
+      logger.info("Internet connection restored, starting sync");
       this.sync();
     });
 
@@ -48,12 +49,12 @@ class SyncService {
    */
   async sync(): Promise<{ success: number; failed: number }> {
     if (this.isSyncing) {
-      console.log("[Sync] Already syncing, skipping...");
+      logger.debug("Already syncing, skipping");
       return { success: 0, failed: 0 };
     }
 
     if (!navigator.onLine) {
-      console.log("[Sync] Offline, skipping sync");
+      logger.debug("Offline, skipping sync");
       return { success: 0, failed: 0 };
     }
 
@@ -64,14 +65,14 @@ class SyncService {
       const operations = await offlineQueue.getAll();
 
       if (operations.length === 0) {
-        console.log("[Sync] No pending operations");
+        logger.debug("No pending operations");
         return { success: 0, failed: 0 };
       }
 
       // Устанавливаем флаг синхронизации только если есть операции
       this.isSyncing = true;
 
-      console.log(`[Sync] Syncing ${operations.length} operations...`);
+      logger.info("Syncing operations", { count: operations.length });
 
       const supabase = getSupabaseClient();
 
@@ -81,11 +82,11 @@ class SyncService {
           await this.syncOperation(supabase, operation);
           await offlineQueue.remove(operation.id);
           successCount++;
-          console.log(`[Sync] ✅ Operation ${operation.id} synced successfully`);
+          logger.debug("Operation synced successfully", { id: operation.id });
         } catch (error) {
           failedCount++;
           const errorMessage = (error as Error).message;
-          console.error(`[Sync] ❌ Failed to sync operation ${operation.id}:`, errorMessage);
+          logger.error("Failed to sync operation", { id: operation.id, error: errorMessage });
 
           // Обновить операцию с информацией об ошибке
           await offlineQueue.update(operation.id, {
@@ -95,16 +96,16 @@ class SyncService {
 
           // Удалить операцию после 5 неудачных попыток
           if (operation.attempts >= 5) {
-            console.error(`[Sync] ⛔ Operation ${operation.id} failed 5 times, removing from queue`);
+            logger.error("Operation failed 5 times, removing from queue", { id: operation.id });
             await offlineQueue.remove(operation.id);
           }
         }
       }
 
-      console.log(`[Sync] Complete: ${successCount} success, ${failedCount} failed`);
+      logger.info("Sync complete", { success: successCount, failed: failedCount });
       return { success: successCount, failed: failedCount };
     } catch (error) {
-      console.error("[Sync] Sync error:", error);
+      logger.error("Sync error", { error });
       return { success: successCount, failed: failedCount };
     } finally {
       this.isSyncing = false;

@@ -118,7 +118,6 @@ export default function BankImportTrigger() {
       }
 
       // Если есть товар - создаём позицию
-      console.log("🔍 Transaction product:", { hasProduct: !!t.product, product: t.product, inserted: inserted?.id });
       if (t.product && inserted) {
         const totalAmount = Math.round(t.product.quantity * t.product.price_per_unit);
         const { error: itemError } = await supabase.from("transaction_items").insert({
@@ -134,9 +133,7 @@ export default function BankImportTrigger() {
           company_id: companyId,
         });
         if (itemError) {
-          console.error("❌ Error creating transaction item:", itemError);
-        } else {
-          console.log("✅ Transaction item created");
+          // Error creating transaction item - silently continue
         }
       }
     }

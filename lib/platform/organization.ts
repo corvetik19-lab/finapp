@@ -5,6 +5,7 @@
 import { createRouteClient, getCachedUser } from "@/lib/supabase/server";
 import { AppMode, Organization, MemberPermissions } from "@/lib/organizations/types";
 import { cache } from "react";
+import { logger } from "@/lib/logger";
 
 /**
  *    
@@ -188,7 +189,7 @@ export async function hasUserModeAccess(mode: AppMode): Promise<boolean> {
     .single();
 
   if (profileError) {
-    console.error('hasUserModeAccess: Profile fetch error', profileError);
+    logger.error('hasUserModeAccess: Profile fetch error', profileError);
   }
 
   if (profile?.global_role === 'super_admin') {
@@ -230,20 +231,29 @@ export async function hasUserModeAccess(mode: AppMode): Promise<boolean> {
     return true;
   }
 
-  // Если есть role_id - проверяем permissions роли
+  // Если есть role_id - проверяем permissions и allowed_modes роли
   if (member.role_id) {
     const { data: roleData } = await supabase
       .from('roles')
-      .select('permissions')
+      .select('permissions, allowed_modes')
       .eq('id', member.role_id)
       .single();
     
-    if (roleData?.permissions) {
-      const rolePermissions = roleData.permissions as string[];
-      // Проверяем есть ли хоть одно право начинающееся с mode: (например tenders:view)
-      const hasRoleAccess = rolePermissions.some(p => p.startsWith(`${mode}:`));
-      if (hasRoleAccess) {
+    if (roleData) {
+      // Проверяем allowed_modes роли
+      const roleAllowedModes = roleData.allowed_modes as string[] | null;
+      if (roleAllowedModes?.includes(mode)) {
         return true;
+      }
+      
+      // Проверяем permissions роли
+      if (roleData.permissions) {
+        const rolePermissions = roleData.permissions as string[];
+        // Проверяем есть ли хоть одно право начинающееся с mode: (например tenders:view, ai-studio:view)
+        const hasRoleAccess = rolePermissions.some(p => p.startsWith(`${mode}:`));
+        if (hasRoleAccess) {
+          return true;
+        }
       }
     }
   }

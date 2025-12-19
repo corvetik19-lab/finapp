@@ -1,4 +1,5 @@
 import { createRSCClient } from '@/lib/supabase/helpers';
+import { logger } from "@/lib/logger";
 
 // Интерфейсы для отчёта по банковским гарантиям
 export type GuaranteeType = 'application' | 'contract' | 'warranty';
@@ -135,7 +136,7 @@ export async function getGuaranteesReportData(
   const { data: allTenders, error } = await query;
 
   if (error) {
-    console.error('Error fetching tenders for guarantees report:', error);
+    logger.error('Error fetching tenders for guarantees report:', error);
     return getEmptyReport();
   }
 

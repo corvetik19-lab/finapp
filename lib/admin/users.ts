@@ -5,6 +5,7 @@ import { GlobalRole, AppModule } from '@/lib/auth/types';
 import { revalidatePath } from 'next/cache';
 
 import { createClient } from '@supabase/supabase-js';
+import { logger } from "@/lib/logger";
 
 export interface AdminAuthUser {
     id: string;
@@ -17,7 +18,7 @@ export async function getAllAuthUsers(): Promise<AdminAuthUser[]> {
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!serviceKey) {
-        console.error('SUPABASE_SERVICE_ROLE_KEY is not set');
+        logger.error('SUPABASE_SERVICE_ROLE_KEY is not set');
         return [];
     }
 
@@ -35,7 +36,7 @@ export async function getAllAuthUsers(): Promise<AdminAuthUser[]> {
     const { data: { users }, error } = await adminClient.auth.admin.listUsers();
 
     if (error) {
-        console.error('Error listing users:', error);
+        logger.error('Error listing users:', error);
         return [];
     }
 
@@ -67,7 +68,7 @@ export async function getUsersWithOrganizations(): Promise<UserWithOrganizations
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!serviceKey) {
-        console.error('SUPABASE_SERVICE_ROLE_KEY is not set');
+        logger.error('SUPABASE_SERVICE_ROLE_KEY is not set');
         return [];
     }
 
@@ -86,7 +87,7 @@ export async function getUsersWithOrganizations(): Promise<UserWithOrganizations
     const { data: { users }, error } = await adminClient.auth.admin.listUsers();
 
     if (error) {
-        console.error('Error listing users:', error);
+        logger.error('Error listing users:', error);
         return [];
     }
 
@@ -167,7 +168,7 @@ export async function getUsers(query?: string) {
     const { data, error } = await dbQuery;
 
     if (error) {
-        console.error('Error fetching users:', error);
+        logger.error('Error fetching users:', error);
         throw new Error('Failed to fetch users');
     }
 

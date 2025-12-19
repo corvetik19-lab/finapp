@@ -3,6 +3,7 @@
 import { createRSCClient, getCachedUser } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
 import { logActivity } from "./tasks-service";
+import { logger } from "@/lib/logger";
 
 export interface EmailTemplate {
   id: string;
@@ -59,7 +60,7 @@ export async function getEmailTemplates(): Promise<EmailTemplate[]> {
     .order("name");
 
   if (error) {
-    console.error("Error fetching email templates:", error);
+    logger.error("Error fetching email templates:", error);
     return [];
   }
 
@@ -93,7 +94,7 @@ export async function createEmailTemplate(input: {
     .single();
 
   if (error) {
-    console.error("Error creating email template:", error);
+    logger.error("Error creating email template:", error);
     return { success: false, error: "Ошибка создания шаблона" };
   }
 
@@ -118,7 +119,7 @@ export async function deleteEmailTemplate(
     .eq("company_id", companyId);
 
   if (error) {
-    console.error("Error deleting email template:", error);
+    logger.error("Error deleting email template:", error);
     return { success: false, error: "Ошибка удаления шаблона" };
   }
 
@@ -140,7 +141,7 @@ export async function getSupplierEmails(supplierId: string): Promise<SupplierEma
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching supplier emails:", error);
+    logger.error("Error fetching supplier emails:", error);
     return [];
   }
 
@@ -180,7 +181,7 @@ export async function sendEmail(
     .single();
 
   if (error) {
-    console.error("Error sending email:", error);
+    logger.error("Error sending email:", error);
     return { success: false, error: "Ошибка отправки письма" };
   }
 

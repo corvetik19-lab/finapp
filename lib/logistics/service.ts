@@ -1,6 +1,7 @@
 import { createRSCClient, createRouteClient } from "@/lib/supabase/helpers";
 import { Shipment, Driver, ShipmentStatusHistory, ShipmentStatus } from "@/types/logistics";
 import { shipmentFormSchema, driverFormSchema, type ShipmentFormInput, type DriverFormInput } from "./validation";
+import { logger } from "@/lib/logger";
 
 export { shipmentFormSchema, driverFormSchema };
 export type { ShipmentFormInput, DriverFormInput };
@@ -106,7 +107,7 @@ export async function createShipment(input: ShipmentFormInput): Promise<Shipment
     .single();
 
   if (error) {
-    console.error('Supabase error:', error);
+    logger.error('Supabase error:', error);
     throw error;
   }
   return transformShipmentFromDB(data) as Shipment;

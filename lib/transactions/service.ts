@@ -2,6 +2,13 @@ import { z } from "zod";
 import { createRSCClient, createRouteClient } from "@/lib/supabase/helpers";
 import { transactionSchema, transferSchema, type TransferInput as TransferInputSchemaType } from "@/lib/validation/transaction";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
+import { logger } from "@/lib/logger";
+import type { CategoryRow } from "@/types/supabase";
+
+type TransactionWithCategoryJoin = {
+  id: string;
+  category: CategoryRow | CategoryRow[] | null;
+};
 
 export type TransactionDirection = "income" | "expense" | "transfer";
 
@@ -575,7 +582,7 @@ export async function createTransaction(input: InsertTransactionInput): Promise<
           .update({ embedding })
           .eq("id", data.id);
       } catch (err) {
-        console.error("Error creating embedding:", err);
+        logger.error("Error creating embedding", { error: err });
         // Не бросаем ошибку, чтобы не сломать основной flow
       }
     })();
@@ -739,7 +746,7 @@ export async function deleteTransaction(id: string): Promise<void> {
       .single();
 
     if (category && category.name === "Погашение кредита") {
-      console.log("Deleting loan repayment transaction:", {
+      logger.debug("Deleting loan repayment transaction", {
         amount: txnToDelete.amount,
         occurred_at: txnToDelete.occurred_at,
         counterparty: txnToDelete.counterparty,
@@ -755,7 +762,7 @@ export async function deleteTransaction(id: string): Promise<void> {
         .eq("user_id", user.id)
         .eq("amount", txnToDelete.amount);
 
-      console.log("Found loan payments:", loanPayments);
+      logger.debug("Found loan payments", { count: loanPayments?.length });
 
       if (!paymentsError && loanPayments && loanPayments.length > 0) {
         // Ищем платёж с совпадающей датой (берём самый последний если несколько)
@@ -763,21 +770,14 @@ export async function deleteTransaction(id: string): Promise<void> {
           const paymentDate = p.payment_date ? p.payment_date.split('T')[0] : null;
           const dateMatches = paymentDate === txnDate;
           
-          console.log("Checking payment:", {
-            id: p.id,
-            paymentDate,
-            txnDate,
-            dateMatches,
-            amount: p.amount,
-          });
-          
+          logger.debug("Checking payment", { id: p.id, paymentDate, txnDate, dateMatches });
           return dateMatches;
         });
 
         // Берём последний платёж (самый свежий)
         const loanPayment = matchingPayments.length > 0 ? matchingPayments[matchingPayments.length - 1] : null;
 
-        console.log("Matched loan payment:", loanPayment);
+        logger.debug("Matched loan payment", { id: loanPayment?.id });
 
         if (loanPayment) {
           // Уменьшаем principal_paid в кредите
@@ -789,7 +789,7 @@ export async function deleteTransaction(id: string): Promise<void> {
 
           if (loan) {
             const newPrincipalPaid = Math.max(0, (loan.principal_paid || 0) - loanPayment.principal_amount);
-            console.log("Updating loan principal_paid:", {
+            logger.debug("Updating loan principal_paid", {
               old: loan.principal_paid,
               subtract: loanPayment.principal_amount,
               new: newPrincipalPaid,
@@ -823,7 +823,7 @@ export async function deleteTransaction(id: string): Promise<void> {
               .eq("id", loanPayment.loan_id);
           }
           
-          console.log("Deleted loan payment:", loanPayment.id);
+          logger.debug("Deleted loan payment", { id: loanPayment.id });
 
           // Удаляем связанную комиссию, если она есть
           // Ищем транзакцию комиссии с той же датой и counterparty
@@ -835,17 +835,16 @@ export async function deleteTransaction(id: string): Promise<void> {
             .eq("occurred_at", txnToDelete.occurred_at)
             .neq("id", id); // Исключаем текущую транзакцию
 
-          console.log("Found potential commission transactions:", commissionTxns);
+          logger.debug("Found potential commission transactions", { count: commissionTxns?.length });
 
           if (commissionTxns && commissionTxns.length > 0) {
-            // Ищем транзакцию с категорией "Комиссия"
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const commissionTxn = commissionTxns.find((txn: any) => 
-              txn.category && txn.category.name === "Комиссия"
-            );
+            const commissionTxn = (commissionTxns as TransactionWithCategoryJoin[]).find((txn) => {
+              const cat = Array.isArray(txn.category) ? txn.category[0] : txn.category;
+              return cat && cat.name === "Комиссия";
+            });
 
             if (commissionTxn) {
-              console.log("Deleting related commission transaction:", commissionTxn.id);
+              logger.debug("Deleting related commission transaction", { id: commissionTxn.id });
               await supabase
                 .from("transactions")
                 .delete()
@@ -853,10 +852,10 @@ export async function deleteTransaction(id: string): Promise<void> {
             }
           }
         } else {
-          console.log("No matching loan payment found by date");
+          logger.debug("No matching loan payment found by date");
         }
       } else {
-        console.log("No loan payments found for amount:", txnToDelete.amount);
+        logger.debug("No loan payments found for amount", { amount: txnToDelete.amount });
       }
     }
   }
@@ -914,7 +913,7 @@ export async function deleteTransaction(id: string): Promise<void> {
     .delete()
     .eq("transaction_id", id)
     .eq("user_id", user.id);
-  if (itemsError) console.error("Error deleting transaction items:", itemsError);
+  if (itemsError) logger.error("Error deleting transaction items:", itemsError);
 
   const { error } = await supabase.from("transactions").delete().eq("id", id).eq("user_id", user.id);
   if (error) throw error;

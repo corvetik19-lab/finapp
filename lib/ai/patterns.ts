@@ -1,5 +1,6 @@
 import { generateText } from "ai";
 import { getAnalyticsModel } from "./openai-client";
+import { logger } from "@/lib/logger";
 
 /**
  * Анализ паттернов трат пользователя через AI
@@ -99,7 +100,7 @@ export async function detectSpendingAnomaly(
       recommendation: recommendation || "Проверьте свои траты в этой категории",
     };
   } catch (error) {
-    console.error("AI pattern analysis error:", error);
+    logger.error("AI pattern analysis error:", error);
     return {
       isAnomaly: true,
       severity,
@@ -249,7 +250,7 @@ export async function generateFinancialInsight(
 
     return text.trim();
   } catch (error) {
-    console.error("AI insight generation error:", error);
+    logger.error("AI insight generation error:", error);
     return "Продолжайте отслеживать свои расходы для лучшего контроля финансов";
   }
 }

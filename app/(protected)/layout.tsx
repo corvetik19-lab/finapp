@@ -1,13 +1,14 @@
 ﻿import { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { getCachedUser } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/supabase/helpers";
 import ProtectedShell from "@/components/layout/ProtectedShell";
 import PlatformHeader from "@/components/platform/PlatformHeader";
 import OfflineIndicator from "@/components/offline/OfflineIndicator";
 import { OnlineStatusTracker } from "@/components/online/OnlineStatusTracker";
 import { getCurrentOrganization, getActiveOrganizationInfo } from "@/lib/platform/organization";
 import { getEnabledModes } from "@/lib/platform/platform-settings";
+import { logger } from "@/lib/logger";
 
 export default async function ProtectedLayout({ children }: { children: ReactNode }) {
   const {
@@ -18,11 +19,14 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
     redirect("/login");
   }
 
-  const organization = await getCurrentOrganization();
-  const activeOrgInfo = await getActiveOrganizationInfo();
-  const globalEnabledModes = await getEnabledModes();
+  // Параллельно загружаем независимые данные
+  const [organization, activeOrgInfo, globalEnabledModes] = await Promise.all([
+    getCurrentOrganization(),
+    getActiveOrganizationInfo(),
+    getEnabledModes(),
+  ]);
 
-  // Получаем роль пользователя (используем admin client для обхода RLS)
+  // Получаем контекст пользователя через оптимизированный RPC вызов
   let isSuperAdmin = false;
   let isOrgAdmin = false;
   let roleName: string | undefined;
@@ -31,135 +35,57 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
   let userPhone: string | undefined;
   let userCreatedAt: string | undefined;
   let userAvatarUrl: string | undefined;
+  let userAllowedModes: string[] | undefined;
   
   try {
     const adminSupabase = createAdminClient();
     
-    // Проверяем глобальную роль и получаем данные профиля
-    const { data: profile, error } = await adminSupabase
-      .from('profiles')
-      .select('global_role, avatar_url, updated_at')
-      .eq('id', user.id)
-      .single();
+    // Используем RPC для получения всех данных одним запросом
+    const { data: context, error } = await adminSupabase
+      .rpc('get_user_context', {
+        p_user_id: user.id,
+        p_organization_id: organization?.id || null
+      });
 
-    if (!error && profile) {
-      isSuperAdmin = profile.global_role === 'super_admin';
-      // Админ глобально тоже считается админом организации
-      isOrgAdmin = profile.global_role === 'admin' || profile.global_role === 'super_admin';
-      userAvatarUrl = profile.avatar_url || undefined;
-      userCreatedAt = profile.updated_at || undefined;
+    if (!error && context) {
+      isSuperAdmin = context.is_super_admin || false;
+      isOrgAdmin = context.is_org_admin || false;
+      roleName = context.role_name || undefined;
+      departmentName = context.department_name || undefined;
+      position = context.position || undefined;
+      userAvatarUrl = context.avatar_url || undefined;
+      userCreatedAt = context.created_at || undefined;
     }
-
-    // Проверяем роль в текущей организации (добавляем права, не убираем)
-    if (organization && !isOrgAdmin) {
-      const { data: member } = await adminSupabase
-        .from('organization_members')
-        .select('role')
-        .eq('organization_id', organization.id)
+    
+    // Получаем allowed_modes из роли пользователя (если не супер-админ и не орг-админ)
+    if (!isSuperAdmin && !isOrgAdmin) {
+      const { data: memberWithRole } = await adminSupabase
+        .from('company_members')
+        .select('role_id, roles(allowed_modes, permissions)')
         .eq('user_id', user.id)
+        .eq('status', 'active')
         .single();
-
-      if (member && (member.role === 'admin' || member.role === 'owner')) {
-        isOrgAdmin = true;
-      }
-    }
-
-    // Получаем данные сотрудника и роли из company_members
-    const { data: companyMember } = await adminSupabase
-      .from('company_members')
-      .select('role, role_id, employee_id')
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .limit(1)
-      .single();
-
-    if (companyMember) {
-      // Если роль admin в company_members
-      if (companyMember.role === 'admin') {
-        isOrgAdmin = true;
-      }
-
-      // Получаем название роли
-      if (companyMember.role_id) {
-        const { data: roleData } = await adminSupabase
-          .from('roles')
-          .select('name')
-          .eq('id', companyMember.role_id)
-          .single();
-        
-        if (roleData) {
-          roleName = roleData.name;
-        }
-      }
-
-      // Получаем данные сотрудника
-      if (companyMember.employee_id) {
-        const { data: employeeData } = await adminSupabase
-          .from('employees')
-          .select('full_name, position, department_id')
-          .eq('id', companyMember.employee_id)
-          .single();
-
-        if (employeeData) {
-          position = employeeData.position || undefined;
-
-          // Получаем название отдела
-          if (employeeData.department_id) {
-            const { data: deptData } = await adminSupabase
-              .from('departments')
-              .select('name')
-              .eq('id', employeeData.department_id)
-              .single();
-
-            if (deptData) {
-              departmentName = deptData.name;
-            }
-          }
-        }
-      }
-    }
-
-    // Fallback: если нет company_members, ищем сотрудника напрямую по user_id
-    if (!roleName && !position) {
-      const { data: employee } = await adminSupabase
-        .from('employees')
-        .select('full_name, position, department_id, role_id')
-        .eq('user_id', user.id)
-        .limit(1)
-        .single();
-
-      if (employee) {
-        position = employee.position || undefined;
-
-        // Получаем роль
-        if (employee.role_id) {
-          const { data: roleData } = await adminSupabase
-            .from('roles')
-            .select('name')
-            .eq('id', employee.role_id)
-            .single();
-          
-          if (roleData) {
-            roleName = roleData.name;
-          }
-        }
-
-        // Получаем отдел
-        if (employee.department_id) {
-          const { data: deptData } = await adminSupabase
-            .from('departments')
-            .select('name')
-            .eq('id', employee.department_id)
-            .single();
-
-          if (deptData) {
-            departmentName = deptData.name;
+      
+      if (memberWithRole?.roles) {
+        const role = memberWithRole.roles as { allowed_modes?: string[] | null; permissions?: string[] };
+        // Собираем режимы из allowed_modes роли
+        if (role.allowed_modes && role.allowed_modes.length > 0) {
+          userAllowedModes = role.allowed_modes;
+        } else if (role.permissions) {
+          // Извлекаем режимы из permissions (формат "mode:action")
+          const modesFromPermissions = [...new Set(
+            role.permissions
+              .map(p => p.split(':')[0])
+              .filter(m => ['finance', 'tenders', 'ai-studio', 'personal', 'investments'].includes(m))
+          )];
+          if (modesFromPermissions.length > 0) {
+            userAllowedModes = modesFromPermissions;
           }
         }
       }
     }
   } catch (e) {
-    console.error('[Layout] Error fetching profile:', e);
+    logger.error('Error fetching user context in layout', { error: e });
   }
 
   return (
@@ -175,6 +101,7 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
           created_at: userCreatedAt || user.created_at,
         }}
         organization={organization ? { name: organization.name, allowed_modes: organization.allowed_modes } : undefined}
+        userAllowedModes={userAllowedModes}
         globalEnabledModes={globalEnabledModes}
         notificationCount={0}
         impersonating={null}

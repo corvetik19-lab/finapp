@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import { createBrowserClient } from "@supabase/ssr";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Camera, Receipt, AlertCircle, Loader2, Eye, Download, Trash2, Link, FileText } from "lucide-react";
 
 interface Attachment {
@@ -52,10 +53,8 @@ export default function ReceiptsManager({ initialReceipts }: ReceiptsManagerProp
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        console.log('❌ [Desktop] No user found for Realtime subscription');
         return null;
       }
-      console.log('🔄 [Desktop] Setting up Realtime subscription for user:', user.id);
 
       // Используем фильтр по user_id на уровне сервера
       const ch = supabase
@@ -71,7 +70,6 @@ export default function ReceiptsManager({ initialReceipts }: ReceiptsManagerProp
             filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
-            console.log('🔔 [Desktop] Realtime event:', payload);
             if (payload.eventType === 'INSERT') {
               const newAttachment = payload.new as Attachment;
               setReceipts((prev) => {
@@ -89,19 +87,7 @@ export default function ReceiptsManager({ initialReceipts }: ReceiptsManagerProp
             }
           }
         )
-        .subscribe((status, err) => {
-          if (status === 'SUBSCRIBED') {
-            console.log('✅ [Desktop] Realtime SUBSCRIBED successfully');
-          } else if (status === 'CHANNEL_ERROR') {
-            console.error('❌ [Desktop] Realtime CHANNEL_ERROR:', err);
-          } else if (status === 'TIMED_OUT') {
-            console.error('❌ [Desktop] Realtime TIMED_OUT');
-          } else if (status === 'CLOSED') {
-            console.log('🔌 [Desktop] Realtime CLOSED');
-          } else {
-            console.log('🔄 [Desktop] Realtime status:', status);
-          }
-        });
+        .subscribe();
 
       return ch;
     };
@@ -112,7 +98,6 @@ export default function ReceiptsManager({ initialReceipts }: ReceiptsManagerProp
 
     return () => {
       if (channel) {
-        console.log('🔌 [Desktop] Removing Realtime channel');
         supabase.removeChannel(channel);
       }
     };
@@ -277,11 +262,39 @@ export default function ReceiptsManager({ initialReceipts }: ReceiptsManagerProp
                   </div>
                 )}
                 <div className="flex items-center gap-1 pt-1">
-                  <Button variant="ghost" size="sm" onClick={() => handlePreview(file)} title="Просмотр"><Eye className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="sm" asChild title="Скачать">
-                    <a href={`/api/attachments/download?path=${encodeURIComponent(file.file_path)}&name=${encodeURIComponent(file.file_name)}`} download><Download className="h-4 w-4" /></a>
+                  <Button variant="ghost" size="sm" onClick={() => handlePreview(file)} title="Просмотр">
+                    <Eye className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDelete(file.id, file.file_path)} title="Удалить"><Trash2 className="h-4 w-4" /></Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                    onClick={async () => {
+                      try {
+                        // Используем view endpoint который работает, и скачиваем как blob
+                        const response = await fetch(`/api/attachments/view?path=${encodeURIComponent(file.file_path)}`);
+                        if (!response.ok) throw new Error('Download failed');
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = file.file_name;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                      } catch (err) {
+                        console.error('Download error:', err);
+                        alert('Ошибка скачивания файла');
+                      }
+                    }}
+                    title="Скачать"
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDelete(file.id, file.file_path)} title="Удалить">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -290,7 +303,10 @@ export default function ReceiptsManager({ initialReceipts }: ReceiptsManagerProp
       )}
 
       <Dialog open={!!previewUrl} onOpenChange={() => setPreviewUrl(null)}>
-        <DialogContent className="max-w-4xl p-0">
+        <DialogContent className="max-w-4xl p-0" aria-describedby={undefined}>
+          <VisuallyHidden>
+            <DialogTitle>Просмотр чека</DialogTitle>
+          </VisuallyHidden>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {previewUrl && <img src={previewUrl} alt="Preview" className="w-full h-auto max-h-[80vh] object-contain" />}
         </DialogContent>

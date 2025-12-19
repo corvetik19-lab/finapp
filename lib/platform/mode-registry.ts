@@ -161,6 +161,36 @@ export const MODE_REGISTRY: Record<string, ModeConfig> = {
     },
     minRole: 'member',
   },
+
+  'ai-studio': {
+    key: 'ai-studio',
+    name: 'ИИ Студия',
+    icon: 'auto_awesome',
+    color: '#a78bfa',
+    description: 'Gemini AI: чат, изображения, видео, аудио, документы и исследования',
+    isEnabled: true,
+    isPremium: false,
+    order: 5,
+    permissions: {
+      view: ['viewer', 'member', 'admin', 'owner'],
+      create: ['member', 'admin', 'owner'],
+      edit: ['member', 'admin', 'owner'],
+      delete: ['admin', 'owner'],
+      admin: ['owner'],
+    },
+    routes: {
+      root: '/ai-studio',
+      dashboard: '/ai-studio',
+      settings: '/ai-studio/settings',
+    },
+    features: {
+      ai: true,
+      analytics: false,
+      exports: true,
+      integrations: true,
+      notifications: false,
+    },
+  },
 };
 
 /**

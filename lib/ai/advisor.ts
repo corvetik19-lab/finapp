@@ -1,5 +1,6 @@
 import { generateText } from "ai";
 import { getAnalyticsModel } from "./openai-client";
+import { logger } from "@/lib/logger";
 
 /**
  * AI Финансовый советник - комплексный анализ финансового здоровья
@@ -366,7 +367,7 @@ ${context.goals ? `- Финансовые цели: ${context.goals.join(", ")}`
 
     return fallbackAdvice.slice(0, 5);
   } catch (error) {
-    console.error("AI advice generation error:", error);
+    logger.error("AI advice generation error:", error);
     
     // Минимальный fallback
     return [

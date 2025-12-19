@@ -3,6 +3,7 @@
 import { createRSCClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
 import { ensureValidToken } from "./bank-oauth";
+import { logger } from "@/lib/logger";
 
 const TINKOFF_API_BASE = "https://business.tinkoff.ru/openapi/api/v1";
 const TINKOFF_SANDBOX_BASE = "https://business.tinkoff.ru/openapi/sandbox/api/v1";
@@ -118,7 +119,7 @@ export async function sendPaymentOrderToTinkoff(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Tinkoff payment error:", errorText);
+      logger.error("Tinkoff payment error:", errorText);
       
       // Обновляем статус на ошибку
       await supabase
@@ -147,7 +148,7 @@ export async function sendPaymentOrderToTinkoff(
 
     return { success: true, externalId: result.paymentId || result.id };
   } catch (error) {
-    console.error("Payment send error:", error);
+    logger.error("Payment send error:", error);
     
     await supabase
       .from("payment_orders")
@@ -243,7 +244,7 @@ export async function checkPaymentOrderStatus(
 
     return { success: true, status: newStatus };
   } catch (error) {
-    console.error("Status check error:", error);
+    logger.error("Status check error:", error);
     return { success: false, error: "Ошибка сети" };
   }
 }
@@ -308,7 +309,7 @@ export async function cancelPaymentOrder(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Cancel error:", errorText);
+      logger.error("Cancel error:", errorText);
       return { success: false, error: "Ошибка отмены платежа в банке" };
     }
 
@@ -322,7 +323,7 @@ export async function cancelPaymentOrder(
 
     return { success: true };
   } catch (error) {
-    console.error("Cancel error:", error);
+    logger.error("Cancel error:", error);
     return { success: false, error: "Ошибка сети" };
   }
 }

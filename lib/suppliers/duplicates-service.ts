@@ -3,6 +3,7 @@
 import { createRSCClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
 import { Supplier } from "./types";
+import { logger } from "@/lib/logger";
 
 export interface DuplicateGroup {
   key: string;
@@ -31,7 +32,7 @@ export async function findDuplicates(): Promise<DuplicateGroup[]> {
     .order("name");
 
   if (error || !suppliers) {
-    console.error("Error fetching suppliers for duplicates:", error);
+    logger.error("Error fetching suppliers for duplicates:", error);
     return [];
   }
 
@@ -262,13 +263,13 @@ export async function mergeSuppliers(
       .eq("company_id", companyId);
 
     if (deleteError) {
-      console.error("Error deleting duplicate suppliers:", deleteError);
+      logger.error("Error deleting duplicate suppliers:", deleteError);
       return { success: false, error: "Ошибка удаления дубликатов" };
     }
 
     return { success: true, targetId, mergedCount: sourceIds.length };
   } catch (error) {
-    console.error("Error merging suppliers:", error);
+    logger.error("Error merging suppliers:", error);
     return { success: false, error: "Ошибка слияния поставщиков" };
   }
 }

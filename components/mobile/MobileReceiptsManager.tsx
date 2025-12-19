@@ -41,11 +41,8 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        console.log('❌ [Mobile] No user found for Realtime subscription');
         return null;
       }
-
-      console.log('🔄 [Mobile] Setting up Realtime subscription for user:', user.id);
 
       // Используем фильтр по user_id на уровне сервера
       const ch = supabase
@@ -61,7 +58,6 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
             filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
-            console.log('🔔 [Mobile] Realtime event:', payload);
             if (payload.eventType === 'INSERT') {
               const newAttachment = payload.new as Attachment;
               setReceipts((prev) => {
@@ -79,19 +75,7 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
             }
           }
         )
-        .subscribe((status, err) => {
-          if (status === 'SUBSCRIBED') {
-            console.log('✅ [Mobile] Realtime SUBSCRIBED successfully');
-          } else if (status === 'CHANNEL_ERROR') {
-            console.error('❌ [Mobile] Realtime CHANNEL_ERROR:', err);
-          } else if (status === 'TIMED_OUT') {
-            console.error('❌ [Mobile] Realtime TIMED_OUT');
-          } else if (status === 'CLOSED') {
-            console.log('🔌 [Mobile] Realtime CLOSED');
-          } else {
-            console.log('🔄 [Mobile] Realtime status:', status);
-          }
-        });
+        .subscribe();
 
       return ch;
     };
@@ -102,7 +86,6 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
 
     return () => {
       if (channel) {
-        console.log('🔌 [Mobile] Removing Realtime channel');
         supabase.removeChannel(channel);
       }
     };
@@ -110,10 +93,8 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    console.log('Files selected:', files);
     
     if (!files || files.length === 0) {
-      console.log('No files selected');
       return;
     }
 
@@ -125,23 +106,15 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
       
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        console.log(`File ${i}:`, {
-          name: file.name,
-          size: file.size,
-          type: file.type,
-        });
         formData.append('files', file);
       }
 
-      console.log('Sending upload request...');
       const response = await fetch('/api/attachments/upload', {
         method: 'POST',
         body: formData,
       });
 
-      console.log('Response status:', response.status);
       const data = await response.json();
-      console.log('Response data:', data);
 
       if (data.success && data.attachments) {
         // Добавляем новые файлы в начало списка
@@ -154,8 +127,7 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
       } else {
         setError(data.error || 'Ошибка загрузки файлов');
       }
-    } catch (err) {
-      console.error('Upload error:', err);
+    } catch {
       setError('Произошла ошибка при загрузке');
     } finally {
       setIsUploading(false);
@@ -182,8 +154,7 @@ export default function MobileReceiptsManager({ initialReceipts }: MobileReceipt
       } else {
         alert(data.error || 'Ошибка удаления');
       }
-    } catch (err) {
-      console.error('Delete error:', err);
+    } catch {
       alert('Произошла ошибка при удалении');
     }
   };

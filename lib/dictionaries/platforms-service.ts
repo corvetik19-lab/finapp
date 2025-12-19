@@ -3,6 +3,7 @@
 import { createRSCClient } from "@/lib/supabase/helpers";
 import { getCurrentOrganization } from "@/lib/platform/organization";
 import { Platform, PlatformInput, PlatformFilters } from "@/types/platform";
+import { logger } from "@/lib/logger";
 
 /**
  * Получить список площадок с фильтрацией
@@ -36,7 +37,7 @@ export async function getPlatforms(filters?: PlatformFilters): Promise<Platform[
   const { data, error } = await query;
 
   if (error) {
-    console.error("Error fetching platforms:", error);
+    logger.error("Error fetching platforms:", error);
     return [];
   }
 
@@ -62,7 +63,7 @@ export async function getPlatformById(id: string): Promise<Platform | null> {
     .single();
 
   if (error) {
-    console.error("Error fetching platform:", error);
+    logger.error("Error fetching platform:", error);
     return null;
   }
 
@@ -97,7 +98,7 @@ export async function createPlatform(input: PlatformInput): Promise<{ success: b
     .single();
 
   if (error) {
-    console.error("Error creating platform:", error);
+    logger.error("Error creating platform:", error);
     return { success: false, error: error.message };
   }
 
@@ -127,7 +128,7 @@ export async function updatePlatform(id: string, input: Partial<PlatformInput>):
     .single();
 
   if (error) {
-    console.error("Error updating platform:", error);
+    logger.error("Error updating platform:", error);
     return { success: false, error: error.message };
   }
 
@@ -152,7 +153,7 @@ export async function deletePlatform(id: string): Promise<{ success: boolean; er
     .eq("organization_id", organization.id);
 
   if (error) {
-    console.error("Error deleting platform:", error);
+    logger.error("Error deleting platform:", error);
     return { success: false, error: error.message };
   }
 
@@ -190,7 +191,7 @@ export async function togglePlatformActive(id: string): Promise<{ success: boole
     .eq("organization_id", organization.id);
 
   if (error) {
-    console.error("Error toggling platform active:", error);
+    logger.error("Error toggling platform active:", error);
     return { success: false, error: error.message };
   }
 
@@ -241,7 +242,7 @@ export async function getPlatformTendersCount(platformId: string): Promise<numbe
     .is("deleted_at", null);
 
   if (error) {
-    console.error("Error fetching platform tenders count:", error);
+    logger.error("Error fetching platform tenders count:", error);
     return 0;
   }
 
@@ -277,7 +278,7 @@ export async function getPlatformTenders(platformId: string, limit = 10): Promis
     .limit(limit);
 
   if (error) {
-    console.error("Error fetching platform tenders:", error);
+    logger.error("Error fetching platform tenders:", error);
     return [];
   }
 

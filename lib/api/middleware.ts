@@ -7,6 +7,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { createHash } from "crypto";
+import { logger } from "@/lib/logger";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -91,7 +92,7 @@ export async function checkRateLimit(
     .maybeSingle();
 
   if (error) {
-    console.error("Rate limit check error:", error);
+    logger.error("Rate limit check error:", error);
     return { allowed: true, remaining: limit };
   }
 
@@ -258,7 +259,7 @@ export async function withApiAuth(
       method,
       response.status,
       responseTime
-    ).catch(console.error);
+    ).catch((err) => logger.error("Failed to log API usage", err));
 
     // 6. Добавляем заголовки rate limit в ответ
     const headers = new Headers(response.headers);
@@ -271,7 +272,7 @@ export async function withApiAuth(
       headers,
     });
   } catch (error) {
-    console.error("API error:", error);
+    logger.error("API error:", error);
     return new Response(
       JSON.stringify({
         error: "Internal Server Error",

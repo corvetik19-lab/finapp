@@ -2,6 +2,7 @@
 
 import { createRouteClient } from "@/lib/supabase/helpers";
 import type { QuickTransactionPreset, QuickPresetInput, QuickPresetUpdate } from "@/types/quick-preset";
+import { logger } from "@/lib/logger";
 
 /**
  * Получить все быстрые пресеты пользователя
@@ -24,7 +25,7 @@ export async function getQuickPresets(): Promise<QuickTransactionPreset[]> {
     .order("sort_order", { ascending: true });
 
   if (error) {
-    console.error("Error fetching quick presets:", error);
+    logger.error("Error fetching quick presets:", error);
     throw new Error(`Ошибка при получении быстрых пресетов: ${error.message}`);
   }
 
@@ -59,7 +60,7 @@ export async function createQuickPreset(input: QuickPresetInput): Promise<QuickT
     .single();
 
   if (error) {
-    console.error("Error creating quick preset:", error);
+    logger.error("Error creating quick preset:", error);
     throw new Error(`Ошибка при создании быстрого пресета: ${error.message}`);
   }
 
@@ -96,7 +97,7 @@ export async function updateQuickPreset(update: QuickPresetUpdate): Promise<Quic
     .single();
 
   if (error) {
-    console.error("Error updating quick preset:", error);
+    logger.error("Error updating quick preset:", error);
     throw new Error(`Ошибка при обновлении быстрого пресета: ${error.message}`);
   }
 
@@ -123,7 +124,7 @@ export async function deleteQuickPreset(id: string): Promise<void> {
     .eq("user_id", user.id);
 
   if (error) {
-    console.error("Error deleting quick preset:", error);
+    logger.error("Error deleting quick preset:", error);
     throw new Error(`Ошибка при удалении быстрого пресета: ${error.message}`);
   }
 }

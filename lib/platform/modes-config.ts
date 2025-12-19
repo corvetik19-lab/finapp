@@ -5,6 +5,7 @@ export const ALL_MODES = [
   { key: "tenders", label: "Тендеры", icon: "📋", description: "Управление тендерами" },
   { key: "personal", label: "Личные", icon: "🎯", description: "Личные цели и планы" },
   { key: "investments", label: "Инвестиции", icon: "📈", description: "Инвестиционный портфель" },
+  { key: "ai-studio", label: "ИИ Студия", icon: "✨", description: "Gemini AI: чат, изображения, видео" },
 ] as const;
 
 export type AppModeKey = typeof ALL_MODES[number]["key"];

@@ -36,9 +36,24 @@ export const isAdmin = (profile: UserProfile | null): boolean => {
 };
 
 // Проверка является ли пользователь админом организации (company_members.role = 'admin')
+type SupabaseClientLike = {
+    from: (table: string) => {
+        select: (columns: string) => {
+            eq: (column: string, value: string) => {
+                eq: (column: string, value: string) => {
+                    in: (column: string, values: string[]) => {
+                        limit: (n: number) => {
+                            single: () => Promise<{ data: { role: string } | null }>;
+                        };
+                    };
+                };
+            };
+        };
+    };
+};
+
 export const isOrganizationAdmin = async (userId: string, supabase: unknown): Promise<boolean> => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const client = supabase as any;
+    const client = supabase as SupabaseClientLike;
     const { data: member } = await client
         .from('company_members')
         .select('role')

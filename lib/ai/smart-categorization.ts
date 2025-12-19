@@ -5,6 +5,7 @@
 
 import { createEmbedding } from "./embeddings";
 import { createRouteClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 interface Transaction {
   id: string;
@@ -66,7 +67,7 @@ export async function smartCategorizeTransaction(
     );
     
     if (error) {
-      console.error('Error searching similar transactions:', error);
+      logger.error('Error searching similar transactions:', error);
       // Fallback на простую категоризацию без embeddings
       return fallbackCategorization(description, availableCategories);
     }
@@ -135,7 +136,7 @@ export async function smartCategorizeTransaction(
     );
     
   } catch (error) {
-    console.error('Error in smart categorization:', error);
+    logger.error('Error in smart categorization:', error);
     return fallbackCategorization(description, availableCategories);
   }
 }

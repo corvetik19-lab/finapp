@@ -1,26 +1,49 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { Menu, Search, ChevronDown, ChevronUp, Check, RefreshCw, Send, Loader2, MessageCircle, AlertTriangle } from "lucide-react";
-import ChatSidebar from "./ChatSidebar";
+import {
+  Search,
+  ChevronDown,
+  Check,
+  Send,
+  Square,
+  Sparkles,
+  Settings2,
+  History,
+  Plus,
+  MessageCircle,
+  Trash2,
+  MoreVertical,
+  CheckSquare,
+  X,
+  Pencil,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import ChatMessage from "./components/ChatMessage";
+import TypingIndicator from "./components/TypingIndicator";
+import EmptyState from "./components/EmptyState";
 import {
   getChatMessagesAction,
   createChatAction,
   saveMessageAction,
   updateChatTitleAction,
 } from "./actions";
-import { getQuickCommands } from "@/lib/ai/commands";
 
-interface ChatMessage {
+interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
+  timestamp: Date;
 }
 
 interface AIModel {
@@ -32,52 +55,84 @@ interface AIModel {
 
 type ModelGroups = {
   recommended: AIModel[];
-  free: AIModel[];
-  gpt5: AIModel[];
-  gpt41: AIModel[];
-  gpt4o: AIModel[];
-  reasoning: AIModel[];
-  realtime: AIModel[];
-  audio: AIModel[];
-  specialized: AIModel[];
-  embeddings: AIModel[];
-  gpt4: AIModel[];
-  other: AIModel[];
   all: AIModel[];
 };
 
 type ModelGroupKey = Exclude<keyof ModelGroups, "all">;
 
 export default function Chat() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<
-    "checking" | "connected" | "error"
-  >("checking");
-  const [errorMessage, setErrorMessage] = useState("");
-  const [selectedModel, setSelectedModel] = useState("gpt-4o-mini");
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [selectedModel, setSelectedModel] = useState("gemini-2.5-pro");
   const [models, setModels] = useState<ModelGroups>({
     recommended: [],
-    free: [],
-    gpt5: [],
-    gpt41: [],
-    gpt4o: [],
-    reasoning: [],
-    realtime: [],
-    audio: [],
-    specialized: [],
-    embeddings: [],
-    gpt4: [],
-    other: [],
     all: [],
   });
   const [showModelSelector, setShowModelSelector] = useState(false);
   const [modelSearchQuery, setModelSearchQuery] = useState("");
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [chats, setChats] = useState<Array<{ id: string; title: string; updated_at: string }>>([]);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedChats, setSelectedChats] = useState<Set<string>>(new Set());
+  const [editingChatId, setEditingChatId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Загрузка истории чатов
+  useEffect(() => {
+    async function loadChats() {
+      try {
+        const { getChatsAction } = await import("./actions");
+        const data = await getChatsAction();
+        setChats(data);
+      } catch {
+        // Ignore
+      }
+    }
+    loadChats();
+  }, [refreshKey]);
+
+  // Загрузка моделей
+  useEffect(() => {
+    async function loadModels() {
+      try {
+        const res = await fetch("/api/ai/models");
+        if (res.ok) {
+          const data = await res.json();
+          const allModels: AIModel[] = data.models || [];
+          
+          // Все модели - только Gemini 3 Pro и 2.5 Flash
+          setModels({
+            recommended: allModels,
+            all: allModels,
+          });
+        }
+      } catch {
+        // Ignore errors
+      }
+    }
+    loadModels();
+  }, []);
+
+  // Автоскролл
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isLoading]);
+
+  // Автореsize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+    }
+  }, [input]);
 
   // Создание нового чата
   const handleNewChat = async () => {
@@ -86,191 +141,14 @@ export default function Chat() {
       if (chatId) {
         setCurrentChatId(chatId);
         setMessages([]);
-        setRefreshKey(prev => prev + 1);
+        setRefreshKey((prev) => prev + 1);
       }
-    } catch (error) {
-      console.error("Failed to create new chat:", error);
+    } catch {
+      // Ignore
     }
   };
 
-  // Монтирование компонента и загрузка состояния из localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('aiChatSidebarCollapsed');
-    if (saved !== null) {
-      setIsSidebarCollapsed(saved === 'true');
-    }
-  }, []);
-
-  // Загружаем список моделей при загрузке
-  useEffect(() => {
-    async function initialize() {
-      try {
-        const res = await fetch("/api/ai/models");
-        if (res.ok) {
-          const data = (await res.json()) as Partial<ModelGroups>;
-          setModels({
-            recommended: data.recommended ?? [],
-            free: data.free ?? [],
-            gpt5: data.gpt5 ?? [],
-            gpt41: data.gpt41 ?? [],
-            gpt4o: data.gpt4o ?? [],
-            reasoning: data.reasoning ?? [],
-            realtime: data.realtime ?? [],
-            audio: data.audio ?? [],
-            specialized: data.specialized ?? [],
-            embeddings: data.embeddings ?? [],
-            gpt4: data.gpt4 ?? [],
-            other: data.other ?? [],
-            all: data.all ?? [],
-          });
-        }
-        setConnectionStatus("connected");
-      } catch (error) {
-        console.error("Failed to initialize:", error);
-        setConnectionStatus("error");
-      }
-    }
-    initialize();
-  }, []);
-
-  // Сохраняем состояние сворачивания в localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('aiChatSidebarCollapsed', String(isSidebarCollapsed));
-    }
-  }, [isSidebarCollapsed]);
-
-
-  // Фильтрация моделей по поисковому запросу
-  const filterModels = (modelList: AIModel[]) => {
-    if (!modelSearchQuery.trim()) return modelList;
-
-    const query = modelSearchQuery.toLowerCase();
-    return modelList.filter(model => 
-      model.name.toLowerCase().includes(query) ||
-      model.id.toLowerCase().includes(query)
-    );
-  };
-
-  const modelGroupConfig: Array<{
-    key: ModelGroupKey;
-    title: string;
-    badge?: string;
-  }> = [
-    { key: "recommended", title: "🌟 Рекомендуемые", badge: "TOP" },
-    { key: "gpt5", title: "🚀 GPT-5 серия", badge: "NEW" },
-    { key: "gpt41", title: "🎯 GPT-4.1 серия" },
-    { key: "gpt4o", title: "⚡ GPT-4o серия" },
-    { key: "reasoning", title: "🧠 Reasoning модели", badge: "PRO" },
-    { key: "realtime", title: "🎙️ Realtime модели", badge: "VOICE" },
-    { key: "audio", title: "🔊 Audio модели" },
-    { key: "specialized", title: "🛠️ Специализированные" },
-    { key: "embeddings", title: "🔍 Embeddings модели", badge: "VECTOR" },
-    { key: "gpt4", title: "📚 GPT-4 классика" },
-    { key: "other", title: "💼 Другие модели" },
-    { key: "free", title: "🆓 Бесплатные" },
-  ];
-
-  const filteredModelGroups = modelGroupConfig.map((group) => ({
-    ...group,
-    models: filterModels(models[group.key]),
-  }));
-
-  const hasFilteredResults = filteredModelGroups.some((group) => group.models.length > 0);
-
-  // Форматирование ответа ассистента без markdown-звёздочек
-  const parseAssistantMessage = (content: string) => {
-    const cleaned = content
-      .replace(/\*\*/g, "")
-      .replace(/^[-•]\s*/gm, "")
-      .trim();
-
-    const lines = cleaned
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean);
-
-    const items: { icon: string; title: string; description: string }[] = [];
-    const paragraphs: string[] = [];
-
-    const isIcon = (value: string) => {
-      if (!value) return false;
-      const icon = Array.from(value)[0];
-      if (!icon) return false;
-      const codePoint = icon.codePointAt(0);
-      if (!codePoint) return false;
-      return (
-        (codePoint >= 0x1f300 && codePoint <= 0x1f9ff) ||
-        (codePoint >= 0x1fa70 && codePoint <= 0x1faff) ||
-        (codePoint >= 0x2600 && codePoint <= 0x26ff) ||
-        (codePoint >= 0x2700 && codePoint <= 0x27bf) ||
-        icon === "•"
-      );
-    };
-
-    lines.forEach((line) => {
-      const structuredMatch = line.match(/^(\S+)\s+([^:]+):\s*(.+)$/);
-      if (structuredMatch) {
-        const iconCandidate = Array.from(structuredMatch[1])[0] || "";
-        if (isIcon(iconCandidate)) {
-          items.push({
-            icon: iconCandidate,
-            title: structuredMatch[2].trim(),
-            description: structuredMatch[3].trim(),
-          });
-          return;
-        }
-      }
-
-      const iconMatch = line.match(/^(\S+)\s+(.+)$/);
-      if (iconMatch) {
-        const iconCandidate = Array.from(iconMatch[1])[0] || "";
-        if (isIcon(iconCandidate)) {
-          items.push({
-            icon: iconCandidate,
-            title: iconMatch[2].trim(),
-            description: "",
-          });
-          return;
-        }
-      }
-
-      paragraphs.push(line);
-    });
-
-    return { items, paragraphs };
-  };
-
-  const renderAssistantMessage = (content: string) => {
-    const { items, paragraphs } = parseAssistantMessage(content);
-
-    if (!items.length && !paragraphs.length) {
-      return <p>{content}</p>;
-    }
-
-    return (
-      <div className="space-y-3">
-        {paragraphs.map((text, index) => (
-          <p key={`paragraph-${index}`}>{text}</p>
-        ))}
-        {items.length > 0 && (
-          <div className="space-y-2">
-            {items.map((item, index) => (
-              <div className="flex items-start gap-3" key={`item-${index}`}>
-                <div className="text-xl">{item.icon}</div>
-                <div>
-                  <div className="font-medium">{item.title}</div>
-                  {item.description && <div className="text-sm text-muted-foreground">{item.description}</div>}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // Переключение на другой чат
+  // Выбор чата
   const handleSelectChat = async (chatId: string | null) => {
     if (chatId === currentChatId) return;
 
@@ -283,27 +161,32 @@ export default function Chat() {
     try {
       setCurrentChatId(chatId);
       const history = await getChatMessagesAction(chatId);
-      const loadedMessages: ChatMessage[] = history.map((msg) => ({
+      const loadedMessages: Message[] = history.map((msg) => ({
         id: msg.id,
         role: msg.role as "user" | "assistant",
         content: msg.content,
+        timestamp: new Date(msg.created_at),
       }));
       setMessages(loadedMessages);
-    } catch (error) {
-      console.error("Failed to load chat history:", error);
+    } catch {
+      // Ignore
     }
   };
 
-  // Автоскролл
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  // Остановка генерации
+  const handleStop = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsLoading(false);
+    setIsStreaming(false);
+  }, []);
 
-  // Обработчик отправки
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!input.trim() || isLoading) return;
+  // Отправка сообщения
+  const handleSubmit = async (messageText?: string) => {
+    const text = messageText || input.trim();
+    if (!text || isLoading) return;
 
     // Создаем чат если нужно
     let chatId = currentChatId;
@@ -312,69 +195,65 @@ export default function Chat() {
         chatId = await createChatAction(selectedModel);
         if (!chatId) return;
         setCurrentChatId(chatId);
-        setRefreshKey(prev => prev + 1);
-      } catch (error) {
-        console.error("Failed to create chat:", error);
+        setRefreshKey((prev) => prev + 1);
+      } catch {
+        setIsLoading(false);
         return;
       }
     }
 
-    const currentInput = input;
-    const userMessage: ChatMessage = {
+    const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: currentInput,
+      content: text,
+      timestamp: new Date(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
 
-    await saveMessageAction(chatId, "user", currentInput);
+    // Сохраняем сообщение пользователя
+    await saveMessageAction(chatId, "user", text);
 
     // Обновляем название чата
     if (messages.length === 0) {
-      const title = currentInput.length > 50 
-        ? currentInput.substring(0, 50) + "..." 
-        : currentInput;
+      const title = text.length > 50 ? text.substring(0, 50) + "..." : text;
       await updateChatTitleAction(chatId, title);
-      setRefreshKey(prev => prev + 1);
+      setRefreshKey((prev) => prev + 1);
     }
 
     try {
-      // НОВОЕ: Проверяем, является ли это командой
+      // Проверяем команду
       const commandResponse = await fetch("/api/chat/execute-command", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ command: currentInput }),
+        body: JSON.stringify({ command: text }),
       });
 
       if (commandResponse.ok) {
         const commandResult = await commandResponse.json();
-        
-        // Если команда успешно выполнена
+
         if (commandResult.success) {
-          const assistantMessage: ChatMessage = {
+          const assistantMessage: Message = {
             id: (Date.now() + 1).toString(),
             role: "assistant",
             content: commandResult.message,
+            timestamp: new Date(),
           };
-          
           setMessages((prev) => [...prev, assistantMessage]);
           await saveMessageAction(chatId, "assistant", commandResult.message);
           setIsLoading(false);
-          return; // Завершаем, не отправляя в AI
+          return;
         }
-        
-        // Если команда не распознана (isUnknown), продолжаем в AI
+
         if (!commandResult.isUnknown) {
-          // Команда распознана но произошла ошибка
-          const assistantMessage: ChatMessage = {
+          const assistantMessage: Message = {
             id: (Date.now() + 1).toString(),
             role: "assistant",
             content: commandResult.message || "Ошибка при выполнении команды",
+            timestamp: new Date(),
           };
-          
           setMessages((prev) => [...prev, assistantMessage]);
           await saveMessageAction(chatId, "assistant", assistantMessage.content);
           setIsLoading(false);
@@ -382,7 +261,9 @@ export default function Chat() {
         }
       }
 
-      // Если команда не распознана или произошла ошибка - отправляем запрос к AI
+      // AI запрос
+      abortControllerRef.current = new AbortController();
+
       const response = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -392,13 +273,14 @@ export default function Chat() {
             content: m.content,
           })),
         }),
+        signal: abortControllerRef.current.signal,
       });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      // Создаем временное сообщение для AI
+      // Создаем сообщение AI
       const assistantMessageId = (Date.now() + 1).toString();
       setMessages((prev) => [
         ...prev,
@@ -406,117 +288,558 @@ export default function Chat() {
           id: assistantMessageId,
           role: "assistant",
           content: "",
+          timestamp: new Date(),
         },
       ]);
+      setIsStreaming(true);
 
-      // Читаем потоковый ответ
+      // Читаем поток
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let accumulatedText = "";
 
       if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
 
-          const chunk = decoder.decode(value, { stream: true });
-          accumulatedText += chunk;
+            const chunk = decoder.decode(value, { stream: true });
+            accumulatedText += chunk;
 
-          // Обновляем сообщение
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === assistantMessageId
-                ? { ...msg, content: accumulatedText }
-                : msg
-            )
-          );
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === assistantMessageId
+                  ? { ...msg, content: accumulatedText }
+                  : msg
+              )
+            );
+          }
+        } catch (error) {
+          if (error instanceof Error && error.name === "AbortError") {
+            // User stopped generation
+          } else {
+            throw error;
+          }
         }
 
-        // Сохраняем ответ AI в БД
+        // Сохраняем ответ
         if (accumulatedText && chatId) {
           await saveMessageAction(chatId, "assistant", accumulatedText);
         }
       }
     } catch (error) {
-      console.error("Chat error:", error);
-      setConnectionStatus("error");
-      setErrorMessage(
-        error instanceof Error ? error.message : "Ошибка при отправке сообщения"
-      );
+      if (error instanceof Error && error.name !== "AbortError") {
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: "❌ Произошла ошибка при обработке запроса. Попробуйте еще раз.",
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+      }
     } finally {
       setIsLoading(false);
+      setIsStreaming(false);
+      abortControllerRef.current = null;
+    }
+  };
+
+  // Обработка Enter
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
+  // Регенерация последнего ответа
+  const handleRegenerate = async () => {
+    if (messages.length < 2) return;
+    
+    // Находим последнее сообщение пользователя
+    const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
+    if (!lastUserMessage) return;
+
+    // Удаляем последний ответ AI
+    setMessages((prev) => prev.slice(0, -1));
+    
+    // Повторяем запрос
+    await handleSubmit(lastUserMessage.content);
+  };
+
+  // Фильтрация моделей
+  const filterModels = (modelList: AIModel[]) => {
+    if (!modelSearchQuery.trim()) return modelList;
+    const query = modelSearchQuery.toLowerCase();
+    return modelList.filter(
+      (model) =>
+        model.name.toLowerCase().includes(query) ||
+        model.id.toLowerCase().includes(query)
+    );
+  };
+
+  const modelGroupConfig: Array<{
+    key: ModelGroupKey;
+    title: string;
+    badge?: string;
+  }> = [
+    { key: "recommended", title: "🌟 Доступные модели" },
+  ];
+
+  const filteredModelGroups = modelGroupConfig.map((group) => ({
+    ...group,
+    models: filterModels(models[group.key]),
+  }));
+
+  const currentModelName = models.all.find((m) => m.id === selectedModel)?.name || selectedModel;
+
+  // Форматирование даты
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+    } else if (diffDays === 1) {
+      return "Вчера";
+    } else if (diffDays < 7) {
+      return `${diffDays} дн. назад`;
+    } else {
+      return date.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
     }
   };
 
   return (
-    <div className="flex h-full">
-      <ChatSidebar currentChatId={currentChatId} onSelectChat={handleSelectChat} onNewChat={handleNewChat} refreshKey={refreshKey} isCollapsed={isSidebarCollapsed} onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
-
-      <div className="flex-1 flex flex-col">
-        <div className="p-3 border-b flex items-center justify-between">
+    <div className="flex h-full bg-white dark:bg-zinc-950 relative">
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header */}
+        <header className="h-12 border-b flex items-center justify-between px-4 bg-white dark:bg-zinc-950">
           <div className="flex items-center gap-3">
-            {isSidebarCollapsed && <Button variant="ghost" size="icon" onClick={() => setIsSidebarCollapsed(false)}><Menu className="h-5 w-5" /></Button>}
-            <h2 className="font-semibold">ChatGPT</h2>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-sm">
+                <Sparkles className="w-3.5 h-3.5" />
+              </div>
+              <div>
+                <h1 className="font-semibold text-sm">AI Ассистент</h1>
+              </div>
+            </div>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setShowModelSelector(!showModelSelector)} disabled={isLoading}>
-            {selectedModel.split("/")[1] || selectedModel} <Badge variant="secondary" className="ml-2">{models.all.length}</Badge> {showModelSelector ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />}
-          </Button>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleNewChat}
+              className="gap-1.5"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Новый</span>
+            </Button>
+            <Button
+              variant={showHistory ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setShowHistory(!showHistory)}
+              className="gap-1.5"
+            >
+              <History className="h-4 w-4" />
+              <span className="hidden sm:inline">История</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowModelSelector(true)}
+              disabled={isLoading}
+              className="gap-1.5"
+            >
+              <Settings2 className="h-4 w-4" />
+              <span className="hidden md:inline">{currentModelName}</span>
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+          </div>
+        </header>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto">
+          {messages.length === 0 ? (
+            <EmptyState onSendMessage={handleSubmit} />
+          ) : (
+            <div className="max-w-4xl mx-auto">
+              {messages.map((message, index) => (
+                <ChatMessage
+                  key={message.id}
+                  role={message.role}
+                  content={message.content}
+                  timestamp={message.timestamp}
+                  isStreaming={isStreaming && index === messages.length - 1 && message.role === "assistant"}
+                  onRegenerate={
+                    index === messages.length - 1 && message.role === "assistant"
+                      ? handleRegenerate
+                      : undefined
+                  }
+                />
+              ))}
+              {isLoading && !isStreaming && <TypingIndicator />}
+              <div ref={messagesEndRef} className="h-4" />
+            </div>
+          )}
         </div>
 
-        <Sheet open={showModelSelector} onOpenChange={setShowModelSelector}>
-          <SheetContent side="right" className="w-80 p-0">
-            <SheetHeader className="p-4 border-b"><SheetTitle>Выбор модели</SheetTitle></SheetHeader>
-            <div className="p-4"><div className="relative"><Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="Поиск моделей..." value={modelSearchQuery} onChange={(e) => setModelSearchQuery(e.target.value)} className="pl-8" /></div></div>
-            <div className="overflow-y-auto max-h-[calc(100vh-180px)] px-4 pb-4">
-              {filteredModelGroups.map((group) => group.models.length === 0 ? null : (
-                <div key={group.key} className="mb-4">
-                  <h3 className="text-sm font-medium mb-2 flex items-center gap-2">{group.title} <Badge variant="outline">{group.models.length}</Badge></h3>
-                  {group.models.map((model) => (
-                    <button key={model.id} onClick={() => { setSelectedModel(model.id); setShowModelSelector(false); }} className={cn("w-full text-left p-2 rounded-md hover:bg-muted flex items-center justify-between", selectedModel === model.id && "bg-muted")}>
-                      <div><div className="font-medium text-sm">{model.name} {model.is_free && <Badge variant="secondary" className="ml-1">FREE</Badge>} {group.badge && <Badge className="ml-1">{group.badge}</Badge>}</div>{model.description && <div className="text-xs text-muted-foreground">{model.description}</div>}</div>
-                      {selectedModel === model.id && <Check className="h-4 w-4" />}
-                    </button>
-                  ))}
-                </div>
-              ))}
-              {modelSearchQuery && !hasFilteredResults && <div className="text-center py-8 text-muted-foreground"><Search className="h-8 w-8 mx-auto" /><p className="mt-2">Модели не найдены</p></div>}
+        {/* Input Area */}
+        <div className="border-t bg-white dark:bg-zinc-950 p-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="relative flex items-end gap-2 bg-muted/50 rounded-2xl border p-2">
+              <Textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Напишите сообщение... (Shift+Enter для новой строки)"
+                disabled={isLoading}
+                className="flex-1 min-h-[44px] max-h-[200px] resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 py-3 px-3"
+                rows={1}
+              />
+              
+              {isLoading ? (
+                <Button
+                  onClick={handleStop}
+                  size="icon"
+                  variant="destructive"
+                  className="shrink-0 rounded-xl h-10 w-10"
+                >
+                  <Square className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => handleSubmit()}
+                  size="icon"
+                  disabled={!input.trim()}
+                  className="shrink-0 rounded-xl h-10 w-10 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              )}
             </div>
-          </SheetContent>
-        </Sheet>
+            
+            <p className="text-xs text-center text-muted-foreground mt-2">
+              AI может ошибаться. Проверяйте важную информацию.
+            </p>
+          </div>
+        </div>
+      </div>
 
-        <div className="flex-1 overflow-y-auto p-4">
-          {messages.length === 0 ? (
-            <div className="max-w-2xl mx-auto text-center py-8">
-              <MessageCircle className="h-12 w-12 mx-auto text-muted-foreground" />
-              <h3 className="text-lg font-semibold mt-4">Привет! Я ваш финансовый помощник</h3>
-              <p className="text-muted-foreground mt-2">Я могу помочь вам управлять финансами прямо через чат. Просто напишите что хотите сделать!</p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
-                {[{t:"📁 Категории",e:"Создай категорию расходов"},{t:"💰 Транзакции",e:"Потратил 500р на Еду"},{t:"💳 Счета",e:"Добавь счёт Сбербанк"},{t:"📊 Бюджеты",e:"Поставь бюджет 10000"},{t:"📝 Заметки",e:"Запомни что надо..."},{t:"🎯 Планы",e:"Создай план накопить..."},{t:"🔖 Закладки",e:"Сохрани закладку"},{t:"💪 Фитнес",e:"Бегал 30 минут"}].map((c,i) => (
-                  <Card key={i} className="text-left"><CardContent className="pt-4"><div className="text-sm font-medium">{c.t}</div><div className="text-xs text-muted-foreground mt-1">&quot;{c.e}&quot;</div></CardContent></Card>
+      {/* History Panel - Sheet */}
+      <Sheet open={showHistory} onOpenChange={(open) => {
+        setShowHistory(open);
+        if (!open) {
+          setSelectionMode(false);
+          setSelectedChats(new Set());
+        }
+      }}>
+        <SheetContent side="right" className="w-80 p-0 flex flex-col !bg-white dark:!bg-zinc-950" hideCloseButton>
+          <SheetHeader className="p-4 border-b bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white">
+                  <History className="w-4 h-4" />
+                </div>
+                <div>
+                  <SheetTitle className="text-base">
+                    {selectionMode ? `Выбрано: ${selectedChats.size}` : "История чатов"}
+                  </SheetTitle>
+                  <p className="text-xs text-muted-foreground">{chats.length} чатов</p>
+                </div>
+              </div>
+              {chats.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (selectionMode) {
+                      setSelectionMode(false);
+                      setSelectedChats(new Set());
+                    } else {
+                      setSelectionMode(true);
+                    }
+                  }}
+                  className="h-8 px-2"
+                >
+                  {selectionMode ? <X className="h-4 w-4" /> : <CheckSquare className="h-4 w-4" />}
+                </Button>
+              )}
+            </div>
+          </SheetHeader>
+          
+          {/* Action buttons */}
+          <div className="p-3 border-b flex gap-2">
+            {selectionMode ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (selectedChats.size === chats.length) {
+                      setSelectedChats(new Set());
+                    } else {
+                      setSelectedChats(new Set(chats.map(c => c.id)));
+                    }
+                  }}
+                  className="flex-1"
+                >
+                  {selectedChats.size === chats.length ? "Снять всё" : "Выбрать всё"}
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={selectedChats.size === 0}
+                  onClick={async () => {
+                    if (selectedChats.size === 0) return;
+                    if (!confirm(`Удалить ${selectedChats.size} чат(ов)?`)) return;
+                    
+                    const { deleteChatAction } = await import("./actions");
+                    for (const chatId of selectedChats) {
+                      await deleteChatAction(chatId);
+                      if (chatId === currentChatId) {
+                        setCurrentChatId(null);
+                        setMessages([]);
+                      }
+                    }
+                    setSelectedChats(new Set());
+                    setSelectionMode(false);
+                    setRefreshKey(prev => prev + 1);
+                  }}
+                  className="flex-1 gap-1"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Удалить ({selectedChats.size})
+                </Button>
+              </>
+            ) : (
+              <Button 
+                onClick={() => { handleNewChat(); setShowHistory(false); }} 
+                className="w-full gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700"
+              >
+                <Plus className="h-4 w-4" />
+                Новый чат
+              </Button>
+            )}
+          </div>
+
+          {/* Chat list */}
+          <div className="flex-1 overflow-y-auto">
+            {chats.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <MessageCircle className="h-8 w-8" />
+                </div>
+                <p className="text-sm font-medium">Нет чатов</p>
+                <p className="text-xs mt-1">Начните новый разговор</p>
+              </div>
+            ) : (
+              <div className="p-2">
+                {chats.map((chat) => (
+                  <div
+                    key={chat.id}
+                    className={cn(
+                      "group relative flex items-center gap-2 p-3 rounded-lg cursor-pointer transition-all hover:bg-muted mb-1",
+                      chat.id === currentChatId && !selectionMode && "bg-muted ring-1 ring-emerald-500/20",
+                      selectionMode && selectedChats.has(chat.id) && "bg-emerald-50 dark:bg-emerald-950/30 ring-1 ring-emerald-500/30"
+                    )}
+                    onClick={() => {
+                      if (selectionMode) {
+                        const newSelected = new Set(selectedChats);
+                        if (newSelected.has(chat.id)) {
+                          newSelected.delete(chat.id);
+                        } else {
+                          newSelected.add(chat.id);
+                        }
+                        setSelectedChats(newSelected);
+                      } else {
+                        handleSelectChat(chat.id);
+                        setShowHistory(false);
+                      }
+                    }}
+                  >
+                    {selectionMode ? (
+                      <div className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border-2 transition-colors",
+                        selectedChats.has(chat.id)
+                          ? "bg-emerald-500 border-emerald-500 text-white"
+                          : "border-muted-foreground/30 text-transparent"
+                      )}>
+                        <Check className="h-4 w-4" />
+                      </div>
+                    ) : (
+                      <div className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                        chat.id === currentChatId 
+                          ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white" 
+                          : "bg-muted-foreground/10 text-muted-foreground"
+                      )}>
+                        <MessageCircle className="h-4 w-4" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      {editingChatId === chat.id ? (
+                        <input
+                          type="text"
+                          value={editingTitle}
+                          onChange={(e) => setEditingTitle(e.target.value)}
+                          onKeyDown={async (e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              if (editingTitle.trim()) {
+                                const { updateChatTitleAction } = await import("./actions");
+                                await updateChatTitleAction(chat.id, editingTitle.trim());
+                                setRefreshKey(prev => prev + 1);
+                              }
+                              setEditingChatId(null);
+                            } else if (e.key === "Escape") {
+                              setEditingChatId(null);
+                            }
+                          }}
+                          onBlur={async () => {
+                            if (editingTitle.trim() && editingTitle !== chat.title) {
+                              const { updateChatTitleAction } = await import("./actions");
+                              await updateChatTitleAction(chat.id, editingTitle.trim());
+                              setRefreshKey(prev => prev + 1);
+                            }
+                            setEditingChatId(null);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          autoFocus
+                          className="w-full text-sm font-medium bg-transparent border-b border-emerald-500 outline-none py-0.5"
+                        />
+                      ) : (
+                        <div className="text-sm font-medium truncate">{chat.title}</div>
+                      )}
+                      <div className="text-xs text-muted-foreground">{formatDate(chat.updated_at)}</div>
+                    </div>
+                    {!selectionMode && editingChatId !== chat.id && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingChatId(chat.id);
+                              setEditingTitle(chat.title);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Переименовать
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-destructive focus:text-destructive"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (confirm("Удалить этот чат?")) {
+                                const { deleteChatAction } = await import("./actions");
+                                await deleteChatAction(chat.id);
+                                if (chat.id === currentChatId) {
+                                  setCurrentChatId(null);
+                                  setMessages([]);
+                                }
+                                setRefreshKey(prev => prev + 1);
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Удалить
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
                 ))}
               </div>
-              <p className="text-sm text-muted-foreground mt-6">💡 Пишите естественным языком - я пойму!</p>
-              <div className="mt-6"><p className="text-sm font-medium mb-3">⚡ Быстрые команды:</p><div className="flex flex-wrap gap-2 justify-center">{getQuickCommands().map((cmd, idx) => (<Button key={idx} variant="outline" size="sm" onClick={() => setInput(cmd.command)}>{cmd.icon} {cmd.label}</Button>))}</div></div>
-            </div>
-          ) : (
-            messages.map((message) => (
-              <div key={message.id} className={cn("flex gap-3 mb-4", message.role === "user" && "flex-row-reverse")}>
-                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-lg shrink-0">{message.role === "user" ? "👤" : "🤖"}</div>
-                <div className={cn("max-w-[80%] p-3 rounded-lg", message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted")}>{message.role === "assistant" ? renderAssistantMessage(message.content) : message.content}</div>
-              </div>
-            ))
-          )}
-          {connectionStatus === "error" && errorMessage && (
-            <Card className="border-destructive"><CardContent className="pt-6"><div className="flex items-start gap-4"><AlertTriangle className="h-6 w-6 text-destructive shrink-0" /><div><h3 className="font-semibold">Ошибка подключения к AI</h3><p className="text-sm text-muted-foreground mt-1">{errorMessage}</p><div className="mt-4 text-sm"><p className="font-medium">Возможные причины:</p><ul className="list-disc pl-4 mt-1 text-muted-foreground"><li>OpenAI API ключ не настроен</li><li>Проблемы с интернет-соединением</li><li>API ключ недействителен</li></ul></div><Button className="mt-4" onClick={() => { setConnectionStatus("checking"); setErrorMessage(""); window.location.reload(); }}><RefreshCw className="h-4 w-4 mr-2" />Попробовать снова</Button></div></div></CardContent></Card>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
 
-        <form className="p-4 border-t flex gap-2" onSubmit={handleSubmit}>
-          <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Сообщение ChatGPT" disabled={isLoading} className="flex-1" />
-          <Button type="submit" disabled={isLoading || !input.trim()}>{isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}</Button>
-        </form>
-      </div>
+      {/* Model Selector Sheet */}
+      <Sheet open={showModelSelector} onOpenChange={setShowModelSelector}>
+        <SheetContent side="right" className="w-80 p-0 flex flex-col !bg-white dark:!bg-zinc-950">
+          <SheetHeader className="p-4 border-b bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white">
+                <Settings2 className="w-4 h-4" />
+              </div>
+              <SheetTitle>Выбор модели Gemini</SheetTitle>
+            </div>
+          </SheetHeader>
+          <div className="p-4">
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Поиск моделей..."
+                value={modelSearchQuery}
+                onChange={(e) => setModelSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-3 py-2 text-sm border rounded-lg bg-background"
+              />
+            </div>
+          </div>
+          <div className="overflow-y-auto max-h-[calc(100vh-180px)] px-4 pb-4">
+            {filteredModelGroups.map(
+              (group) =>
+                group.models.length > 0 && (
+                  <div key={group.key} className="mb-4">
+                    <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
+                      {group.title}
+                      <Badge variant="outline">{group.models.length}</Badge>
+                    </h3>
+                    {group.models.map((model) => (
+                      <button
+                        key={model.id}
+                        onClick={() => {
+                          setSelectedModel(model.id);
+                          setShowModelSelector(false);
+                        }}
+                        className={cn(
+                          "w-full text-left p-2 rounded-md hover:bg-muted flex items-center justify-between transition-colors",
+                          selectedModel === model.id && "bg-muted"
+                        )}
+                      >
+                        <div>
+                          <div className="font-medium text-sm flex items-center gap-2">
+                            {model.name}
+                            {model.is_free && (
+                              <Badge variant="secondary" className="text-xs">
+                                FREE
+                              </Badge>
+                            )}
+                          </div>
+                          {model.description && (
+                            <div className="text-xs text-muted-foreground">
+                              {model.description}
+                            </div>
+                          )}
+                        </div>
+                        {selectedModel === model.id && (
+                          <Check className="h-4 w-4 text-primary" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Permission } from "./permissions";
 import { hasPermission, hasAllPermissions, isAdmin, canAccessPage } from "./permissions";
+import { logger } from "@/lib/logger";
 
 export type PermissionsContextValue = {
   permissions: Permission[];
@@ -30,7 +31,7 @@ export function usePermissions(): PermissionsContextValue {
           setPermissions(data.permissions || []);
         }
       } catch (error) {
-        console.error("Failed to load permissions:", error);
+        logger.error("Failed to load permissions:", error);
       } finally {
         setIsLoading(false);
       }

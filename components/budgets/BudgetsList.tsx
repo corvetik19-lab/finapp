@@ -91,9 +91,7 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
     try {
       const formData = new FormData();
       formData.append("id", budgetId);
-      console.log("Attempting to delete budget:", budgetId);
       await deleteBudget(formData);
-      console.log("Budget deleted, refreshing...");
       showToast("✅ Бюджет успешно удален", { type: "success" });
       router.refresh();
     } catch (error) {

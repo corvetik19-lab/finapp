@@ -17,6 +17,21 @@ export default async function DashboardRedirect() {
 
   // Убрали редирект для супер-админа, чтобы он мог заходить в режимы без организации
 
+  // Проверяем доступ к режимам в порядке приоритета
+  // ai-studio проверяем первым, если это единственный доступный режим
+  if (await hasUserModeAccess("ai-studio")) {
+    // Проверяем есть ли доступ к другим режимам
+    const hasFinance = await hasUserModeAccess("finance");
+    const hasTenders = await hasUserModeAccess("tenders");
+    const hasInvestments = await hasUserModeAccess("investments");
+    const hasPersonal = await hasUserModeAccess("personal");
+    
+    // Если ai-studio единственный доступный режим - редиректим туда
+    if (!hasFinance && !hasTenders && !hasInvestments && !hasPersonal) {
+      redirect("/ai-studio");
+    }
+  }
+
   if (await hasUserModeAccess("finance")) {
     redirect("/finance/dashboard");
   }
@@ -31,6 +46,11 @@ export default async function DashboardRedirect() {
 
   if (await hasUserModeAccess("personal")) {
     redirect("/personal/dashboard");
+  }
+
+  // Если только ai-studio доступен (fallback)
+  if (await hasUserModeAccess("ai-studio")) {
+    redirect("/ai-studio");
   }
 
   // Если нет доступа ни к одному модулю

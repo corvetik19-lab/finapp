@@ -1,4 +1,5 @@
 import { createRSCClient } from '@/lib/supabase/helpers';
+import { logger } from "@/lib/logger";
 
 // Интерфейсы для отчёта по оплатам от заказчиков
 export interface CustomerPaymentsReportData {
@@ -166,7 +167,7 @@ export async function getCustomerPaymentsReportData(
   const { data: allTenders, error } = await query;
 
   if (error) {
-    console.error('Error fetching tenders for customer payments report:', error);
+    logger.error('Error fetching tenders for customer payments report:', error);
     return getEmptyReport();
   }
 

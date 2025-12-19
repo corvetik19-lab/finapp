@@ -2,6 +2,7 @@
 
 import { createRouteClient } from "@/lib/supabase/server";
 import { ALL_MODES, type AppModeKey } from "./modes-config";
+import { logger } from "@/lib/logger";
 
 // Re-export для удобства (но эти экспорты будут работать только в серверных компонентах)
 // Для клиентских компонентов импортируйте напрямую из modes-config.ts
@@ -20,10 +21,17 @@ export async function getEnabledModes(): Promise<AppModeKey[]> {
 
   if (error || !data) {
     // Fallback - все режимы включены
-    return ["finance", "tenders", "personal", "investments"];
+    return ["finance", "tenders", "personal", "investments", "ai-studio"];
   }
 
-  return data.value as AppModeKey[];
+  const modes = data.value as AppModeKey[];
+  
+  // Всегда добавляем ai-studio если его нет в списке
+  if (!modes.includes("ai-studio")) {
+    modes.push("ai-studio");
+  }
+  
+  return modes;
 }
 
 /**
@@ -72,7 +80,7 @@ export async function updateEnabledModes(modes: AppModeKey[]): Promise<{ ok: boo
     });
 
   if (error) {
-    console.error("Error updating enabled modes:", error);
+    logger.error("Error updating enabled modes:", error);
     return { ok: false, error: error.message };
   }
 

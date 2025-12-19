@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createRSCClient, createRouteClient } from "@/lib/supabase/helpers";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
+import { logger } from "@/lib/logger";
 
 export type PlanSelectItem = {
   id: string;
@@ -354,7 +355,7 @@ export async function listPlansWithActivity(): Promise<PlanWithActivity[]> {
   const { data, error } = await query;
 
   if (error) {
-    console.error("listPlansWithActivity", error);
+    logger.error("listPlansWithActivity", error);
     return [];
   }
 

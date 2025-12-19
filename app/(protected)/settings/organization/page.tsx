@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
-import { createRSCClient } from "@/lib/supabase/helpers";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createRSCClient, createAdminClient } from "@/lib/supabase/helpers";
 import { getCurrentOrganization } from "@/lib/platform/organization";
 import OrganizationSettings from "@/components/settings/OrganizationSettings";
 

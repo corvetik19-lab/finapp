@@ -41,12 +41,10 @@ export default function NotificationCenter({
 
   const handleMarkAllRead = () => {
     // TODO: API call to mark all as read
-    console.log("Mark all as read");
   };
 
   const handleClearAll = () => {
     // TODO: API call to clear all
-    console.log("Clear all");
   };
 
   return (

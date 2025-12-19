@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 /**
  * PDF экспорт финансовых отчётов
  * Требуется: npm install jspdf jspdf-autotable
@@ -32,8 +33,11 @@ export async function generatePDFReport(data: ExportData): Promise<Blob> {
     const jsPDF = (await import("jspdf")).default;
     const autoTable = (await import("jspdf-autotable")).default;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const doc = new jsPDF() as any;
+    type JsPDFWithAutoTable = InstanceType<typeof jsPDF> & {
+      autoTable: typeof autoTable;
+      lastAutoTable?: { finalY: number };
+    };
+    const doc = new jsPDF() as JsPDFWithAutoTable;
 
     // Заголовок
     doc.setFontSize(20);
@@ -75,7 +79,7 @@ export async function generatePDFReport(data: ExportData): Promise<Blob> {
     });
 
     // Расходы по категориям
-    yPos = doc.lastAutoTable.finalY + 15;
+    yPos = (doc.lastAutoTable?.finalY ?? yPos) + 15;
     doc.setFontSize(14);
     doc.setTextColor(31, 41, 55);
     doc.text("Расходы по категориям", 14, yPos);
@@ -95,7 +99,7 @@ export async function generatePDFReport(data: ExportData): Promise<Blob> {
 
     // Транзакции
     if (data.transactions.length > 0) {
-      yPos = doc.lastAutoTable.finalY + 15;
+      yPos = (doc.lastAutoTable?.finalY ?? yPos) + 15;
       
       // Если не помещаются, добавляем новую страницу
       if (yPos > 250) {
@@ -152,7 +156,7 @@ export async function generatePDFReport(data: ExportData): Promise<Blob> {
 
     return doc.output("blob");
   } catch (error) {
-    console.error("PDF generation error:", error);
+    logger.error("PDF generation error:", error);
     throw new Error("Не удалось создать PDF. Установите библиотеку: npm install jspdf jspdf-autotable");
   }
 }

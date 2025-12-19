@@ -1,7 +1,9 @@
 import { cookies } from "next/headers";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient, User, AuthError } from "@supabase/supabase-js";
+
+// Re-export singleton admin client from dedicated module
+export { createAdminClient } from "./admin";
 
 // Use in Server Components (read-only cookies context)
 export async function createRSCClient(): Promise<SupabaseClient> {
@@ -24,30 +26,16 @@ export async function createRSCClient(): Promise<SupabaseClient> {
       get(name: string) {
         return store.get(name)?.value;
       },
-      // No-ops in RSC
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      set(_name: string, _value: string, _options: CookieOptions) {},
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      remove(_name: string, _options: CookieOptions) {},
+      set() {
+        // No-op in RSC (read-only context)
+      },
+      remove() {
+        // No-op in RSC (read-only context)
+      },
     },
   });
 }
 
-export function createAdminClient(): SupabaseClient {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url || !serviceKey) {
-    throw new Error("Supabase service credentials are not configured");
-  }
-
-  return createClient(url, serviceKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  });
-}
 
 // Use in Route Handlers / Server Actions (read/write cookies context)
 export async function createRouteClient(): Promise<SupabaseClient> {

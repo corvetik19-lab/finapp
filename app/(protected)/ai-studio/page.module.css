@@ -1,0 +1,274 @@
+.container {
+  padding: 24px;
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-y: auto;
+  height: 100%;
+}
+
+/* Hero Cards */
+.heroCards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.heroCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 20px;
+  background: #ffffff;
+  border: 1px solid #e8e8e8;
+  border-radius: 16px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.heroCard:hover {
+  border-color: #d0d0d0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
+}
+
+.heroCardIcon {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  color: #ffffff;
+}
+
+.heroCardContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.heroCardContent h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+
+.heroCardContent > p {
+  font-size: 13px;
+  color: #666666;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.heroCardFeatures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.heroCardFeatures span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: #f5f5f5;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #555555;
+}
+
+.heroCardArrow {
+  width: 18px;
+  height: 18px;
+  color: #cccccc;
+  margin-top: 4px;
+  transition: transform 0.2s, color 0.2s;
+}
+
+.heroCard:hover .heroCardArrow {
+  transform: translateX(4px);
+  color: #666666;
+}
+
+/* Recent Chats */
+.recentSection {
+  margin-bottom: 24px;
+}
+
+.recentChats {
+  display: flex;
+  gap: 12px;
+}
+
+.recentChat {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.15s;
+  color: #666666;
+}
+
+.recentChat:hover {
+  border-color: #d0d0d0;
+  background: #fafafa;
+}
+
+.recentChatTitle {
+  flex: 1;
+  font-size: 13px;
+  color: #333333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recentChatDate {
+  font-size: 12px;
+  color: #999999;
+}
+
+.seeAllLink {
+  margin-left: auto;
+  font-size: 13px;
+  color: #666666;
+  text-decoration: none;
+}
+
+.seeAllLink:hover {
+  color: #333333;
+}
+
+/* Section */
+.section {
+  margin-bottom: 32px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.sectionIcon {
+  width: 20px;
+  height: 20px;
+  color: #ff6b35;
+}
+
+.sectionHeader h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+/* Tools Grid */
+.toolsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.toolCard {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.toolCard:hover {
+  border-color: var(--tool-color);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.toolIcon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tool-color);
+  border-radius: 10px;
+  color: #ffffff;
+  margin-bottom: 12px;
+}
+
+.toolContent h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+
+.toolModel {
+  font-size: 12px;
+  color: var(--tool-color);
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.toolDescription {
+  font-size: 13px;
+  color: #666666;
+  line-height: 1.4;
+}
+
+/* Info Footer */
+.infoFooter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: #f8f8f8;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  font-size: 13px;
+  color: #666666;
+}
+
+.infoFooter strong {
+  color: #333333;
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .heroCards {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .toolsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .recentChats {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 16px;
+  }
+
+  .toolsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .heroCardFeatures {
+    display: none;
+  }
+}

@@ -1,6 +1,7 @@
 "use server";
 
 import { createRSCClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 export interface RoleConfig {
   id: string;
@@ -26,7 +27,7 @@ export async function getRoleConfigs(): Promise<RoleConfig[]> {
     .order("sort_order", { ascending: true });
   
   if (error) {
-    console.error("Error fetching role configs:", error);
+    logger.error("Error fetching role configs:", error);
     return [];
   }
   
@@ -50,7 +51,7 @@ export async function updateRoleConfigs(roles: RoleConfig[]): Promise<{ success:
       .eq("id", role.id);
     
     if (error) {
-      console.error("Error updating role config:", error);
+      logger.error("Error updating role config:", error);
       return { success: false, error: error.message };
     }
   }

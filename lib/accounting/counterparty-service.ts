@@ -2,6 +2,7 @@
 
 import { createRSCClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
+import { logger } from "@/lib/logger";
 
 export interface Counterparty {
   id: string;
@@ -88,7 +89,7 @@ export async function getCounterpartiesList(
   const { data, error } = await query.order("name");
 
   if (error) {
-    console.error("Error fetching counterparties:", error);
+    logger.error("Error fetching counterparties:", error);
     return [];
   }
 
@@ -110,7 +111,7 @@ export async function getCounterpartyById(id: string): Promise<Counterparty | nu
     .single();
 
   if (error) {
-    console.error("Error fetching counterparty:", error);
+    logger.error("Error fetching counterparty:", error);
     return null;
   }
 
@@ -168,7 +169,7 @@ export async function createCounterparty(
     .single();
 
   if (error) {
-    console.error("Error creating counterparty:", error);
+    logger.error("Error creating counterparty:", error);
     return { success: false, error: "Ошибка создания контрагента" };
   }
 
@@ -217,7 +218,7 @@ export async function updateCounterparty(
     .eq("company_id", companyId);
 
   if (error) {
-    console.error("Error updating counterparty:", error);
+    logger.error("Error updating counterparty:", error);
     return { success: false, error: "Ошибка обновления контрагента" };
   }
 
@@ -242,7 +243,7 @@ export async function deleteCounterparty(
     .eq("company_id", companyId);
 
   if (error) {
-    console.error("Error deleting counterparty:", error);
+    logger.error("Error deleting counterparty:", error);
     return { success: false, error: "Ошибка удаления контрагента" };
   }
 
@@ -312,7 +313,7 @@ export async function importCounterpartiesFromTenders(): Promise<{
     .insert(toInsert);
 
   if (error) {
-    console.error("Error importing counterparties:", error);
+    logger.error("Error importing counterparties:", error);
     return { success: false, imported: 0, error: "Ошибка импорта" };
   }
 
@@ -379,7 +380,7 @@ export async function searchByInn(inn: string): Promise<{
       },
     };
   } catch (error) {
-    console.error("DaData API error:", error);
+    logger.error("DaData API error:", error);
     return { success: false, error: "Ошибка подключения к DaData" };
   }
 }

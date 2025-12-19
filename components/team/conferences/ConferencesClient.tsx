@@ -30,6 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -546,7 +547,10 @@ export default function ConferencesClient({
 
       {/* Jitsi Meet Modal */}
       <Dialog open={showJoinModal} onOpenChange={(open) => !open && handleLeaveConference()}>
-        <DialogContent className={`${isFullscreen ? 'max-w-[95vw] h-[95vh]' : 'max-w-4xl h-[80vh]'} p-0`}>
+        <DialogContent className={`${isFullscreen ? 'max-w-[95vw] h-[95vh]' : 'max-w-4xl h-[80vh]'} p-0`} aria-describedby={undefined}>
+          <VisuallyHidden>
+            <DialogTitle>Видеовстреча</DialogTitle>
+          </VisuallyHidden>
           <div className="flex flex-col h-full">
             <div className="flex items-center justify-between p-4 border-b">
               <div>

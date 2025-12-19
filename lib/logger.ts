@@ -1,17 +1,25 @@
-type LogMetadata = Record<string, unknown>;
+type LogMetadata = Record<string, unknown> | unknown;
 
 type LogLevel = "debug" | "info" | "warn" | "error";
 
+const isDev = process.env.NODE_ENV !== "production";
+
 function emit(level: LogLevel, message: string, metadata?: LogMetadata) {
-  if (process.env.NODE_ENV !== "production") {
-    console[level === "warn" ? "warn" : level](
-      `[${level.toUpperCase()}] ${message}`,
-      metadata ?? {}
-    );
+  const timestamp = new Date().toISOString();
+  const prefix = `[${timestamp}] [${level.toUpperCase()}]`;
+  
+  // В production логируем только warn и error
+  if (!isDev && level !== "warn" && level !== "error") {
+    return;
   }
 
-  // TODO: подключить централизованный трекинг (Sentry/Amplitude и т.п.)
-  // sendToTelemetry(level, message, metadata);
+  const logFn = level === "error" ? console.error : level === "warn" ? console.warn : console.log;
+  
+  if (metadata && Object.keys(metadata).length > 0) {
+    logFn(`${prefix} ${message}`, metadata);
+  } else {
+    logFn(`${prefix} ${message}`);
+  }
 }
 
 export const logger = {

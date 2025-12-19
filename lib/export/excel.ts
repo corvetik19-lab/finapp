@@ -4,6 +4,7 @@
  */
 
 import type { ExportData } from "./pdf";
+import { logger } from "@/lib/logger";
 
 /**
  * Генерация Excel отчёта
@@ -153,7 +154,7 @@ export async function generateExcelReport(data: ExportData): Promise<Blob> {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
   } catch (error) {
-    console.error("Excel generation error:", error);
+    logger.error("Excel generation error:", error);
     throw new Error("Не удалось создать Excel. Установите библиотеку: npm install exceljs");
   }
 }

@@ -3,6 +3,7 @@
 import { createRSCClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
 import type { DocumentFormType, DocumentStatus, DocumentItem, DocumentFormData } from "./document-forms-types";
+import { logger } from "@/lib/logger";
 
 // Re-export types for consumers (constants must be imported from document-forms-types.ts directly)
 export type { DocumentFormType, DocumentStatus, DocumentItem, DocumentFormData };
@@ -128,7 +129,7 @@ export async function createDocument(
     .single();
 
   if (docError) {
-    console.error("Error creating document:", docError);
+    logger.error("Error creating document:", docError);
     return { success: false, error: "Ошибка создания документа" };
   }
 
@@ -152,7 +153,7 @@ export async function createDocument(
       .insert(items);
 
     if (itemsError) {
-      console.error("Error creating document items:", itemsError);
+      logger.error("Error creating document items:", itemsError);
     }
   }
 
@@ -192,7 +193,7 @@ export async function updateDocument(
     .eq("company_id", companyId);
 
   if (error) {
-    console.error("Error updating document:", error);
+    logger.error("Error updating document:", error);
     return { success: false, error: "Ошибка обновления документа" };
   }
 

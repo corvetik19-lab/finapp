@@ -4,6 +4,7 @@ import { createRSCClient, getCachedUser } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
 import { logActivity } from "./tasks-service";
 import { SupplierPricelist } from "./types";
+import { logger } from "@/lib/logger";
 
 async function getCurrentUserId(): Promise<string | null> {
   const { data: { user } } = await getCachedUser();
@@ -27,7 +28,7 @@ export async function getSupplierPricelists(
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching supplier pricelists:", error);
+    logger.error("Error fetching supplier pricelists:", error);
     return [];
   }
 
@@ -60,7 +61,7 @@ export async function uploadPricelist(input: {
     .upload(fileName, input.file);
 
   if (uploadError) {
-    console.error("Error uploading pricelist file:", uploadError);
+    logger.error("Error uploading pricelist file:", uploadError);
     return { success: false, error: "Ошибка загрузки файла" };
   }
 
@@ -84,7 +85,7 @@ export async function uploadPricelist(input: {
     .single();
 
   if (error) {
-    console.error("Error creating pricelist record:", error);
+    logger.error("Error creating pricelist record:", error);
     return { success: false, error: "Ошибка сохранения прайс-листа" };
   }
 
@@ -131,7 +132,7 @@ export async function deletePricelist(
     .eq("company_id", companyId);
 
   if (error) {
-    console.error("Error deleting pricelist:", error);
+    logger.error("Error deleting pricelist:", error);
     return { success: false, error: "Ошибка удаления прайс-листа" };
   }
 
@@ -157,7 +158,7 @@ export async function togglePricelistActive(
     .eq("company_id", companyId);
 
   if (error) {
-    console.error("Error toggling pricelist active:", error);
+    logger.error("Error toggling pricelist active:", error);
     return { success: false, error: "Ошибка обновления" };
   }
 

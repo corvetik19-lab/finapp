@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { Plus, ChevronLeft, ChevronRight, Search, X, MessageCircle, Edit, Trash2, Check, RefreshCw, List } from "lucide-react";
+import { Plus, ChevronLeft, Search, X, MessageCircle, Edit, Trash2, Check, RefreshCw, List } from "lucide-react";
 import { getChatsAction, deleteChatAction, updateChatTitleAction } from "./actions";
 import type { AiChat } from "@/lib/ai/chat-types";
 
@@ -210,20 +210,78 @@ export default function ChatSidebar({
   };
 
   return (
-    <div className={cn("border-r bg-muted/30 flex flex-col transition-all", isCollapsed ? "w-12" : "w-72")}>
-      {onToggleCollapse && (
-        <Button variant="ghost" size="icon" className="absolute top-2 right-2 z-10" onClick={onToggleCollapse}>
-          {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-        </Button>
+    <div 
+      className={cn(
+        "border-r bg-muted/30 flex flex-col transition-all duration-300 ease-in-out relative",
+        isCollapsed ? "w-14" : "w-72"
+      )}
+    >
+      {/* Collapse toggle button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className={cn(
+          "absolute -right-3 top-4 z-20 h-6 w-6 rounded-full border bg-background shadow-sm hover:bg-muted",
+          "transition-transform duration-300",
+          isCollapsed && "rotate-180"
+        )}
+        onClick={onToggleCollapse}
+      >
+        <ChevronLeft className="h-3 w-3" />
+      </Button>
+
+      {/* Collapsed state - show icons only */}
+      {isCollapsed && (
+        <div className="flex flex-col items-center py-4 gap-2">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={onNewChat}
+            title="Новый чат"
+            className="h-10 w-10"
+          >
+            <Plus className="h-5 w-5" />
+          </Button>
+          <div className="w-8 h-px bg-border my-2" />
+          {filteredChats.slice(0, 5).map((chat) => (
+            <Button
+              key={chat.id}
+              size="icon"
+              variant={chat.id === currentChatId ? "secondary" : "ghost"}
+              onClick={() => onSelectChat(chat.id)}
+              title={chat.title}
+              className="h-10 w-10"
+            >
+              <MessageCircle className="h-4 w-4" />
+            </Button>
+          ))}
+        </div>
       )}
 
+      {/* Expanded state */}
       {!isCollapsed && (
         <>
           <div className="p-3 border-b flex items-center justify-between">
-            <h2 className="font-semibold">Чаты</h2>
+            <h2 className="font-semibold text-sm">История чатов</h2>
             <div className="flex gap-1">
-              {!isSelectionMode && <Button size="icon" variant="ghost" onClick={onNewChat} title="Новый чат"><Plus className="h-4 w-4" /></Button>}
-              <Button size="icon" variant={isSelectionMode ? "secondary" : "ghost"} onClick={toggleSelectionMode} title={isSelectionMode ? "Отменить" : "Выбрать"}>
+              {!isSelectionMode && (
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  onClick={onNewChat} 
+                  title="Новый чат"
+                  className="h-8 w-8"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              )}
+              <Button 
+                size="icon" 
+                variant={isSelectionMode ? "secondary" : "ghost"} 
+                onClick={toggleSelectionMode} 
+                title={isSelectionMode ? "Отменить" : "Выбрать"}
+                className="h-8 w-8"
+              >
                 {isSelectionMode ? <X className="h-4 w-4" /> : <List className="h-4 w-4" />}
               </Button>
             </div>

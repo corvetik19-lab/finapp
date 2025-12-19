@@ -48,11 +48,6 @@ export default function ReportBuilder({ onGenerate, onAddToChart, isGenerating }
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
   
-  // Debug: проверяем что dataTypes установлены
-  useEffect(() => {
-    console.log("ReportBuilder mounted, dataTypes:", dataTypes);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   
   const [categories, setCategories] = useState<Category[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -109,8 +104,6 @@ export default function ReportBuilder({ onGenerate, onAddToChart, isGenerating }
   };
 
   const handleGenerate = () => {
-    console.log("handleGenerate called, current dataTypes:", dataTypes);
-    
     if (dataTypes.length === 0) {
       alert("Выберите хотя бы один тип данных");
       return;
@@ -129,7 +122,6 @@ export default function ReportBuilder({ onGenerate, onAddToChart, isGenerating }
       config.dateTo = customDateTo;
     }
 
-    console.log("Generating report with config:", config);
     onGenerate(config);
   };
 

@@ -1,6 +1,6 @@
 // Типы для организационной структуры
 
-export type AppMode = 'finance' | 'tenders' | 'personal' | 'investments';
+export type AppMode = 'finance' | 'tenders' | 'personal' | 'investments' | 'ai-studio';
 
 export interface Organization {
   id: string;

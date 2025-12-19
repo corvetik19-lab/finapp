@@ -1,23 +1,10 @@
 /**
- * OpenAI Embeddings для семантического поиска транзакций (RAG)
- * Используем OpenAI API с моделью text-embedding-3-small
+ * Google Gemini Embeddings для семантического поиска (RAG)
+ * Используем Gemini API с моделью gemini-embedding-001
  */
 
-import OpenAI from "openai";
-import { getEmbeddingsModel } from "./openai-client";
-
-// Функция для получения клиента OpenAI (ленивая инициализация)
-function getOpenAIClient() {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey || apiKey === "dummy-key-for-build") {
-    throw new Error("OPENAI_API_KEY not configured");
-  }
-  
-  return new OpenAI({
-    apiKey,
-    dangerouslyAllowBrowser: false,
-  });
-}
+import { getGeminiClient, getEmbeddingsModel, getEmbeddingDimension } from "./gemini-client";
+import { logger } from "@/lib/logger";
 
 /**
  * Создаёт текстовое описание транзакции для embedding
@@ -52,20 +39,20 @@ export function buildTransactionText(transaction: {
 /**
  * Создаёт embedding (векторное представление) для текста
  * @param text - текст для преобразования
- * @returns массив чисел (вектор размерностью 1536)
+ * @returns массив чисел (вектор размерностью 768)
  */
 export async function createEmbedding(text: string): Promise<number[]> {
   try {
-    const openai = getOpenAIClient();
-    const response = await openai.embeddings.create({
+    const client = getGeminiClient();
+    const response = await client.models.embedContent({
       model: getEmbeddingsModel(),
-      input: text,
-      encoding_format: "float",
+      contents: text,
+      config: { outputDimensionality: getEmbeddingDimension() },
     });
 
-    return response.data[0].embedding;
+    return response.embeddings?.[0]?.values || [];
   } catch (error) {
-    console.error("Error creating embedding:", error);
+    logger.error("Error creating embedding:", error);
     throw new Error("Failed to create embedding");
   }
 }
@@ -77,16 +64,23 @@ export async function createEmbeddings(texts: string[]): Promise<number[][]> {
   if (texts.length === 0) return [];
 
   try {
-    const openai = getOpenAIClient();
-    const response = await openai.embeddings.create({
-      model: getEmbeddingsModel(),
-      input: texts,
-      encoding_format: "float",
-    });
-
-    return response.data.map((item) => item.embedding);
+    // Gemini поддерживает batch embeddings
+    const results: number[][] = [];
+    const client = getGeminiClient();
+    
+    // Обрабатываем по одному (Gemini embedContent не поддерживает batch напрямую)
+    for (const text of texts) {
+      const response = await client.models.embedContent({
+        model: getEmbeddingsModel(),
+        contents: text,
+        config: { outputDimensionality: getEmbeddingDimension() },
+      });
+      results.push(response.embeddings?.[0]?.values || []);
+    }
+    
+    return results;
   } catch (error) {
-    console.error("Error creating embeddings:", error);
+    logger.error("Error creating embeddings:", error);
     throw new Error("Failed to create embeddings");
   }
 }
@@ -99,38 +93,32 @@ export async function suggestCategory(
   availableCategories: { id: string; name: string; type: string }[]
 ): Promise<{ categoryId: string; categoryName: string; confidence: number; explanation: string }> {
   try {
-    const openai = getOpenAIClient();
+    const client = getGeminiClient();
     const categoryList = availableCategories
       .map((c) => `- ${c.name} (${c.type})`)
       .join("\n");
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: `Ты финансовый помощник. Определи наиболее подходящую категорию для транзакции из списка доступных категорий. Отвечай ТОЛЬКО в формате JSON:
+    const response = await client.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `Ты финансовый помощник. Определи наиболее подходящую категорию для транзакции из списка доступных категорий.
+
+Описание транзакции: "${description}"
+
+Доступные категории:
+${categoryList}
+
+Выбери наиболее подходящую категорию. Отвечай ТОЛЬКО в формате JSON:
 {
   "categoryName": "название категории",
   "confidence": 0.95,
   "explanation": "краткое объяснение"
 }`,
-        },
-        {
-          role: "user",
-          content: `Описание транзакции: "${description}"
-
-Доступные категории:
-${categoryList}
-
-Выбери наиболее подходящую категорию.`,
-        },
-      ],
-      temperature: 0.3,
-      response_format: { type: "json_object" },
+      config: {
+        responseMimeType: "application/json",
+      },
     });
 
-    const result = JSON.parse(response.choices[0].message.content || "{}");
+    const result = JSON.parse(response.text || "{}");
     
     // Находим ID категории по названию
     const category = availableCategories.find(
@@ -148,7 +136,7 @@ ${categoryList}
       explanation: result.explanation || "Автоматически определено AI",
     };
   } catch (error) {
-    console.error("Error suggesting category:", error);
+    logger.error("Error suggesting category:", error);
     throw new Error("Failed to suggest category");
   }
 }

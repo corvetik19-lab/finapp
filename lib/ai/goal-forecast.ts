@@ -8,6 +8,7 @@
  */
 
 import { SupabaseClient } from "@supabase/supabase-js";
+import { logger } from "@/lib/logger";
 
 export interface Plan {
   id: string;
@@ -90,7 +91,7 @@ export async function calculateGoalForecast(
     .single();
 
   if (planError || !plan) {
-    console.error("Plan not found:", planError);
+    logger.error("Plan not found:", planError);
     return null;
   }
 

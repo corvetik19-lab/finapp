@@ -2,8 +2,9 @@ import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 import type { TDocumentDefinitions, Content } from "pdfmake/interfaces";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(pdfMake as any).vfs = (pdfFonts as any).pdfMake?.vfs || pdfFonts;
+type PdfMakeWithVfs = typeof pdfMake & { vfs: Record<string, string> };
+const fontsModule = pdfFonts as unknown as { pdfMake?: { vfs: Record<string, string> }; vfs?: Record<string, string> };
+(pdfMake as PdfMakeWithVfs).vfs = fontsModule.pdfMake?.vfs || fontsModule.vfs || {};
 
 interface PDFReportOptions {
   user: { email: string; name: string };

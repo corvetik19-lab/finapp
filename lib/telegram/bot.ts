@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 /**
  * Telegram Bot Integration
  * Webhook-based bot для уведомлений и быстрых команд
@@ -70,7 +71,7 @@ export async function sendTelegramMessage(
 
     return response.ok;
   } catch (error) {
-    console.error("Telegram send error:", error);
+    logger.error("Telegram send error:", error);
     return false;
   }
 }
@@ -94,7 +95,7 @@ export async function setTelegramWebhook(
 
     return response.ok;
   } catch (error) {
-    console.error("Telegram webhook setup error:", error);
+    logger.error("Telegram webhook setup error:", error);
     return false;
   }
 }
@@ -117,7 +118,7 @@ export async function getTelegramBotInfo(botToken: string): Promise<{
     );
     return await response.json();
   } catch (error) {
-    console.error("Telegram bot info error:", error);
+    logger.error("Telegram bot info error:", error);
     return null;
   }
 }
@@ -203,7 +204,7 @@ export async function answerCallbackQuery(
     );
     return response.ok;
   } catch (error) {
-    console.error("Answer callback query error:", error);
+    logger.error("Answer callback query error:", error);
     return false;
   }
 }
@@ -237,7 +238,7 @@ export async function editMessageText(
     );
     return response.ok;
   } catch (error) {
-    console.error("Edit message error:", error);
+    logger.error("Edit message error:", error);
     return false;
   }
 }

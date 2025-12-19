@@ -13,6 +13,7 @@ import type {
   EmployeeStats,
   EmployeeSkill,
 } from './types';
+import { logger } from "@/lib/logger";
 
 /**
  * Получить список сотрудников с фильтрацией
@@ -25,13 +26,14 @@ export async function getEmployees(
 ) {
   const supabase = await createClient();
   
-  // Get list of super_admin user IDs to exclude from employees list
+  // Get list of super_admin user IDs and emails to exclude from employees list
   const { data: superAdmins } = await supabase
     .from('profiles')
-    .select('id')
+    .select('id, email')
     .eq('global_role', 'super_admin');
   
   const superAdminIds = new Set((superAdmins || []).map(sa => sa.id));
+  const superAdminEmails = new Set((superAdmins || []).map(sa => sa.email?.toLowerCase()).filter(Boolean));
   
   // Подгружаем связанную роль из таблицы roles
   let query = supabase
@@ -89,14 +91,18 @@ export async function getEmployees(
   const result = await query;
   
   if (result.error) {
-    console.error('Error fetching employees:', result.error);
+    logger.error('Error fetching employees:', result.error);
     throw new Error(result.error.message);
   }
 
-  // Filter out super admins from the list (server-side filtering)
-  const filteredData = (result.data || []).filter((emp: { user_id?: string }) => 
-    !emp.user_id || !superAdminIds.has(emp.user_id)
-  );
+  // Filter out super admins from the list (server-side filtering by user_id AND email)
+  const filteredData = (result.data || []).filter((emp: { user_id?: string; email?: string }) => {
+    // Exclude if user_id matches super_admin
+    if (emp.user_id && superAdminIds.has(emp.user_id)) return false;
+    // Exclude if email matches super_admin
+    if (emp.email && superAdminEmails.has(emp.email.toLowerCase())) return false;
+    return true;
+  });
 
   // Подсчёт тендеров для каждого сотрудника
   const employeeIds = filteredData.map((e: { id: string }) => e.id);
@@ -178,7 +184,7 @@ export async function getEmployeeById(id: string) {
     .single();
   
   if (result.error) {
-    console.error('Error fetching employee:', result.error);
+    logger.error('Error fetching employee:', result.error);
     throw new Error(result.error.message);
   }
   
@@ -199,7 +205,7 @@ export async function getEmployeeTenderStats(employeeId: string) {
     .is('deleted_at', null);
   
   if (error) {
-    console.error('Error fetching employee tender stats:', error);
+    logger.error('Error fetching employee tender stats:', error);
     return {
       total: 0,
       won: 0,
@@ -260,8 +266,9 @@ export async function createEmployee(data: CreateEmployeeData) {
   };
   
   // Удаляем поля, которых нет в таблице
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { create_user_account, password, role, ...dbData } = employeeData;
+  const { create_user_account: _createUserAccount, password: _password, role, ...dbData } = employeeData;
+  void _createUserAccount;
+  void _password;
   
   // Если role - это UUID, то это role_id
   if (role && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(role)) {
@@ -278,7 +285,7 @@ export async function createEmployee(data: CreateEmployeeData) {
     .single();
   
   if (result.error) {
-    console.error('Error creating employee:', result.error);
+    logger.error('Error creating employee:', result.error);
     throw new Error(result.error.message);
   }
   
@@ -299,7 +306,7 @@ export async function updateEmployee(id: string, data: UpdateEmployeeData) {
     .single();
   
   if (result.error) {
-    console.error('Error updating employee:', result.error);
+    logger.error('Error updating employee:', result.error);
     throw new Error(result.error.message);
   }
   
@@ -320,7 +327,7 @@ export async function deleteEmployee(id: string) {
     .single();
   
   if (result.error) {
-    console.error('Error deleting employee:', result.error);
+    logger.error('Error deleting employee:', result.error);
     throw new Error(result.error.message);
   }
   
@@ -341,7 +348,7 @@ export async function getEmployeesStats(companyId: string): Promise<EmployeeStat
     .is('deleted_at', null);
   
   if (result.error) {
-    console.error('Error fetching employees stats:', result.error);
+    logger.error('Error fetching employees stats:', result.error);
     throw new Error(result.error.message);
   }
   
@@ -394,7 +401,7 @@ export async function getEmployeeSkills(employeeId: string) {
     .order('skill_level', { ascending: false });
   
   if (result.error) {
-    console.error('Error fetching employee skills:', result.error);
+    logger.error('Error fetching employee skills:', result.error);
     throw new Error(result.error.message);
   }
   
@@ -414,7 +421,7 @@ export async function addEmployeeSkill(data: Omit<EmployeeSkill, 'id' | 'created
     .single();
   
   if (result.error) {
-    console.error('Error adding employee skill:', result.error);
+    logger.error('Error adding employee skill:', result.error);
     throw new Error(result.error.message);
   }
   
@@ -435,7 +442,7 @@ export async function getEmployeeHistory(employeeId: string, limit: number = 50)
     .limit(limit);
   
   if (result.error) {
-    console.error('Error fetching employee history:', result.error);
+    logger.error('Error fetching employee history:', result.error);
     throw new Error(result.error.message);
   }
   
@@ -456,7 +463,7 @@ export async function getDepartments(companyId: string): Promise<string[]> {
     .is('deleted_at', null);
   
   if (result.error) {
-    console.error('Error fetching departments:', result.error);
+    logger.error('Error fetching departments:', result.error);
     return [];
   }
   
@@ -479,7 +486,7 @@ export async function getPositions(companyId: string): Promise<string[]> {
     .is('deleted_at', null);
   
   if (result.error) {
-    console.error('Error fetching positions:', result.error);
+    logger.error('Error fetching positions:', result.error);
     return [];
   }
   

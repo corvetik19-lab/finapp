@@ -4,6 +4,7 @@
 
 import { generateText } from "ai";
 import { getAnalyticsModel } from "./openai-client";
+import { logger } from "@/lib/logger";
 
 /**
  * AI прогнозирование расходов и финансовые сценарии
@@ -309,7 +310,7 @@ ${savingsGoal ? `- Цель накоплений: ${(savingsGoal / 100).toFixed(
 
     return text.trim();
   } catch (error) {
-    console.error("Forecast insights generation error:", error);
+    logger.error("Forecast insights generation error:", error);
     return "Продолжайте следить за расходами и придерживайтесь бюджета";
   }
 }

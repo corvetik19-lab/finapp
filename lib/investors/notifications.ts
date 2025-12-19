@@ -5,6 +5,7 @@ import type { Investment } from "./types";
 import { INVESTMENT_STATUS_LABELS } from "./types";
 import { formatMoney } from "./calculations";
 import { getUpcomingPayments, getOverdueInvestments } from "./returns";
+import { logger } from "@/lib/logger";
 
 // ============================================
 // Email уведомления для модуля инвестиций
@@ -135,7 +136,7 @@ export async function createPaymentReminderNotification(
     .single();
 
   if (error) {
-    console.error("Error creating notification:", error);
+    logger.error("Error creating notification:", error);
     return { success: false };
   }
 
@@ -173,7 +174,7 @@ export async function createOverdueNotification(
     .single();
 
   if (error) {
-    console.error("Error creating notification:", error);
+    logger.error("Error creating notification:", error);
     return { success: false };
   }
 
@@ -210,7 +211,7 @@ export async function createStatusChangeNotification(
     .single();
 
   if (error) {
-    console.error("Error creating notification:", error);
+    logger.error("Error creating notification:", error);
     return { success: false };
   }
 

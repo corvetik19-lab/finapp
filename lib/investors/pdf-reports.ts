@@ -194,8 +194,9 @@ function generateInvestmentHtml(investment: Investment, schedule: ReturnSchedule
   `;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function generateSummaryHtml(report: Awaited<ReturnType<typeof generateSummaryReport>>, investments: Investment[], sources: InvestmentSource[]): string {
+  // Функция используется для генерации HTML отчётов
+  void report; void investments; void sources;
   const today = new Date().toLocaleDateString("ru-RU");
   
   return `

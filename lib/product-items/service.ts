@@ -3,6 +3,7 @@
 import { createRouteClient } from "@/lib/supabase/helpers";
 import type { ProductItem, ProductItemInput, ProductItemUpdate } from "@/types/product-item";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
+import { logger } from "@/lib/logger";
 
 /**
  * Получить все активные товары пользователя
@@ -47,7 +48,7 @@ export async function getProductItems(
   const { data, error } = await query;
 
   if (error) {
-    console.error("Error fetching product items:", error);
+    logger.error("Error fetching product items:", error);
     throw new Error(`Ошибка при получении товаров: ${error.message}`);
   }
 
@@ -113,7 +114,7 @@ export async function searchProductItems(
   const { data, error } = await dbQuery;
 
   if (error) {
-    console.error("Error searching product items:", error);
+    logger.error("Error searching product items:", error);
     throw new Error(`Ошибка при поиске товаров: ${error.message}`);
   }
 
@@ -171,7 +172,7 @@ export async function createProductItem(input: ProductItemInput): Promise<Produc
     .single();
 
   if (error) {
-    console.error("Error creating product item:", error);
+    logger.error("Error creating product item:", error);
     throw new Error(`Ошибка при создании товара: ${error.message}`);
   }
 
@@ -209,7 +210,7 @@ export async function updateProductItem(update: ProductItemUpdate): Promise<Prod
     .single();
 
   if (error) {
-    console.error("Error updating product item:", error);
+    logger.error("Error updating product item:", error);
     throw new Error(`Ошибка при обновлении товара: ${error.message}`);
   }
 
@@ -238,7 +239,7 @@ export async function deleteProductItem(id: string): Promise<void> {
     .single();
 
   if (productError) {
-    console.error("Error fetching product item:", productError);
+    logger.error("Error fetching product item:", productError);
     throw new Error(`Ошибка при получении товара: ${productError.message}`);
   }
 
@@ -251,7 +252,7 @@ export async function deleteProductItem(id: string): Promise<void> {
     .limit(1);
 
   if (checkError && checkError.code !== "PGRST116") {
-    console.error("Error checking product usage:", checkError);
+    logger.error("Error checking product usage:", checkError);
     throw new Error(`Ошибка при проверке использования товара: ${checkError.message}`);
   }
 
@@ -267,7 +268,7 @@ export async function deleteProductItem(id: string): Promise<void> {
     .eq("user_id", user.id);
 
   if (error) {
-    console.error("Error deleting product item:", error);
+    logger.error("Error deleting product item:", error);
     throw new Error(`Ошибка при удалении товара: ${error.message}`);
   }
 }
@@ -294,7 +295,7 @@ export async function permanentDeleteProductItem(id: string): Promise<void> {
     .single();
 
   if (productError) {
-    console.error("Error fetching product item:", productError);
+    logger.error("Error fetching product item:", productError);
     throw new Error(`Ошибка при получении товара: ${productError.message}`);
   }
 
@@ -307,7 +308,7 @@ export async function permanentDeleteProductItem(id: string): Promise<void> {
     .limit(1);
 
   if (checkError && checkError.code !== "PGRST116") {
-    console.error("Error checking product usage:", checkError);
+    logger.error("Error checking product usage:", checkError);
     throw new Error(`Ошибка при проверке использования товара: ${checkError.message}`);
   }
 
@@ -322,7 +323,7 @@ export async function permanentDeleteProductItem(id: string): Promise<void> {
     .eq("user_id", user.id);
 
   if (error) {
-    console.error("Error permanently deleting product item:", error);
+    logger.error("Error permanently deleting product item:", error);
     throw new Error(`Ошибка при удалении товара: ${error.message}`);
   }
 }

@@ -3,6 +3,7 @@
 import { createRSCClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
 import type { OrganizationType, TaxSystem, OrganizationSettings, UpdateOrganizationSettingsInput } from "./settings-types";
+import { logger } from "@/lib/logger";
 
 // Re-export types for consumers
 export type { OrganizationType, TaxSystem, OrganizationSettings, UpdateOrganizationSettingsInput };
@@ -21,7 +22,7 @@ export async function getOrganizationSettings(): Promise<OrganizationSettings | 
     .single();
 
   if (error && error.code !== "PGRST116") {
-    console.error("Error fetching organization settings:", error);
+    logger.error("Error fetching organization settings:", error);
     return null;
   }
 
@@ -97,7 +98,7 @@ export async function upsertOrganizationSettings(
       .eq("id", existing.id);
 
     if (error) {
-      console.error("Error updating settings:", error);
+      logger.error("Error updating settings:", error);
       return { success: false, error: "Ошибка сохранения настроек" };
     }
   } else {
@@ -107,7 +108,7 @@ export async function upsertOrganizationSettings(
       .insert(cleanData);
 
     if (error) {
-      console.error("Error creating settings:", error);
+      logger.error("Error creating settings:", error);
       return { success: false, error: "Ошибка создания настроек" };
     }
   }

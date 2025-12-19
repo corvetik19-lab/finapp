@@ -1,4 +1,5 @@
 import { createRSCClient } from '@/lib/supabase/helpers';
+import { logger } from "@/lib/logger";
 
 // Типы событий календаря
 export type CalendarEventType = 
@@ -93,7 +94,7 @@ export async function getCalendarData(params: CalendarParams): Promise<CalendarD
     .is('deleted_at', null);
 
   if (tendersError) {
-    console.error('Error fetching tenders for calendar:', tendersError);
+    logger.error('Error fetching tenders for calendar:', tendersError);
   }
 
   // Получаем задачи (если таблица существует)

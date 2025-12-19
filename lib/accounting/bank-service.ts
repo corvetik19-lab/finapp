@@ -14,6 +14,7 @@ import {
   UpdateBankIntegrationDTO,
   CreatePaymentOrderDTO,
 } from "./bank-types";
+import { logger } from "@/lib/logger";
 
 // ============================================
 // Расчётные счета
@@ -33,7 +34,7 @@ export async function getBankAccounts(): Promise<BankAccount[]> {
     .order("created_at", { ascending: false });
   
   if (error) {
-    console.error("Error fetching bank accounts:", error);
+    logger.error("Error fetching bank accounts:", error);
     return [];
   }
   
@@ -54,7 +55,7 @@ export async function getBankAccount(id: string): Promise<BankAccount | null> {
     .single();
   
   if (error) {
-    console.error("Error fetching bank account:", error);
+    logger.error("Error fetching bank account:", error);
     return null;
   }
   
@@ -87,7 +88,7 @@ export async function createBankAccount(dto: CreateBankAccountDTO): Promise<Bank
     .single();
   
   if (error) {
-    console.error("Error creating bank account:", error);
+    logger.error("Error creating bank account:", error);
     return null;
   }
   
@@ -121,7 +122,7 @@ export async function updateBankAccount(
     .single();
   
   if (error) {
-    console.error("Error updating bank account:", error);
+    logger.error("Error updating bank account:", error);
     return null;
   }
   
@@ -141,7 +142,7 @@ export async function deleteBankAccount(id: string): Promise<boolean> {
     .eq("company_id", companyId);
   
   if (error) {
-    console.error("Error deleting bank account:", error);
+    logger.error("Error deleting bank account:", error);
     return false;
   }
   
@@ -165,7 +166,7 @@ export async function getBankIntegrations(): Promise<BankIntegration[]> {
     .order("created_at", { ascending: false });
   
   if (error) {
-    console.error("Error fetching bank integrations:", error);
+    logger.error("Error fetching bank integrations:", error);
     return [];
   }
   
@@ -186,7 +187,7 @@ export async function getBankIntegration(id: string): Promise<BankIntegration | 
     .single();
   
   if (error) {
-    console.error("Error fetching bank integration:", error);
+    logger.error("Error fetching bank integration:", error);
     return null;
   }
   
@@ -214,7 +215,7 @@ export async function createBankIntegration(
     .single();
   
   if (error) {
-    console.error("Error creating bank integration:", error);
+    logger.error("Error creating bank integration:", error);
     return null;
   }
   
@@ -239,7 +240,7 @@ export async function updateBankIntegration(
     .single();
   
   if (error) {
-    console.error("Error updating bank integration:", error);
+    logger.error("Error updating bank integration:", error);
     return null;
   }
   
@@ -259,7 +260,7 @@ export async function deleteBankIntegration(id: string): Promise<boolean> {
     .eq("company_id", companyId);
   
   if (error) {
-    console.error("Error deleting bank integration:", error);
+    logger.error("Error deleting bank integration:", error);
     return false;
   }
   
@@ -317,7 +318,7 @@ export async function getBankTransactions(filters?: {
   const { data, error } = await query;
   
   if (error) {
-    console.error("Error fetching bank transactions:", error);
+    logger.error("Error fetching bank transactions:", error);
     return [];
   }
   
@@ -342,7 +343,7 @@ export async function updateBankTransaction(
     .single();
   
   if (error) {
-    console.error("Error updating bank transaction:", error);
+    logger.error("Error updating bank transaction:", error);
     return null;
   }
   
@@ -390,7 +391,7 @@ export async function getPaymentOrders(filters?: {
   const { data, error } = await query;
   
   if (error) {
-    console.error("Error fetching payment orders:", error);
+    logger.error("Error fetching payment orders:", error);
     return [];
   }
   
@@ -411,7 +412,7 @@ export async function getPaymentOrder(id: string): Promise<PaymentOrder | null> 
     .single();
   
   if (error) {
-    console.error("Error fetching payment order:", error);
+    logger.error("Error fetching payment order:", error);
     return null;
   }
   
@@ -439,7 +440,7 @@ export async function createPaymentOrder(
     .single();
   
   if (error) {
-    console.error("Error creating payment order:", error);
+    logger.error("Error creating payment order:", error);
     return null;
   }
   
@@ -464,7 +465,7 @@ export async function updatePaymentOrder(
     .single();
   
   if (error) {
-    console.error("Error updating payment order:", error);
+    logger.error("Error updating payment order:", error);
     return null;
   }
   
@@ -486,7 +487,7 @@ export async function deletePaymentOrder(id: string): Promise<boolean> {
     .eq("status", "draft");
   
   if (error) {
-    console.error("Error deleting payment order:", error);
+    logger.error("Error deleting payment order:", error);
     return false;
   }
   
@@ -512,7 +513,7 @@ export async function getBankSyncLogs(integrationId: string): Promise<BankSyncLo
     .limit(50);
   
   if (error) {
-    console.error("Error fetching bank sync logs:", error);
+    logger.error("Error fetching bank sync logs:", error);
     return [];
   }
   

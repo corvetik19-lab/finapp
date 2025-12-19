@@ -6,7 +6,7 @@ import Link from "next/link";
 import { getModeConfig } from "@/lib/platform/mode-registry";
 import { usePermissions } from "@/lib/auth/use-permissions";
 import { cn } from "@/lib/utils";
-import { ChevronDown, ChevronUp, ShieldCheck, LayoutDashboard, Receipt, PieChart, CreditCard, Landmark, Banknote, BarChart3, TrendingUp, FileText, Trophy, Brain, MessageCircle, Lightbulb, LineChart, Bell, Settings, Briefcase, Package, Calendar, ListTodo, Flag, Bookmark, Dumbbell, StickyNote, Gavel, Truck, Users, Book, Building, MapPin, Tag, Wallet, type LucideIcon } from "lucide-react";
+import { ChevronDown, ChevronUp, ShieldCheck, LayoutDashboard, Receipt, PieChart, CreditCard, Landmark, Banknote, BarChart3, TrendingUp, FileText, Trophy, Brain, MessageCircle, Lightbulb, LineChart, Bell, Settings, Briefcase, Package, Calendar, ListTodo, Flag, Bookmark, Dumbbell, StickyNote, Gavel, Truck, Users, Book, Building, MapPin, Tag, Wallet, Image, Video, Mic, FlaskConical, History, Sparkles, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -54,6 +54,12 @@ const ICON_MAP: Record<string, LucideIcon> = {
   person: Users,
   arrow_downward: TrendingUp,
   arrow_upward: TrendingUp,
+  image: Image,
+  movie: Video,
+  mic: Mic,
+  science: FlaskConical,
+  history: History,
+  auto_awesome: Sparkles,
 };
 
 interface MenuItem {
@@ -187,6 +193,17 @@ const MODE_MENUS: ModeMenuConfig = {
     },
     { key: 'settings', label: 'Настройки тендеров', icon: 'settings', href: '/tenders/settings' },
   ],
+
+  'ai-studio': [
+    { key: 'chat', label: 'Чат', icon: 'chat', href: '/ai-studio/chat' },
+    { key: 'image', label: 'Изображения', icon: 'image', href: '/ai-studio/image' },
+    { key: 'video', label: 'Видео', icon: 'movie', href: '/ai-studio/video' },
+    { key: 'audio', label: 'Аудио', icon: 'mic', href: '/ai-studio/audio' },
+    { key: 'document', label: 'Документы', icon: 'description', href: '/ai-studio/document' },
+    { key: 'research', label: 'Исследования', icon: 'science', href: '/ai-studio/research' },
+    { key: 'history', label: 'История', icon: 'history', href: '/ai-studio/history' },
+    { key: 'settings', label: 'Настройки', icon: 'settings', href: '/ai-studio/settings' },
+  ],
 };
 
 export default function ModeSidebar() {
@@ -207,6 +224,11 @@ export default function ModeSidebar() {
       modeKey === 'ai-advisor' || modeKey === 'ai-chat' || modeKey === 'ai-analytics' ||
       modeKey === 'plans' || modeKey === 'notifications' || modeKey === 'settings') {
       return 'finance';
+    }
+
+    // AI Studio
+    if (modeKey === 'ai-studio') {
+      return 'ai-studio';
     }
 
     return modeKey;

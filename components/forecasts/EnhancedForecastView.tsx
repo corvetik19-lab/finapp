@@ -156,7 +156,7 @@ export default function EnhancedForecastView() {
       },
       tooltip: {
         callbacks: {
-          label: (context: { dataset: { label?: string }; parsed: { y: number } }) => {
+          label: (context: { dataset: { label?: string }; parsed: { y: number | null } }) => {
             const value = context.parsed?.y ?? 0;
             return `${context.dataset.label}: ${value.toFixed(0)}₽`;
           },

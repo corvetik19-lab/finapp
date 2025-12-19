@@ -2,6 +2,7 @@
 
 import { createRSCClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
+import { logger } from "@/lib/logger";
 
 // Типы документов, которые можно создать из тендера
 export type TenderDocumentType = 
@@ -95,7 +96,7 @@ export async function createDocumentFromTender(
     .single();
 
   if (docError || !document) {
-    console.error("Error creating document:", docError);
+    logger.error("Error creating document:", docError);
     return { success: false, error: "Ошибка создания документа" };
   }
 
@@ -165,7 +166,7 @@ async function findOrCreateCounterparty(
     .single();
 
   if (error) {
-    console.error("Error creating counterparty:", error);
+    logger.error("Error creating counterparty:", error);
     return null;
   }
 
@@ -305,7 +306,7 @@ export async function createKudirEntryForTender(
     .single();
 
   if (error) {
-    console.error("Error creating KUDIR entry:", error);
+    logger.error("Error creating KUDIR entry:", error);
     return { success: false, error: "Ошибка создания записи КУДиР" };
   }
 

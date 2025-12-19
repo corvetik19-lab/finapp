@@ -1,0 +1,282 @@
+.container {
+  padding: 24px;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #667eea;
+  text-decoration: none;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.backLink:hover {
+  text-decoration: underline;
+}
+
+.titleSection {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+.filters {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #f5f5f5;
+  border-radius: 12px;
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filterGroup label {
+  font-size: 14px;
+  color: #666;
+}
+
+.select {
+  padding: 8px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.refreshBtn {
+  padding: 8px 16px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.refreshBtn:hover {
+  background: #5a6fd6;
+}
+
+.loading,
+.error,
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: #666;
+  font-size: 48px;
+}
+
+.loading p,
+.error p,
+.empty p {
+  font-size: 16px;
+  margin: 16px 0;
+}
+
+.error button,
+.linkBtn {
+  padding: 10px 20px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.taskList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 16px;
+  padding-bottom: 24px;
+}
+
+.taskCard {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.2s;
+}
+
+.taskCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.taskHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.taskCategory {
+  font-size: 12px;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.taskStatus {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.taskStatus.success {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.taskStatus.fail {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.taskStatus.generating,
+.taskStatus.queuing,
+.taskStatus.waiting {
+  background: #fff3e0;
+  color: #ef6c00;
+}
+
+.taskBody {
+  margin-bottom: 12px;
+}
+
+.taskModel {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 8px 0;
+}
+
+.taskPrompt {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.taskResults {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.resultThumb {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 24px;
+}
+
+.resultThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.taskError {
+  font-size: 12px;
+  color: #c62828;
+  background: #ffebee;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 0 0 12px 0;
+}
+
+.taskFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.taskDate {
+  font-size: 12px;
+  color: #999;
+}
+
+.taskActions {
+  display: flex;
+  gap: 8px;
+}
+
+.deleteBtn {
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.deleteBtn:hover {
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .taskList {
+    grid-template-columns: 1fr;
+  }
+}

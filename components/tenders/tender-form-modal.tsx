@@ -275,8 +275,6 @@ export function TenderFormModal({
         }
       });
 
-      console.log('Sending payload:', payload);
-
       const url = mode === 'edit' && tender 
         ? `/api/tenders/${tender.id}` 
         : '/api/tenders';

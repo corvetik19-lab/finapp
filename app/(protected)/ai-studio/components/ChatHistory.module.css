@@ -1,0 +1,182 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.emptyIcon {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.empty p {
+  font-size: 13px;
+}
+
+.group {
+  margin-bottom: 4px;
+}
+
+.groupHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  text-align: left;
+  transition: color 0.15s;
+}
+
+.groupHeader:hover {
+  color: #1f2937;
+}
+
+.groupHeader svg {
+  flex-shrink: 0;
+}
+
+.count {
+  margin-left: auto;
+  padding: 2px 6px;
+  background: #f3f4f6;
+  border-radius: 10px;
+  font-size: 10px;
+  color: #9ca3af;
+}
+
+.chatList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 8px;
+}
+
+.chatItem {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.chatItem:hover {
+  background: #f9fafb;
+}
+
+.chatItem.active {
+  background: #f3f4f6;
+}
+
+.chatButton {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  min-width: 0;
+}
+
+.chatTitle {
+  font-size: 13px;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menuBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #9ca3af;
+  opacity: 0;
+  transition: all 0.15s;
+  margin-right: 4px;
+}
+
+.chatItem:hover .menuBtn {
+  opacity: 1;
+}
+
+.menuBtn:hover {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+.menu {
+  position: absolute;
+  top: 100%;
+  right: 4px;
+  width: 160px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  color: #1f2937;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.menu button:hover {
+  background: #f9fafb;
+}
+
+.menu .deleteBtn {
+  color: #ef4444;
+}
+
+.menu .deleteBtn:hover {
+  background: #fef2f2;
+}
+
+.editInput {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #6366f1;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #1f2937;
+  outline: none;
+  margin: 4px;
+}

@@ -44,12 +44,14 @@ export async function GET(request: NextRequest) {
 
     // Возвращаем файл с заголовком для скачивания
     const fileName = name || path.split('/').pop() || 'download';
+    // Кодируем имя файла для UTF-8 (RFC 5987)
+    const encodedFileName = encodeURIComponent(fileName).replace(/['()]/g, escape);
     
     return new NextResponse(data, {
       headers: {
-        'Content-Type': data.type || 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${fileName}"`,
-        'Cache-Control': 'private, max-age=3600',
+        'Content-Type': 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${fileName}"; filename*=UTF-8''${encodedFileName}`,
+        'Cache-Control': 'private, no-cache',
       },
     });
   } catch (error) {

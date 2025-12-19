@@ -1,6 +1,7 @@
 import { generateText } from "ai";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { getCommandsModel } from "./openai-client";
+import { logger } from "@/lib/logger";
 
 /**
  * AI команды через естественный язык
@@ -86,7 +87,7 @@ export async function parseCommand(text: string): Promise<ParsedCommand> {
     // Fallback
     return simpleParse(text);
   } catch (error) {
-    console.error("Command parsing error:", error);
+    logger.error("Command parsing error:", error);
     return simpleParse(text);
   }
 }
@@ -261,7 +262,7 @@ export async function executeCommand(
         };
     }
   } catch (error) {
-    console.error("Command execution error:", error);
+    logger.error("Command execution error:", error);
     return {
       success: false,
       message: "Ошибка выполнения команды",

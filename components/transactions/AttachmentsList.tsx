@@ -68,8 +68,7 @@ export function AttachmentsList({ transactionId, onDelete, onViewFile }: Attachm
       
       // console.log('fetchAttachments: generated URLs:', urls);
       setSignedUrls(urls);
-    } catch (err) {
-      console.error('Ошибка загрузки вложений:', err);
+    } catch {
       setError('Не удалось загрузить вложения');
     } finally {
       setLoading(false);
@@ -100,8 +99,7 @@ export function AttachmentsList({ transactionId, onDelete, onViewFile }: Attachm
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('Ошибка скачивания:', err);
+    } catch {
       alert('Не удалось скачать файл');
     }
   };
@@ -135,19 +133,15 @@ export function AttachmentsList({ transactionId, onDelete, onViewFile }: Attachm
       if (onDelete) {
         onDelete(attachment.id);
       }
-    } catch (err) {
-      console.error('Ошибка удаления:', err);
+    } catch {
       alert('Не удалось удалить файл');
     }
   };
 
   const getSignedUrl = async (filePath: string | null): Promise<string> => {
     if (!filePath) {
-      console.log('getSignedUrl: filePath is null or empty');
       return '';
     }
-    
-    console.log('getSignedUrl: generating for path:', filePath);
     
     try {
       const { data, error } = await supabase.storage
@@ -155,14 +149,11 @@ export function AttachmentsList({ transactionId, onDelete, onViewFile }: Attachm
         .createSignedUrl(filePath, 3600); // 1 hour expiry
       
       if (error) {
-        console.error('Error creating signed URL:', error);
         return '';
       }
       
-      console.log('getSignedUrl: success:', data.signedUrl);
       return data.signedUrl;
-    } catch (err) {
-      console.error('Exception creating signed URL:', err);
+    } catch {
       return '';
     }
   };

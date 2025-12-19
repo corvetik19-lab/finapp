@@ -1,6 +1,7 @@
 "use server";
 
 import { createRouteClient } from "@/lib/supabase/helpers";
+import { logger } from "@/lib/logger";
 
 export type ItemAnalytics = {
   name: string;
@@ -45,7 +46,7 @@ export async function getTopItems(limit: number = 20): Promise<ItemAnalytics[]> 
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching top items:", error);
+    logger.error("Error fetching top items:", error);
     throw new Error(`Ошибка при получении данных: ${error.message}`);
   }
 
@@ -104,7 +105,7 @@ export async function getItemTrends(itemName: string): Promise<ItemTrend[]> {
     .order("created_at", { ascending: true });
 
   if (error) {
-    console.error("Error fetching item trends:", error);
+    logger.error("Error fetching item trends:", error);
     throw new Error(`Ошибка при получении трендов: ${error.message}`);
   }
 
@@ -165,7 +166,7 @@ export async function getItemsByCategory(): Promise<CategoryItemsAnalytics[]> {
     .not("category_id", "is", null);
 
   if (txError) {
-    console.error("Error fetching transactions:", txError);
+    logger.error("Error fetching transactions:", txError);
     throw new Error(`Ошибка при получении транзакций: ${txError.message}`);
   }
 
@@ -176,7 +177,7 @@ export async function getItemsByCategory(): Promise<CategoryItemsAnalytics[]> {
     .eq("user_id", user.id);
 
   if (itemsError) {
-    console.error("Error fetching items:", itemsError);
+    logger.error("Error fetching items:", itemsError);
     throw new Error(`Ошибка при получении позиций: ${itemsError.message}`);
   }
 

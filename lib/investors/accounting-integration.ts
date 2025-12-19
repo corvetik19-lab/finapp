@@ -4,6 +4,7 @@ import { createRSCClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
 import type { Investment } from "./types";
 import { getInvestmentById } from "./service";
+import { logger } from "@/lib/logger";
 
 // ============================================
 // Интеграция инвестиций с бухгалтерией
@@ -86,7 +87,7 @@ export async function createDocumentFromInvestment(
     .single();
 
   if (docError || !document) {
-    console.error("Error creating document:", docError);
+    logger.error("Error creating document:", docError);
     return { success: false, error: "Ошибка создания документа" };
   }
 
@@ -153,7 +154,7 @@ export async function addInvestmentInterestToTenderExpenses(
     .single();
 
   if (error) {
-    console.error("Error adding expense:", error);
+    logger.error("Error adding expense:", error);
     return { success: false, error: error.message };
   }
 
@@ -274,7 +275,7 @@ export async function createKudirEntryForInvestment(
     .single();
 
   if (error) {
-    console.error("Error creating KUDIR entry:", error);
+    logger.error("Error creating KUDIR entry:", error);
     return { success: false, error: "Ошибка создания записи КУДиР" };
   }
 
@@ -330,7 +331,7 @@ async function findOrCreateInvestorCounterparty(
     .single();
 
   if (error) {
-    console.error("Error creating counterparty:", error);
+    logger.error("Error creating counterparty:", error);
     return null;
   }
 

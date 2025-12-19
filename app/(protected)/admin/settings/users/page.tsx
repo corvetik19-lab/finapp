@@ -55,13 +55,31 @@ export default async function UsersSettingsPage() {
     .select("user_id, role_id, roles(name, color)")
     .returns<Array<{user_id: string; role_id: string; roles: {name: string; color: string} | null}>>();
 
-  // Получаем профили для last_seen_at
+  // Получаем профили для last_seen_at и global_role
   const { data: profilesData } = await supabase
     .from("profiles")
-    .select("id, last_seen_at");
+    .select("id, last_seen_at, global_role");
 
-  // Формируем список пользователей с ролями
-  const users = usersData.map(u => {
+  // Получаем ID текущего пользователя для проверки super_admin
+  const { data: currentUserProfile } = await supabase
+    .from("profiles")
+    .select("global_role")
+    .eq("id", user.id)
+    .single();
+  
+  const isCurrentUserSuperAdmin = currentUserProfile?.global_role === 'super_admin';
+
+  // Получаем список super_admin ID для фильтрации (скрываем их от обычных админов)
+  const superAdminIds = new Set(
+    (profilesData || [])
+      .filter(p => p.global_role === 'super_admin')
+      .map(p => p.id)
+  );
+
+  // Формируем список пользователей с ролями (исключаем super_admin если текущий пользователь не super_admin)
+  const users = usersData
+    .filter(u => isCurrentUserSuperAdmin || !superAdminIds.has(u.id))
+    .map(u => {
     const userRole = userRolesData?.find(ur => ur.user_id === u.id);
     const profile = profilesData?.find(p => p.id === u.id);
     const isAdmin = u.id === user?.id;

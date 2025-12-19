@@ -2,6 +2,7 @@
 
 import { createRSCClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
+import { logger } from "@/lib/logger";
 
 export interface KudirEntryFull {
   id: string;
@@ -113,7 +114,7 @@ export async function getKudirEntriesFull(
   const { data, error } = await query.order("entry_date").order("entry_number");
 
   if (error) {
-    console.error("Error fetching kudir entries:", error);
+    logger.error("Error fetching kudir entries:", error);
     return [];
   }
 
@@ -242,7 +243,7 @@ export async function createKudirEntryManual(input: {
     .single();
 
   if (error) {
-    console.error("Error creating kudir entry:", error);
+    logger.error("Error creating kudir entry:", error);
     return { success: false, error: "Ошибка создания записи" };
   }
 
@@ -267,7 +268,7 @@ export async function deleteKudirEntry(
     .eq("company_id", companyId);
 
   if (error) {
-    console.error("Error deleting kudir entry:", error);
+    logger.error("Error deleting kudir entry:", error);
     return { success: false, error: "Ошибка удаления записи" };
   }
 
@@ -358,7 +359,7 @@ export async function syncKudirFromDocuments(
   const { error } = await supabase.from("kudir_entries").insert(entries);
 
   if (error) {
-    console.error("Error syncing kudir from documents:", error);
+    logger.error("Error syncing kudir from documents:", error);
     return { success: false, created: 0, error: "Ошибка синхронизации" };
   }
 

@@ -70,8 +70,16 @@ export async function updateDebt(id: string, input: Partial<DebtInsertInput> & {
   } = await supabase.auth.getUser();
   if (authError || !user) throw authError ?? new Error("Нет пользователя");
   
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const updatePayload: any = { ...input };
+  type DebtUpdatePayload = {
+    amount?: number;
+    amount_paid?: number;
+    name?: string;
+    counterparty?: string;
+    due_date?: string | null;
+    status?: string;
+    note?: string | null;
+  };
+  const updatePayload: DebtUpdatePayload = { ...input };
   
   if (input.amount !== undefined) {
     updatePayload.amount = Math.round(input.amount * 100);

@@ -76,3 +76,4 @@ public/workbox-*.js.map
 # Files with secrets (should never be committed)
 VERCEL_ENV.txt
 SENTRY_CONFIG.txt
+google-credentials.json

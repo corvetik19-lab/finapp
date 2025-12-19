@@ -1,6 +1,7 @@
 "use server";
 
 import { createRSCClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 export interface Receipt {
   id: string;
@@ -20,7 +21,7 @@ export async function getRecentReceipts(limit: number = 10): Promise<Receipt[]> 
     .limit(limit);
 
   if (error) {
-    console.error("Error fetching receipts:", error);
+    logger.error("Error fetching receipts:", error);
     return [];
   }
 

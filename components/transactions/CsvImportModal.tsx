@@ -113,8 +113,8 @@ export function CsvImportModal({ open, onOpenChange, categories, products = [], 
           setStep("review");
         }
       }
-    } catch (e) {
-      console.error("Failed to load saved CSV data:", e);
+    } catch {
+      // Failed to load saved CSV data
     }
   }, []);
 
@@ -203,8 +203,7 @@ export function CsvImportModal({ open, onOpenChange, categories, products = [], 
       const parsed = parseCSV(text);
       setOperations(parsed);
       setStep("review");
-    } catch (error) {
-      console.error("Error parsing CSV:", error);
+    } catch {
       alert("Ошибка при чтении файла");
     } finally {
       setLoading(false);
@@ -374,7 +373,6 @@ export function CsvImportModal({ open, onOpenChange, categories, products = [], 
       ? products.find(p => p.id === mergeProduct) 
       : null;
 
-    console.log("🔍 [Merge] mergeProduct:", mergeProduct, "product:", product);
 
     // Создаём объединённую операцию
     const newMerged: MergedOperation = {
@@ -389,7 +387,6 @@ export function CsvImportModal({ open, onOpenChange, categories, products = [], 
       productUnit: product?.default_unit || "шт",
     };
 
-    console.log("🔍 [Merge] Created merged operation:", newMerged);
 
     // Удаляем выбранные объединённые операции
     setMergedOperations(prev => [
@@ -472,11 +469,9 @@ export function CsvImportModal({ open, onOpenChange, categories, products = [], 
       }));
 
       // Объединённые операции - используем сохранённые данные напрямую
-      console.log("🔍 [Import] mergedOperations:", mergedOperations);
       const mergedTransactions = mergedOperations.map(m => {
         // Если есть productId и productName - создаём product объект
         const hasProduct = m.productId && m.productName;
-        console.log("🔍 [Import] m.productId:", m.productId, "m.productName:", m.productName, "hasProduct:", hasProduct);
         return {
           date: formatDateForDB(m.date),
           amount: Math.abs(m.amount),
@@ -493,7 +488,6 @@ export function CsvImportModal({ open, onOpenChange, categories, products = [], 
         };
       });
 
-      console.log("🔍 [Import] mergedTransactions to send:", mergedTransactions);
       await onImport([...regularTransactions, ...mergedTransactions]);
       
       // Очищаем localStorage и сбрасываем состояние
@@ -504,8 +498,7 @@ export function CsvImportModal({ open, onOpenChange, categories, products = [], 
       setFileName("");
       setCategoryAssignments(new Map());
       onOpenChange(false);
-    } catch (error) {
-      console.error("Error importing:", error);
+    } catch {
       alert("Ошибка при импорте");
     } finally {
       setImporting(false);

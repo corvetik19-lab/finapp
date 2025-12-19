@@ -4,6 +4,7 @@ import { createRSCClient, getCachedUser } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
 import { logActivity } from "./tasks-service";
 import { SupplierReview } from "./types";
+import { logger } from "@/lib/logger";
 
 async function getCurrentUserId(): Promise<string | null> {
   const { data: { user } } = await getCachedUser();
@@ -37,7 +38,7 @@ export async function getSupplierReviews(
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching supplier reviews:", error);
+    logger.error("Error fetching supplier reviews:", error);
     return [];
   }
 
@@ -86,7 +87,7 @@ export async function createReview(
     .single();
 
   if (error) {
-    console.error("Error creating review:", error);
+    logger.error("Error creating review:", error);
     return { success: false, error: "Ошибка создания отзыва" };
   }
 
@@ -140,7 +141,7 @@ export async function updateReview(
     .eq("company_id", companyId);
 
   if (error) {
-    console.error("Error updating review:", error);
+    logger.error("Error updating review:", error);
     return { success: false, error: "Ошибка обновления отзыва" };
   }
 
@@ -165,7 +166,7 @@ export async function deleteReview(
     .eq("company_id", companyId);
 
   if (error) {
-    console.error("Error deleting review:", error);
+    logger.error("Error deleting review:", error);
     return { success: false, error: "Ошибка удаления отзыва" };
   }
 

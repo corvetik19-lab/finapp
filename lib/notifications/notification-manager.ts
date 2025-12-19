@@ -5,6 +5,7 @@
  */
 
 import { SupabaseClient } from "@supabase/supabase-js";
+import { logger } from "@/lib/logger";
 import { detectSpendingAnomalies, type SpendingAlert } from "./spending-detector";
 import { detectInactivity, detectLowActivity, type ActivityAlert } from "./activity-detector";
 import { detectUpcomingPayments, type PaymentAlert } from "./payment-detector";
@@ -85,7 +86,7 @@ export async function saveNotifications(
 ): Promise<void> {
   // Здесь можно сохранить в таблицу notifications_history, если она существует
   // Пока просто логируем
-  console.log(`Generated ${notifications.summary.total_alerts} notifications for user ${notifications.user_id}`);
+  logger.debug("Generated notifications", { count: notifications.summary.total_alerts, userId: notifications.user_id });
 }
 
 /**
@@ -106,7 +107,7 @@ export async function sendNotifications(
     .single();
 
   if (!settings) {
-    console.log(`No notification settings found for user ${notifications.user_id}`);
+    logger.debug("No notification settings found", { userId: notifications.user_id });
     return { sent: 0, failed: 0 };
   }
 
@@ -214,16 +215,16 @@ export async function sendNotifications(
 
       if (success) {
         sent += alertsToSend.length;
-        console.log(`Sent ${alertsToSend.length} notifications to Telegram chat ${settings.telegram_chat_id}`);
+        logger.info("Sent notifications to Telegram", { count: alertsToSend.length, chatId: settings.telegram_chat_id });
       } else {
-        console.error(`Failed to send notifications to Telegram chat ${settings.telegram_chat_id}`);
+        logger.error("Failed to send notifications to Telegram", { chatId: settings.telegram_chat_id });
       }
     } catch (error) {
-      console.error("Telegram send error:", error);
+      logger.error("Telegram send error", { error });
     }
   } else if (alertsToSend.length > 0) {
     // Если Telegram не включен, просто логируем
-    console.log(`Would send ${alertsToSend.length} notifications (Telegram disabled or not configured)`);
+    logger.debug("Would send notifications (Telegram disabled)", { count: alertsToSend.length });
     sent += alertsToSend.length;
   }
 

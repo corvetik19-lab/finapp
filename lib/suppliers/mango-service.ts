@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { createRSCClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
 import { MangoSettings, MangoCallbackRequest, MangoWebhookEvent } from "./types";
+import { logger } from "@/lib/logger";
 
 const MANGO_API_BASE = "https://app.mango-office.ru/vpbx";
 
@@ -85,7 +86,7 @@ export async function initiateCall(
       error: getMangoErrorMessage(result.result),
     };
   } catch (error) {
-    console.error("Error initiating call:", error);
+    logger.error("Error initiating call:", error);
     return { success: false, error: "Ошибка соединения с Mango Office" };
   }
 }
@@ -194,7 +195,7 @@ export async function getCallRecording(
 
     return null;
   } catch (error) {
-    console.error("Error getting recording:", error);
+    logger.error("Error getting recording:", error);
     return null;
   }
 }

@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Settings, Building2, HelpCircle, LogOut, ChevronDown } from "lucide-react";
+import { User, Building2, HelpCircle, LogOut, ChevronDown } from "lucide-react";
 import EmployeeProfileModal, { EmployeeProfileData } from "@/components/profile/EmployeeProfileModal";
 
 interface UserMenuProps {
@@ -25,6 +25,7 @@ interface UserMenuProps {
     created_at?: string;
   };
   isAdmin?: boolean;
+  isSuperAdmin?: boolean;
   roleName?: string;
   departmentName?: string;
   position?: string;
@@ -33,6 +34,7 @@ interface UserMenuProps {
 export default function UserMenu({ 
   user, 
   isAdmin = false, 
+  isSuperAdmin = false,
   roleName,
   departmentName,
   position 
@@ -128,22 +130,14 @@ export default function UserMenu({
           )}
         </DropdownMenuItem>
 
-        {/* Admin only items */}
+        {/* Admin - Организация */}
         {isAdmin && (
-          <>
-            <DropdownMenuItem asChild>
-              <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
-                <Settings className="h-4 w-4" />
-                <span>Настройки</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/settings/organization" className="flex items-center gap-2 cursor-pointer">
-                <Building2 className="h-4 w-4" />
-                <span>Организация</span>
-              </Link>
-            </DropdownMenuItem>
-          </>
+          <DropdownMenuItem asChild>
+            <Link href="/settings/organization" className="flex items-center gap-2 cursor-pointer">
+              <Building2 className="h-4 w-4" />
+              <span>Организация</span>
+            </Link>
+          </DropdownMenuItem>
         )}
 
         {/* Help - для всех */}

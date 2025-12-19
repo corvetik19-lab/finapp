@@ -3,6 +3,7 @@
 import { createRSCClient } from "@/lib/supabase/helpers";
 import { getCurrentOrganization } from "@/lib/platform/organization";
 import { Customer, CustomerInput, CustomerFilters } from "@/types/customer";
+import { logger } from "@/lib/logger";
 
 // Helper to get first element from possibly array (Supabase returns arrays for joins)
 function getFirst<T>(value: T | T[] | null | undefined): T | null {
@@ -52,7 +53,7 @@ export async function getCustomers(filters?: CustomerFilters): Promise<Customer[
   const { data, error } = await query;
 
   if (error) {
-    console.error("Error fetching customers:", error);
+    logger.error("Error fetching customers:", error);
     return [];
   }
 
@@ -78,7 +79,7 @@ export async function getCustomerById(id: string): Promise<Customer | null> {
     .single();
 
   if (error) {
-    console.error("Error fetching customer:", error);
+    logger.error("Error fetching customer:", error);
     return null;
   }
 
@@ -123,7 +124,7 @@ export async function createCustomer(input: CustomerInput): Promise<{ success: b
     .single();
 
   if (error) {
-    console.error("Error creating customer:", error);
+    logger.error("Error creating customer:", error);
     return { success: false, error: error.message };
   }
 
@@ -153,7 +154,7 @@ export async function updateCustomer(id: string, input: Partial<CustomerInput>):
     .single();
 
   if (error) {
-    console.error("Error updating customer:", error);
+    logger.error("Error updating customer:", error);
     return { success: false, error: error.message };
   }
 
@@ -178,7 +179,7 @@ export async function deleteCustomer(id: string): Promise<{ success: boolean; er
     .eq("organization_id", organization.id);
 
   if (error) {
-    console.error("Error deleting customer:", error);
+    logger.error("Error deleting customer:", error);
     return { success: false, error: error.message };
   }
 
@@ -216,7 +217,7 @@ export async function toggleCustomerActive(id: string): Promise<{ success: boole
     .eq("organization_id", organization.id);
 
   if (error) {
-    console.error("Error toggling customer active:", error);
+    logger.error("Error toggling customer active:", error);
     return { success: false, error: error.message };
   }
 
@@ -295,7 +296,7 @@ export async function getCustomerTenders(customerId: string): Promise<{
     .limit(10);
 
   if (error) {
-    console.error("Error fetching customer tenders:", error);
+    logger.error("Error fetching customer tenders:", error);
     return [];
   }
 

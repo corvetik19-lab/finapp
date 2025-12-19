@@ -8,6 +8,7 @@ import {
   ContractStatus,
 } from "./types";
 import { logActivity } from "./tasks-service";
+import { logger } from "@/lib/logger";
 
 async function getCurrentUserId(): Promise<string | null> {
   const { data: { user } } = await getCachedUser();
@@ -36,7 +37,7 @@ export async function getSupplierContracts(
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching supplier contracts:", error);
+    logger.error("Error fetching supplier contracts:", error);
     return [];
   }
 
@@ -61,7 +62,7 @@ export async function getActiveContracts(): Promise<SupplierContract[]> {
     .order("end_date", { ascending: true });
 
   if (error) {
-    console.error("Error fetching active contracts:", error);
+    logger.error("Error fetching active contracts:", error);
     return [];
   }
 
@@ -93,7 +94,7 @@ export async function getExpiringContracts(
     .order("end_date", { ascending: true });
 
   if (error) {
-    console.error("Error fetching expiring contracts:", error);
+    logger.error("Error fetching expiring contracts:", error);
     return [];
   }
 
@@ -135,7 +136,7 @@ export async function createContract(
     .single();
 
   if (error) {
-    console.error("Error creating contract:", error);
+    logger.error("Error creating contract:", error);
     return { success: false, error: "Ошибка создания договора" };
   }
 
@@ -169,7 +170,7 @@ export async function updateContract(
     .eq("company_id", companyId);
 
   if (error) {
-    console.error("Error updating contract:", error);
+    logger.error("Error updating contract:", error);
     return { success: false, error: "Ошибка обновления договора" };
   }
 
@@ -194,7 +195,7 @@ export async function deleteContract(
     .eq("company_id", companyId);
 
   if (error) {
-    console.error("Error deleting contract:", error);
+    logger.error("Error deleting contract:", error);
     return { success: false, error: "Ошибка удаления договора" };
   }
 

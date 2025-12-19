@@ -133,10 +133,8 @@ export default function TransactionsGroupedList({
   const [transactionItems, setTransactionItems] = useState<TransactionItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
   const [editingItems, setEditingItems] = useState<TransactionItem[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [editClosing, setEditClosing] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [viewClosing, setViewClosing] = useState(false);
+  const [, setEditClosing] = useState(false);
+  const [, setViewClosing] = useState(false);
 
   const [isSaving, startSaving] = useTransition();
   const [isDuplicating, startDuplicating] = useTransition();

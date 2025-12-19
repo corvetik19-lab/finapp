@@ -3,6 +3,7 @@
 import { createRouteClient } from "@/lib/supabase/helpers";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
 import type { TransactionItem, TransactionItemInput } from "@/types/transaction";
+import { logger } from "@/lib/logger";
 
 /**
  * Создать позиции товаров для транзакции
@@ -46,7 +47,7 @@ export async function createTransactionItems(
     .select();
 
   if (error) {
-    console.error("Error creating transaction items:", error);
+    logger.error("Error creating transaction items:", error);
     throw new Error(`Ошибка при создании позиций товаров: ${error.message}`);
   }
 
@@ -76,7 +77,7 @@ export async function getTransactionItems(transactionId: string): Promise<Transa
     .order("created_at", { ascending: true });
 
   if (error) {
-    console.error("Error fetching transaction items:", error);
+    logger.error("Error fetching transaction items:", error);
     throw new Error(`Ошибка при получении позиций товаров: ${error.message}`);
   }
 
@@ -108,7 +109,7 @@ export async function updateTransactionItems(
     .eq("user_id", user.id);
 
   if (deleteError) {
-    console.error("Error deleting old transaction items:", deleteError);
+    logger.error("Error deleting old transaction items:", deleteError);
     throw new Error(`Ошибка при удалении старых позиций: ${deleteError.message}`);
   }
 
@@ -140,7 +141,7 @@ export async function deleteTransactionItems(transactionId: string): Promise<voi
     .eq("user_id", user.id);
 
   if (error) {
-    console.error("Error deleting transaction items:", error);
+    logger.error("Error deleting transaction items:", error);
     throw new Error(`Ошибка при удалении позиций товаров: ${error.message}`);
   }
 }

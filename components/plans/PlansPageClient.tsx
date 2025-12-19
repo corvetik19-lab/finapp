@@ -512,8 +512,6 @@ export default function PlansPageClient({ plans }: PlansPageClientProps) {
         category_id: topupForm.create_transaction ? topupForm.category_id : null,
       };
 
-      console.log("Sending topup request:", payload);
-
       const res = await fetch("/api/plan-topups", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -48,7 +48,7 @@ export default async function SettingsOverviewPage() {
     {
       href: "/admin/settings/users",
       icon: Users,
-      title: "Сотрудники",
+      title: "Пользователи",
       description: "Приглашения и управление доступом",
       gradient: "from-green-500 to-emerald-600",
       badge: null,

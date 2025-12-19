@@ -31,6 +31,7 @@ interface PlatformHeaderProps {
     subscription_plan: string;
   }>;
   globalEnabledModes?: string[];
+  userAllowedModes?: string[];
   notificationCount?: number;
   impersonating?: {
     userId: string;
@@ -48,6 +49,7 @@ export default function PlatformHeader({
   organization,
   organizations = [],
   globalEnabledModes,
+  userAllowedModes,
   notificationCount = 0,
   impersonating,
   isSuperAdmin = false,
@@ -97,6 +99,7 @@ export default function PlatformHeader({
           <ModeSwitcher 
             allowedModes={organization?.allowed_modes} 
             globalEnabledModes={globalEnabledModes}
+            userAllowedModes={userAllowedModes}
           />
 
           {/* Tenders Module Switcher - показывается только в режиме Тендеры */}
@@ -177,6 +180,7 @@ export default function PlatformHeader({
                   created_at: user.created_at || '',
                 }}
                 isAdmin={isSuperAdmin || isOrgAdmin}
+                isSuperAdmin={isSuperAdmin}
                 roleName={roleName}
                 departmentName={departmentName}
                 position={position}

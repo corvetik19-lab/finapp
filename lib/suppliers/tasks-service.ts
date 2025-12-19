@@ -39,7 +39,7 @@ export async function getSupplierTasks(
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching supplier tasks:", error);
+    logger.error("Error fetching supplier tasks:", error);
     return [];
   }
 
@@ -87,7 +87,7 @@ export async function getAllTasks(options?: {
     .order("priority", { ascending: false });
 
   if (error) {
-    console.error("Error fetching tasks:", error);
+    logger.error("Error fetching tasks:", error);
     return [];
   }
 
@@ -126,7 +126,7 @@ export async function getOverdueTasks(): Promise<SupplierTask[]> {
     .order("due_date", { ascending: true });
 
   if (error) {
-    console.error("Error fetching overdue tasks:", error);
+    logger.error("Error fetching overdue tasks:", error);
     return [];
   }
 
@@ -163,7 +163,7 @@ export async function createTask(
     .single();
 
   if (error) {
-    console.error("Error creating task:", error);
+    logger.error("Error creating task:", error);
     return { success: false, error: "Ошибка создания задачи" };
   }
 
@@ -202,7 +202,7 @@ export async function updateTask(
     .single();
 
   if (error) {
-    console.error("Error updating task:", error);
+    logger.error("Error updating task:", error);
     return { success: false, error: "Ошибка обновления задачи" };
   }
 
@@ -234,7 +234,7 @@ export async function deleteTask(
     .eq("company_id", companyId);
 
   if (error) {
-    console.error("Error deleting task:", error);
+    logger.error("Error deleting task:", error);
     return { success: false, error: "Ошибка удаления задачи" };
   }
 
@@ -293,7 +293,7 @@ export async function getSupplierActivities(
     .limit(limit);
 
   if (error) {
-    console.error("Error fetching activities:", error);
+    logger.error("Error fetching activities:", error);
     return [];
   }
 
@@ -323,7 +323,7 @@ export async function addComment(
   });
 
   if (error) {
-    console.error("Error adding comment:", error);
+    logger.error("Error adding comment:", error);
     return { success: false, error: "Ошибка добавления комментария" };
   }
 
@@ -332,3 +332,4 @@ export async function addComment(
 
 // Импорт типа для активности
 import { SupplierActivity } from "./types";
+import { logger } from "@/lib/logger";

@@ -2,6 +2,7 @@
 
 import { createRSCClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
+import { logger } from "@/lib/logger";
 
 // Создание записи КУДиР из банковской транзакции
 export async function createKudirEntryFromTransaction(
@@ -79,7 +80,7 @@ export async function createKudirEntryFromTransaction(
     .single();
 
   if (error) {
-    console.error("Error creating KUDIR entry:", error);
+    logger.error("Error creating KUDIR entry:", error);
     return { success: false, error: "Ошибка создания записи КУДиР" };
   }
 

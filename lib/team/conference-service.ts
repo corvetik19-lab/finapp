@@ -5,6 +5,7 @@ import type {
   CreateConferenceInput,
   ParticipantStatus,
 } from './types';
+import { logger } from "@/lib/logger";
 
 // =====================================================
 // JITSI UTILS
@@ -72,7 +73,7 @@ export async function getConferences(companyId: string): Promise<Conference[]> {
     .order('scheduled_at', { ascending: true, nullsFirst: false });
 
   if (error) {
-    console.error('Error fetching conferences:', error);
+    logger.error('Error fetching conferences:', error);
     return [];
   }
 
@@ -98,7 +99,7 @@ export async function getUpcomingConferences(companyId: string, limit = 5): Prom
     .limit(limit);
 
   if (error) {
-    console.error('Error fetching upcoming conferences:', error);
+    logger.error('Error fetching upcoming conferences:', error);
     return [];
   }
 
@@ -118,7 +119,7 @@ export async function getConference(conferenceId: string): Promise<Conference | 
     .single();
 
   if (error) {
-    console.error('Error fetching conference:', error);
+    logger.error('Error fetching conference:', error);
     return null;
   }
 
@@ -151,7 +152,7 @@ export async function createConference(
     .single();
 
   if (confError || !conference) {
-    console.error('Error creating conference:', confError);
+    logger.error('Error creating conference:', confError);
     return null;
   }
 
@@ -196,7 +197,7 @@ export async function updateConference(
     .eq('id', conferenceId);
 
   if (error) {
-    console.error('Error updating conference:', error);
+    logger.error('Error updating conference:', error);
     return false;
   }
 
@@ -224,7 +225,7 @@ export async function deleteConference(conferenceId: string): Promise<boolean> {
     .eq('id', conferenceId);
 
   if (error) {
-    console.error('Error deleting conference:', error);
+    logger.error('Error deleting conference:', error);
     return false;
   }
 
@@ -252,7 +253,7 @@ export async function inviteToConference(
     .upsert(participantsToInsert, { onConflict: 'conference_id,user_id' });
 
   if (error) {
-    console.error('Error inviting to conference:', error);
+    logger.error('Error inviting to conference:', error);
     return false;
   }
 
@@ -281,7 +282,7 @@ export async function updateParticipantStatus(
     .eq('user_id', userId);
 
   if (error) {
-    console.error('Error updating participant status:', error);
+    logger.error('Error updating participant status:', error);
     return false;
   }
 
@@ -301,7 +302,7 @@ export async function removeFromConference(
     .eq('user_id', userId);
 
   if (error) {
-    console.error('Error removing from conference:', error);
+    logger.error('Error removing from conference:', error);
     return false;
   }
 

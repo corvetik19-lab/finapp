@@ -1,0 +1,302 @@
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: #9ca3af;
+  gap: 12px;
+}
+
+.loading .material-icons {
+  font-size: 32px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 24px;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.header h1 .material-icons {
+  font-size: 28px;
+  color: #fbbf24;
+}
+
+.header p {
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+.grantButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.grantButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+/* Notice */
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.notice .material-icons {
+  font-size: 20px;
+  color: #fbbf24;
+}
+
+.notice p {
+  font-size: 13px;
+  color: #d1d5db;
+  line-height: 1.5;
+}
+
+.notice strong {
+  color: #fbbf24;
+}
+
+/* Access List */
+.accessList {
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+}
+
+.accessList h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 16px;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px;
+  color: #6b7280;
+}
+
+.empty .material-icons {
+  font-size: 48px;
+}
+
+/* Table */
+.table {
+  display: flex;
+  flex-direction: column;
+}
+
+.tableHeader {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 16px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 16px;
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  align-items: center;
+  font-size: 14px;
+  color: #d1d5db;
+}
+
+.tableRow:last-child {
+  border-bottom: none;
+}
+
+.orgName {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  font-weight: 500;
+}
+
+.orgName .material-icons {
+  font-size: 20px;
+  color: #9ca3af;
+}
+
+.status {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status.active {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.status.inactive {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.revokeButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 6px;
+  color: #ef4444;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.revokeButton:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.revokeButton .material-icons {
+  font-size: 16px;
+}
+
+/* Modal */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  width: 100%;
+  max-width: 400px;
+  background: #1a1a2e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.modal h3 {
+  font-size: 18px;
+  color: #fff;
+  margin-bottom: 20px;
+}
+
+.modalContent {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.modalContent label {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.modalContent select {
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+}
+
+.modalActions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.cancelButton {
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #9ca3af;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.cancelButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.confirmButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.confirmButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.confirmButton .material-icons {
+  font-size: 18px;
+}

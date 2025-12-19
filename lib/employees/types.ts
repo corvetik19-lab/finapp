@@ -47,6 +47,7 @@ export interface Employee {
   
   // Роли и доступ
   role: EmployeeRole;
+  role_id?: string;
   status: EmployeeStatus;
   permissions?: Record<string, boolean>;
   

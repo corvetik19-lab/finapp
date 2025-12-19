@@ -3,6 +3,7 @@
 import { createRSCClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
 import { BankCode } from "./bank-types";
+import { logger } from "@/lib/logger";
 
 // Конфигурация OAuth для банков
 const BANK_OAUTH_CONFIG: Record<string, {
@@ -49,7 +50,7 @@ export async function generateOAuthUrl(
 ): Promise<{ url: string; state: string } | null> {
   const config = BANK_OAUTH_CONFIG[bankCode];
   if (!config) {
-    console.error(`OAuth not supported for bank: ${bankCode}`);
+    logger.error(`OAuth not supported for bank: ${bankCode}`);
     return null;
   }
 
@@ -67,12 +68,12 @@ export async function generateOAuthUrl(
     .single();
 
   if (error || !integration) {
-    console.error("Integration not found:", error);
+    logger.error("Integration not found:", error);
     return null;
   }
 
   if (!integration.api_client_id) {
-    console.error("Client ID not configured for integration");
+    logger.error("Client ID not configured for integration");
     return null;
   }
 
@@ -165,7 +166,7 @@ export async function exchangeCodeForTokens(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Token exchange failed:", errorText);
+      logger.error("Token exchange failed:", errorText);
       return { success: false, error: "Token exchange failed" };
     }
 
@@ -189,13 +190,13 @@ export async function exchangeCodeForTokens(
       .eq("id", integration.id);
 
     if (updateError) {
-      console.error("Failed to save tokens:", updateError);
+      logger.error("Failed to save tokens:", updateError);
       return { success: false, error: "Failed to save tokens" };
     }
 
     return { success: true };
   } catch (error) {
-    console.error("Token exchange error:", error);
+    logger.error("Token exchange error:", error);
     return { success: false, error: "Network error during token exchange" };
   }
 }
@@ -251,7 +252,7 @@ export async function refreshAccessToken(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Token refresh failed:", errorText);
+      logger.error("Token refresh failed:", errorText);
       
       // Обновляем статус интеграции
       await supabase
@@ -284,7 +285,7 @@ export async function refreshAccessToken(
 
     return { success: true };
   } catch (error) {
-    console.error("Token refresh error:", error);
+    logger.error("Token refresh error:", error);
     return { success: false, error: "Network error during token refresh" };
   }
 }

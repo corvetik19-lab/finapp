@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createRSCClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 
 interface AssignedEmployee {
   user_id: string | null;
@@ -22,39 +23,43 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'company_id is required' }, { status: 400 });
     }
 
-    // RLS политики позволяют админу компании видеть всех членов и их профили
-    // Получаем всех пользователей компании (company_members)
-    const { data: members, error: membersError } = await supabase
-      .from('company_members')
-      .select('user_id, role, role_id')
-      .eq('company_id', companyId)
-      .eq('status', 'active');
-
-    if (membersError) {
-      console.error('Error fetching company members:', membersError);
-      return NextResponse.json({ error: membersError.message }, { status: 500 });
+    // Получаем всех пользователей через Admin API (как на странице "Пользователи")
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceKey) {
+      return NextResponse.json({ error: 'Service key not configured' }, { status: 500 });
     }
 
-    // Получаем profiles для этих пользователей (RLS разрешает админу компании)
-    const userIds = (members || []).map(m => m.user_id);
-    const { data: profiles, error: profilesError } = await supabase
+    const adminClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      serviceKey,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
+
+    const { data: { users: adminUsers }, error: usersError } = await adminClient.auth.admin.listUsers();
+    if (usersError) {
+      console.error('Error fetching admin users:', usersError);
+      return NextResponse.json({ error: usersError.message }, { status: 500 });
+    }
+
+    // Получаем профили для global_role (используем adminClient для обхода RLS)
+    const { data: profilesData } = await adminClient
       .from('profiles')
-      .select('id, email, full_name, avatar_url, global_role')
-      .in('id', userIds);
+      .select('id, global_role');
 
-    if (profilesError) {
-      console.error('Error fetching profiles:', profilesError);
-      return NextResponse.json({ error: profilesError.message }, { status: 500 });
-    }
+    const profilesMap = new Map((profilesData || []).map(p => [p.id, p]));
 
-    // Создаём map profiles по id
-    const profilesMap = new Map((profiles || []).map(p => [p.id, p]));
-
-    // Получаем список user_id, которые уже назначены сотрудникам
-    const { data: assignedEmployees, error: employeesError } = await supabase
+    // Получаем список user_id, которые уже назначены сотрудникам в этой компании
+    // Используем adminClient чтобы обойти RLS
+    const { data: assignedEmployees, error: employeesError } = await adminClient
       .from('employees')
       .select('user_id')
       .eq('company_id', companyId)
+      .is('deleted_at', null)
       .not('user_id', 'is', null);
 
     if (employeesError) {
@@ -68,27 +73,24 @@ export async function GET(request: Request) {
         .filter((id): id is string => id !== null)
     );
 
-    // Фильтруем: исключаем админов и уже назначенных
-    const availableUsers = (members || [])
-      .filter((m) => {
-        // Исключаем владельцев и админов компании
-        if (m.role === 'owner' || m.role === 'admin') return false;
-        // Исключаем глобальных админов
-        const profile = profilesMap.get(m.user_id);
-        if (profile?.global_role === 'admin' || profile?.global_role === 'super_admin') return false;
+    // Фильтруем: исключаем super_admin и уже назначенных сотрудникам
+    const availableUsers = (adminUsers || [])
+      .filter((u) => {
+        // Исключаем глобальных super_admin (они не должны быть видны)
+        const profile = profilesMap.get(u.id);
+        if (profile?.global_role === 'super_admin') return false;
         // Исключаем уже назначенных сотрудникам
-        if (assignedUserIds.has(m.user_id)) return false;
+        if (assignedUserIds.has(u.id)) return false;
         return true;
       })
-      .map((m) => {
-        const profile = profilesMap.get(m.user_id);
+      .map((u) => {
         return {
-          id: m.user_id,
-          email: profile?.email || '',
-          full_name: profile?.full_name || '',
-          avatar_url: profile?.avatar_url || null,
-          role_in_company: m.role,
-          role_id: m.role_id || null,
+          id: u.id,
+          email: u.email || '',
+          full_name: u.user_metadata?.full_name || null,
+          avatar_url: u.user_metadata?.avatar_url || null,
+          role_in_company: 'member',
+          role_id: null,
         };
       });
 

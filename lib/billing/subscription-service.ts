@@ -13,6 +13,7 @@ import type {
   PriceCalculation,
   BillingPeriod,
 } from '@/types/billing';
+import { logger } from "@/lib/logger";
 
 // =====================================================
 // Получение данных
@@ -36,7 +37,7 @@ export async function getSubscriptionPlans(activeOnly = true): Promise<Subscript
   const { data, error } = await query;
   
   if (error) {
-    console.error('Error fetching subscription plans:', error);
+    logger.error('Error fetching subscription plans:', error);
     return [];
   }
   
@@ -56,7 +57,7 @@ export async function getSubscriptionPlan(planId: string): Promise<SubscriptionP
     .single();
     
   if (error) {
-    console.error('Error fetching subscription plan:', error);
+    logger.error('Error fetching subscription plan:', error);
     return null;
   }
   
@@ -119,7 +120,7 @@ export async function getSubscriptions(filters?: SubscriptionFilters): Promise<S
   const { data: subscriptions, error } = await query;
   
   if (error) {
-    console.error('Error fetching subscriptions:', error);
+    logger.error('Error fetching subscriptions:', error);
     return [];
   }
   
@@ -200,7 +201,7 @@ export async function getOrganizationSubscription(organizationId: string): Promi
     .single();
     
   if (error) {
-    console.error('Error fetching organization subscription:', error);
+    logger.error('Error fetching organization subscription:', error);
     return null;
   }
   
@@ -220,7 +221,7 @@ export async function getOrganizationPayments(organizationId: string): Promise<S
     .order('created_at', { ascending: false });
     
   if (error) {
-    console.error('Error fetching payments:', error);
+    logger.error('Error fetching payments:', error);
     return [];
   }
   
@@ -243,7 +244,7 @@ export async function getAllPayments(limit = 50): Promise<SubscriptionPayment[]>
     .limit(limit);
     
   if (error) {
-    console.error('Error fetching all payments:', error);
+    logger.error('Error fetching all payments:', error);
     return [];
   }
   
@@ -263,7 +264,7 @@ export async function getOrganizationInvoices(organizationId: string): Promise<S
     .order('created_at', { ascending: false });
     
   if (error) {
-    console.error('Error fetching invoices:', error);
+    logger.error('Error fetching invoices:', error);
     return [];
   }
   
@@ -453,7 +454,7 @@ export async function createSubscription(input: CreateSubscriptionInput): Promis
   // Получаем план
   const plan = await getSubscriptionPlan(input.plan_id);
   if (!plan) {
-    console.error('Plan not found:', input.plan_id);
+    logger.error('Plan not found:', input.plan_id);
     return null;
   }
   
@@ -505,7 +506,7 @@ export async function createSubscription(input: CreateSubscriptionInput): Promis
     .single();
     
   if (error) {
-    console.error('Error creating subscription:', error);
+    logger.error('Error creating subscription:', error);
     return null;
   }
   
@@ -539,7 +540,7 @@ export async function updateSubscription(
     .single();
     
   if (!current) {
-    console.error('Subscription not found:', subscriptionId);
+    logger.error('Subscription not found:', subscriptionId);
     return null;
   }
   
@@ -550,7 +551,7 @@ export async function updateSubscription(
   if (input.plan_id && input.plan_id !== current.plan_id) {
     const newPlan = await getSubscriptionPlan(input.plan_id);
     if (!newPlan) {
-      console.error('New plan not found:', input.plan_id);
+      logger.error('New plan not found:', input.plan_id);
       return null;
     }
     
@@ -615,7 +616,7 @@ export async function updateSubscription(
     .single();
     
   if (error) {
-    console.error('Error updating subscription:', error);
+    logger.error('Error updating subscription:', error);
     return null;
   }
   
@@ -648,7 +649,7 @@ export async function createPayment(input: CreatePaymentInput): Promise<Subscrip
     .single();
     
   if (!subscription) {
-    console.error('Subscription not found');
+    logger.error('Subscription not found');
     return null;
   }
   
@@ -669,7 +670,7 @@ export async function createPayment(input: CreatePaymentInput): Promise<Subscrip
     .single();
     
   if (error) {
-    console.error('Error creating payment:', error);
+    logger.error('Error creating payment:', error);
     return null;
   }
   
@@ -696,7 +697,7 @@ export async function renewSubscription(subscriptionId: string): Promise<Organiz
     .single();
     
   if (!current) {
-    console.error('Subscription not found');
+    logger.error('Subscription not found');
     return null;
   }
   
@@ -722,7 +723,7 @@ export async function renewSubscription(subscriptionId: string): Promise<Organiz
     .single();
     
   if (error) {
-    console.error('Error renewing subscription:', error);
+    logger.error('Error renewing subscription:', error);
     return null;
   }
   

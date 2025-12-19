@@ -4,6 +4,7 @@
  */
 
 import { createRSCClient } from "@/lib/supabase/helpers";
+import { logger } from "@/lib/logger";
 
 export interface GraphRelation {
   entity_type: string;
@@ -33,7 +34,7 @@ export async function buildTransactionGraph(userId: string): Promise<number> {
     .order('occurred_at', { ascending: true });
 
   if (error || !transactions) {
-    console.error('Error fetching transactions:', error);
+    logger.error('Error fetching transactions:', error);
     return 0;
   }
 
@@ -158,7 +159,7 @@ export async function buildTransactionGraph(userId: string): Promise<number> {
         );
 
       if (insertError) {
-        console.error('Error inserting graph relations:', insertError);
+        logger.error('Error inserting graph relations:', insertError);
       }
     }
   }
@@ -179,7 +180,7 @@ export async function analyzeSpendingPatterns(userId: string) {
   });
 
   if (error) {
-    console.error('Error finding patterns:', error);
+    logger.error('Error finding patterns:', error);
     return { patterns: [], insights: [] };
   }
 

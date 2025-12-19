@@ -3,6 +3,7 @@
 import { createRSCClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
 import { BankTransaction } from "./bank-types";
+import { logger } from "@/lib/logger";
 
 // Правила автоматической категоризации по ключевым словам
 const CATEGORIZATION_RULES: {
@@ -200,7 +201,7 @@ export async function categorizeNewTransactions(
   const { data: transactions, error } = await query;
 
   if (error || !transactions) {
-    console.error("Error fetching transactions for categorization:", error);
+    logger.error("Error fetching transactions for categorization:", error);
     return { processed: 0, categorized: 0 };
   }
 
@@ -245,7 +246,7 @@ export async function applyTransactionCategory(
     .eq("company_id", companyId);
 
   if (error) {
-    console.error("Error applying category:", error);
+    logger.error("Error applying category:", error);
     return false;
   }
 

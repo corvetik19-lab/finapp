@@ -28,7 +28,7 @@ export default function OrganizationSwitcher({
 
   const handleSwitch = async (orgId: string) => {
     // TODO: API call to switch organization
-    console.log("Switching to org:", orgId);
+    void orgId; // Reserved for future API call
     setIsOpen(false);
     router.refresh();
   };

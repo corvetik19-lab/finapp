@@ -2,6 +2,7 @@
 
 import { createRSCClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
+import { logger } from "@/lib/logger";
 
 export interface SupplierLocation {
   id: string;
@@ -35,7 +36,7 @@ export async function getSuppliersWithLocation(): Promise<SupplierLocation[]> {
     .order("name");
 
   if (error) {
-    console.error("Error fetching suppliers with location:", error);
+    logger.error("Error fetching suppliers with location:", error);
     return [];
   }
 
@@ -57,7 +58,7 @@ export async function getSuppliersForGeocoding(): Promise<SupplierLocation[]> {
     .order("name");
 
   if (error) {
-    console.error("Error fetching suppliers for geocoding:", error);
+    logger.error("Error fetching suppliers for geocoding:", error);
     return [];
   }
 
@@ -88,7 +89,7 @@ export async function updateSupplierCoordinates(
     .eq("company_id", companyId);
 
   if (error) {
-    console.error("Error updating supplier coordinates:", error);
+    logger.error("Error updating supplier coordinates:", error);
     return { success: false, error: "Ошибка обновления координат" };
   }
 
@@ -117,7 +118,7 @@ export async function clearSupplierCoordinates(
     .eq("company_id", companyId);
 
   if (error) {
-    console.error("Error clearing supplier coordinates:", error);
+    logger.error("Error clearing supplier coordinates:", error);
     return { success: false, error: "Ошибка очистки координат" };
   }
 

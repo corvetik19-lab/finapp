@@ -1,5 +1,6 @@
 import { createRSCClient } from '@/lib/supabase/helpers';
 import { getCurrentUserPermissions, canViewAllTenders } from '@/lib/permissions/check-permissions';
+import { logger } from "@/lib/logger";
 
 export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
 export type TaskPriority = 'low' | 'normal' | 'high' | 'urgent';
@@ -156,7 +157,7 @@ export async function getTasksData(companyId: string, filters?: TaskFilters): Pr
   const { data, error } = await query;
 
   if (error) {
-    console.error('Error fetching tasks:', error);
+    logger.error('Error fetching tasks:', error);
     return { tasks: [], stats: getEmptyStats() };
   }
 
@@ -230,7 +231,7 @@ export async function getEmployees(companyId: string): Promise<TaskAssignee[]> {
     .eq('status', 'active');
 
   if (error) {
-    console.error('Error fetching employees:', error);
+    logger.error('Error fetching employees:', error);
     return [];
   }
 
@@ -244,7 +245,7 @@ export async function getEmployees(companyId: string): Promise<TaskAssignee[]> {
     .in('id', userIds);
 
   if (profilesError) {
-    console.error('Error fetching profiles:', profilesError);
+    logger.error('Error fetching profiles:', profilesError);
     return [];
   }
 
@@ -268,7 +269,7 @@ export async function getTendersForTasks(companyId: string): Promise<TaskTender[
     .limit(100);
 
   if (error) {
-    console.error('Error fetching tenders:', error);
+    logger.error('Error fetching tenders:', error);
     return [];
   }
 

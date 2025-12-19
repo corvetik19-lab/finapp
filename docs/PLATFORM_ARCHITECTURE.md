@@ -47,17 +47,17 @@ app/
 │   │   ├── budgets/
 │   │   └── ...                   # Существующий функционал
 │   │
-│   ├── investments/              # Режим: Инвестиции (заглушка)
+│   ├── investments/              # Режим: Инвестиции 
 │   │   ├── layout.tsx
 │   │   ├── sidebar.tsx
 │   │   └── placeholder/
 │   │
-│   ├── personal/                 # Режим: Личные (заглушка)
+│   ├── personal/                 # Режим: Личные 
 │   │   ├── layout.tsx
 │   │   ├── sidebar.tsx
 │   │   └── placeholder/
 │   │
-│   ├── tenders/                  # Режим: Тендеры (заглушка)
+│   ├── tenders/                  # Режим: Тендеры 
 │   │   ├── layout.tsx
 │   │   ├── sidebar.tsx
 │   │   └── placeholder/

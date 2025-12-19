@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { render } from "@react-email/render";
+import { logger } from "@/lib/logger";
 import BudgetAlertEmail from "./templates/BudgetAlert";
 import LargeTransactionAlert from "./templates/LargeTransactionAlert";
 import WeeklySummary from "./templates/WeeklySummary";
@@ -22,7 +23,7 @@ export async function sendBudgetAlertEmail(params: {
   percentage: number;
 }) {
   if (!resend) {
-    console.warn("Resend API key not configured, skipping email");
+    logger.warn("Resend API key not configured, skipping email");
     return { success: false, error: "Email service not configured" };
   }
   
@@ -42,14 +43,14 @@ export async function sendBudgetAlertEmail(params: {
     });
 
     if (error) {
-      console.error("Budget alert email error:", error);
+      logger.error("Budget alert email error", { error });
       throw error;
     }
 
-    console.log("Budget alert email sent:", data?.id);
+    logger.info("Budget alert email sent", { id: data?.id });
     return { success: true, id: data?.id };
   } catch (error) {
-    console.error("Failed to send budget alert email:", error);
+    logger.error("Failed to send budget alert email", { error });
     return { success: false, error };
   }
 }
@@ -67,7 +68,7 @@ export async function sendLargeTransactionEmail(params: {
   averageAmount: number;
 }) {
   if (!resend) {
-    console.warn("Resend API key not configured, skipping email");
+    logger.warn("Resend API key not configured, skipping email");
     return { success: false, error: "Email service not configured" };
   }
   
@@ -87,14 +88,14 @@ export async function sendLargeTransactionEmail(params: {
     });
 
     if (error) {
-      console.error("Large transaction email error:", error);
+      logger.error("Large transaction email error", { error });
       throw error;
     }
 
-    console.log("Large transaction email sent:", data?.id);
+    logger.info("Large transaction email sent", { id: data?.id });
     return { success: true, id: data?.id };
   } catch (error) {
-    console.error("Failed to send large transaction email:", error);
+    logger.error("Failed to send large transaction email", { error });
     return { success: false, error };
   }
 }
@@ -118,7 +119,7 @@ export async function sendWeeklySummaryEmail(params: {
   transactionCount: number;
 }) {
   if (!resend) {
-    console.warn("Resend API key not configured, skipping email");
+    logger.warn("Resend API key not configured, skipping email");
     return { success: false, error: "Email service not configured" };
   }
   
@@ -138,14 +139,14 @@ export async function sendWeeklySummaryEmail(params: {
     });
 
     if (error) {
-      console.error("Weekly summary email error:", error);
+      logger.error("Weekly summary email error", { error });
       throw error;
     }
 
-    console.log("Weekly summary email sent:", data?.id);
+    logger.info("Weekly summary email sent", { id: data?.id });
     return { success: true, id: data?.id };
   } catch (error) {
-    console.error("Failed to send weekly summary email:", error);
+    logger.error("Failed to send weekly summary email", { error });
     return { success: false, error };
   }
 }
@@ -175,7 +176,7 @@ export async function checkEmailPreferences(userId: string, type: "budget" | "tr
     }
 
     if (error) {
-      console.error("Check email preferences error:", error);
+      logger.error("Check email preferences error", { error });
       return true; // В случае ошибки отправляем уведомление
     }
 
@@ -191,7 +192,7 @@ export async function checkEmailPreferences(userId: string, type: "budget" | "tr
         return true;
     }
   } catch (error) {
-    console.error("Check email preferences error:", error);
+    logger.error("Check email preferences error", { error });
     return true; // В случае ошибки отправляем уведомление
   }
 }
@@ -201,7 +202,7 @@ export async function checkEmailPreferences(userId: string, type: "budget" | "tr
  */
 export async function sendTestEmail(to: string) {
   if (!resend) {
-    console.warn("Resend API key not configured, skipping email");
+    logger.warn("Resend API key not configured, skipping email");
     return { success: false, error: "Email service not configured" };
   }
   
@@ -221,7 +222,7 @@ export async function sendTestEmail(to: string) {
 
     return { success: true, id: data?.id };
   } catch (error) {
-    console.error("Test email error:", error);
+    logger.error("Test email error", { error });
     return { success: false, error };
   }
 }

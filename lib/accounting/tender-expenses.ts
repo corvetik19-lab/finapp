@@ -3,6 +3,7 @@
 import { createRSCClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
 import type { TenderExpense, TenderExpenseSummary } from "./tender-expenses-types";
+import { logger } from "@/lib/logger";
 
 // Re-export types for consumers
 export type { TenderExpense, TenderExpenseSummary };
@@ -156,7 +157,7 @@ export async function linkDocumentToTender(
       });
     
     if (expenseError) {
-      console.error("Ошибка создания расхода:", expenseError);
+      logger.error("Ошибка создания расхода:", expenseError);
     }
   }
   

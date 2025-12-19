@@ -91,7 +91,7 @@ export default function ForecastChart({ forecast }: Props) {
             callbacks: {
               label: function(context) {
                 const label = context.dataset.label || "";
-                const value = context.parsed.y;
+                const value = context.parsed.y ?? 0;
                 const confidence = confidenceData[context.dataIndex];
                 return `${label}: ${value.toLocaleString('ru-RU')}₽ (уверенность: ${confidence}%)`;
               },

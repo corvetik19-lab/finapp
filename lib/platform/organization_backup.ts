@@ -5,6 +5,7 @@
 import { createRouteClient, getCachedUser } from "@/lib/supabase/server";
 import { AppMode, Organization, MemberPermissions } from "@/lib/organizations/types";
 import { cache } from "react";
+import { logger } from "@/lib/logger";
 
 /**
  * РџРѕР»СѓС‡РёС‚СЊ С‚РµРєСѓС‰СѓСЋ РѕСЂРіР°РЅРёР·Р°С†РёСЋ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
@@ -160,7 +161,7 @@ export async function hasUserModeAccess(mode: AppMode): Promise<boolean> {
     .single();
 
   if (profileError) {
-    console.error('hasUserModeAccess: Profile fetch error', profileError);
+    logger.error('hasUserModeAccess: Profile fetch error', profileError);
   }
 
   if (profile?.global_role === 'super_admin') {

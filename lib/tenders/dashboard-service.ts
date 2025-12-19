@@ -1,5 +1,6 @@
 import { createRSCClient } from '@/lib/supabase/helpers';
 import { getCurrentUserPermissions, canViewAllTenders } from '@/lib/permissions/check-permissions';
+import { logger } from "@/lib/logger";
 
 // Types
 export interface DashboardOverview {
@@ -172,7 +173,7 @@ export async function getDashboardData(companyId: string): Promise<DashboardData
   const { data: tenders, error } = await query.order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching tenders for dashboard:', error);
+    logger.error('Error fetching tenders for dashboard:', error);
     return getEmptyDashboardData();
   }
 

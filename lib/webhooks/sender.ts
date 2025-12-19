@@ -8,6 +8,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { createHmac } from "crypto";
+import { logger } from "@/lib/logger";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -198,7 +199,7 @@ export async function triggerWebhooks(
       },
       event
     ).catch((error) => {
-      console.error(`Webhook ${webhook.id} failed:`, error);
+      logger.error(`Webhook ${webhook.id} failed:`, error);
     });
   });
 }

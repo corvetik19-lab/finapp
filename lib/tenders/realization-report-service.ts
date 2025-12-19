@@ -1,6 +1,7 @@
 'use server';
 
 import { createRSCClient } from '@/lib/supabase/server';
+import { logger } from "@/lib/logger";
 
 export interface RealizationReportData {
   // Общая статистика
@@ -149,7 +150,7 @@ export async function getRealizationReportData(
   const { data: tenders, error } = await tendersQuery;
 
   if (error || !tenders) {
-    console.error('Error fetching tenders for realization report:', error);
+    logger.error('Error fetching tenders for realization report:', error);
     return getEmptyReport();
   }
 

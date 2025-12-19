@@ -1,4 +1,5 @@
 import { createRSCClient } from '@/lib/supabase/helpers';
+import { logger } from "@/lib/logger";
 
 // Интерфейсы для отчёта по расходам
 export interface ExpenseCategory {
@@ -172,7 +173,7 @@ export async function getExpensesReportData(
   const { data: allTenders, error } = await query;
 
   if (error) {
-    console.error('Error fetching tenders for expenses report:', error);
+    logger.error('Error fetching tenders for expenses report:', error);
     return getEmptyReport();
   }
 

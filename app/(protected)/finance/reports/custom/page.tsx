@@ -127,7 +127,7 @@ export default function CustomReportsPage() {
                   label += new Intl.NumberFormat('ru-RU', {
                     style: 'currency',
                     currency: 'RUB'
-                  }).format(context.parsed.y);
+                  }).format(context.parsed.y ?? 0);
                   return label;
                 }
               }

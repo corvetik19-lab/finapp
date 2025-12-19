@@ -460,9 +460,11 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
 
       if (data.success) {
         showToast("✅ Транзакции по чеку созданы", { type: "success" });
+        
+        // Удаляем чек после успешного создания транзакции
         if (selectedReceipt) {
           try {
-            await fetch("/api/attachments/delete", {
+            const deleteResponse = await fetch("/api/attachments/delete", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -470,6 +472,13 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
                 storagePath: selectedReceipt.file_path
               })
             });
+            
+            const deleteResult = await deleteResponse.json();
+            if (deleteResult.success) {
+              console.log("Чек успешно удалён:", selectedReceipt.id);
+            } else {
+              console.error("Ошибка удаления чека:", deleteResult.error);
+            }
           } catch (deleteError) {
             console.error("Ошибка удаления чека:", deleteError);
           }
@@ -478,7 +487,14 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
         localStorage.removeItem('receiptChatInput');
         localStorage.removeItem('receiptChatPreview');
         localStorage.removeItem('receiptChatText');
-        setTimeout(() => window.location.reload(), 2000);
+        setPreview(null);
+        setSelectedReceipt(null);
+        
+        // Закрываем модалку и обновляем страницу
+        setTimeout(() => {
+          onClose();
+          window.location.reload();
+        }, 1500);
       } else if (data.message) {
         showToast(data.message, { type: "error" });
       } else {

@@ -27,20 +27,16 @@ export default function TourGuide({ page }: TourGuideProps) {
         }
         
         const settings = await response.json();
-        console.log('Tour settings loaded:', settings);
         
         // Если туры отключены глобально - не показываем
         if (!settings.enabled) {
-          console.log('Tours are disabled globally');
           return;
         }
         
         // Проверяем, прошёл ли пользователь тур для этой страницы
         const completed = settings.completedTours?.[page];
-        console.log(`Tour for page "${page}" completed:`, completed);
         
         if (!completed) {
-          console.log(`Starting tour for page "${page}"`);
           const steps = getStepsForPage(page);
           setSteps(steps);
           setCurrentStep(0);

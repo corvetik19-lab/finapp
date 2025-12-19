@@ -116,6 +116,8 @@ export function EmployeeFormModal({
   // Заполняем форму при редактировании
   useEffect(() => {
     if (mode === 'edit' && employee && isOpen) {
+      // Используем role_id если есть, иначе role
+      const roleValue = employee.role_id || employee.role;
       reset({
         company_id: employee.company_id,
         full_name: employee.full_name,
@@ -126,13 +128,19 @@ export function EmployeeFormModal({
         position: employee.position || undefined,
         department: employee.department || undefined,
         department_id: employee.department_id || undefined,
-        role: employee.role,
+        role: roleValue,
+        role_id: employee.role_id || undefined,
         status: employee.status || 'active',
         hire_date: employee.hire_date || undefined,
         work_schedule: employee.work_schedule || undefined,
         notes: employee.notes || undefined,
       });
-    } else if (mode === 'create' && isOpen && companyRoles.length > 0) {
+    }
+  }, [mode, employee, isOpen, reset]);
+
+  // Устанавливаем дефолтные значения для создания
+  useEffect(() => {
+    if (mode === 'create' && isOpen && companyRoles.length > 0) {
       // Устанавливаем первую роль по умолчанию (обычно "Наблюдатель тендеров")
       const defaultRole = companyRoles.find(r => r.name === 'Наблюдатель тендеров') || companyRoles[companyRoles.length - 1];
       reset({
@@ -142,7 +150,7 @@ export function EmployeeFormModal({
         status: 'active',
       });
     }
-  }, [mode, employee, isOpen, reset, companyId, companyRoles]);
+  }, [mode, isOpen, reset, companyId, companyRoles]);
 
   const onSubmit = async (data: CreateEmployeeFormData) => {
     try {

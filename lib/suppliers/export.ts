@@ -2,6 +2,7 @@
 
 import { createRSCClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
+import { logger } from "@/lib/logger";
 
 export interface ExportSuppliersOptions {
   format: "csv" | "xlsx";
@@ -69,7 +70,7 @@ export async function exportSuppliers(
   const { data: suppliers, error } = await query;
 
   if (error) {
-    console.error("Error fetching suppliers for export:", error);
+    logger.error("Error fetching suppliers for export:", error);
     return { success: false, error: "Ошибка получения данных" };
   }
 

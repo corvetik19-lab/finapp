@@ -1,12 +1,8 @@
 "use server";
 
-import OpenAI from "openai";
+import { getGeminiClient, GEMINI_MODELS } from "@/lib/ai/gemini-client";
 import { createRSCClient } from "@/lib/supabase/server";
-
-// Инициализируем клиент OpenAI только на сервере
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { logger } from "@/lib/logger";
 
 export interface OCRResult {
   success: boolean;
@@ -37,8 +33,8 @@ async function processFileBuffer(buffer: Buffer, mimeType: string): Promise<OCRR
         }
 
         // Lazy load pdf-parse
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const pdf = require("pdf-parse");
+        const pdfParse = await import("pdf-parse") as unknown as { default: (buffer: Buffer) => Promise<{ text: string }> };
+        const pdf = pdfParse.default;
         
         const data = await pdf(buffer);
         const text = data.text.trim();
@@ -52,49 +48,48 @@ async function processFileBuffer(buffer: Buffer, mimeType: string): Promise<OCRR
           error: "Не удалось извлечь текст из PDF. Если это скан/фото в PDF, пожалуйста, конвертируйте его в JPG/PNG." 
         };
       } catch (e) {
-        console.error("PDF parse error:", e);
+        logger.error("PDF parse error:", e);
         return { success: false, text: "", error: "Ошибка чтения PDF файла" };
       }
     }
 
-    // 2. Обработка Изображений (GPT-4o Vision)
+    // 2. Обработка Изображений (Gemini Vision)
     if (mimeType.startsWith("image/")) {
       const base64Image = buffer.toString("base64");
-      const dataUrl = `data:${mimeType};base64,${base64Image}`;
-
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: `Ты - профессиональный OCR сканер чеков. 
-            Твоя задача - извлечь ВЕСЬ текст с изображения чека.
-            
-            Правила:
-            1. Выпиши весь видимый текст построчно.
-            2. Сохраняй структуру чека (название магазина сверху, товары в середине, итого снизу).
-            3. НЕ добавляй никаких комментариев (типа "Вот текст чека").
-            4. НЕ используй markdown блоки кода. Просто текст.
-            5. Если текст неразборчив, напиши "[неразборчиво]".`
-          },
+      
+      const client = getGeminiClient();
+      
+      const response = await client.models.generateContent({
+        model: GEMINI_MODELS.FAST, // gemini-2.5-flash для быстрого OCR
+        contents: [
           {
             role: "user",
-            content: [
-              { type: "text", text: "Распознай этот чек:" },
+            parts: [
               {
-                type: "image_url",
-                image_url: {
-                  url: dataUrl,
-                  detail: "high"
+                text: `Ты - профессиональный OCR сканер чеков. 
+Твоя задача - извлечь ВЕСЬ текст с изображения чека.
+
+Правила:
+1. Выпиши весь видимый текст построчно.
+2. Сохраняй структуру чека (название магазина сверху, товары в середине, итого снизу).
+3. НЕ добавляй никаких комментариев (типа "Вот текст чека").
+4. НЕ используй markdown блоки кода. Просто текст.
+5. Если текст неразборчив, напиши "[неразборчиво]".
+
+Распознай этот чек:`
+              },
+              {
+                inlineData: {
+                  mimeType: mimeType,
+                  data: base64Image,
                 }
               }
             ]
           }
         ],
-        max_tokens: 1500,
       });
 
-      const text = response.choices[0]?.message?.content || "";
+      const text = response.text || "";
       
       if (!text) {
         return { success: false, text: "", error: "Нейросеть не вернула текст" };
@@ -106,7 +101,7 @@ async function processFileBuffer(buffer: Buffer, mimeType: string): Promise<OCRR
     return { success: false, text: "", error: "Неподдерживаемый формат файла. Используйте JPG, PNG или PDF." };
 
   } catch (error: unknown) {
-    console.error("OCR Error:", error);
+    logger.error("OCR Error:", error);
     const errorMessage = error instanceof Error ? error.message : "Неизвестная ошибка";
     return { 
       success: false, 
@@ -131,7 +126,7 @@ export async function recognizeReceiptFile(formData: FormData): Promise<OCRResul
     return processFileBuffer(buffer, file.type);
 
   } catch (error: unknown) {
-    console.error("Recognize File Error:", error);
+    logger.error("Recognize File Error:", error);
     return { 
       success: false, 
       text: "", 
@@ -154,7 +149,7 @@ export async function recognizeReceiptFromPath(filePath: string, mimeType: strin
       .download(filePath);
 
     if (error || !data) {
-      console.error("Download error:", error);
+      logger.error("Download error:", error);
       return { success: false, text: "", error: "Не удалось скачать файл из хранилища" };
     }
 
@@ -162,7 +157,7 @@ export async function recognizeReceiptFromPath(filePath: string, mimeType: strin
     return processFileBuffer(buffer, mimeType);
 
   } catch (error: unknown) {
-    console.error("Recognize Path Error:", error);
+    logger.error("Recognize Path Error:", error);
     return { 
       success: false, 
       text: "", 

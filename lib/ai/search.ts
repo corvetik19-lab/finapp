@@ -3,6 +3,7 @@
  */
 
 import { createRSCClient } from "@/lib/supabase/helpers";
+import { logger } from "@/lib/logger";
 
 export type SearchResult = {
   id: string;
@@ -50,7 +51,7 @@ export async function searchSimilarTransactions(
   });
 
   if (error) {
-    console.error("Error searching transactions:", error);
+    logger.error("Error searching transactions:", error);
     throw new Error("Failed to search transactions");
   }
 
@@ -97,7 +98,7 @@ export async function findSimilarToTransaction(
   });
 
   if (error) {
-    console.error("Error finding similar transactions:", error);
+    logger.error("Error finding similar transactions:", error);
     throw new Error("Failed to find similar transactions");
   }
 
@@ -131,7 +132,7 @@ export async function updateTransactionEmbedding(
     .eq("user_id", user.id);
 
   if (error) {
-    console.error("Error updating embedding:", error);
+    logger.error("Error updating embedding:", error);
     throw new Error("Failed to update embedding");
   }
 }
@@ -179,8 +180,8 @@ export async function generateMissingEmbeddings(): Promise<{ processed: number; 
       const { createEmbedding, buildTransactionText } = await import("./embeddings");
       
       // category может быть массивом из-за Supabase join
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const category: any = transaction.category;
+      type CategoryJoinResult = { name?: string } | { name?: string }[] | null;
+      const category = transaction.category as CategoryJoinResult;
       const categoryName = Array.isArray(category)
         ? category[0]?.name
         : category?.name;
@@ -197,7 +198,7 @@ export async function generateMissingEmbeddings(): Promise<{ processed: number; 
       
       processed++;
     } catch (err) {
-      console.error(`Error processing transaction ${transaction.id}:`, err);
+      logger.error(`Error processing transaction ${transaction.id}:`, err);
       errors++;
     }
   }

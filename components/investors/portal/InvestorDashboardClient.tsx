@@ -20,8 +20,6 @@ export function InvestorDashboardClient({ accesses, investments }: Props) {
   const activeInvestments = investments.filter(
     (i) => !["completed", "cancelled"].includes(i.status)
   );
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const completedInvestments = investments.filter((i) => i.status === "completed");
 
   const totalInvested = activeInvestments.reduce((sum, i) => sum + i.approved_amount, 0);
   const totalInterest = activeInvestments.reduce((sum, i) => sum + i.interest_amount, 0);

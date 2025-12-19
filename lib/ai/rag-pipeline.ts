@@ -5,6 +5,7 @@
 
 import { createEmbedding } from "./embeddings";
 import { createRSCClient } from "@/lib/supabase/helpers";
+import { logger } from "@/lib/logger";
 
 export interface TransactionContext {
   id: string;
@@ -47,7 +48,7 @@ export async function searchRelevantTransactions(
   });
 
   if (error || !matches) {
-    console.error("Error searching transactions:", error);
+    logger.error("Error searching transactions:", error);
     return [];
   }
 

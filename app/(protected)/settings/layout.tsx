@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { getCachedUser, createRouteClient } from "@/lib/supabase/server";
 import { SettingsLayoutWrapper } from "@/components/settings/settings-layout";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/supabase/helpers";
 import { getCurrentOrganization } from "@/lib/platform/organization";
 
 export default async function SettingsLayout({ children }: { children: ReactNode }) {

@@ -1,5 +1,8 @@
 import * as Sentry from "@sentry/nextjs";
 
+// Export hook for tracking navigation transitions in Next.js 16
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
   tracesSampleRate: 1.0,

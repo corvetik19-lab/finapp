@@ -18,6 +18,7 @@ import {
   formatDocumentNumber,
   calculateVat,
 } from "./types";
+import { logger } from "@/lib/logger";
 
 // ============================================
 // Настройки бухгалтерии
@@ -36,7 +37,7 @@ export async function getAccountingSettings(): Promise<AccountingSettings | null
     .single();
   
   if (error && error.code !== "PGRST116") {
-    console.error("Error fetching accounting settings:", error);
+    logger.error("Error fetching accounting settings:", error);
     return null;
   }
   
@@ -55,7 +56,7 @@ export async function createAccountingSettings(
     .single();
   
   if (error) {
-    console.error("Error creating accounting settings:", error);
+    logger.error("Error creating accounting settings:", error);
     return null;
   }
   
@@ -78,7 +79,7 @@ export async function updateAccountingSettings(
     .single();
   
   if (error) {
-    console.error("Error updating accounting settings:", error);
+    logger.error("Error updating accounting settings:", error);
     return null;
   }
   
@@ -103,7 +104,7 @@ export async function getCounterparties(): Promise<AccountingCounterparty[]> {
     .order("name");
   
   if (error) {
-    console.error("Error fetching counterparties:", error);
+    logger.error("Error fetching counterparties:", error);
     return [];
   }
   
@@ -120,7 +121,7 @@ export async function getCounterpartyById(id: string): Promise<AccountingCounter
     .single();
   
   if (error) {
-    console.error("Error fetching counterparty:", error);
+    logger.error("Error fetching counterparty:", error);
     return null;
   }
   
@@ -139,7 +140,7 @@ export async function createCounterparty(
     .single();
   
   if (error) {
-    console.error("Error creating counterparty:", error);
+    logger.error("Error creating counterparty:", error);
     return null;
   }
   
@@ -160,7 +161,7 @@ export async function updateCounterparty(
     .single();
   
   if (error) {
-    console.error("Error updating counterparty:", error);
+    logger.error("Error updating counterparty:", error);
     return null;
   }
   
@@ -176,7 +177,7 @@ export async function deleteCounterparty(id: string): Promise<boolean> {
     .eq("id", id);
   
   if (error) {
-    console.error("Error deleting counterparty:", error);
+    logger.error("Error deleting counterparty:", error);
     return false;
   }
   
@@ -205,7 +206,7 @@ export async function getRecentDocuments(limit: number = 5): Promise<AccountingD
     .limit(limit);
   
   if (error) {
-    console.error("Error fetching recent documents:", error);
+    logger.error("Error fetching recent documents:", error);
     return [];
   }
   
@@ -257,7 +258,7 @@ export async function getDocuments(filters?: {
   const { data, error } = await query.order("document_date", { ascending: false });
   
   if (error) {
-    console.error("Error fetching documents:", error);
+    logger.error("Error fetching documents:", error);
     return [];
   }
   
@@ -279,7 +280,7 @@ export async function getDocumentById(id: string): Promise<AccountingDocument | 
     .single();
   
   if (error) {
-    console.error("Error fetching document:", error);
+    logger.error("Error fetching document:", error);
     return null;
   }
   
@@ -388,7 +389,7 @@ export async function createDocument(
     .single();
   
   if (docError) {
-    console.error("Error creating document:", docError);
+    logger.error("Error creating document:", docError);
     return null;
   }
   
@@ -403,7 +404,7 @@ export async function createDocument(
     .insert(itemsToInsert);
   
   if (itemsError) {
-    console.error("Error creating document items:", itemsError);
+    logger.error("Error creating document items:", itemsError);
   }
   
   // Обновляем счётчик нумерации
@@ -439,7 +440,7 @@ export async function updateDocumentStatus(
     .eq("id", id);
   
   if (error) {
-    console.error("Error updating document status:", error);
+    logger.error("Error updating document status:", error);
     return false;
   }
   
@@ -455,7 +456,7 @@ export async function deleteDocument(id: string): Promise<boolean> {
     .eq("id", id);
   
   if (error) {
-    console.error("Error deleting document:", error);
+    logger.error("Error deleting document:", error);
     return false;
   }
   
@@ -502,7 +503,7 @@ export async function getKudirEntries(filters?: {
   const { data, error } = await query.order("entry_date").order("entry_number");
   
   if (error) {
-    console.error("Error fetching kudir entries:", error);
+    logger.error("Error fetching kudir entries:", error);
     return [];
   }
   
@@ -538,7 +539,7 @@ export async function createKudirEntry(
     .single();
   
   if (error) {
-    console.error("Error creating kudir entry:", error);
+    logger.error("Error creating kudir entry:", error);
     return null;
   }
   
@@ -573,7 +574,7 @@ export async function getTaxPayments(filters?: {
   const { data, error } = await query.order("due_date");
   
   if (error) {
-    console.error("Error fetching tax payments:", error);
+    logger.error("Error fetching tax payments:", error);
     return [];
   }
   
@@ -599,7 +600,7 @@ export async function getUpcomingTaxPayments(days: number = 30): Promise<TaxPaym
     .order("due_date");
   
   if (error) {
-    console.error("Error fetching upcoming tax payments:", error);
+    logger.error("Error fetching upcoming tax payments:", error);
     return [];
   }
   
@@ -626,7 +627,7 @@ export async function createTaxPayment(input: {
     .single();
   
   if (error) {
-    console.error("Error creating tax payment:", error);
+    logger.error("Error creating tax payment:", error);
     return null;
   }
   
@@ -655,7 +656,7 @@ export async function updateTaxPaymentStatus(
     .eq("id", id);
   
   if (error) {
-    console.error("Error updating tax payment:", error);
+    logger.error("Error updating tax payment:", error);
     return false;
   }
   
@@ -696,7 +697,7 @@ export async function getTaxCalendarEvents(filters?: {
   const { data, error } = await query.order("event_date");
   
   if (error) {
-    console.error("Error fetching tax calendar events:", error);
+    logger.error("Error fetching tax calendar events:", error);
     return [];
   }
   

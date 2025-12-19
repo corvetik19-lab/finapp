@@ -5,6 +5,7 @@
 import { createAdminClient, createRouteClient } from "@/lib/supabase/helpers";
 import type { ToolParameters } from "./tools";
 import { searchRelevantTransactions } from "./rag-pipeline";
+import { logger } from "@/lib/logger";
 
 type TransactionSummaryRow = {
   amount: number;
@@ -334,7 +335,7 @@ export async function handleGetExpensesByCategory(params: ToolParameters<"getExp
     endDate = new Date(year, month + 1, 0).toISOString().split('T')[0];
   }
 
-  console.log(`📊 getExpensesByCategory: ${startDate} - ${endDate}`);
+  logger.debug("getExpensesByCategory", { startDate, endDate });
 
   const { data: transactions, error } = await supabase
     .from("transactions")
@@ -345,7 +346,7 @@ export async function handleGetExpensesByCategory(params: ToolParameters<"getExp
     .lt("occurred_at", `${endDate}T23:59:59.999Z`);
 
   if (error) {
-    console.error("getExpensesByCategory error:", error);
+    logger.error("getExpensesByCategory error:", error);
     return { success: false, message: "Ошибка получения данных: " + error.message };
   }
 
@@ -658,11 +659,11 @@ export async function handleAIGetTransactions(
   params: { limit?: number; categoryName?: string; userId?: string }
 ) {
   try {
-    console.log("🔍 getTransactions called with params:", params);
+    logger.debug("getTransactions called", { params });
     const supabase = createAdminClient();
     
     if (!params.userId) {
-      console.error("❌ No userId provided");
+      logger.error("❌ No userId provided");
       return {
         success: false,
         message: "❌ Ошибка: userId не указан"
@@ -671,7 +672,7 @@ export async function handleAIGetTransactions(
     
     const userId = params.userId;
     const limit = params.limit || 10;
-    console.log("✅ Using userId:", userId, "limit:", limit);
+    logger.debug("Using userId and limit", { userId, limit });
 
     // Упрощённый запрос без вложенных связей
     let query = supabase
@@ -707,17 +708,17 @@ export async function handleAIGetTransactions(
     const { data: transactions, error } = await query;
 
     if (error) {
-      console.error("❌ Supabase error in getTransactions:", error);
+      logger.error("❌ Supabase error in getTransactions:", error);
       return {
         success: false,
         message: `❌ Ошибка БД: ${error.message}`
       };
     }
     
-    console.log("📊 Transactions fetched:", transactions?.length || 0);
+    logger.debug("Transactions fetched", { count: transactions?.length || 0 });
     
     if (!transactions || transactions.length === 0) {
-      console.log("📭 No transactions found");
+      logger.debug("No transactions found");
       return { 
         success: true, 
         data: [], 
@@ -792,7 +793,7 @@ export async function handleAIGetTransactions(
     message: `📊 Последние транзакции:\n\n${summary}` 
   };
   } catch (error) {
-    console.error("❌ Unexpected error in getTransactions:", error);
+    logger.error("❌ Unexpected error in getTransactions:", error);
     return {
       success: false,
       message: `❌ Непредвиденная ошибка: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -1287,7 +1288,7 @@ export async function handleSearchTransactions(params: { query: string; limit?: 
       transactions: formatted
     };
   } catch (error) {
-    console.error("Error in handleSearchTransactions:", error);
+    logger.error("Error in handleSearchTransactions:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Ошибка поиска"
@@ -1433,7 +1434,7 @@ export const toolHandlers = {
       const supabase = createAdminClient();
       const { receiptText, userId, accountName } = params;
 
-      console.log("📄 Processing receipt for user:", userId);
+      logger.debug("Processing receipt for user", { userId });
 
       // 1. Парсим чек используя OpenAI
       const apiKey = process.env.OPENAI_API_KEY;
@@ -1481,7 +1482,7 @@ ${receiptText}`;
       const parseData = await parseResponse.json();
       const parsed = JSON.parse(parseData.choices[0].message.content);
       
-      console.log("📋 Raw parsed data:", parsed);
+      logger.debug("Raw parsed data", { parsed });
       
       // Проверяем и исправляем дату если нужно
       let finalDate = new Date().toISOString().split('T')[0]; // По умолчанию сегодня
@@ -1514,7 +1515,7 @@ ${receiptText}`;
       }
       
       parsed.date = finalDate;
-      console.log("✅ Parsed receipt with corrected date:", parsed);
+      logger.debug("Parsed receipt with corrected date", { date: parsed.date });
 
       // Получаем все товары из БД для сопоставления (нужно и для preview, и для сохранения)
       const { data: products, error: productsError } = await supabase
@@ -1524,7 +1525,7 @@ ${receiptText}`;
         .eq("is_active", true);
 
       if (productsError) {
-        console.error("❌ Products query error:", productsError);
+        logger.error("❌ Products query error:", productsError);
       }
 
       if (!products || products.length === 0) {
@@ -1662,14 +1663,14 @@ ${receiptText}`;
         .single();
 
       if (txError || !transaction) {
-        console.error("Transaction error:", txError);
+        logger.error("Transaction error:", txError);
         return { success: false, message: "Ошибка создания транзакции: " + txError?.message };
       }
 
-      console.log("✅ Transaction created:", transaction.id);
+      logger.debug("Transaction created", { transactionId: transaction.id });
 
       // 4. Используем уже загруженные товары и результаты сопоставления
-      console.log(`📦 Using ${products.length} products from DB:`, products.map(p => p.name).join(", "));
+      logger.debug("Using products from DB", { count: products.length });
 
       const addedItems = [];
       const notFoundItems = [];
@@ -1728,14 +1729,14 @@ ${products.map((p: { name: string }, idx: number) => `${idx + 1}. ${p.name}`).jo
                   const resultIdx = matchResults.findIndex(r => r.receiptItem === unmatchedItems[checkIdx].receiptItem);
                   if (resultIdx !== -1) {
                     matchResults[resultIdx].matchedProduct = products[dbIdx];
-                    console.log(`🤖 AI matched (${Math.round(confidence * 100)}%): "${unmatchedItems[checkIdx].receiptItem.name}" → "${products[dbIdx].name}"`);
+                    logger.debug("AI matched item", { confidence: Math.round(confidence * 100), receiptItem: unmatchedItems[checkIdx].receiptItem.name, product: products[dbIdx].name });
                   }
                 }
               }
             }
           }
         } catch (error) {
-          console.error("Batch AI matching error:", error);
+          logger.error("Batch AI matching error:", error);
         }
       }
 
@@ -1769,7 +1770,7 @@ ${products.map((p: { name: string }, idx: number) => `${idx + 1}. ${p.name}`).jo
               categoryCounts.set(result.matchedProduct.category_id, count + 1);
             }
           } else {
-            console.error("Item insert error:", itemError);
+            logger.error("Item insert error:", itemError);
           }
         } else {
           notFoundItems.push(result.receiptItem.name);
@@ -1794,7 +1795,7 @@ ${products.map((p: { name: string }, idx: number) => `${idx + 1}. ${p.name}`).jo
             .update({ category_id: mostFrequentCategoryId })
             .eq("id", transaction.id);
           
-          console.log(`✅ Transaction category set to: ${mostFrequentCategoryId}`);
+          logger.debug("Transaction category set", { categoryId: mostFrequentCategoryId });
         }
       }
 
@@ -1832,7 +1833,7 @@ ${products.map((p: { name: string }, idx: number) => `${idx + 1}. ${p.name}`).jo
       };
 
     } catch (error) {
-      console.error("processReceipt error:", error);
+      logger.error("processReceipt error:", error);
       return {
         success: false,
         message: "Ошибка обработки чека: " + (error instanceof Error ? error.message : "Unknown error")

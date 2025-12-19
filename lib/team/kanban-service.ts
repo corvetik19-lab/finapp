@@ -9,6 +9,7 @@ import type {
   CreateKanbanCardInput,
   BoardMemberRole,
 } from './types';
+import { logger } from "@/lib/logger";
 
 // =====================================================
 // ДОСКИ
@@ -29,7 +30,7 @@ export async function getKanbanBoards(companyId: string): Promise<KanbanBoard[]>
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching kanban boards:', error);
+    logger.error('Error fetching kanban boards:', error);
     return [];
   }
 
@@ -59,7 +60,7 @@ export async function getKanbanBoard(boardId: string): Promise<KanbanBoard | nul
     .single();
 
   if (error) {
-    console.error('Error fetching kanban board:', error);
+    logger.error('Error fetching kanban board:', error);
     return null;
   }
 
@@ -101,7 +102,7 @@ export async function createKanbanBoard(
     .single();
 
   if (boardError || !board) {
-    console.error('Error creating kanban board:', boardError);
+    logger.error('Error creating kanban board:', boardError);
     return null;
   }
 
@@ -127,7 +128,7 @@ export async function createKanbanBoard(
     .insert(columnsToInsert);
 
   if (columnsError) {
-    console.error('Error creating kanban columns:', columnsError);
+    logger.error('Error creating kanban columns:', columnsError);
   }
 
   // Add creator as owner
@@ -173,7 +174,7 @@ export async function updateKanbanBoard(
     .eq('id', boardId);
 
   if (error) {
-    console.error('Error updating kanban board:', error);
+    logger.error('Error updating kanban board:', error);
     return false;
   }
 
@@ -189,7 +190,7 @@ export async function deleteKanbanBoard(boardId: string): Promise<boolean> {
     .eq('id', boardId);
 
   if (error) {
-    console.error('Error deleting kanban board:', error);
+    logger.error('Error deleting kanban board:', error);
     return false;
   }
 
@@ -230,7 +231,7 @@ export async function createKanbanColumn(
     .single();
 
   if (error) {
-    console.error('Error creating kanban column:', error);
+    logger.error('Error creating kanban column:', error);
     return null;
   }
 
@@ -249,7 +250,7 @@ export async function updateKanbanColumn(
     .eq('id', columnId);
 
   if (error) {
-    console.error('Error updating kanban column:', error);
+    logger.error('Error updating kanban column:', error);
     return false;
   }
 
@@ -265,7 +266,7 @@ export async function deleteKanbanColumn(columnId: string): Promise<boolean> {
     .eq('id', columnId);
 
   if (error) {
-    console.error('Error deleting kanban column:', error);
+    logger.error('Error deleting kanban column:', error);
     return false;
   }
 
@@ -289,7 +290,7 @@ export async function reorderKanbanColumns(
     .upsert(updates, { onConflict: 'id' });
 
   if (error) {
-    console.error('Error reordering kanban columns:', error);
+    logger.error('Error reordering kanban columns:', error);
     return false;
   }
 
@@ -337,7 +338,7 @@ export async function createKanbanCard(
     .single();
 
   if (error) {
-    console.error('Error creating kanban card:', error);
+    logger.error('Error creating kanban card:', error);
     return null;
   }
 
@@ -356,7 +357,7 @@ export async function updateKanbanCard(
     .eq('id', cardId);
 
   if (error) {
-    console.error('Error updating kanban card:', error);
+    logger.error('Error updating kanban card:', error);
     return false;
   }
 
@@ -427,7 +428,7 @@ export async function moveKanbanCard(
     .eq('id', cardId);
 
   if (error) {
-    console.error('Error moving kanban card:', error);
+    logger.error('Error moving kanban card:', error);
     return false;
   }
 
@@ -443,7 +444,7 @@ export async function deleteKanbanCard(cardId: string): Promise<boolean> {
     .eq('id', cardId);
 
   if (error) {
-    console.error('Error deleting kanban card:', error);
+    logger.error('Error deleting kanban card:', error);
     return false;
   }
 
@@ -476,7 +477,7 @@ export async function addBoardMember(
     });
 
   if (error) {
-    console.error('Error adding board member:', error);
+    logger.error('Error adding board member:', error);
     return false;
   }
 
@@ -497,7 +498,7 @@ export async function updateBoardMemberRole(
     .eq('user_id', userId);
 
   if (error) {
-    console.error('Error updating board member role:', error);
+    logger.error('Error updating board member role:', error);
     return false;
   }
 
@@ -517,7 +518,7 @@ export async function removeBoardMember(
     .eq('user_id', userId);
 
   if (error) {
-    console.error('Error removing board member:', error);
+    logger.error('Error removing board member:', error);
     return false;
   }
 
@@ -538,7 +539,7 @@ export async function getCardComments(cardId: string): Promise<KanbanCardComment
     .order('created_at', { ascending: true });
 
   if (error) {
-    console.error('Error fetching card comments:', error);
+    logger.error('Error fetching card comments:', error);
     return [];
   }
 
@@ -563,7 +564,7 @@ export async function addCardComment(
     .single();
 
   if (error) {
-    console.error('Error adding card comment:', error);
+    logger.error('Error adding card comment:', error);
     return null;
   }
 
@@ -579,7 +580,7 @@ export async function deleteCardComment(commentId: string): Promise<boolean> {
     .eq('id', commentId);
 
   if (error) {
-    console.error('Error deleting card comment:', error);
+    logger.error('Error deleting card comment:', error);
     return false;
   }
 

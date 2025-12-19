@@ -2,6 +2,7 @@
 
 import { createRSCClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
+import { logger } from "@/lib/logger";
 import {
   Supplier,
   SupplierCategory,
@@ -40,7 +41,7 @@ export async function getSupplierCategories(): Promise<SupplierCategory[]> {
     .order("sort_order");
 
   if (error) {
-    console.error("Error fetching supplier categories:", error);
+    logger.error("Error fetching supplier categories:", error);
     return [];
   }
 
@@ -69,7 +70,7 @@ export async function createSupplierCategory(
     .single();
 
   if (error) {
-    console.error("Error creating supplier category:", error);
+    logger.error("Error creating supplier category:", error);
     return null;
   }
 
@@ -90,7 +91,7 @@ export async function updateSupplierCategory(
     .single();
 
   if (error) {
-    console.error("Error updating supplier category:", error);
+    logger.error("Error updating supplier category:", error);
     return null;
   }
 
@@ -106,7 +107,7 @@ export async function deleteSupplierCategory(id: string): Promise<boolean> {
     .eq("id", id);
 
   if (error) {
-    console.error("Error deleting supplier category:", error);
+    logger.error("Error deleting supplier category:", error);
     return false;
   }
 
@@ -156,7 +157,7 @@ export async function getSuppliers(
   const { data, error } = await query.order("name");
 
   if (error) {
-    console.error("Error fetching suppliers:", error);
+    logger.error("Error fetching suppliers:", error);
     return [];
   }
 
@@ -176,7 +177,7 @@ export async function getSupplierById(id: string): Promise<Supplier | null> {
     .single();
 
   if (error) {
-    console.error("Error fetching supplier:", error);
+    logger.error("Error fetching supplier:", error);
     return null;
   }
 
@@ -205,7 +206,7 @@ export async function createSupplier(
     .single();
 
   if (error) {
-    console.error("Error creating supplier:", error);
+    logger.error("Error creating supplier:", error);
     return null;
   }
 
@@ -226,7 +227,7 @@ export async function updateSupplier(
     .single();
 
   if (error) {
-    console.error("Error updating supplier:", error);
+    logger.error("Error updating supplier:", error);
     return null;
   }
 
@@ -243,7 +244,7 @@ export async function deleteSupplier(id: string): Promise<boolean> {
     .eq("id", id);
 
   if (error) {
-    console.error("Error deleting supplier:", error);
+    logger.error("Error deleting supplier:", error);
     return false;
   }
 
@@ -267,7 +268,7 @@ export async function getSupplierContacts(
     .order("name");
 
   if (error) {
-    console.error("Error fetching supplier contacts:", error);
+    logger.error("Error fetching supplier contacts:", error);
     return [];
   }
 
@@ -294,7 +295,7 @@ export async function createSupplierContact(
     .single();
 
   if (error) {
-    console.error("Error creating supplier contact:", error);
+    logger.error("Error creating supplier contact:", error);
     return null;
   }
 
@@ -325,7 +326,7 @@ export async function updateSupplierContact(
     .single();
 
   if (error) {
-    console.error("Error updating supplier contact:", error);
+    logger.error("Error updating supplier contact:", error);
     return null;
   }
 
@@ -341,7 +342,7 @@ export async function deleteSupplierContact(id: string): Promise<boolean> {
     .eq("id", id);
 
   if (error) {
-    console.error("Error deleting supplier contact:", error);
+    logger.error("Error deleting supplier contact:", error);
     return false;
   }
 
@@ -365,7 +366,7 @@ export async function getSupplierNotes(
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching supplier notes:", error);
+    logger.error("Error fetching supplier notes:", error);
     return [];
   }
 
@@ -392,7 +393,7 @@ export async function createSupplierNote(
     .single();
 
   if (error) {
-    console.error("Error creating supplier note:", error);
+    logger.error("Error creating supplier note:", error);
     return null;
   }
 
@@ -413,7 +414,7 @@ export async function updateSupplierNote(
     .single();
 
   if (error) {
-    console.error("Error updating supplier note:", error);
+    logger.error("Error updating supplier note:", error);
     return null;
   }
 
@@ -426,7 +427,7 @@ export async function deleteSupplierNote(id: string): Promise<boolean> {
   const { error } = await supabase.from("supplier_notes").delete().eq("id", id);
 
   if (error) {
-    console.error("Error deleting supplier note:", error);
+    logger.error("Error deleting supplier note:", error);
     return false;
   }
 
@@ -452,7 +453,7 @@ export async function getSupplierFiles(
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching supplier files:", error);
+    logger.error("Error fetching supplier files:", error);
     return [];
   }
 
@@ -479,7 +480,7 @@ export async function createSupplierFile(
     .single();
 
   if (error) {
-    console.error("Error creating supplier file:", error);
+    logger.error("Error creating supplier file:", error);
     return null;
   }
 
@@ -503,7 +504,7 @@ export async function deleteSupplierFile(id: string): Promise<boolean> {
   const { error } = await supabase.from("supplier_files").delete().eq("id", id);
 
   if (error) {
-    console.error("Error deleting supplier file:", error);
+    logger.error("Error deleting supplier file:", error);
     return false;
   }
 
@@ -529,7 +530,7 @@ export async function getSupplierTenders(
     .order("invited_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching supplier tenders:", error);
+    logger.error("Error fetching supplier tenders:", error);
     return [];
   }
 
@@ -548,7 +549,7 @@ export async function addSupplierToTender(
     .single();
 
   if (error) {
-    console.error("Error adding supplier to tender:", error);
+    logger.error("Error adding supplier to tender:", error);
     return null;
   }
 
@@ -569,7 +570,7 @@ export async function updateSupplierTender(
     .single();
 
   if (error) {
-    console.error("Error updating supplier tender:", error);
+    logger.error("Error updating supplier tender:", error);
     return null;
   }
 
@@ -585,7 +586,7 @@ export async function removeSupplierFromTender(id: string): Promise<boolean> {
     .eq("id", id);
 
   if (error) {
-    console.error("Error removing supplier from tender:", error);
+    logger.error("Error removing supplier from tender:", error);
     return false;
   }
 
@@ -638,7 +639,7 @@ export async function getCallHistory(
     .limit(100);
 
   if (error) {
-    console.error("Error fetching call history:", error);
+    logger.error("Error fetching call history:", error);
     return [];
   }
 
@@ -668,7 +669,7 @@ export async function getMangoSettings(): Promise<MangoSettings | null> {
     .single();
 
   if (error && error.code !== "PGRST116") {
-    console.error("Error fetching mango settings:", error);
+    logger.error("Error fetching mango settings:", error);
     return null;
   }
 
@@ -693,7 +694,7 @@ export async function saveMangoSettings(
     .single();
 
   if (error) {
-    console.error("Error saving mango settings:", error);
+    logger.error("Error saving mango settings:", error);
     return null;
   }
 
@@ -891,7 +892,7 @@ export async function syncSupplierWithCounterparty(
       .eq("id", supplier.counterparty_id);
 
     if (updateError) {
-      console.error("Error updating counterparty:", updateError);
+      logger.error("Error updating counterparty:", updateError);
       return { success: false, error: "Ошибка обновления контрагента" };
     }
 
@@ -949,7 +950,7 @@ export async function syncSupplierWithCounterparty(
     .single();
 
   if (createError || !newCounterparty) {
-    console.error("Error creating counterparty:", createError);
+    logger.error("Error creating counterparty:", createError);
     return { success: false, error: "Ошибка создания контрагента" };
   }
 
@@ -1140,7 +1141,7 @@ export async function importSupplierFromCounterparty(
     .single();
 
   if (createError || !newSupplier) {
-    console.error("Error creating supplier from counterparty:", createError);
+    logger.error("Error creating supplier from counterparty:", createError);
     return { success: false, error: "Ошибка создания поставщика" };
   }
 
@@ -1177,7 +1178,7 @@ export async function bulkUpdateSupplierStatus(
     .is("deleted_at", null);
 
   if (error) {
-    console.error("Error bulk updating status:", error);
+    logger.error("Error bulk updating status:", error);
     return { success: false, count: 0, error: "Ошибка обновления" };
   }
 
@@ -1204,7 +1205,7 @@ export async function bulkUpdateSupplierCategory(
     .is("deleted_at", null);
 
   if (error) {
-    console.error("Error bulk updating category:", error);
+    logger.error("Error bulk updating category:", error);
     return { success: false, count: 0, error: "Ошибка обновления" };
   }
 
@@ -1230,7 +1231,7 @@ export async function bulkDeleteSuppliers(
     .is("deleted_at", null);
 
   if (error) {
-    console.error("Error bulk deleting:", error);
+    logger.error("Error bulk deleting:", error);
     return { success: false, count: 0, error: "Ошибка удаления" };
   }
 

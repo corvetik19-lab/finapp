@@ -3,6 +3,7 @@
  */
 
 import type { Employee, EmployeeRole } from './types';
+import { logger } from "@/lib/logger";
 
 /**
  * Получить список сотрудников для выпадающего списка
@@ -21,7 +22,7 @@ export async function getEmployeesForSelect(
     const response = await fetch(`/api/employees?${params}`);
 
     if (!response.ok) {
-      console.error('Failed to fetch employees');
+      logger.error('Failed to fetch employees');
       return [];
     }
 
@@ -33,7 +34,7 @@ export async function getEmployeesForSelect(
       role: emp.role,
     }));
   } catch (error) {
-    console.error('Error fetching employees:', error);
+    logger.error('Error fetching employees:', error);
     return [];
   }
 }

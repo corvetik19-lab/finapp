@@ -4,6 +4,7 @@ import { createRSCClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/platform/organization";
 import type { TaxType, TaxPaymentStatus, TaxPayment, TaxCalendarEntry } from "./tax-calendar-types";
 import { TAX_DEADLINES } from "./tax-calendar-types";
+import { logger } from "@/lib/logger";
 
 // Re-export types for consumers
 export type { TaxType, TaxPaymentStatus, TaxPayment, TaxCalendarEntry };
@@ -161,7 +162,7 @@ export async function createTaxPayment(input: {
     .single();
 
   if (error) {
-    console.error("Error creating tax payment:", error);
+    logger.error("Error creating tax payment:", error);
     return { success: false, error: "Ошибка создания платежа" };
   }
 
@@ -195,7 +196,7 @@ export async function markTaxPaymentPaid(
     .eq("company_id", companyId);
 
   if (error) {
-    console.error("Error marking tax payment as paid:", error);
+    logger.error("Error marking tax payment as paid:", error);
     return { success: false, error: "Ошибка обновления платежа" };
   }
 
@@ -314,7 +315,7 @@ export async function generateTaxCalendarForYear(
   const { error } = await supabase.from("tax_payments").insert(payments);
 
   if (error) {
-    console.error("Error generating tax calendar:", error);
+    logger.error("Error generating tax calendar:", error);
     return { success: false, created: 0, error: "Ошибка генерации календаря" };
   }
 
