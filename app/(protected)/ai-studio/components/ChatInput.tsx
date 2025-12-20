@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import { Send, Paperclip, Mic, Globe, Link, Code, Sparkles } from "lucide-react";
 import styles from "./ChatInput.module.css";
 

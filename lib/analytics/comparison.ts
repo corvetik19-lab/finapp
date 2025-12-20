@@ -326,9 +326,10 @@ function formatPeriodLabel(date: Date, type: "month" | "quarter" | "year" | "cus
       return `${months[date.getMonth()]} ${date.getFullYear()}`;
     case "year":
       return `${date.getFullYear()}`;
-    case "quarter":
+    case "quarter": {
       const quarter = Math.floor(date.getMonth() / 3) + 1;
       return `Q${quarter} ${date.getFullYear()}`;
+    }
     default:
       return date.toLocaleDateString("ru-RU");
   }

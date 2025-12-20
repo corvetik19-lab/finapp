@@ -208,11 +208,11 @@ export default function TransactionsGroupedList({
           transfer: typeof parsed.transfer === "boolean" ? parsed.transfer : prev.transfer,
         }));
       }
-    } catch {}
+    } catch { /* ignore */ }
     try {
       const storedCats = localStorage.getItem("txn_open_cats");
       if (storedCats) setOpenCats(JSON.parse(storedCats) || {});
-    } catch {}
+    } catch { /* ignore */ }
   }, []);
 
   useEffect(() => {
@@ -279,7 +279,7 @@ export default function TransactionsGroupedList({
       const next = { ...prev, [dir]: !prev[dir] } as typeof prev;
       try {
         localStorage.setItem("txn_open_dir", JSON.stringify(next));
-      } catch {}
+      } catch { /* ignore */ }
       return next;
     });
   }
@@ -290,7 +290,7 @@ export default function TransactionsGroupedList({
       const next = { ...prev, [key]: !prev[key] } as Record<string, boolean>;
       try {
         localStorage.setItem("txn_open_cats", JSON.stringify(next));
-      } catch {}
+      } catch { /* ignore */ }
       return next;
     });
   }

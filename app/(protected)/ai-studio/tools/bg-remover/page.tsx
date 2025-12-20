@@ -21,7 +21,7 @@ interface TaskStatus {
 
 export default function BGRemoverPage() {
   const [image, setImage] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [, setImageFile] = useState<File | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<KieModel>(BG_REMOVAL_MODELS[0]);
   const [isUploading, setIsUploading] = useState(false);

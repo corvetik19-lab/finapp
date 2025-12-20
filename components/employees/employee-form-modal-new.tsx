@@ -4,6 +4,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState, useEffect, useCallback } from 'react';
 import { createEmployeeSchema, type CreateEmployeeFormData } from '@/lib/employees/validation';
+// Employee тип импортирован для возможного использования
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { Employee } from '@/lib/employees/types';
 import { EMPLOYEE_STATUS_LABELS } from '@/lib/employees/types';
 import {
@@ -274,7 +276,7 @@ export function EmployeeFormModal({
       
       if (mode === 'edit') {
         // При редактировании отправляем только разрешённые поля (без company_id, user_id, role_id)
-        const { company_id, user_id, role, role_id, create_user_account, password, ...editableData } = data;
+        const { company_id: _company_id, user_id: _user_id, role: _role, role_id: _role_id, create_user_account: _create_user_account, password: _password, ...editableData } = data;
         payload = editableData;
       } else {
         // При создании отправляем все данные

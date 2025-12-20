@@ -39,7 +39,8 @@ const NAV_ITEMS: { section: string; items: { href: string; Icon: LucideIcon; lab
   ]},
 ];
 
-export default function SettingsNav({}: SettingsNavProps) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export default function SettingsNav(_props: SettingsNavProps) {
   const pathname = usePathname();
 
   return (

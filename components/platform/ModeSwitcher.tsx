@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { getAvailableModes, getModeConfig } from "@/lib/platform/mode-registry";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+// Badge импортирован для возможного использования
 import { Wallet, TrendingUp, User, FileText, Settings, ChevronUp, ChevronDown, CheckCircle, Brain, Sparkles, type LucideIcon } from "lucide-react";
 
 const ICON_MAP: Record<string, LucideIcon> = {

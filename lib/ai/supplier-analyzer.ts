@@ -334,6 +334,7 @@ export async function recommendSuppliersForPurchase(
   const supabase = await createRSCClient();
 
   // Ищем поставщиков по товару
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _entities = await searchEntities(
     `${productName} поставщик`,
     userId,

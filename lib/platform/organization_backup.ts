@@ -179,7 +179,7 @@ export async function hasUserModeAccess(mode: AppMode): Promise<boolean> {
     return false;
   }
 
-  // 3. РџСЂРѕРІРµСЂСЏРµРј РїСЂР°РІР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РІ company_members
+  // 3. Проверяем права пользователя в company_members
   const { data: member } = await supabase
     .from('company_members')
     .select('role, permissions')

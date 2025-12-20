@@ -29,11 +29,12 @@ export function calculateInterest(input: InterestCalculationInput): InterestCalc
       interestAmount = Math.round(principal * (interestRate / 100) * (periodDays / 365));
       break;
       
-    case "monthly":
+    case "monthly": {
       // Месячная ставка: principal × (rate/100) × months
       const months = periodDays / 30;
       interestAmount = Math.round(principal * (interestRate / 100) * months);
       break;
+    }
       
     case "fixed":
       // Фиксированная ставка: principal × (rate/100)

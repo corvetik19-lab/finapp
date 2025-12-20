@@ -21,7 +21,7 @@ interface TaskStatus {
 
 export default function EnhancePage() {
   const [image, setImage] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [, setImageFile] = useState<File | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<KieModel>(UPSCALE_MODELS[0]);
   const [scale, setScale] = useState("2");

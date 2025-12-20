@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Building2, Users, Calendar, Fingerprint, LayoutGrid, AlertTriangle, Trash2, CheckCircle2, Loader2, CreditCard, Shield, Mail, Phone, Globe } from "lucide-react";
+import { Building2, Users, Calendar, Fingerprint, LayoutGrid, AlertTriangle, Trash2, CheckCircle2, Loader2, Mail, Shield } from "lucide-react";
 
 interface Member {
   id: string;

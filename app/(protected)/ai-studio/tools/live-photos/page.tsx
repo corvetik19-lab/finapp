@@ -29,7 +29,7 @@ interface TaskStatus {
 
 export default function LivePhotosPage() {
   const [image, setImage] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [, setImageFile] = useState<File | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
   const [selectedModel, setSelectedModel] = useState<KieModel>(I2V_MODELS[0]);

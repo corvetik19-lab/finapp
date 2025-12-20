@@ -137,7 +137,7 @@ export function SupplierComparison({ suppliers, categories }: SupplierComparison
 
   const renderCellValue = (value: unknown, type: string): React.ReactNode => {
     switch (type) {
-      case "rating":
+      case "rating": {
         const rating = value as number;
         return (
           <div className="flex items-center gap-1">
@@ -149,7 +149,8 @@ export function SupplierComparison({ suppliers, categories }: SupplierComparison
             ))}
           </div>
         );
-      case "status":
+      }
+      case "status": {
         const statusInfo = SUPPLIER_STATUSES[value as keyof typeof SUPPLIER_STATUSES];
         const variants: Record<string, "default" | "secondary" | "destructive"> = {
           green: "default",
@@ -157,6 +158,7 @@ export function SupplierComparison({ suppliers, categories }: SupplierComparison
           red: "destructive",
         };
         return <Badge variant={variants[statusInfo?.color] || "secondary"}>{statusInfo?.name || String(value)}</Badge>;
+      }
       case "currency":
         return new Intl.NumberFormat("ru-RU", {
           style: "currency",

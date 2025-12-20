@@ -222,7 +222,6 @@ export default function AssistantsPage() {
       {/* Grid */}
       <div className={styles.grid}>
         {filteredAssistants.map((assistant) => {
-          const Icon = assistant.icon;
           const isFavorite = favorites.has(assistant.id);
           
           return (

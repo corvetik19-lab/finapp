@@ -130,7 +130,7 @@ const menuSections = [
   },
 ];
 
-export default function AIStudioSidebar({ userEmail, isAdmin = false, userRole }: SidebarProps) {
+export default function AIStudioSidebar({ isAdmin = false, userRole }: SidebarProps) {
   const pathname = usePathname();
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   

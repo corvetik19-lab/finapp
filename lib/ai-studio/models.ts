@@ -132,6 +132,7 @@ export function getChatModels(): AIStudioModel[] {
 /**
  * Получить название категории на русском
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getCategoryName(category: ModelCategory): string {
   return "Чат";
 }

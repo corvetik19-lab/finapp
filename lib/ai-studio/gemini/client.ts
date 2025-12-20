@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 
 // Инициализация клиента Gemini
 const genAI = new GoogleGenAI({

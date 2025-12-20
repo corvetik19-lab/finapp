@@ -62,11 +62,12 @@ export function TendersTable({ tenders, onDelete }: TendersTableProps) {
         case 'nmck':
           comparison = (a.nmck || 0) - (b.nmck || 0);
           break;
-        case 'deadline':
+        case 'deadline': {
           const dateA = a.submission_deadline ? new Date(a.submission_deadline).getTime() : 0;
           const dateB = b.submission_deadline ? new Date(b.submission_deadline).getTime() : 0;
           comparison = dateA - dateB;
           break;
+        }
         case 'created_at':
           comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
           break;

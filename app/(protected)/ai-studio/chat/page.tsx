@@ -337,6 +337,7 @@ export default function AIChatPage() {
     setCurrentChatId(null);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getModelName = (modelId: string) => {
     const names: Record<string, string> = {
       "gemini-3-flash-preview": "Gemini 3 Flash",
@@ -354,7 +355,7 @@ export default function AIChatPage() {
       .replace(/\*([^*]+)\*/g, "$1")
       .replace(/__([^_]+)__/g, "$1")
       .replace(/_([^_]+)_/g, "$1")
-      .replace(/^[\*\-]\s+/gm, "• ")
+      .replace(/^[*-]\s+/gm, "• ")
       .replace(/^#{1,6}\s+/gm, "")
       .replace(/`([^`]+)`/g, "$1")
       .replace(/```[\s\S]*?```/g, (match) => {

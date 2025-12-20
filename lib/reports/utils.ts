@@ -14,23 +14,25 @@ export function getPeriodDates(period: ReportPeriod, customFrom?: string, custom
       to = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       break;
 
-    case "week":
+    case "week": {
       const dayOfWeek = now.getDay();
       const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
       from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
       to = new Date(from.getFullYear(), from.getMonth(), from.getDate() + 6);
       break;
+    }
 
     case "month":
       from = new Date(now.getFullYear(), now.getMonth(), 1);
       to = new Date(now.getFullYear(), now.getMonth() + 1, 0);
       break;
 
-    case "quarter":
+    case "quarter": {
       const currentQuarter = Math.floor(now.getMonth() / 3);
       from = new Date(now.getFullYear(), currentQuarter * 3, 1);
       to = new Date(now.getFullYear(), (currentQuarter + 1) * 3, 0);
       break;
+    }
 
     case "year":
       from = new Date(now.getFullYear(), 0, 1);

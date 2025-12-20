@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Sparkles, Save, MessageCircle, Image, Video, Music, Zap, Shield, Users, CreditCard } from "lucide-react";
+import { Sparkles, Save, MessageCircle, Image, Video, Music, Zap, Shield, CreditCard } from "lucide-react";
 
 export default async function AIStudioModeSettingsPage() {
   const supabase = await createRSCClient();

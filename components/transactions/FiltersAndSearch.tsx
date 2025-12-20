@@ -135,7 +135,7 @@ export default function FiltersAndSearch({
       if (!res.ok) return;
       const json = await res.json();
       setPresets(json.presets || []);
-    } catch {}
+    } catch { /* ignore */ }
   }
   useEffect(() => { loadPresets(); }, []);
 

@@ -34,7 +34,7 @@ export default function ImageModelPage() {
   const [model, setModel] = useState<KieModel | null>(null);
   const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [taskId, setTaskId] = useState<string | null>(null);
+  const [, setTaskId] = useState<string | null>(null);
   const [taskStatus, setTaskStatus] = useState<TaskStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fileUploads, setFileUploads] = useState<FileUploadState>({});

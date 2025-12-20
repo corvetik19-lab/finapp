@@ -17,21 +17,25 @@ export async function GET(request: NextRequest) {
 
   try {
     switch (action) {
-      case "calendar":
+      case "calendar": {
         const calendar = await getTaxCalendar(year);
         return NextResponse.json({ entries: calendar });
+      }
 
-      case "upcoming":
+      case "upcoming": {
         const upcoming = await getUpcomingTaxPayments(days);
         return NextResponse.json({ entries: upcoming });
+      }
 
-      case "overdue":
+      case "overdue": {
         const overdue = await getOverdueTaxPayments();
         return NextResponse.json({ entries: overdue });
+      }
 
-      case "statistics":
+      case "statistics": {
         const stats = await getTaxStatistics(year);
         return NextResponse.json(stats);
+      }
 
       default:
         return NextResponse.json({ error: "Unknown action" }, { status: 400 });

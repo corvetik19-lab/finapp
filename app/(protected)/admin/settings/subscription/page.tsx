@@ -15,7 +15,6 @@ import {
   Sparkles,
   Building2,
   Mail,
-  Shield,
   Clock
 } from "lucide-react";
 import { ALL_MODES } from "@/lib/platform/modes-config";

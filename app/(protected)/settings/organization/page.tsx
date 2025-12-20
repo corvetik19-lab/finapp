@@ -102,7 +102,7 @@ export default async function OrganizationSettingsPage() {
           if (!m.profiles?.email) return false;
           return true;
         })
-        .map(({ global_role, ...rest }) => rest); // Убираем global_role из финального объекта
+        .map(({ global_role: _global_role, ...rest }) => rest); // Убираем global_role из финального объекта
     }
   }
 
