@@ -195,7 +195,6 @@ export default async function AIStudioEmployeesPage() {
       {/* Employees list with client-side modal */}
       <EmployeesList 
         employees={employees}
-        organizationId={organization.id}
         companyId={companyId}
         organizationName={organization.name}
       />
