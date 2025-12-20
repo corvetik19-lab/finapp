@@ -328,24 +328,30 @@ export async function updateEmployee(id: string, data: UpdateEmployeeData) {
 }
 
 /**
- * Удалить сотрудника (мягкое удаление)
+ * Удалить сотрудника (полное удаление из базы)
  */
 export async function deleteEmployee(id: string) {
   const supabase = await createClient();
   
+  // Сначала получаем данные сотрудника для возврата
+  const { data: employee } = await supabase
+    .from('employees')
+    .select('*')
+    .eq('id', id)
+    .single();
+  
+  // Полностью удаляем запись из базы
   const result = await supabase
     .from('employees')
-    .update({ deleted_at: new Date().toISOString() })
-    .eq('id', id)
-    .select()
-    .single();
+    .delete()
+    .eq('id', id);
   
   if (result.error) {
     logger.error('Error deleting employee:', result.error);
     throw new Error(result.error.message);
   }
   
-  return result.data;
+  return employee;
 }
 
 /**
