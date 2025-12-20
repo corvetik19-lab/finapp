@@ -182,25 +182,24 @@ CREATE POLICY "Admin can assign tenders" ON tenders
 ## Файлы для изменения/создания
 
 ### Компоненты
-- [ ] `components/tenders/TenderForm.tsx` - исправить выбор сотрудника
-- [ ] `components/tenders/EmployeeSelect.tsx` - новый компонент выбора сотрудника
-- [ ] `components/tenders/TendersDashboard.tsx` - дашборд для админа
-- [ ] `components/tenders/TenderStageTimer.tsx` - отображение времени на этапе
-- [ ] `components/tenders/QuickAssignModal.tsx` - быстрое назначение
+- [x] `tenders-list-client.tsx` - исправлен выбор сотрудника (роли из role_data)
+- [x] `tender-department-client.tsx` - исправлен выбор сотрудника
+- [x] `components/tenders/TendersAdminDashboard.tsx` - дашборд для админа
+- [x] `components/tenders/TenderStageTimer.tsx` - отображение времени на этапе
+- [x] `components/tenders/QuickAssignModal.tsx` - быстрое назначение
 
 ### API
-- [ ] `app/api/tenders/employees/route.ts` - список сотрудников для назначения
-- [ ] `app/api/tenders/[id]/assign/route.ts` - назначение/переназначение
-- [ ] `app/api/tenders/dashboard/route.ts` - данные для дашборда
-- [ ] `app/api/tenders/stage-history/route.ts` - история этапов
+- [x] `/api/employees` - список сотрудников (уже был)
+- [x] `app/api/tenders/[id]/assign/route.ts` - назначение/переназначение
+- [x] `app/api/tenders/admin-overview/route.ts` - данные для дашборда
+- [x] История этапов входит в admin-overview
 
 ### Сервисы
-- [ ] `lib/tenders/assignment-service.ts` - логика назначения
-- [ ] `lib/tenders/stage-tracking-service.ts` - отслеживание этапов
+- [x] Логика назначения в API route
+- [x] Отслеживание этапов через триггер в БД
 
 ### Миграции
-- [ ] `db/migrations/0169_tender_assignment.sql` - поле assigned_employee_id
-- [ ] `db/migrations/0170_tender_stage_history.sql` - таблица истории
+- [x] `db/migrations/0169_tender_assignment_and_visibility.sql` - RLS, история этапов, realtime
 
 ---
 
@@ -217,6 +216,7 @@ CREATE POLICY "Admin can assign tenders" ON tenders
 
 ---
 
-## Начало работы
+## Статус: ✅ Выполнено
 
-**Текущий шаг:** Исправить список сотрудников в форме тендера
+Все основные задачи выполнены. Осталось:
+- [ ] Realtime подписка в компонентах (опционально)
