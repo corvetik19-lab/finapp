@@ -593,7 +593,7 @@ export async function generateSupplierReport(
 ПЕРИОД: ${period.start} - ${period.end}
 
 СТАТИСТИКА ПО ПОСТАВЩИКАМ:
-${statsArray.map(([_id, stats]) => 
+${statsArray.map(([, stats]) => 
   `- ${stats.name}: ${(stats.total / 100).toFixed(2)} ₽ (${stats.count} заказов)`
 ).join("\n") || "Нет данных"}
 

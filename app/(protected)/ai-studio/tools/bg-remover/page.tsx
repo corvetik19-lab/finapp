@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Upload, Eraser, Loader2, Download, RefreshCw, AlertCircle } from "lucide-react";
 import { IMAGE_MODELS, KieModel } from "@/lib/kie";
@@ -195,7 +196,7 @@ export default function BGRemoverPage() {
             </label>
           ) : (
             <div className={styles.previewArea}>
-              <img src={image} alt="Preview" className={styles.previewImage} />
+              <Image src={image} alt="Preview" className={styles.previewImage} width={400} height={400} unoptimized />
               {isUploading && (
                 <div className={styles.uploadingOverlay}>
                   <Loader2 className="h-6 w-6 animate-spin" />
@@ -250,11 +251,11 @@ export default function BGRemoverPage() {
             <div style={{ display: 'flex', gap: 16, padding: 20 }}>
               <div style={{ flex: 1, textAlign: 'center' }}>
                 <p style={{ fontSize: 12, color: '#666', marginBottom: 8 }}>До</p>
-                <img src={image || ''} alt="Original" style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8 }} />
+                <Image src={image || ''} alt="Original" style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8 }} width={200} height={200} unoptimized />
               </div>
               <div style={{ flex: 1, textAlign: 'center', background: 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)', backgroundSize: '20px 20px', backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px', borderRadius: 8, padding: 8 }}>
                 <p style={{ fontSize: 12, color: '#666', marginBottom: 8 }}>После</p>
-                <img src={result} alt="Result" style={{ maxWidth: '100%', maxHeight: 200 }} />
+                <Image src={result} alt="Result" style={{ maxWidth: '100%', maxHeight: 200 }} width={200} height={200} unoptimized />
               </div>
             </div>
           </div>

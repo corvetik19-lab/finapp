@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { 
   ArrowLeft, 
@@ -174,7 +175,7 @@ export default function FluxKontextPage() {
               />
               {imagePreview ? (
                 <div className={styles.previewArea}>
-                  <img src={imagePreview} alt="Preview" className={styles.previewImage} />
+                  <Image src={imagePreview} alt="Preview" className={styles.previewImage} width={400} height={400} unoptimized />
                   <button
                     className={styles.changeButton}
                     onClick={() => fileInputRef.current?.click()}
@@ -307,15 +308,18 @@ export default function FluxKontextPage() {
                 </button>
               </div>
               <div style={{ padding: 20 }}>
-                <img 
+                <Image 
                   src={resultUrl} 
                   alt="Generated" 
+                  width={600}
+                  height={600}
                   style={{ 
                     width: "100%", 
                     maxHeight: 600, 
                     objectFit: "contain",
                     borderRadius: 8
                   }} 
+                  unoptimized
                 />
               </div>
             </div>

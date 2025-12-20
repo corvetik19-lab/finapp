@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { 
   ArrowLeft, 
@@ -214,7 +215,7 @@ export default function LivePhotosPage() {
             </label>
           ) : (
             <div className={styles.previewArea}>
-              <img src={image} alt="Preview" className={styles.previewImage} />
+              <Image src={image} alt="Preview" className={styles.previewImage} width={400} height={400} unoptimized />
               {isUploading && (
                 <div className={styles.uploadingOverlay}>
                   <Loader2 className="h-6 w-6 animate-spin" />

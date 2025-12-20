@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import styles from "./page.module.css";
 
@@ -226,7 +227,7 @@ export default function KieHistoryPage() {
                       className={styles.resultThumb}
                     >
                       {task.category === "image" ? (
-                        <img src={url} alt={`Result ${idx + 1}`} />
+                        <Image src={url} alt={`Result ${idx + 1}`} width={80} height={80} unoptimized />
                       ) : task.category === "video" ? (
                         <span>🎬</span>
                       ) : (

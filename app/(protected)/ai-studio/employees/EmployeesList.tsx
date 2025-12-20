@@ -35,8 +35,7 @@ import {
   Pencil,
   Trash2,
   UserPlus,
-  Loader2,
-  Send
+  Loader2
 } from "lucide-react";
 import Link from "next/link";
 import { EmployeeFormModal } from "@/components/employees/employee-form-modal-new";
@@ -73,14 +72,12 @@ interface EmployeeWithRole {
 
 interface EmployeesListProps {
   employees: EmployeeWithRole[];
-  organizationId: string;
   companyId: string;
   organizationName: string;
 }
 
 export default function EmployeesList({ 
   employees: initialEmployees, 
-  organizationId, 
   companyId,
   organizationName 
 }: EmployeesListProps) {
@@ -93,7 +90,7 @@ export default function EmployeesList({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState<EmployeeWithRole | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
 
   const loadEmployees = useCallback(async () => {
     try {

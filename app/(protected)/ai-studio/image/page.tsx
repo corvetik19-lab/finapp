@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import styles from "./page.module.css";
 
 interface ReferenceImage {
@@ -115,7 +116,7 @@ export default function AIImagePage() {
         <div className={styles.mainColumn}>
           <div className={styles.preview}>
             {generatedImage ? (
-              <img src={generatedImage} alt="Generated" className={styles.generatedImage} />
+              <Image src={generatedImage} alt="Generated" className={styles.generatedImage} width={512} height={512} unoptimized />
             ) : isGenerating ? (
               <div className={styles.generating}>
                 <div className={styles.spinner}></div>
@@ -205,7 +206,7 @@ export default function AIImagePage() {
               <div className={styles.referenceGrid}>
                 {referenceImages.map((img, i) => (
                   <div key={i} className={styles.referenceItem}>
-                    <img src={img.preview} alt={`Reference ${i + 1}`} />
+                    <Image src={img.preview} alt={`Reference ${i + 1}`} width={100} height={100} unoptimized />
                     <button
                       className={styles.removeButton}
                       onClick={() => removeReference(i)}

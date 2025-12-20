@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import styles from "./page.module.css";
 
 interface ReferenceImage {
@@ -259,7 +260,7 @@ export default function AIVideoPage() {
               <label>Исходное изображение</label>
               {referenceImage ? (
                 <div className={styles.referencePreview}>
-                  <img src={referenceImage.preview} alt="Reference" />
+                  <Image src={referenceImage.preview} alt="Reference" width={200} height={200} unoptimized />
                   <button
                     className={styles.removeButton}
                     onClick={() => setReferenceImage(null)}

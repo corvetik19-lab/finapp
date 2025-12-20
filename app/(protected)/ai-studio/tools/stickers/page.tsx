@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ImagePlus, Loader2, Download, AlertCircle } from "lucide-react";
 import { IMAGE_MODELS, KieModel } from "@/lib/kie";
@@ -175,7 +176,7 @@ export default function StickersPage() {
               </button>
             </div>
             <div style={{ padding: 20, textAlign: 'center', background: 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)', backgroundSize: '20px 20px', backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px', borderRadius: 8, overflow: 'hidden' }}>
-              <img src={result} alt="Стикер" style={{ maxWidth: '100%', maxHeight: 400, objectFit: 'contain', display: 'block', margin: '0 auto' }} />
+              <Image src={result} alt="Стикер" width={400} height={400} style={{ maxWidth: '100%', maxHeight: 400, objectFit: 'contain', display: 'block', margin: '0 auto' }} unoptimized />
             </div>
           </div>
         )}

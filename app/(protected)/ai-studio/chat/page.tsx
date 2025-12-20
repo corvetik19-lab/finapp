@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { Plus, ThumbsUp, ThumbsDown, Copy, Share2, Check, Sparkles, Square, Brain, ChevronDown, ChevronRight, History, Trash2, Pencil, X, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import ModelSelector from "../components/ModelSelector";
@@ -29,7 +30,7 @@ export default function AIChatPage() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [model, setModel] = useState("gemini-3-flash-preview");
-  const [thinkingLevel, setThinkingLevel] = useState<"minimal" | "low" | "medium" | "high">("medium");
+  const [thinkingLevel] = useState<"minimal" | "low" | "medium" | "high">("medium");
   const [enableSearch, setEnableSearch] = useState(true);
   const [enableUrlContext, setEnableUrlContext] = useState(true);
   const [enableCodeExecution, setEnableCodeExecution] = useState(false);
@@ -294,7 +295,7 @@ export default function AIChatPage() {
               } else if (data.type === "error") {
                 throw new Error(data.error);
               }
-            } catch (e) {
+            } catch {
               // Игнорируем ошибки парсинга отдельных чанков
             }
           }
@@ -556,7 +557,7 @@ export default function AIChatPage() {
 
                   {message.imageUrl && (
                     <div className={styles.imageContainer}>
-                      <img src={message.imageUrl} alt="Сгенерированное изображение" className={styles.generatedImage} />
+                      <Image src={message.imageUrl} alt="Сгенерированное изображение" className={styles.generatedImage} width={512} height={512} unoptimized />
                     </div>
                   )}
                   

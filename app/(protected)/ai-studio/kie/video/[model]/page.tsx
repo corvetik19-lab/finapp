@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import styles from "../../images/[model]/page.module.css";
@@ -226,7 +227,7 @@ export default function VideoModelPage() {
           <div className={styles.fileUpload}>
             {uploadState?.preview && (
               <div className={styles.filePreview}>
-                <img src={uploadState.preview} alt="Preview" />
+                <Image src={uploadState.preview} alt="Preview" width={200} height={200} unoptimized />
                 {uploadState.isUploading && (
                   <div className={styles.uploadingOverlay}>
                     ⏳ Загрузка...

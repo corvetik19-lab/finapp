@@ -276,7 +276,8 @@ export function EmployeeFormModal({
       
       if (mode === 'edit') {
         // При редактировании отправляем только разрешённые поля (без company_id, user_id, role_id)
-        const { company_id: _company_id, user_id: _user_id, role: _role, role_id: _role_id, create_user_account: _create_user_account, password: _password, ...editableData } = data;
+        const { company_id, user_id, role, role_id, create_user_account, password, ...editableData } = data;
+        void company_id; void user_id; void role; void role_id; void create_user_account; void password;
         payload = editableData;
       } else {
         // При создании отправляем все данные

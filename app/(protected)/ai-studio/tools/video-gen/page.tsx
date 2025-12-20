@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { 
   ArrowLeft, 
@@ -189,7 +190,7 @@ export default function VideoGenPage() {
               />
               {imagePreview ? (
                 <div className={styles.previewArea}>
-                  <img src={imagePreview} alt="Preview" className={styles.previewImage} />
+                  <Image src={imagePreview} alt="Preview" className={styles.previewImage} width={400} height={400} unoptimized />
                   <button
                     className={styles.changeButton}
                     onClick={() => fileInputRef.current?.click()}

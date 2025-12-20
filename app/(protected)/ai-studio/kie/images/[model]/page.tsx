@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import styles from "./page.module.css";
@@ -257,7 +258,7 @@ export default function ImageModelPage() {
             {/* Preview */}
             {uploadState?.preview && (
               <div className={styles.filePreview}>
-                <img src={uploadState.preview} alt="Preview" />
+                <Image src={uploadState.preview} alt="Preview" width={200} height={200} unoptimized />
                 {uploadState.isUploading && (
                   <div className={styles.uploadingOverlay}>
                     ⏳ Загрузка...
@@ -419,7 +420,7 @@ export default function ImageModelPage() {
             <div className={styles.gallery}>
               {taskStatus.resultUrls.map((url, idx) => (
                 <div key={idx} className={styles.imageCard}>
-                  <img src={url} alt={`Результат ${idx + 1}`} />
+                  <Image src={url} alt={`Результат ${idx + 1}`} width={512} height={512} unoptimized />
                   <div className={styles.imageActions}>
                     <a
                       href={url}
