@@ -51,7 +51,7 @@ export function TenderDepartmentClient({ stages: initialStages, types, companyId
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [eisData, setEisData] = useState<EISTenderData | null>(null);
-  const [employees, setEmployees] = useState<Array<{ id: string; full_name: string; role?: string }>>([]);
+  const [employees, setEmployees] = useState<Array<{ id: string; full_name: string; role?: string; role_color?: string }>>([]);
   const [templates, setTemplates] = useState<TenderStageTemplate[]>([]);
   const [stages, setStages] = useState<TenderStage[]>(initialStages);
 
@@ -186,19 +186,19 @@ export function TenderDepartmentClient({ stages: initialStages, types, companyId
         const data = await response.json();
         const employeesList = Array.isArray(data) ? data : (data.employees || data.data || []);
         
-        const roleNames: Record<string, string> = {
-          admin: 'Администратор',
-          manager: 'Менеджер',
-          tender_specialist: 'Тендерный специалист',
-          accountant: 'Бухгалтер',
-          logistics: 'Логист',
-          viewer: 'Наблюдатель',
-        };
-        
-        setEmployees(employeesList.map((emp: { id: string; full_name?: string; first_name?: string; last_name?: string; email?: string; role?: string }) => ({
+        // Форматируем для селекта: id, full_name и role из role_data
+        setEmployees(employeesList.map((emp: { 
+          id: string; 
+          full_name?: string; 
+          first_name?: string; 
+          last_name?: string; 
+          email?: string; 
+          role_data?: { name?: string; color?: string } | null;
+        }) => ({
           id: emp.id,
           full_name: emp.full_name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.email || 'Без имени',
-          role: emp.role ? roleNames[emp.role] || emp.role : undefined
+          role: emp.role_data?.name || undefined,
+          role_color: emp.role_data?.color || undefined
         })));
       }
     } catch (err) {
