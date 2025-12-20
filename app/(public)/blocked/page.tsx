@@ -1,12 +1,13 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Lock, CreditCard, Mail } from 'lucide-react';
+import { AlertTriangle, Lock, CreditCard, Mail, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
-export default function BlockedPage() {
+function BlockedContent() {
   const searchParams = useSearchParams();
   const reason = searchParams.get('reason') || 'blocked';
   const orgName = searchParams.get('org') || '';
@@ -77,5 +78,25 @@ export default function BlockedPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-xl">
+        <CardContent className="flex items-center justify-center py-16">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function BlockedPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <BlockedContent />
+    </Suspense>
   );
 }

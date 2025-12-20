@@ -38,13 +38,13 @@ export default function ModeSwitcher({ allowedModes, globalEnabledModes, userAll
     : allModes;
   
   // Затем фильтруем по разрешённым для организации
-  let orgFilteredModes = allowedModes !== undefined
+  const orgFilteredModes = allowedModes !== undefined
     ? globallyEnabled.filter(mode => allowedModes.includes(mode.key))
     : globallyEnabled;
   
   // Если есть userAllowedModes (из роли пользователя) - используем их как финальный фильтр
   // Это ограничивает режимы только теми, что доступны пользователю по роли
-  let availableModes = userAllowedModes && userAllowedModes.length > 0
+  const availableModes = userAllowedModes && userAllowedModes.length > 0
     ? orgFilteredModes.filter(mode => userAllowedModes.includes(mode.key))
     : orgFilteredModes;
   
