@@ -79,24 +79,39 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
 
   // Получаем пользователей организации
   const companyIds = companies?.map(c => c.id) || [];
-  const { data: allMembers } = await supabase
+  
+  // Сначала получаем членов компаний
+  const { data: membersData } = await supabase
     .from('company_members')
-    .select(`
-      id,
-      role,
-      status,
-      created_at,
-      user:profiles(id, full_name, global_role),
-      company:companies(name)
-    `)
+    .select('id, user_id, role, status, created_at, company_id')
     .in('company_id', companyIds)
     .eq('status', 'active');
 
-  // Filter out super admins from members list
-  const members = (allMembers || []).filter(m => {
-    const user = m.user as { global_role?: string } | null;
-    return user?.global_role !== 'super_admin';
-  });
+  // Получаем профили пользователей
+  const userIds = (membersData || []).map(m => m.user_id).filter(Boolean);
+  const { data: profilesData } = await supabase
+    .from('profiles')
+    .select('id, full_name, email, global_role')
+    .in('id', userIds);
+
+  const profilesMap = new Map((profilesData || []).map(p => [p.id, p]));
+  const companiesMap = new Map((companies || []).map(c => [c.id, c]));
+
+  // Собираем данные и фильтруем супер-админов
+  const members = (membersData || [])
+    .map(m => {
+      const profile = m.user_id ? profilesMap.get(m.user_id) : null;
+      const company = companiesMap.get(m.company_id);
+      return {
+        id: m.id,
+        role: m.role,
+        status: m.status,
+        created_at: m.created_at,
+        user: profile ? { id: profile.id, full_name: profile.full_name, email: profile.email, global_role: profile.global_role } : null,
+        company: company ? { name: company.name } : null,
+      };
+    })
+    .filter(m => m.user?.global_role !== 'super_admin');
 
   // Получаем подписку
   const subscription = await getOrganizationSubscription(organizationId);
@@ -231,6 +246,8 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
               organizationName={organization.name}
               subscription={null}
               plans={plans}
+              isBlocked={organization.is_blocked || false}
+              isSuperAdminOrg={organization.name === 'Личное пространство'}
             />
           </CardContent>
         </Card>
@@ -284,6 +301,8 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
               organizationName={organization.name}
               subscription={subscription}
               plans={plans}
+              isBlocked={organization.is_blocked || false}
+              isSuperAdminOrg={organization.name === 'Личное пространство'}
             />
           </CardContent>
         </Card>

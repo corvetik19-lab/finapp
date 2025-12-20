@@ -8,6 +8,7 @@ import OfflineIndicator from "@/components/offline/OfflineIndicator";
 import { OnlineStatusTracker } from "@/components/online/OnlineStatusTracker";
 import { getCurrentOrganization, getActiveOrganizationInfo } from "@/lib/platform/organization";
 import { getEnabledModes } from "@/lib/platform/platform-settings";
+import { checkOrganizationAccess } from "@/lib/auth/organization-access";
 import { logger } from "@/lib/logger";
 
 export default async function ProtectedLayout({ children }: { children: ReactNode }) {
@@ -17,6 +18,16 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
 
   if (!user) {
     redirect("/login");
+  }
+
+  // Проверяем доступ к организации (блокировка, подписка)
+  const accessCheck = await checkOrganizationAccess(user.id);
+  if (!accessCheck.hasAccess) {
+    const params = new URLSearchParams({
+      reason: accessCheck.reason || 'blocked',
+      org: accessCheck.organization?.name || '',
+    });
+    redirect(`/blocked?${params.toString()}`);
   }
 
   // Параллельно загружаем независимые данные

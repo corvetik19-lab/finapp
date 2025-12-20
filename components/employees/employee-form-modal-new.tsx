@@ -41,7 +41,9 @@ import {
   AlertCircle,
   UserPlus,
   Save,
+  ExternalLink,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface CompanyRole {
   id: string;
@@ -65,6 +67,33 @@ interface AvailableUser {
   avatar_url: string | null;
   role_in_company: string;
   role_id: string | null;
+  role_name: string | null;
+  role_color: string | null;
+  role_description: string | null;
+}
+
+// Гибкий тип для employee - принимает как Employee так и EmployeeWithRole
+interface EmployeeInput {
+  id: string;
+  full_name: string;
+  email: string;
+  phone?: string;
+  telegram?: string;
+  birth_date?: string;
+  position?: string;
+  department?: string;
+  department_id?: string;
+  role?: string;
+  role_id?: string;
+  status?: string;
+  avatar_url?: string;
+  hire_date?: string;
+  work_schedule?: string;
+  notes?: string;
+  company_id: string;
+  user_id?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface EmployeeFormModalProps {
@@ -72,7 +101,7 @@ interface EmployeeFormModalProps {
   onClose: () => void;
   onSuccess: () => void;
   companyId: string;
-  employee?: Employee | null;
+  employee?: EmployeeInput | null;
   mode?: 'create' | 'edit';
 }
 
@@ -84,6 +113,7 @@ export function EmployeeFormModal({
   employee = null,
   mode = 'create',
 }: EmployeeFormModalProps) {
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [companyRoles, setCompanyRoles] = useState<CompanyRole[]>([]);
@@ -92,6 +122,9 @@ export function EmployeeFormModal({
   const [availableUsers, setAvailableUsers] = useState<AvailableUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  
+  // Выбранный пользователь для отображения его роли
+  const selectedUser = selectedUserId ? availableUsers.find(u => u.id === selectedUserId) : null;
 
   const {
     register,
@@ -196,8 +229,9 @@ export function EmployeeFormModal({
         position: employee.position || undefined,
         department: employee.department || undefined,
         department_id: employee.department_id || undefined,
-        role: employee.role,
-        status: employee.status || 'active',
+        role: employee.role_id || employee.role, // Используем role_id если есть
+        role_id: employee.role_id || undefined,
+        status: (employee.status as 'active' | 'inactive' | 'vacation' | 'dismissed') || 'active',
         hire_date: employee.hire_date || undefined,
         work_schedule: employee.work_schedule || undefined,
         notes: employee.notes || undefined,
@@ -225,13 +259,31 @@ export function EmployeeFormModal({
         return;
       }
 
-      const isRoleUUID = data.role && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.role);
+      // При создании используем role_id из выбранного пользователя
+      let roleId = data.role_id;
+      if (mode === 'create' && selectedUser?.role_id) {
+        roleId = selectedUser.role_id;
+      } else {
+        const isRoleUUID = data.role && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.role);
+        if (isRoleUUID) {
+          roleId = data.role;
+        }
+      }
       
-      const payload = {
-        ...data,
-        role_id: isRoleUUID ? data.role : data.role_id,
-        user_id: selectedUserId || undefined,
-      };
+      let payload: Record<string, unknown>;
+      
+      if (mode === 'edit') {
+        // При редактировании отправляем только разрешённые поля (без company_id, user_id, role_id)
+        const { company_id, user_id, role, role_id, create_user_account, password, ...editableData } = data;
+        payload = editableData;
+      } else {
+        // При создании отправляем все данные
+        payload = {
+          ...data,
+          role_id: roleId,
+          user_id: selectedUserId || undefined,
+        };
+      }
 
       const url = mode === 'edit' && employee 
         ? `/api/employees/${employee.id}` 
@@ -426,41 +478,110 @@ export function EmployeeFormModal({
               <div className="space-y-2">
                 <Label className="text-gray-700">
                   <Shield className="h-3 w-3 inline mr-1" />
-                  Роль в системе <span className="text-red-500">*</span>
+                  Роль в системе {mode === 'create' && <span className="text-red-500">*</span>}
                 </Label>
-                <Select 
-                  value={watch('role') || undefined} 
-                  onValueChange={(v) => setValue('role', v)}
-                  disabled={loadingRoles || (mode === 'create' && !!selectedUserId)}
-                >
-                  <SelectTrigger className={mode === 'create' && selectedUserId ? 'bg-gray-100 cursor-not-allowed' : ''}>
-                    <SelectValue placeholder={loadingRoles ? "Загрузка..." : "Выберите роль"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {companyRoles.filter(role => role.id).length > 0 ? (
-                      companyRoles.filter(role => role.id).map((role) => (
-                        <SelectItem key={role.id} value={role.id}>
-                          <span className="flex items-center gap-2">
-                            <span 
-                              className="h-2 w-2 rounded-full" 
-                              style={{ backgroundColor: role.color }}
-                            />
-                            {role.name}
+                
+                {/* При редактировании показываем роль только для чтения */}
+                {mode === 'edit' && employee ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                      {employee.role_id || (employee as { role_data?: { name?: string; color?: string; description?: string } }).role_data?.name ? (
+                        <>
+                          <span 
+                            className="h-3 w-3 rounded-full shrink-0" 
+                            style={{ backgroundColor: (employee as { role_data?: { color?: string } }).role_data?.color || '#6366f1' }}
+                          />
+                          <span className="font-medium text-gray-900">
+                            {(employee as { role_data?: { name?: string } }).role_data?.name || 'Роль не найдена'}
                           </span>
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="viewer">Наблюдатель</SelectItem>
+                        </>
+                      ) : (
+                        <span className="text-amber-600 font-medium">
+                          Роль не назначена
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      Роль назначается через раздел «Пользователи» в настройках
+                    </p>
+                    {(employee as { role_data?: { description?: string } }).role_data?.description && (
+                      <p className="text-xs text-gray-500">{(employee as { role_data?: { description?: string } }).role_data?.description}</p>
                     )}
-                  </SelectContent>
-                </Select>
-                {mode === 'create' && selectedUserId ? (
-                  <p className="text-xs text-blue-600">
-                    Роль устанавливается автоматически из настроек пользователя
-                  </p>
-                ) : selectedRole?.description ? (
-                  <p className="text-xs text-gray-500">{selectedRole.description}</p>
-                ) : null}
+                  </div>
+                ) : mode === 'create' && selectedUser ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                      {selectedUser.role_id || selectedUser.role_name ? (
+                        <>
+                          <span 
+                            className="h-3 w-3 rounded-full shrink-0" 
+                            style={{ backgroundColor: selectedUser.role_color || '#6366f1' }}
+                          />
+                          <span className="font-medium text-gray-900">
+                            {selectedUser.role_name || 'Роль не найдена'}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-amber-600 font-medium">
+                          Роль не назначена
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-blue-600">
+                        Роль берётся из настроек пользователя
+                      </p>
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        className="text-xs h-auto p-0 text-blue-600 hover:text-blue-800"
+                        onClick={() => {
+                          onClose();
+                          router.push(`/admin/settings/users?edit=${selectedUserId}`);
+                        }}
+                      >
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        Изменить роль
+                      </Button>
+                    </div>
+                    {selectedUser.role_description && (
+                      <p className="text-xs text-gray-500">{selectedUser.role_description}</p>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <Select 
+                      value={watch('role') || undefined} 
+                      onValueChange={(v) => setValue('role', v)}
+                      disabled={loadingRoles}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={loadingRoles ? "Загрузка..." : "Выберите роль"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {companyRoles.filter(role => role.id).length > 0 ? (
+                          companyRoles.filter(role => role.id).map((role) => (
+                            <SelectItem key={role.id} value={role.id}>
+                              <span className="flex items-center gap-2">
+                                <span 
+                                  className="h-2 w-2 rounded-full" 
+                                  style={{ backgroundColor: role.color }}
+                                />
+                                {role.name}
+                              </span>
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="viewer">Наблюдатель</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    {selectedRole?.description && (
+                      <p className="text-xs text-gray-500">{selectedRole.description}</p>
+                    )}
+                  </>
+                )}
               </div>
 
               <div className="space-y-2">

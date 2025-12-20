@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import { Camera, Receipt, AlertCircle, Loader2, Eye, Download, Trash2, Link, FileText } from "lucide-react";
+import { Camera, Receipt, AlertCircle, Loader2, Eye, Download, Trash2, Link, FileText, ScanText } from "lucide-react";
+import ReceiptChatModal from "./ReceiptChatModal";
 
 interface Attachment {
   id: string;
@@ -37,6 +38,7 @@ export default function ReceiptsManager({ initialReceipts }: ReceiptsManagerProp
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [receiptToProcess, setReceiptToProcess] = useState<Attachment | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Realtime подписка на изменения в таблице attachments
@@ -292,6 +294,15 @@ export default function ReceiptsManager({ initialReceipts }: ReceiptsManagerProp
                   >
                     <Download className="h-4 w-4" />
                   </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                    onClick={() => setReceiptToProcess(file)}
+                    title="Распознать и создать транзакцию"
+                  >
+                    <ScanText className="h-4 w-4" />
+                  </Button>
                   <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDelete(file.id, file.file_path)} title="Удалить">
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -311,6 +322,19 @@ export default function ReceiptsManager({ initialReceipts }: ReceiptsManagerProp
           {previewUrl && <img src={previewUrl} alt="Preview" className="w-full h-auto max-h-[80vh] object-contain" />}
         </DialogContent>
       </Dialog>
+
+      {/* Модалка распознавания чека */}
+      {receiptToProcess && (
+        <ReceiptChatModal 
+          onClose={() => setReceiptToProcess(null)}
+          initialReceipt={{
+            id: receiptToProcess.id,
+            file_name: receiptToProcess.file_name,
+            file_path: receiptToProcess.file_path,
+            mime_type: receiptToProcess.mime_type,
+          }}
+        />
+      )}
     </div>
   );
 }

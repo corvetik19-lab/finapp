@@ -36,7 +36,7 @@ export default async function SubscriptionSettingsPage() {
 
   const subscription = await getOrganizationSubscription(organization.id);
 
-  // Получаем количество сотрудников
+  // Получаем количество сотрудников (исключая супер-админов)
   const supabase = await createRSCClient();
   const { data: companies } = await supabase
     .from('companies')
@@ -45,11 +45,23 @@ export default async function SubscriptionSettingsPage() {
 
   const companyIds = companies?.map(c => c.id) || [];
   
-  const { count: employeesCount } = await supabase
+  // Получаем членов компании
+  const { data: membersData } = await supabase
     .from('company_members')
-    .select('id', { count: 'exact', head: true })
+    .select('user_id')
     .in('company_id', companyIds)
     .eq('status', 'active');
+
+  // Получаем профили для проверки global_role
+  const userIds = (membersData || []).map(m => m.user_id).filter(Boolean);
+  const { data: profilesData } = await supabase
+    .from('profiles')
+    .select('id, global_role')
+    .in('id', userIds);
+
+  // Считаем только не-супер-админов
+  const superAdminIds = new Set((profilesData || []).filter(p => p.global_role === 'super_admin').map(p => p.id));
+  const employeesCount = (membersData || []).filter(m => !superAdminIds.has(m.user_id)).length;
 
   // Рассчитываем дни до окончания
   const daysUntilExpiry = subscription 

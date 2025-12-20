@@ -44,11 +44,19 @@ interface ReceiptPreview {
   availableProducts: AvailableProduct[];
 }
 
-interface ReceiptChatModalProps {
-  onClose: () => void;
+interface InitialReceipt {
+  id: string;
+  file_name: string;
+  file_path: string;
+  mime_type: string;
 }
 
-export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
+interface ReceiptChatModalProps {
+  onClose: () => void;
+  initialReceipt?: InitialReceipt;
+}
+
+export default function ReceiptChatModal({ onClose, initialReceipt }: ReceiptChatModalProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -183,6 +191,65 @@ export default function ReceiptChatModal({ onClose }: ReceiptChatModalProps) {
     textareaRef.current?.focus();
     loadCategories();
   }, []);
+
+  // Обработка initialReceipt - автоматическое распознавание при открытии
+  useEffect(() => {
+    if (initialReceipt) {
+      const processInitialReceipt = async () => {
+        setIsUploading(true);
+        setSelectedReceipt({
+          id: initialReceipt.id,
+          file_name: initialReceipt.file_name,
+          file_path: initialReceipt.file_path,
+          mime_type: initialReceipt.mime_type,
+          created_at: new Date().toISOString(),
+        });
+        
+        const loadingMsg: Message = {
+          role: "assistant",
+          content: `👀 Распознаю чек "${initialReceipt.file_name}"...`,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, loadingMsg]);
+
+        try {
+          const result = await recognizeReceiptFromPath(initialReceipt.file_path, initialReceipt.mime_type);
+          setMessages((prev) => prev.filter(m => m !== loadingMsg));
+
+          if (result.success) {
+            setInput(result.text);
+            const successMsg: Message = {
+              role: "assistant",
+              content: `✅ Чек распознан! Проверьте текст и отправьте для создания транзакции.`,
+              timestamp: new Date(),
+            };
+            setMessages((prev) => [...prev, successMsg]);
+            setTimeout(() => textareaRef.current?.focus(), 100);
+          } else {
+            const errorMsg: Message = {
+              role: "assistant",
+              content: `❌ Ошибка: ${result.error}`,
+              timestamp: new Date(),
+            };
+            setMessages((prev) => [...prev, errorMsg]);
+          }
+        } catch (error) {
+          console.error("Initial receipt processing error:", error);
+          setMessages((prev) => prev.filter(m => m !== loadingMsg));
+          const errorMsg: Message = {
+            role: "assistant",
+            content: "❌ Ошибка при обработке чека",
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev, errorMsg]);
+        } finally {
+          setIsUploading(false);
+        }
+      };
+      
+      processInitialReceipt();
+    }
+  }, [initialReceipt]);
 
   const loadCategories = async () => {
     try {

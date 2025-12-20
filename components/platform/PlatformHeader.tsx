@@ -40,6 +40,9 @@ interface PlatformHeaderProps {
   isSuperAdmin?: boolean;
   isOrgAdmin?: boolean;
   roleName?: string;
+  roleColor?: string;
+  rolePermissions?: string[];
+  roleAllowedModes?: string[];
   departmentName?: string;
   position?: string;
 }
@@ -55,6 +58,9 @@ export default function PlatformHeader({
   isSuperAdmin = false,
   isOrgAdmin = false,
   roleName,
+  roleColor,
+  rolePermissions,
+  roleAllowedModes,
   departmentName,
   position,
 }: PlatformHeaderProps) {
@@ -182,6 +188,10 @@ export default function PlatformHeader({
                 isAdmin={isSuperAdmin || isOrgAdmin}
                 isSuperAdmin={isSuperAdmin}
                 roleName={roleName}
+                roleColor={roleColor}
+                rolePermissions={rolePermissions}
+                roleAllowedModes={roleAllowedModes}
+                organizationName={organization?.name}
                 departmentName={departmentName}
                 position={position}
               />

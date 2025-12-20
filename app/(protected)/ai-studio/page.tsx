@@ -21,6 +21,20 @@ import {
 } from "lucide-react";
 import styles from "./page.module.css";
 
+interface UserAccessInfo {
+  isAdmin: boolean;
+  userRole: {
+    permissions: string[];
+  } | null;
+}
+
+// Проверка наличия permission
+const hasPermission = (permissions: string[] | undefined, required: string[]): boolean => {
+  if (!permissions || permissions.length === 0) return false;
+  if (permissions.includes('*')) return true;
+  return required.some(req => permissions.includes(req));
+};
+
 const tools = [
   {
     id: "live-photos",
@@ -86,8 +100,26 @@ interface RecentChat {
 
 export default function AIStudioHomePage() {
   const [recentChats, setRecentChats] = useState<RecentChat[]>([]);
+  const [accessInfo, setAccessInfo] = useState<UserAccessInfo | null>(null);
 
   useEffect(() => {
+    // Загружаем права доступа пользователя
+    const loadAccessInfo = async () => {
+      try {
+        const response = await fetch("/api/ai-studio/access/check");
+        if (response.ok) {
+          const data = await response.json();
+          setAccessInfo({
+            isAdmin: data.isAdmin || false,
+            userRole: data.userRole || null,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load access info:", error);
+      }
+    };
+    loadAccessInfo();
+
     const loadRecentChats = async () => {
       try {
         const response = await fetch("/api/ai-studio/chats");
@@ -107,6 +139,11 @@ export default function AIStudioHomePage() {
     };
     loadRecentChats();
   }, []);
+
+  // Проверяем доступ к функциям
+  const canAccessKie = accessInfo?.isAdmin || hasPermission(accessInfo?.userRole?.permissions, ['ai-studio:kie', 'ai-studio:media', 'ai-studio:*', '*']);
+  const canAccessAssistants = accessInfo?.isAdmin || hasPermission(accessInfo?.userRole?.permissions, ['ai-studio:assistants', 'ai-studio:*', '*']);
+  const canAccessTools = accessInfo?.isAdmin || hasPermission(accessInfo?.userRole?.permissions, ['ai-studio:tools', 'ai-studio:*', '*']);
 
   return (
     <div className={styles.container}>
@@ -128,39 +165,43 @@ export default function AIStudioHomePage() {
           <ArrowRight className={styles.heroCardArrow} />
         </Link>
 
-        {/* Kie.ai Card */}
-        <Link href="/ai-studio/kie" className={styles.heroCard}>
-          <div className={styles.heroCardIcon} style={{ background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" }}>
-            <Palette size={24} />
-          </div>
-          <div className={styles.heroCardContent}>
-            <h2>Kie.ai Market</h2>
-            <p>100+ моделей для изображений, видео и аудио</p>
-            <div className={styles.heroCardFeatures}>
-              <span><ImagePlus size={12} /> Imagen4</span>
-              <span><Video size={12} /> Kling</span>
-              <span><Volume2 size={12} /> ElevenLabs</span>
+        {/* Kie.ai Card - только для админов и пользователей с правами */}
+        {canAccessKie && (
+          <Link href="/ai-studio/kie" className={styles.heroCard}>
+            <div className={styles.heroCardIcon} style={{ background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" }}>
+              <Palette size={24} />
             </div>
-          </div>
-          <ArrowRight className={styles.heroCardArrow} />
-        </Link>
+            <div className={styles.heroCardContent}>
+              <h2>Kie.ai Market</h2>
+              <p>100+ моделей для изображений, видео и аудио</p>
+              <div className={styles.heroCardFeatures}>
+                <span><ImagePlus size={12} /> Imagen4</span>
+                <span><Video size={12} /> Kling</span>
+                <span><Volume2 size={12} /> ElevenLabs</span>
+              </div>
+            </div>
+            <ArrowRight className={styles.heroCardArrow} />
+          </Link>
+        )}
 
-        {/* Assistants Card */}
-        <Link href="/ai-studio/assistants" className={styles.heroCard}>
-          <div className={styles.heroCardIcon} style={{ background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" }}>
-            <Users size={24} />
-          </div>
-          <div className={styles.heroCardContent}>
-            <h2>Ассистенты GPTs</h2>
-            <p>Создайте своего ИИ-помощника</p>
-            <div className={styles.heroCardFeatures}>
-              <span>⚖️ Юрист</span>
-              <span>✍️ Копирайтер</span>
-              <span>📊 Аналитик</span>
+        {/* Assistants Card - только для админов и пользователей с правами */}
+        {canAccessAssistants && (
+          <Link href="/ai-studio/assistants" className={styles.heroCard}>
+            <div className={styles.heroCardIcon} style={{ background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" }}>
+              <Users size={24} />
             </div>
-          </div>
-          <ArrowRight className={styles.heroCardArrow} />
-        </Link>
+            <div className={styles.heroCardContent}>
+              <h2>Ассистенты GPTs</h2>
+              <p>Создайте своего ИИ-помощника</p>
+              <div className={styles.heroCardFeatures}>
+                <span>⚖️ Юрист</span>
+                <span>✍️ Копирайтер</span>
+                <span>📊 Аналитик</span>
+              </div>
+            </div>
+            <ArrowRight className={styles.heroCardArrow} />
+          </Link>
+        )}
       </div>
 
       {/* Recent Chats */}
@@ -185,45 +226,49 @@ export default function AIStudioHomePage() {
         </div>
       )}
 
-      {/* Tools Section */}
-      <div className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <Zap size={18} />
-          <h2>Инструменты AI</h2>
+      {/* Tools Section - только для админов и пользователей с правами */}
+      {canAccessTools && (
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <Zap size={18} />
+            <h2>Инструменты AI</h2>
+          </div>
+          
+          <div className={styles.toolsGrid}>
+            {tools.map((tool) => {
+              const Icon = tool.icon;
+              return (
+                <Link
+                  key={tool.id}
+                  href={tool.href}
+                  className={styles.toolCard}
+                  style={{ "--tool-color": tool.color } as React.CSSProperties}
+                >
+                  <div className={styles.toolIcon}>
+                    <Icon size={20} />
+                  </div>
+                  <div className={styles.toolContent}>
+                    <h3>{tool.title}</h3>
+                    <p className={styles.toolModel}>{tool.model}</p>
+                    <p className={styles.toolDescription}>{tool.description}</p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         </div>
-        
-        <div className={styles.toolsGrid}>
-          {tools.map((tool) => {
-            const Icon = tool.icon;
-            return (
-              <Link
-                key={tool.id}
-                href={tool.href}
-                className={styles.toolCard}
-                style={{ "--tool-color": tool.color } as React.CSSProperties}
-              >
-                <div className={styles.toolIcon}>
-                  <Icon size={20} />
-                </div>
-                <div className={styles.toolContent}>
-                  <h3>{tool.title}</h3>
-                  <p className={styles.toolModel}>{tool.model}</p>
-                  <p className={styles.toolDescription}>{tool.description}</p>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
+      )}
 
-      {/* Info Footer */}
-      <div className={styles.infoFooter}>
-        <Sparkles size={16} />
-        <span>
-          <strong>Gemini 3 Flash</strong> для чата • <strong>Kie.ai</strong> для генерации медиа • 
-          <strong> GPTs</strong> для кастомных ассистентов
-        </span>
-      </div>
+      {/* Info Footer - показываем только админам */}
+      {accessInfo?.isAdmin && (
+        <div className={styles.infoFooter}>
+          <Sparkles size={16} />
+          <span>
+            <strong>Gemini 3 Flash</strong> для чата • <strong>Kie.ai</strong> для генерации медиа • 
+            <strong> GPTs</strong> для кастомных ассистентов
+          </span>
+        </div>
+      )}
     </div>
   );
 }

@@ -8,13 +8,15 @@ import { PaymentModal } from './PaymentModal';
 import { ConfirmModal } from './ConfirmModal';
 import { renewOrganizationSubscription, cancelOrganizationSubscription } from '@/app/(protected)/superadmin/actions';
 import { Button } from '@/components/ui/button';
-import { Pencil, RefreshCw, ArrowUpCircle, CreditCard, XCircle } from 'lucide-react';
+import { Pencil, RefreshCw, ArrowUpCircle, CreditCard, XCircle, Lock, Unlock } from 'lucide-react';
 
 interface OrganizationActionsProps {
   organizationId: string;
   organizationName: string;
   subscription: OrganizationSubscription | null;
   plans: SubscriptionPlan[];
+  isBlocked?: boolean;
+  isSuperAdminOrg?: boolean;
 }
 
 export function OrganizationActions({
@@ -22,12 +24,57 @@ export function OrganizationActions({
   organizationName,
   subscription,
   plans,
+  isBlocked = false,
+  isSuperAdminOrg = false,
 }: OrganizationActionsProps) {
   const router = useRouter();
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showRenewModal, setShowRenewModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const [showUnblockModal, setShowUnblockModal] = useState(false);
+  const [blockLoading, setBlockLoading] = useState(false);
+
+  const handleBlock = async () => {
+    setBlockLoading(true);
+    try {
+      const res = await fetch(`/api/admin/organizations/${organizationId}/block`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: 'Заблокировано администратором' }),
+      });
+      if (res.ok) {
+        router.refresh();
+        return { success: true };
+      }
+      const data = await res.json();
+      return { success: false, error: data.error };
+    } catch {
+      return { success: false, error: 'Ошибка при блокировке' };
+    } finally {
+      setBlockLoading(false);
+    }
+  };
+
+  const handleUnblock = async () => {
+    setBlockLoading(true);
+    try {
+      const res = await fetch(`/api/admin/organizations/${organizationId}/block`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        router.refresh();
+        return { success: true };
+      }
+      const data = await res.json();
+      return { success: false, error: data.error };
+    } catch {
+      return { success: false, error: 'Ошибка при разблокировке' };
+    } finally {
+      setBlockLoading(false);
+    }
+  };
 
   const handleRenew = async () => {
     if (!subscription) return { success: false, error: 'Нет подписки' };
@@ -88,6 +135,21 @@ export function OrganizationActions({
             </Button>
           </>
         )}
+
+        {/* Кнопки блокировки */}
+        {!isSuperAdminOrg && (
+          isBlocked ? (
+            <Button variant="outline" onClick={() => setShowUnblockModal(true)} disabled={blockLoading}>
+              <Unlock className="h-4 w-4 mr-2" />
+              Разблокировать
+            </Button>
+          ) : (
+            <Button variant="destructive" onClick={() => setShowBlockModal(true)} disabled={blockLoading}>
+              <Lock className="h-4 w-4 mr-2" />
+              Заблокировать
+            </Button>
+          )
+        )}
       </div>
 
       <SubscriptionModal
@@ -130,6 +192,26 @@ export function OrganizationActions({
           />
         </>
       )}
+
+      {/* Модалки блокировки */}
+      <ConfirmModal
+        isOpen={showBlockModal}
+        onClose={() => setShowBlockModal(false)}
+        onConfirm={handleBlock}
+        title="Заблокировать организацию"
+        message={`Вы уверены, что хотите заблокировать организацию "${organizationName}"? Все пользователи потеряют доступ к платформе.`}
+        confirmText="Заблокировать"
+        confirmVariant="danger"
+      />
+
+      <ConfirmModal
+        isOpen={showUnblockModal}
+        onClose={() => setShowUnblockModal(false)}
+        onConfirm={handleUnblock}
+        title="Разблокировать организацию"
+        message={`Вы уверены, что хотите разблокировать организацию "${organizationName}"? Пользователи снова получат доступ к платформе.`}
+        confirmText="Разблокировать"
+      />
     </>
   );
 }

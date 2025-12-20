@@ -4,7 +4,9 @@ import { getSubscriptions } from '@/lib/billing/subscription-service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Building2, Eye } from 'lucide-react';
+import { Building2, Eye, Shield, Crown } from 'lucide-react';
+import { CreateOrganizationModal } from '@/components/admin/create-organization-modal';
+import { cn } from '@/lib/utils';
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('ru-RU', {
@@ -37,14 +39,62 @@ export default async function OrganizationsPage() {
   const subscriptions = await getSubscriptions();
   const subsByOrg = new Map(subscriptions.map(s => [s.organization_id, s]));
 
-  // Считаем пользователей по организациям
+  // Получаем всех пользователей для выбора владельца
+  const { data: users } = await supabase
+    .from('users')
+    .select('id, email, full_name, global_role')
+    .order('email');
+
+  // Получаем профили для определения супер-админов
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, global_role');
+  
+  const superAdminIds = new Set(
+    (profiles || []).filter(p => p.global_role === 'super_admin').map(p => p.id)
+  );
+
+  // Получаем владельцев/админов организаций через company_members
+  const { data: orgAdmins } = await supabase
+    .from('company_members')
+    .select('user_id, role, companies!inner(organization_id)')
+    .in('role', ['owner', 'admin'])
+    .eq('status', 'active');
+
+  // Группируем админов по организациям
+  const adminsByOrg = new Map<string, string[]>();
+  orgAdmins?.forEach((m) => {
+    const companies = m.companies as { organization_id: string } | { organization_id: string }[];
+    const orgId = Array.isArray(companies) ? companies[0]?.organization_id : companies?.organization_id;
+    if (orgId) {
+      if (!adminsByOrg.has(orgId)) {
+        adminsByOrg.set(orgId, []);
+      }
+      adminsByOrg.get(orgId)!.push(m.user_id);
+    }
+  });
+
+  // Определяем организации супер-админов - только те, где ВСЕ админы являются супер-админами
+  // (т.е. организация принадлежит исключительно супер-админу)
+  const superAdminOrgIds = new Set<string>();
+  adminsByOrg.forEach((adminIds, orgId) => {
+    const allAdminsAreSuperAdmins = adminIds.every(id => superAdminIds.has(id));
+    if (allAdminsAreSuperAdmins && adminIds.length > 0) {
+      superAdminOrgIds.add(orgId);
+    }
+  });
+
+  // Считаем пользователей по организациям (исключая супер-админов)
   const { data: memberCounts } = await supabase
     .from('company_members')
-    .select('company_id, companies!inner(organization_id)')
+    .select('user_id, company_id, companies!inner(organization_id)')
     .eq('status', 'active');
 
   const usersByOrg: Record<string, number> = {};
-  memberCounts?.forEach((m: { companies: { organization_id: string } | { organization_id: string }[] }) => {
+  memberCounts?.forEach((m: { user_id: string; companies: { organization_id: string } | { organization_id: string }[] }) => {
+    // Пропускаем супер-админов
+    if (superAdminIds.has(m.user_id)) return;
+    
     const companies = m.companies;
     const orgId = Array.isArray(companies) ? companies[0]?.organization_id : companies?.organization_id;
     if (orgId) {
@@ -54,9 +104,12 @@ export default async function OrganizationsPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-gray-900">Все организации</h1>
-        <p className="text-gray-500 mt-1">Список всех зарегистрированных организаций на платформе</p>
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Все организации</h1>
+          <p className="text-gray-500 mt-1">Список всех зарегистрированных организаций на платформе</p>
+        </div>
+        <CreateOrganizationModal users={users || []} />
       </header>
 
       <Card>
@@ -82,16 +135,37 @@ export default async function OrganizationsPage() {
                     const sub = subsByOrg.get(org.id);
                     const usersCount = usersByOrg[org.id] || 0;
                     const statusInfo = sub ? STATUS_STYLES[sub.status] || STATUS_STYLES.cancelled : null;
+                    const isSuperAdminOrg = superAdminOrgIds.has(org.id);
 
                     return (
-                      <tr key={org.id} className="border-b last:border-0 hover:bg-gray-50">
+                      <tr key={org.id} className={cn(
+                        "border-b last:border-0 hover:bg-gray-50",
+                        isSuperAdminOrg && "bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100"
+                      )}>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white font-semibold text-sm">
-                              {org.name?.charAt(0)?.toUpperCase() || '?'}
+                            <div className={cn(
+                              "h-9 w-9 rounded-lg flex items-center justify-center text-white font-semibold text-sm",
+                              isSuperAdminOrg 
+                                ? "bg-gradient-to-br from-purple-600 to-blue-600 ring-2 ring-purple-300 ring-offset-1"
+                                : "bg-gradient-to-br from-blue-500 to-indigo-600"
+                            )}>
+                              {isSuperAdminOrg ? (
+                                <Crown className="h-5 w-5" />
+                              ) : (
+                                org.name?.charAt(0)?.toUpperCase() || '?'
+                              )}
                             </div>
                             <div>
-                              <div className="font-medium text-gray-900">{org.name}</div>
+                              <div className="font-medium text-gray-900 flex items-center gap-2">
+                                {org.name}
+                                {isSuperAdminOrg && (
+                                  <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 text-xs">
+                                    <Shield className="h-3 w-3 mr-1" />
+                                    Супер-админ
+                                  </Badge>
+                                )}
+                              </div>
                               <div className="text-xs text-gray-500">{org.slug || org.id.slice(0, 8)}</div>
                             </div>
                           </div>
@@ -100,7 +174,12 @@ export default async function OrganizationsPage() {
                           <span className="font-semibold text-gray-900">{usersCount}</span>
                         </td>
                         <td className="py-3 px-4">
-                          {sub ? (
+                          {isSuperAdminOrg ? (
+                            <div>
+                              <div className="font-medium text-purple-700">∞ Бессрочно</div>
+                              <div className="text-xs text-purple-500">Без ограничений</div>
+                            </div>
+                          ) : sub ? (
                             <div>
                               <div className="font-medium text-gray-900">{sub.plan?.name}</div>
                               <div className="text-xs text-gray-500">
@@ -112,7 +191,11 @@ export default async function OrganizationsPage() {
                           )}
                         </td>
                         <td className="py-3 px-4">
-                          {statusInfo ? (
+                          {isSuperAdminOrg ? (
+                            <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                              ✓ Активный
+                            </Badge>
+                          ) : statusInfo ? (
                             <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                           ) : (
                             <Badge variant="outline">Без подписки</Badge>

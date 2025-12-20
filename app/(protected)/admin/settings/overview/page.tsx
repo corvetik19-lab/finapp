@@ -12,7 +12,11 @@ import {
   LayoutGrid,
   Bell,
   CreditCard,
-  ChevronRight
+  ChevronRight,
+  Sparkles,
+  Briefcase,
+  Wallet,
+  TrendingUp
 } from "lucide-react";
 
 export default async function SettingsOverviewPage() {
@@ -27,8 +31,42 @@ export default async function SettingsOverviewPage() {
 
   const organization = await getCurrentOrganization();
   const modesCount = organization?.allowed_modes?.length || 0;
+  const allowedModes = organization?.allowed_modes || [];
 
-  const settingsCards = [
+  // Настройки модулей по режимам
+  const modeSettings: Record<string, { href: string; icon: typeof Building2; title: string; description: string; gradient: string }> = {
+    'ai_studio': {
+      href: "/admin/settings/modes/ai-studio",
+      icon: Sparkles,
+      title: "Настройка ИИ Студии",
+      description: "Модели, лимиты и доступ к функциям ИИ",
+      gradient: "from-violet-500 to-purple-600",
+    },
+    'tenders': {
+      href: "/admin/settings/modes/tenders",
+      icon: Briefcase,
+      title: "Настройка Тендеров",
+      description: "Тендеры, закупки и интеграции",
+      gradient: "from-blue-500 to-cyan-600",
+    },
+    'finance': {
+      href: "/admin/settings/modes/finance",
+      icon: Wallet,
+      title: "Настройка Финансов",
+      description: "Счета, категории и бюджеты",
+      gradient: "from-green-500 to-emerald-600",
+    },
+    'investments': {
+      href: "/admin/settings/modes/investments",
+      icon: TrendingUp,
+      title: "Настройка Инвестиций",
+      description: "Портфели и аналитика",
+      gradient: "from-amber-500 to-orange-600",
+    },
+  };
+
+  // Базовые карточки настроек
+  const baseSettingsCards = [
     {
       href: "/admin/settings/organization",
       icon: Building2,
@@ -61,14 +99,21 @@ export default async function SettingsOverviewPage() {
       gradient: "from-amber-500 to-orange-600",
       badge: null,
     },
-    {
+  ];
+
+  // Добавляем интеграции только для режима tenders
+  if (allowedModes.includes('tenders')) {
+    baseSettingsCards.push({
       href: "/admin/settings/integrations",
       icon: Puzzle,
       title: "Интеграции",
       description: "Telegram, уведомления и другие сервисы",
       gradient: "from-pink-500 to-rose-600",
       badge: null,
-    },
+    });
+  }
+
+  baseSettingsCards.push(
     {
       href: "/admin/settings/notifications",
       icon: Bell,
@@ -84,8 +129,18 @@ export default async function SettingsOverviewPage() {
       description: "Тарифный план и оплата",
       gradient: "from-indigo-500 to-blue-600",
       badge: null,
-    },
-  ];
+    }
+  );
+
+  // Добавляем настройки модулей только для доступных режимов
+  const moduleCards = allowedModes
+    .filter(mode => modeSettings[mode])
+    .map(mode => ({
+      ...modeSettings[mode],
+      badge: null,
+    }));
+
+  const settingsCards = [...baseSettingsCards, ...moduleCards];
 
   return (
     <div className="space-y-6 pt-4">

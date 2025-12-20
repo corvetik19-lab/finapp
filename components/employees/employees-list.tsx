@@ -201,6 +201,7 @@ export function EmployeesList({ companyId }: EmployeesListProps) {
         isOpen={isModalOpen}
         companyId={companyId}
         employee={editingEmployee || undefined}
+        mode={editingEmployee ? 'edit' : 'create'}
         onClose={handleModalClose}
         onSuccess={handleModalSuccess}
       />

@@ -98,6 +98,13 @@ export async function getUsersWithOrganizations(): Promise<UserWithOrganizations
         .in('id', users.map(u => u.id));
 
     const profileMap = new Map(profiles?.map(p => [p.id, p.global_role]));
+    
+    // Получаем список super_admin ID для фильтрации
+    const superAdminIds = new Set(
+        (profiles || [])
+            .filter(p => p.global_role === 'super_admin')
+            .map(p => p.id)
+    );
 
     // Получаем членство в компаниях
     const { data: memberships } = await adminClient
@@ -105,6 +112,7 @@ export async function getUsersWithOrganizations(): Promise<UserWithOrganizations
         .select(`
             user_id,
             role,
+            company_id,
             company:companies(
                 id,
                 name,
@@ -112,8 +120,32 @@ export async function getUsersWithOrganizations(): Promise<UserWithOrganizations
             )
         `)
         .eq('status', 'active');
+    
+    // Получаем роли пользователей из user_roles (реальные роли: просчётчик, менеджер и т.д.)
+    // Роли привязаны к компании через roles.company_id
+    const { data: userRoles } = await adminClient
+        .from('user_roles')
+        .select(`
+            user_id,
+            role_id,
+            roles(name, company_id)
+        `);
+    
+    // Создаём карту ролей: user_id + company_id -> role_name
+    const userRolesMap = new Map<string, string>();
+    userRoles?.forEach(ur => {
+        if (ur.user_id && ur.roles) {
+            const roleData = ur.roles as unknown;
+            const roleObj = Array.isArray(roleData) ? roleData[0] : roleData;
+            const typedRole = roleObj as { name?: string; company_id?: string } | null;
+            if (typedRole?.name && typedRole?.company_id) {
+                userRolesMap.set(`${ur.user_id}:${typedRole.company_id}`, typedRole.name);
+            }
+        }
+    });
 
     // Группируем членства по пользователям
+    // Super_admin показываем только в его собственной организации ("Личное пространство")
     const membershipMap = new Map<string, { id: string; name: string; role: string }[]>();
     
     memberships?.forEach(m => {
@@ -129,6 +161,15 @@ export async function getUsersWithOrganizations(): Promise<UserWithOrganizations
         const orgName = orgTyped?.name || company.name;
         const orgId = orgTyped?.id || company.id;
         
+        const isSuperAdmin = superAdminIds.has(m.user_id);
+        
+        // Super_admin показываем только в его "Личное пространство"
+        // В других организациях он не должен отображаться
+        if (isSuperAdmin && orgName !== 'Личное пространство') return;
+        
+        // Получаем реальную роль из user_roles, если нет - используем company_members.role
+        const realRole = userRolesMap.get(`${m.user_id}:${m.company_id}`) || m.role;
+        
         if (!membershipMap.has(m.user_id)) {
             membershipMap.set(m.user_id, []);
         }
@@ -139,7 +180,7 @@ export async function getUsersWithOrganizations(): Promise<UserWithOrganizations
             existing.push({
                 id: orgId,
                 name: orgName,
-                role: m.role,
+                role: realRole,
             });
         }
     });

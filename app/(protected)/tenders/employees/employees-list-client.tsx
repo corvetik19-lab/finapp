@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import type { Employee, EmployeeFilters, EmployeeStats } from '@/lib/employees/types';
 import { EMPLOYEE_ROLE_LABELS, EMPLOYEE_STATUS_LABELS, EMPLOYEE_STATUS_COLORS } from '@/lib/employees/types';
-import { EmployeeFormModal } from '@/components/employees/employee-form-modal';
+import { EmployeeFormModal } from '@/components/employees/employee-form-modal-new';
 // Reusable styles
 const cardStyle = "bg-white rounded-xl border shadow-sm";
 const btnPrimary = "px-4 py-2 rounded-lg font-semibold text-sm bg-blue-600 text-white hover:bg-blue-700 transition-colors inline-flex items-center gap-2";

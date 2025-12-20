@@ -27,6 +27,10 @@ interface UserMenuProps {
   isAdmin?: boolean;
   isSuperAdmin?: boolean;
   roleName?: string;
+  roleColor?: string;
+  rolePermissions?: string[];
+  roleAllowedModes?: string[];
+  organizationName?: string;
   departmentName?: string;
   position?: string;
 }
@@ -36,6 +40,10 @@ export default function UserMenu({
   isAdmin = false, 
   isSuperAdmin = false,
   roleName,
+  roleColor,
+  rolePermissions,
+  roleAllowedModes,
+  organizationName,
   departmentName,
   position 
 }: UserMenuProps) {
@@ -66,8 +74,12 @@ export default function UserMenu({
     avatar: user.avatar_url || null,
     createdAt: user.created_at || "",
     roleName,
+    roleColor,
     departmentName,
     position,
+    permissions: rolePermissions,
+    allowedModes: roleAllowedModes,
+    organizationName,
   };
 
   return (

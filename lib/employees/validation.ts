@@ -45,6 +45,9 @@ export const createEmployeeSchema = z.object({
   work_schedule: z.string().max(500).optional().nullable(),
   notes: z.string().max(2000).optional().nullable(),
   
+  // Привязка к существующему пользователю
+  user_id: z.string().uuid('Неверный ID пользователя').optional().nullable(),
+  
   // Для создания учетной записи
   create_user_account: z.boolean().optional(),
   password: z

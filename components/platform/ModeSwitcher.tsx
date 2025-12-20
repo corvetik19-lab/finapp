@@ -85,13 +85,25 @@ export default function ModeSwitcher({ allowedModes, globalEnabledModes, userAll
     return <IconComponent className={className || "h-5 w-5"} style={{ color }} />;
   };
 
-  if (singleModeOnly && !pathname.startsWith('/admin') && !pathname.startsWith('/settings')) {
+  // Если только один режим доступен - показываем только название без выпадающего списка
+  if (singleModeOnly) {
     const singleMode = availableModes[0];
+    // В админке показываем "Администрирование", иначе название режима
+    const isInAdmin = pathname.startsWith('/admin') || pathname.startsWith('/settings');
     return (
       <div className="relative">
         <div className="flex items-center gap-2 px-3 py-2">
-          {renderIcon(singleMode.icon, singleMode.color)}
-          <span className="hidden sm:inline font-medium">{singleMode.name}</span>
+          {isInAdmin ? (
+            <>
+              {renderIcon('settings', '#64748b')}
+              <span className="hidden sm:inline font-medium">Администрирование</span>
+            </>
+          ) : (
+            <>
+              {renderIcon(singleMode.icon, singleMode.color)}
+              <span className="hidden sm:inline font-medium">{singleMode.name}</span>
+            </>
+          )}
         </div>
       </div>
     );

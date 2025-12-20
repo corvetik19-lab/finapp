@@ -1,8 +1,12 @@
 import { ReactNode } from "react";
 import AdminSettingsNav from "@/components/settings/AdminSettingsNav";
 import { Building2 } from "lucide-react";
+import { getCurrentOrganization } from "@/lib/platform/organization";
 
-export default function AdminSettingsLayout({ children }: { children: ReactNode }) {
+export default async function AdminSettingsLayout({ children }: { children: ReactNode }) {
+  const organization = await getCurrentOrganization();
+  const allowedModes = organization?.allowed_modes || [];
+  
   return (
     <div className="flex h-full bg-white">
       {/* Sidebar */}
@@ -19,7 +23,7 @@ export default function AdminSettingsLayout({ children }: { children: ReactNode 
           </div>
         </div>
         <div className="flex-1 overflow-y-auto px-4 py-4">
-          <AdminSettingsNav />
+          <AdminSettingsNav allowedModes={allowedModes} />
         </div>
       </aside>
       

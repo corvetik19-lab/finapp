@@ -21,14 +21,14 @@ export async function getEnabledModes(): Promise<AppModeKey[]> {
 
   if (error || !data) {
     // Fallback - все режимы включены
-    return ["finance", "tenders", "personal", "investments", "ai-studio"];
+    return ["finance", "tenders", "personal", "investments", "ai_studio"];
   }
 
   const modes = data.value as AppModeKey[];
   
-  // Всегда добавляем ai-studio если его нет в списке
-  if (!modes.includes("ai-studio")) {
-    modes.push("ai-studio");
+  // Всегда добавляем ai_studio если его нет в списке
+  if (!modes.includes("ai_studio")) {
+    modes.push("ai_studio");
   }
   
   return modes;

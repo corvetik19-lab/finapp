@@ -1,11 +1,13 @@
 import { redirect } from "next/navigation";
 import { getCachedUser } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentOrganization } from "@/lib/platform/organization";
 import { getEnabledModes } from "@/lib/platform/platform-settings";
 import { ALL_MODES } from "@/lib/platform/modes-config";
 import { OrgModesManager } from "@/components/admin/OrgModesManager";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { LayoutGrid } from "lucide-react";
+import { LayoutGrid, Info } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +29,16 @@ export default async function OrgModesPage() {
     );
   }
 
+  // Проверяем является ли пользователь супер-админом
+  const supabase = createAdminClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("global_role")
+    .eq("id", user.id)
+    .single();
+  
+  const isSuperAdmin = profile?.global_role === "super_admin";
+
   // Получаем глобально включённые режимы (супер-админом)
   const globalEnabledModes = await getEnabledModes();
   
@@ -38,9 +50,22 @@ export default async function OrgModesPage() {
       <header>
         <h1 className="text-2xl font-bold text-gray-900">Режимы организации</h1>
         <p className="text-gray-500 mt-1">
-          Управление доступными режимами для сотрудников вашей организации
+          {isSuperAdmin 
+            ? "Управление доступными режимами для организации"
+            : "Просмотр доступных режимов организации"
+          }
         </p>
       </header>
+
+      {!isSuperAdmin && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            Режимы организации устанавливаются администратором платформы при создании или настройке организации. 
+            Для изменения режимов обратитесь к администратору.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card>
         <CardHeader>
@@ -59,6 +84,7 @@ export default async function OrgModesPage() {
             globalEnabledModes={globalEnabledModes}
             orgModes={orgModes}
             organizationId={organization.id}
+            isSuperAdmin={isSuperAdmin}
           />
         </CardContent>
       </Card>

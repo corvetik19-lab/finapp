@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createRSCClient, createAdminClient } from "@/lib/supabase/helpers";
-import { getCurrentOrganization } from "@/lib/platform/organization";
+import { getCurrentOrganization, getCurrentCompanyId } from "@/lib/platform/organization";
 import OrganizationSettings from "@/components/settings/OrganizationSettings";
 
 export default async function OrganizationSettingsPage() {
@@ -16,6 +16,7 @@ export default async function OrganizationSettingsPage() {
   }
 
   const organization = await getCurrentOrganization();
+  const companyId = await getCurrentCompanyId();
 
   if (!organization) {
     return (
@@ -26,46 +27,83 @@ export default async function OrganizationSettingsPage() {
     );
   }
 
-  // Получаем участников организации (используем admin client для обхода RLS)
-  const { data: membersData } = await adminSupabase
-    .from("organization_members")
-    .select(`
-      id,
-      role,
-      created_at,
-      profiles:user_id (
-        id,
-        full_name,
-        email,
-        avatar_url
-      )
-    `)
-    .eq("organization_id", organization.id);
+  // Получаем участников через company_members
+  let members: Array<{
+    id: string;
+    role: string;
+    created_at: string;
+    profiles: {
+      id: string;
+      full_name: string | null;
+      email: string | null;
+      avatar_url: string | null;
+    } | null;
+  }> = [];
 
-  // Получаем профиль текущего пользователя
-  const { data: currentUserProfile } = await adminSupabase
-    .from("profiles")
-    .select("id, full_name, email, avatar_url")
-    .eq("id", user.id)
-    .single();
+  if (companyId) {
+    // Получаем членов компании
+    const { data: membersData } = await adminSupabase
+      .from('company_members')
+      .select('id, user_id, role, created_at')
+      .eq('company_id', companyId)
+      .eq('status', 'active');
 
-  // Преобразуем данные участников в нужный формат
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let members: any[] = (membersData || []).map((m: any) => ({
-    id: m.id,
-    role: m.role,
-    created_at: m.created_at,
-    profiles: Array.isArray(m.profiles) ? m.profiles[0] : m.profiles
-  }));
+    if (membersData && membersData.length > 0) {
+      // Получаем профили с global_role для фильтрации супер-админов
+      const userIds = membersData.map(m => m.user_id).filter(Boolean);
+      const { data: profilesData } = await adminSupabase
+        .from('profiles')
+        .select('id, full_name, email, avatar_url, global_role')
+        .in('id', userIds);
 
-  // Если нет участников в organization_members, показываем текущего пользователя как владельца
-  if (members.length === 0 && currentUserProfile) {
-    members = [{
-      id: 'current-user',
-      role: 'owner',
-      created_at: organization.created_at,
-      profiles: currentUserProfile
-    }];
+      // Получаем роли пользователей из user_roles
+      const { data: userRolesData } = await adminSupabase
+        .from('user_roles')
+        .select('user_id, roles(name)')
+        .in('user_id', userIds);
+
+      const profilesMap = new Map(
+        (profilesData || []).map(p => [p.id, p])
+      );
+
+      // Создаём Map для ролей пользователей
+      const userRolesMap = new Map<string, string>();
+      (userRolesData || []).forEach((ur) => {
+        const roles = ur.roles as { name?: string } | { name?: string }[] | null;
+        const roleName = Array.isArray(roles) ? roles[0]?.name : roles?.name;
+        if (roleName) {
+          userRolesMap.set(ur.user_id, roleName);
+        }
+      });
+
+      // Фильтруем: исключаем супер-админов и пользователей без email
+      members = membersData
+        .map(m => {
+          const profile = m.user_id ? profilesMap.get(m.user_id) : null;
+          // Используем роль из user_roles, если есть, иначе company_members.role
+          const userRole = m.user_id ? userRolesMap.get(m.user_id) : null;
+          return {
+            id: m.id,
+            role: userRole || m.role, // Приоритет у роли из user_roles
+            created_at: m.created_at,
+            profiles: profile ? {
+              id: profile.id,
+              full_name: profile.full_name,
+              email: profile.email,
+              avatar_url: profile.avatar_url
+            } : null,
+            global_role: profile?.global_role
+          };
+        })
+        .filter(m => {
+          // Исключаем супер-админов
+          if (m.global_role === 'super_admin') return false;
+          // Исключаем пользователей без email (пустые профили)
+          if (!m.profiles?.email) return false;
+          return true;
+        })
+        .map(({ global_role, ...rest }) => rest); // Убираем global_role из финального объекта
+    }
   }
 
   // Получаем статистику
@@ -84,20 +122,14 @@ export default async function OrganizationSettingsPage() {
     .select("*", { count: "exact", head: true })
     .eq("organization_id", organization.id);
 
-  // Проверяем роль текущего пользователя (используем admin client)
-  const { data: currentMember } = await adminSupabase
-    .from("organization_members")
-    .select("role")
-    .eq("organization_id", organization.id)
-    .eq("user_id", user.id)
-    .single();
-
+  // Проверяем роль текущего пользователя
+  const currentMember = members.find(m => m.profiles?.id === user.id);
   const isAdmin = currentMember?.role === "admin" || currentMember?.role === "owner";
 
   return (
     <OrganizationSettings 
       organization={organization}
-      members={members || []}
+      members={members}
       stats={{
         transactions: transactionsCount || 0,
         accounts: accountsCount || 0,

@@ -162,8 +162,8 @@ export const MODE_REGISTRY: Record<string, ModeConfig> = {
     minRole: 'member',
   },
 
-  'ai-studio': {
-    key: 'ai-studio',
+  'ai_studio': {
+    key: 'ai_studio',
     name: 'ИИ Студия',
     icon: 'auto_awesome',
     color: '#a78bfa',

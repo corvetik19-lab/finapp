@@ -59,8 +59,14 @@ interface GlobalSettingsTabsProps {
 }
 
 const ROLE_LABELS: Record<string, string> = {
+  // Глобальные роли
   super_admin: "Супер-админ",
   admin: "Админ",
+  user: "Пользователь",
+  // Роли в организации (company_members.role)
+  owner: "Владелец",
+  member: "Участник",
+  // Роли по функциям
   manager: "Менеджер",
   accountant: "Бухгалтер",
   supplier_manager: "Менеджер поставщиков",

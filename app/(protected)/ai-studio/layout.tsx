@@ -8,6 +8,14 @@ import { Sparkles, Lock, ArrowLeft } from "lucide-react";
 import AIStudioSidebar from "./components/Sidebar";
 import styles from "./layout.module.css";
 
+interface UserRole {
+  id: string;
+  name: string;
+  color: string;
+  permissions: string[];
+  allowed_modes: string[];
+}
+
 interface AIStudioLayoutProps {
   children: React.ReactNode;
 }
@@ -17,6 +25,8 @@ export default function AIStudioLayout({ children }: AIStudioLayoutProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
 
   useEffect(() => {
     async function checkAccess() {
@@ -36,6 +46,14 @@ export default function AIStudioLayout({ children }: AIStudioLayoutProps) {
         // Проверяем супер-админа
         if (isSuperAdmin(user.email)) {
           setHasAccess(true);
+          setIsAdmin(true);
+          setUserRole({
+            id: 'super_admin',
+            name: 'Супер-админ',
+            color: '#ef4444',
+            permissions: ['*'],
+            allowed_modes: ['*'],
+          });
           setIsLoading(false);
           return;
         }
@@ -45,6 +63,8 @@ export default function AIStudioLayout({ children }: AIStudioLayoutProps) {
         if (res.ok) {
           const data = await res.json();
           setHasAccess(data.hasAccess);
+          setIsAdmin(data.isAdmin || false);
+          setUserRole(data.userRole || null);
         } else {
           setHasAccess(false);
         }
@@ -91,7 +111,7 @@ export default function AIStudioLayout({ children }: AIStudioLayoutProps) {
 
   return (
     <div className={styles.layout}>
-      <AIStudioSidebar userEmail={userEmail} />
+      <AIStudioSidebar userEmail={userEmail} isAdmin={isAdmin} userRole={userRole} />
       <main className={styles.main}>
         {children}
       </main>

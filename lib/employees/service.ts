@@ -26,14 +26,13 @@ export async function getEmployees(
 ) {
   const supabase = await createClient();
   
-  // Get list of super_admin user IDs and emails to exclude from employees list
+  // Get list of super_admin user IDs to exclude from employees list
   const { data: superAdmins } = await supabase
     .from('profiles')
-    .select('id, email')
+    .select('id')
     .eq('global_role', 'super_admin');
   
   const superAdminIds = new Set((superAdmins || []).map(sa => sa.id));
-  const superAdminEmails = new Set((superAdmins || []).map(sa => sa.email?.toLowerCase()).filter(Boolean));
   
   // Подгружаем связанную роль из таблицы roles
   let query = supabase
@@ -95,12 +94,11 @@ export async function getEmployees(
     throw new Error(result.error.message);
   }
 
-  // Filter out super admins from the list (server-side filtering by user_id AND email)
+  // Filter out super admins from the list (only by user_id, not by employee email)
+  // Employee email may coincidentally match super_admin email but that doesn't mean they are super_admin
   const filteredData = (result.data || []).filter((emp: { user_id?: string; email?: string }) => {
-    // Exclude if user_id matches super_admin
+    // Exclude only if user_id matches super_admin
     if (emp.user_id && superAdminIds.has(emp.user_id)) return false;
-    // Exclude if email matches super_admin
-    if (emp.email && superAdminEmails.has(emp.email.toLowerCase())) return false;
     return true;
   });
 
@@ -245,13 +243,14 @@ export async function getEmployeeTenderStats(employeeId: string) {
 export async function createEmployee(data: CreateEmployeeData) {
   const supabase = await createClient();
   
-  // Проверяем, что user_id (если передан) не назначен другому сотруднику
+  // Проверяем, что user_id (если передан) не назначен другому активному сотруднику
   if (data.user_id) {
     const { data: existingEmployee } = await supabase
       .from('employees')
       .select('id, full_name')
       .eq('user_id', data.user_id)
       .eq('company_id', data.company_id)
+      .is('deleted_at', null)
       .maybeSingle();
     
     if (existingEmployee) {

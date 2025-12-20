@@ -36,10 +36,10 @@ export async function PATCH(
       return NextResponse.json({ success: true });
     }
 
-    // Проверяем существует ли роль
+    // Проверяем существует ли роль и получаем её company_id
     const { data: roleData, error: roleError } = await supabase
       .from("roles")
-      .select("id")
+      .select("id, company_id")
       .eq("id", role_id)
       .single();
 
@@ -47,21 +47,24 @@ export async function PATCH(
       return NextResponse.json({ error: "Role not found" }, { status: 404 });
     }
 
-    // Удаляем старое назначение (если есть) и создаём новое
-    // Используем upsert так как у нас UNIQUE(user_id)
+    // Сначала удаляем старое назначение для этой компании (если есть)
+    // Потом создаём новое. Это нужно т.к. UNIQUE может быть на (user_id, company_id)
+    await supabase
+      .from("user_roles")
+      .delete()
+      .eq("user_id", id)
+      .eq("company_id", roleData.company_id);
+
+    // Создаём новое назначение роли
     const { error: assignError } = await supabase
       .from("user_roles")
-      .upsert(
-        {
-          user_id: id,
-          role_id,
-          assigned_by: user.id,
-          assigned_at: new Date().toISOString(),
-        },
-        {
-          onConflict: "user_id",
-        }
-      );
+      .insert({
+        user_id: id,
+        role_id,
+        company_id: roleData.company_id,
+        assigned_by: user.id,
+        assigned_at: new Date().toISOString(),
+      });
 
     if (assignError) {
       console.error("Failed to assign role:", assignError);

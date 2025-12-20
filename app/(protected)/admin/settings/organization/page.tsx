@@ -93,5 +93,55 @@ export default async function OrganizationSettingsPage() {
     );
   }
 
-  return <OrganizationSettings organization={organization} />;
+  // Получаем компании организации и участников
+  const { data: companies } = await supabase
+    .from('companies')
+    .select('id')
+    .eq('organization_id', organization.id);
+  
+  const companyIds = companies?.map(c => c.id) || [];
+  
+  // Получаем участников компаний организации
+  let members: Array<{
+    id: string;
+    role: string;
+    created_at: string;
+    profiles: {
+      id: string;
+      full_name: string | null;
+      email: string | null;
+      avatar_url: string | null;
+    } | null;
+  }> = [];
+  
+  if (companyIds.length > 0) {
+    // Сначала получаем членов компании
+    const { data: membersData } = await supabase
+      .from('company_members')
+      .select('id, user_id, role, created_at')
+      .in('company_id', companyIds)
+      .eq('status', 'active');
+    
+    if (membersData && membersData.length > 0) {
+      // Получаем профили отдельным запросом
+      const userIds = membersData.map(m => m.user_id).filter(Boolean);
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, avatar_url')
+        .in('id', userIds);
+      
+      const profilesMap = new Map(
+        (profilesData || []).map(p => [p.id, p])
+      );
+      
+      members = membersData.map(m => ({
+        id: m.id,
+        role: m.role,
+        created_at: m.created_at,
+        profiles: m.user_id ? profilesMap.get(m.user_id) || null : null
+      }));
+    }
+  }
+
+  return <OrganizationSettings organization={organization} members={members} currentUserId={user.id} />;
 }

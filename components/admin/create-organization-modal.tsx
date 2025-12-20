@@ -24,6 +24,7 @@ interface CreateOrganizationModalProps {
 const MODES = [
     { key: 'finance', label: 'Финансы' },
     { key: 'tenders', label: 'Тендеры' },
+    { key: 'ai_studio', label: 'ИИ Студия' },
     { key: 'investments', label: 'Инвестиции' },
     { key: 'personal', label: 'Личные' },
 ];

@@ -4,6 +4,7 @@
  */
 
 import { createRouteClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 // Супер-админ email
 const SUPER_ADMIN_EMAIL = "corvetik1@yandex.ru";
@@ -61,8 +62,9 @@ export async function hasAIStudioAccess(
       return false;
     }
 
-    // Проверяем доступ организации к AI Studio
-    const { data: access } = await supabase
+    // Проверяем доступ организации к AI Studio (используем admin client для обхода RLS)
+    const adminClient = createAdminClient();
+    const { data: access } = await adminClient
       .from("ai_studio_access")
       .select("*")
       .eq("organization_id", organizationId)
@@ -168,8 +170,9 @@ export async function getAIStudioAccessInfo(
       }
     }
 
-    // Получаем доступ организации через ai_studio_access
-    const { data: access } = await supabase
+    // Получаем доступ организации через ai_studio_access (используем admin client для обхода RLS)
+    const adminClient = createAdminClient();
+    const { data: access } = await adminClient
       .from("ai_studio_access")
       .select("*")
       .eq("organization_id", organizationId)

@@ -23,13 +23,46 @@ import {
   History,
   Film,
   Disc3,
-  Layers
+  Layers,
+  UserCog,
+  Settings
 } from "lucide-react";
 import styles from "./Sidebar.module.css";
 
+interface UserRole {
+  id: string;
+  name: string;
+  color: string;
+  permissions: string[];
+  allowed_modes: string[];
+}
+
 interface SidebarProps {
   userEmail: string | null;
+  isAdmin?: boolean;
+  userRole?: UserRole | null;
 }
+
+// Пункты меню, требующие админских прав
+const ADMIN_ONLY_SECTIONS = ['employees', 'settings'];
+
+// Маппинг пунктов меню на требуемые permissions
+const SECTION_PERMISSIONS: Record<string, string[]> = {
+  'home': [], // Главная доступна всем
+  'chat': ['ai-studio:chat', 'ai-studio:*', '*'],
+  'assistants': ['ai-studio:assistants', 'ai-studio:*', '*'],
+  'kie': ['ai-studio:kie', 'ai-studio:media', 'ai-studio:*', '*'],
+  'tools': ['ai-studio:tools', 'ai-studio:*', '*'],
+  'employees': ['employees:*', 'admin:*', '*'],
+  'settings': ['settings:*', 'admin:*', '*'],
+};
+
+// Проверка наличия permission
+const hasPermission = (permissions: string[] | undefined, required: string[]): boolean => {
+  if (!permissions || permissions.length === 0) return false;
+  if (permissions.includes('*')) return true;
+  return required.some(req => permissions.includes(req));
+};
 
 const menuSections = [
   {
@@ -81,11 +114,46 @@ const menuSections = [
       { id: "enhance", href: "/ai-studio/tools/enhance", icon: Sparkle, label: "Фотобустер" },
     ],
   },
+  {
+    id: "employees",
+    label: "Сотрудники",
+    icon: UserCog,
+    href: "/ai-studio/employees",
+    items: [],
+  },
+  {
+    id: "settings",
+    label: "Настройки",
+    icon: Settings,
+    href: "/admin/settings",
+    items: [],
+  },
 ];
 
-export default function AIStudioSidebar({ userEmail }: SidebarProps) {
+export default function AIStudioSidebar({ userEmail, isAdmin = false, userRole }: SidebarProps) {
   const pathname = usePathname();
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["tools"]));
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  
+  // Фильтруем секции меню в зависимости от прав пользователя
+  const visibleSections = menuSections.filter(section => {
+    // Админские пункты показываем только админам
+    if (ADMIN_ONLY_SECTIONS.includes(section.id)) {
+      return isAdmin;
+    }
+    
+    // Если админ - показываем все
+    if (isAdmin) return true;
+    
+    // Проверяем permissions роли для каждой секции
+    const requiredPerms = SECTION_PERMISSIONS[section.id];
+    if (requiredPerms && requiredPerms.length > 0) {
+      // Если есть требования к permissions, проверяем их
+      return hasPermission(userRole?.permissions, requiredPerms);
+    }
+    
+    // Главная страница доступна всем
+    return true;
+  });
 
   const toggleSection = (sectionId: string) => {
     const newExpanded = new Set(expandedSections);
@@ -112,7 +180,7 @@ export default function AIStudioSidebar({ userEmail }: SidebarProps) {
 
       {/* Navigation Sections */}
       <nav className={styles.nav}>
-        {menuSections.map((section) => {
+        {visibleSections.map((section) => {
           const SectionIcon = section.icon;
           const isExpanded = expandedSections.has(section.id);
           

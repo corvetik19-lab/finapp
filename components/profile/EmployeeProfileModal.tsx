@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Camera, Mail, Phone, Calendar, Shield, Building2, Briefcase } from "lucide-react";
+import { Camera, Mail, Phone, Calendar, Shield, Building2, Briefcase, CheckCircle2, XCircle, Sparkles } from "lucide-react";
 
 export interface EmployeeProfileData {
   email: string;
@@ -20,8 +20,12 @@ export interface EmployeeProfileData {
   avatar: string | null;
   createdAt: string;
   roleName?: string;
+  roleColor?: string;
   departmentName?: string;
   position?: string;
+  permissions?: string[];
+  allowedModes?: string[];
+  organizationName?: string;
 }
 
 interface EmployeeProfileModalProps {
@@ -200,7 +204,25 @@ export default function EmployeeProfileModal({
               <Shield className="h-5 w-5 text-muted-foreground" />
               <div>
                 <Label className="text-xs text-muted-foreground">Роль в системе</Label>
-                <p className="text-sm font-medium">{profile.roleName}</p>
+                <div className="flex items-center gap-2">
+                  {profile.roleColor && (
+                    <span 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: profile.roleColor }}
+                    />
+                  )}
+                  <p className="text-sm font-medium">{profile.roleName}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {profile.organizationName && (
+            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+              <Building2 className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <Label className="text-xs text-muted-foreground">Организация</Label>
+                <p className="text-sm font-medium">{profile.organizationName}</p>
               </div>
             </div>
           )}
@@ -213,6 +235,50 @@ export default function EmployeeProfileModal({
             </div>
           </div>
         </div>
+
+        {/* Доступы и разрешения */}
+        {(profile.allowedModes && profile.allowedModes.length > 0) && (
+          <div className="mt-4 pt-4 border-t">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <Label className="text-sm font-medium">Доступные модули</Label>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { key: 'ai-studio', label: 'ИИ Студия', icon: '✨' },
+                { key: 'ai_studio', label: 'ИИ Студия', icon: '✨' },
+                { key: 'finance', label: 'Финансы', icon: '💰' },
+                { key: 'tenders', label: 'Тендеры', icon: '📋' },
+                { key: 'personal', label: 'Личные', icon: '🎯' },
+                { key: 'investments', label: 'Инвестиции', icon: '📈' },
+              ].map(mode => {
+                const hasAccess = profile.allowedModes?.includes(mode.key) || 
+                                  profile.allowedModes?.includes('*');
+                // Пропускаем дубликаты ai-studio/ai_studio
+                if (mode.key === 'ai_studio' && profile.allowedModes?.includes('ai-studio')) return null;
+                if (mode.key === 'ai-studio' && profile.allowedModes?.includes('ai_studio')) return null;
+                
+                return (
+                  <div 
+                    key={mode.key}
+                    className={`flex items-center gap-2 p-2 rounded-md text-sm ${
+                      hasAccess 
+                        ? 'bg-green-50 text-green-700' 
+                        : 'bg-gray-50 text-gray-400'
+                    }`}
+                  >
+                    {hasAccess ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-gray-300" />
+                    )}
+                    <span>{mode.icon} {mode.label}</span>
+                  </div>
+                );
+              }).filter(Boolean)}
+            </div>
+          </div>
+        )}
 
         <div className="pt-4 text-center text-xs text-muted-foreground">
           Для изменения данных профиля обратитесь к администратору

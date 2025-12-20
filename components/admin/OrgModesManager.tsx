@@ -22,13 +22,15 @@ interface OrgModesManagerProps {
   globalEnabledModes: string[];
   orgModes: string[];
   organizationId: string;
+  isSuperAdmin?: boolean;
 }
 
 export function OrgModesManager({ 
   allModes, 
   globalEnabledModes, 
   orgModes, 
-  organizationId 
+  organizationId,
+  isSuperAdmin = false
 }: OrgModesManagerProps) {
   const [modes, setModes] = useState<Set<string>>(new Set(orgModes));
   const [isPending, startTransition] = useTransition();
@@ -37,6 +39,12 @@ export function OrgModesManager({
   const { show: showToast } = useToast();
 
   const toggleMode = (key: string) => {
+    // Только супер-админ может менять режимы
+    if (!isSuperAdmin) {
+      showToast("Изменение режимов доступно только администратору платформы", { type: "error" });
+      return;
+    }
+    
     // Нельзя включить режим, который отключён глобально
     if (!globalEnabledModes.includes(key)) {
       showToast("Этот режим отключён администратором платформы", { type: "error" });
@@ -179,7 +187,7 @@ export function OrgModesManager({
                 <Switch
                   checked={isEnabled}
                   onCheckedChange={() => toggleMode(mode.key)}
-                  disabled={isPending || !isGloballyEnabled}
+                  disabled={isPending || !isGloballyEnabled || !isSuperAdmin}
                 />
               </div>
             </div>
@@ -189,12 +197,21 @@ export function OrgModesManager({
 
       {/* Подсказка */}
       <div className="text-sm text-muted-foreground bg-muted/30 rounded-lg p-4">
-        <p className="font-medium mb-1">💡 Как это работает:</p>
+        <p className="font-medium mb-1">💡 Информация о режимах:</p>
         <ul className="list-disc list-inside space-y-1 text-xs">
-          <li>Включённые режимы будут доступны всем сотрудникам организации</li>
-          <li>Режимы с замком отключены администратором платформы и недоступны</li>
-          <li>Минимум один режим всегда должен быть включён</li>
-          <li>Вы можете дополнительно ограничить доступ к режимам для конкретных сотрудников в разделе «Роли и права»</li>
+          <li>Включённые режимы доступны всем сотрудникам организации</li>
+          {!isSuperAdmin && (
+            <li className="text-amber-600 font-medium">
+              Изменение режимов доступно только администратору платформы при создании или настройке организации
+            </li>
+          )}
+          {isSuperAdmin && (
+            <>
+              <li>Режимы с замком отключены глобально и недоступны</li>
+              <li>Минимум один режим всегда должен быть включён</li>
+            </>
+          )}
+          <li>Вы можете ограничить доступ к режимам для конкретных сотрудников в разделе «Роли и права»</li>
         </ul>
       </div>
     </div>

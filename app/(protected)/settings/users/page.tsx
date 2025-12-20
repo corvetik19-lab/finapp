@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createRSCClient, getCachedUser } from "@/lib/supabase/server";
+import { getCurrentCompanyId } from "@/lib/platform/organization";
 import UsersManager from "@/components/settings/UsersManager";
 
 export const dynamic = 'force-dynamic';
@@ -14,6 +15,7 @@ export default async function UsersSettingsPage() {
   }
   
   const supabase = await createRSCClient();
+  const companyId = await getCurrentCompanyId();
 
   // Получаем роли
   const { data: rolesData = [] } = await supabase
@@ -21,8 +23,33 @@ export default async function UsersSettingsPage() {
     .select("id,name,description,permissions,color,is_default,created_at")
     .order("created_at", { ascending: true });
 
-  // Получаем всех пользователей через Admin API
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  // Получаем членов компании текущего пользователя
+  let companyUserIds: string[] = [];
+  if (serviceKey && companyId) {
+    const { createClient } = await import("@supabase/supabase-js");
+    const adminClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      serviceKey,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
+
+    const { data: companyMembers } = await adminClient
+      .from('company_members')
+      .select('user_id')
+      .eq('company_id', companyId)
+      .eq('status', 'active');
+    
+    companyUserIds = (companyMembers || []).map(m => m.user_id).filter(Boolean);
+  }
+
+  // Получаем пользователей через Admin API
   let usersData: Array<{
     id: string;
     email?: string;
@@ -46,7 +73,8 @@ export default async function UsersSettingsPage() {
 
     const { data: { users: adminUsers }, error: usersError } = await adminClient.auth.admin.listUsers();
     if (!usersError && adminUsers) {
-      usersData = adminUsers as typeof usersData;
+      // Фильтруем только пользователей из текущей компании
+      usersData = (adminUsers as typeof usersData).filter(u => companyUserIds.includes(u.id));
     }
   }
 
@@ -56,7 +84,7 @@ export default async function UsersSettingsPage() {
     .select("user_id, role_id, roles(name, color)")
     .returns<Array<{user_id: string; role_id: string; roles: {name: string; color: string} | null}>>();
 
-  // Получаем профили для фильтрации супер-админов и last_seen_at (используем admin client)
+  // Получаем профили для фильтрации супер-админов и last_seen_at
   let profilesData: Array<{id: string; global_role: string | null; last_seen_at: string | null}> = [];
   if (serviceKey) {
     const { createClient } = await import("@supabase/supabase-js");
@@ -72,7 +100,8 @@ export default async function UsersSettingsPage() {
     );
     const { data } = await adminClient
       .from("profiles")
-      .select("id, global_role, last_seen_at");
+      .select("id, global_role, last_seen_at")
+      .in("id", companyUserIds.length > 0 ? companyUserIds : ['']);
     profilesData = data || [];
   }
 
