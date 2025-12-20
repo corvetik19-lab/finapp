@@ -14,6 +14,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plus, RefreshCw, Settings, AlertCircle } from 'lucide-react';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 interface Platform {
   id: string;
@@ -236,6 +237,30 @@ export function TenderDepartmentClient({ stages: initialStages, types, companyId
 
     return unsubscribe;
   }, [loadStages]);
+
+  // Realtime подписка на изменения тендеров
+  useEffect(() => {
+    const supabase = getSupabaseClient();
+    
+    const channel = supabase.channel(`department_tenders_${companyId}`)
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'tenders', filter: `company_id=eq.${companyId}` },
+        () => {
+          loadTenders();
+        }
+      )
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'tender_responsible' },
+        () => {
+          loadTenders();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [companyId, loadTenders]);
 
   // Перегруппировка при изменении фильтров
   useEffect(() => {

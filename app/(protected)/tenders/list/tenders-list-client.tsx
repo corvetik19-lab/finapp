@@ -12,6 +12,7 @@ import type { EISTenderData } from '@/lib/tenders/eis-mock-data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw } from 'lucide-react';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 interface TendersListClientProps {
   stages: TenderStage[];
@@ -125,6 +126,30 @@ export function TendersListClient({ stages, types, companyId }: TendersListClien
     loadTenders();
     loadEmployees();
   }, [loadTenders, loadEmployees]);
+
+  // Realtime подписка на изменения тендеров
+  useEffect(() => {
+    const supabase = getSupabaseClient();
+    
+    const channel = supabase.channel(`tenders_list_${companyId}`)
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'tenders', filter: `company_id=eq.${companyId}` },
+        () => {
+          loadTenders();
+        }
+      )
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'tender_responsible' },
+        () => {
+          loadTenders();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [companyId, loadTenders]);
 
   // Сохраняем выбранный режим просмотра в localStorage
   useEffect(() => {

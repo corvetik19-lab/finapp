@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { TenderStageTimer } from './TenderStageTimer';
 import { QuickAssignModal } from './QuickAssignModal';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 interface Employee {
   id: string;
@@ -99,6 +100,38 @@ export function TendersAdminDashboard({ companyId }: TendersAdminDashboardProps)
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Realtime подписка на изменения тендеров
+  useEffect(() => {
+    const supabase = getSupabaseClient();
+    
+    // Подписка на изменения в таблице tenders
+    const tendersChannel = supabase.channel(`admin_tenders_${companyId}`)
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'tenders', filter: `company_id=eq.${companyId}` },
+        () => {
+          // При любом изменении перезагружаем данные
+          loadData();
+        }
+      )
+      .subscribe();
+
+    // Подписка на изменения в таблице tender_responsible
+    const responsibleChannel = supabase.channel(`admin_responsible_${companyId}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'tender_responsible' },
+        () => {
+          // При изменении назначений перезагружаем данные
+          loadData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(tendersChannel);
+      supabase.removeChannel(responsibleChannel);
+    };
+  }, [companyId, loadData]);
 
   const handleAssignClick = (tender: Tender) => {
     setSelectedTender(tender);
