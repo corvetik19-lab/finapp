@@ -120,7 +120,7 @@ export function EmployeeFormModal({
   const [error, setError] = useState<string | null>(null);
   const [companyRoles, setCompanyRoles] = useState<CompanyRole[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [loadingRoles, setLoadingRoles] = useState(false);
+  const [, setLoadingRoles] = useState(false);
   const [availableUsers, setAvailableUsers] = useState<AvailableUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -333,9 +333,6 @@ export function EmployeeFormModal({
     }
   };
 
-  const selectedRoleId = watch('role');
-  const selectedRole = companyRoles.find(r => r.id === selectedRoleId);
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-hidden flex flex-col p-0">
@@ -404,16 +401,17 @@ export function EmployeeFormModal({
                   id="email"
                   type="email"
                   {...register('email')}
-                  placeholder="ivan@company.com"
-                  className="text-gray-900"
-                  disabled={mode === 'edit' || !!selectedUserId}
-                  readOnly={mode === 'edit' || !!selectedUserId}
+                  placeholder={mode === 'create' && !selectedUserId ? "Выберите пользователя выше" : "ivan@company.com"}
+                  className="text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  disabled={true}
+                  readOnly={true}
                 />
-                {(mode === 'edit' || selectedUserId) && (
-                  <p className="text-xs text-gray-500">
-                    Email берётся из аккаунта пользователя и не может быть изменён
-                  </p>
-                )}
+                <p className="text-xs text-gray-500">
+                  {mode === 'create' && !selectedUserId 
+                    ? "Email автоматически заполнится после выбора пользователя"
+                    : "Email берётся из аккаунта пользователя и не может быть изменён"
+                  }
+                </p>
                 {errors.email && (
                   <p className="text-sm text-red-500">{errors.email.message}</p>
                 )}
@@ -574,37 +572,16 @@ export function EmployeeFormModal({
                     )}
                   </div>
                 ) : (
-                  <>
-                    <Select 
-                      value={watch('role') || undefined} 
-                      onValueChange={(v) => setValue('role', v)}
-                      disabled={loadingRoles}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={loadingRoles ? "Загрузка..." : "Выберите роль"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {companyRoles.filter(role => role.id).length > 0 ? (
-                          companyRoles.filter(role => role.id).map((role) => (
-                            <SelectItem key={role.id} value={role.id}>
-                              <span className="flex items-center gap-2">
-                                <span 
-                                  className="h-2 w-2 rounded-full" 
-                                  style={{ backgroundColor: role.color }}
-                                />
-                                {role.name}
-                              </span>
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="viewer">Наблюдатель</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                    {selectedRole?.description && (
-                      <p className="text-xs text-gray-500">{selectedRole.description}</p>
-                    )}
-                  </>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 p-3 bg-gray-100 border border-gray-200 rounded-lg">
+                      <span className="text-gray-500">
+                        Выберите пользователя выше
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      Роль автоматически подгрузится из настроек пользователя
+                    </p>
+                  </div>
                 )}
               </div>
 
