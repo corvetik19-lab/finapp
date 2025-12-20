@@ -14,6 +14,13 @@ import {
   Settings,
   Calculator,
   Calendar,
+  Banknote,
+  ClipboardList,
+  FileSignature,
+  Scale,
+  Warehouse,
+  UserCheck,
+  ArrowRightLeft,
   type LucideIcon,
 } from "lucide-react"
 
@@ -51,16 +58,40 @@ const accountingNavigation: NavSection[] = [
     ],
   },
   {
+    title: "Касса",
+    items: [
+      { title: "Кассовые ордера", url: "/tenders/accounting/cash-orders", icon: Banknote },
+      { title: "Кассовая книга", url: "/tenders/accounting/cash-book", icon: ClipboardList },
+    ],
+  },
+  {
+    title: "Документооборот",
+    items: [
+      { title: "Авансовые отчёты", url: "/tenders/accounting/advance-reports", icon: ClipboardList },
+      { title: "Доверенности", url: "/tenders/accounting/power-of-attorney", icon: FileSignature },
+      { title: "Акты сверки", url: "/tenders/accounting/reconciliation-acts", icon: Scale },
+    ],
+  },
+  {
     title: "Контрагенты",
     items: [
       { title: "Все контрагенты", url: "/tenders/accounting/counterparties", icon: Users },
     ],
   },
   {
-    title: "Банк",
+    title: "Деньги",
     items: [
+      { title: "Платёжный календарь", url: "/tenders/accounting/payment-calendar", icon: Calendar },
       { title: "Банковские счета", url: "/tenders/accounting/bank-accounts", icon: Landmark },
-      { title: "Банк-интеграции", url: "/tenders/accounting/bank-integrations", icon: Globe },
+    ],
+  },
+  {
+    title: "Банк-интеграции",
+    items: [
+      { title: "Подключения", url: "/tenders/accounting/bank/connections", icon: Globe },
+      { title: "Выписки", url: "/tenders/accounting/bank/statements", icon: FileText },
+      { title: "Транзакции", url: "/tenders/accounting/bank/transactions", icon: ArrowRightLeft },
+      { title: "Правила", url: "/tenders/accounting/bank/rules", icon: Settings },
     ],
   },
   {
@@ -72,10 +103,38 @@ const accountingNavigation: NavSection[] = [
     ],
   },
   {
+    title: "Регистры",
+    items: [
+      { title: "План счетов", url: "/tenders/accounting/chart-of-accounts", icon: ClipboardList },
+      { title: "ОСВ", url: "/tenders/accounting/osv", icon: BarChart3 },
+      { title: "Журнал проводок", url: "/tenders/accounting/journal", icon: FileText },
+      { title: "Книга покупок", url: "/tenders/accounting/purchase-ledger", icon: FileText },
+      { title: "Книга продаж", url: "/tenders/accounting/sales-ledger", icon: FileText },
+    ],
+  },
+  {
     title: "Отчётность",
     items: [
       { title: "КУДиР", url: "/tenders/accounting/kudir", icon: FileText },
       { title: "Отчёты", url: "/tenders/accounting/reports", icon: BarChart3 },
+    ],
+  },
+  {
+    title: "Склад",
+    items: [
+      { title: "Склады", url: "/tenders/accounting/warehouse", icon: Warehouse },
+      { title: "Номенклатура", url: "/tenders/accounting/warehouse/items", icon: ClipboardList },
+      { title: "Остатки", url: "/tenders/accounting/warehouse/stock", icon: BarChart3 },
+      { title: "Документы", url: "/tenders/accounting/warehouse/documents", icon: FileText },
+    ],
+  },
+  {
+    title: "Персонал",
+    items: [
+      { title: "Сотрудники", url: "/tenders/accounting/payroll/employees", icon: UserCheck },
+      { title: "Должности", url: "/tenders/accounting/payroll/positions", icon: ClipboardList },
+      { title: "Расчётные листки", url: "/tenders/accounting/payroll/payslips", icon: FileText },
+      { title: "Расчётные периоды", url: "/tenders/accounting/payroll/periods", icon: Calendar },
     ],
   },
   {

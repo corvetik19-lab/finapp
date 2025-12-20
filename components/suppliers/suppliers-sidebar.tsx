@@ -15,6 +15,8 @@ import {
   Star,
   Phone,
   Mail,
+  Upload,
+  Users,
   type LucideIcon,
 } from "lucide-react"
 
@@ -48,8 +50,16 @@ const suppliersNavigation: NavSection[] = [
     title: "Управление",
     items: [
       { title: "Все поставщики", url: "/tenders/suppliers", icon: Factory },
+      { title: "Импорт", url: "/tenders/suppliers/import", icon: Upload },
       { title: "Категории", url: "/tenders/suppliers/categories", icon: List },
       { title: "Дубликаты", url: "/tenders/suppliers/duplicates", icon: Copy },
+    ],
+  },
+  {
+    title: "Тендеры",
+    items: [
+      { title: "Подбор под тендер", url: "/tenders/suppliers/matching", icon: Users },
+      { title: "Сравнение КП", url: "/tenders/suppliers/offers", icon: Scale },
     ],
   },
   {

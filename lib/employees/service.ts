@@ -243,6 +243,21 @@ export async function getEmployeeTenderStats(employeeId: string) {
 export async function createEmployee(data: CreateEmployeeData) {
   const supabase = await createClient();
   
+  // Проверяем, что email не занят другим сотрудником в этой компании
+  if (data.email) {
+    const { data: existingByEmail } = await supabase
+      .from('employees')
+      .select('id, full_name')
+      .eq('email', data.email)
+      .eq('company_id', data.company_id)
+      .is('deleted_at', null)
+      .maybeSingle();
+    
+    if (existingByEmail) {
+      throw new Error(`Сотрудник с email ${data.email} уже существует: ${existingByEmail.full_name}`);
+    }
+  }
+  
   // Проверяем, что user_id (если передан) не назначен другому активному сотруднику
   if (data.user_id) {
     const { data: existingEmployee } = await supabase

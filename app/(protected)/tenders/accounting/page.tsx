@@ -1,12 +1,14 @@
 import { Metadata } from "next";
+import { getAccountingSettings } from "@/lib/accounting/service";
 import { 
-  getAccountingSettings, 
-  getAccountingDashboardStats, 
-  getUpcomingTaxPayments,
-  getExtendedDashboardStats,
-  getRecentDocuments
-} from "@/lib/accounting/service";
-import { AccountingDashboardPro } from "@/components/accounting/AccountingDashboardPro";
+  getFinancialOverview, 
+  getReceivablesData,
+  getPayablesData,
+  getTenderProfitabilityData,
+  getTaxCalendarData,
+  getUnpaidInvoicesData,
+} from "@/lib/accounting/dashboard/widgets-service";
+import { AccountingDashboardNew } from "@/components/accounting/dashboard";
 
 export const metadata: Metadata = {
   title: "Бухгалтерия | Тендеры",
@@ -14,21 +16,35 @@ export const metadata: Metadata = {
 };
 
 export default async function AccountingPage() {
-  const [settings, stats, upcomingTaxes, extendedStats, recentDocs] = await Promise.all([
+  const filters = { period: 'month' as const };
+  
+  const [
+    settings,
+    financialOverview,
+    receivables,
+    payables,
+    tenderProfitability,
+    taxCalendar,
+    unpaidInvoices,
+  ] = await Promise.all([
     getAccountingSettings(),
-    getAccountingDashboardStats(),
-    getUpcomingTaxPayments(90),
-    getExtendedDashboardStats(),
-    getRecentDocuments(5),
+    getFinancialOverview(filters),
+    getReceivablesData(),
+    getPayablesData(),
+    getTenderProfitabilityData(),
+    getTaxCalendarData(),
+    getUnpaidInvoicesData(),
   ]);
 
   return (
-    <AccountingDashboardPro
+    <AccountingDashboardNew
       settings={settings}
-      stats={stats}
-      upcomingTaxes={upcomingTaxes}
-      extendedStats={extendedStats}
-      recentDocuments={recentDocs}
+      financialOverview={financialOverview}
+      receivables={receivables}
+      payables={payables}
+      tenderProfitability={tenderProfitability}
+      taxCalendar={taxCalendar}
+      unpaidInvoices={unpaidInvoices}
     />
   );
 }

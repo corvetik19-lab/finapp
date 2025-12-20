@@ -189,16 +189,30 @@ export function EmployeeFormModal({
     }
   }, [companyId]);
 
-  // Обработчик выбора пользователя - автоматически ставит роль из role_id
+  // Обработчик выбора пользователя - автоматически ставит роль, email и имя из пользователя
   const handleUserSelect = useCallback((userId: string | null) => {
     setSelectedUserId(userId);
     
     if (userId) {
       const selectedUser = availableUsers.find(u => u.id === userId);
-      if (selectedUser?.role_id) {
+      if (selectedUser) {
+        // Автоматически заполняем email из пользователя
+        if (selectedUser.email) {
+          setValue('email', selectedUser.email);
+        }
+        // Автоматически заполняем имя из пользователя если есть
+        if (selectedUser.full_name) {
+          setValue('full_name', selectedUser.full_name);
+        }
         // Используем role_id напрямую из company_members
-        setValue('role', selectedUser.role_id);
+        if (selectedUser.role_id) {
+          setValue('role', selectedUser.role_id);
+        }
       }
+    } else {
+      // Если пользователь снят - очищаем email и имя
+      setValue('email', '');
+      setValue('full_name', '');
     }
   }, [availableUsers, setValue]);
 
@@ -392,7 +406,14 @@ export function EmployeeFormModal({
                   {...register('email')}
                   placeholder="ivan@company.com"
                   className="text-gray-900"
+                  disabled={mode === 'edit' || !!selectedUserId}
+                  readOnly={mode === 'edit' || !!selectedUserId}
                 />
+                {(mode === 'edit' || selectedUserId) && (
+                  <p className="text-xs text-gray-500">
+                    Email берётся из аккаунта пользователя и не может быть изменён
+                  </p>
+                )}
                 {errors.email && (
                   <p className="text-sm text-red-500">{errors.email.message}</p>
                 )}
