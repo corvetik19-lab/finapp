@@ -401,7 +401,7 @@ export function EmployeeFormModal({
                   id="email"
                   type="email"
                   {...register('email')}
-                  placeholder={mode === 'create' && !selectedUserId ? "Выберите пользователя выше" : "ivan@company.com"}
+                  placeholder={mode === 'create' && !selectedUserId ? "Выберите пользователя ниже" : "ivan@company.com"}
                   className="text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   disabled={true}
                   readOnly={true}
@@ -575,7 +575,7 @@ export function EmployeeFormModal({
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 p-3 bg-gray-100 border border-gray-200 rounded-lg">
                       <span className="text-gray-500">
-                        Выберите пользователя выше
+                        Выберите пользователя ниже
                       </span>
                     </div>
                     <p className="text-xs text-gray-500">
@@ -680,7 +680,20 @@ export function EmployeeFormModal({
                             className="text-gray-900"
                             textValue={displayText}
                           >
-                            {displayText}
+                            <div className="flex items-center justify-between w-full gap-2">
+                              <span>{displayText}</span>
+                              {user.role_name && (
+                                <span 
+                                  className="text-xs px-2 py-0.5 rounded-full shrink-0"
+                                  style={{ 
+                                    backgroundColor: user.role_color ? `${user.role_color}20` : '#6366f120',
+                                    color: user.role_color || '#6366f1'
+                                  }}
+                                >
+                                  {user.role_name}
+                                </span>
+                              )}
+                            </div>
                           </SelectItem>
                         );
                       })}
