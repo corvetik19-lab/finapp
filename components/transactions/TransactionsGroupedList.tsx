@@ -80,6 +80,12 @@ export default function TransactionsGroupedList({
     setClientTxns(txns);
   }, [txns]);
 
+  // Находим ID категории "Такси" для специальной обработки
+  const taxiCategoryId = useMemo(() => {
+    const taxiCat = categories.find(c => c.name.toLowerCase() === "такси");
+    return taxiCat?.id || null;
+  }, [categories]);
+
   const byDir = useMemo(() => {
     const buckets: Record<string, Txn[]> = {};
     for (const txn of clientTxns) {
@@ -113,8 +119,33 @@ export default function TransactionsGroupedList({
     return grouped;
   }, [clientTxns, catMap]);
 
-  const incomeTotal = useMemo(() => byDir.income.reduce((sum, group) => sum + group.total, 0), [byDir]);
-  const expenseTotal = useMemo(() => byDir.expense.reduce((sum, group) => sum + group.total, 0), [byDir]);
+  // Специальная логика для Такси: чистый доход = доход - расход
+  const taxiIncome = useMemo(() => {
+    const taxiIncomeGroup = byDir.income.find(g => g.category?.id === taxiCategoryId);
+    return taxiIncomeGroup?.total || 0;
+  }, [byDir, taxiCategoryId]);
+
+  const taxiExpense = useMemo(() => {
+    const taxiExpenseGroup = byDir.expense.find(g => g.category?.id === taxiCategoryId);
+    return taxiExpenseGroup?.total || 0;
+  }, [byDir, taxiCategoryId]);
+
+  const taxiNetIncome = taxiIncome - taxiExpense; // Чистый доход такси
+
+  // Общий доход: все доходы, но Такси заменяем на чистый доход
+  const incomeTotal = useMemo(() => {
+    const otherIncome = byDir.income
+      .filter(g => g.category?.id !== taxiCategoryId)
+      .reduce((sum, group) => sum + group.total, 0);
+    return otherIncome + Math.max(0, taxiNetIncome); // Добавляем чистый доход такси (если положительный)
+  }, [byDir, taxiCategoryId, taxiNetIncome]);
+
+  // Общий расход: все расходы КРОМЕ Такси (такси расход - это затраты на работу, не личные расходы)
+  const expenseTotal = useMemo(() => {
+    return byDir.expense
+      .filter(g => g.category?.id !== taxiCategoryId)
+      .reduce((sum, group) => sum + group.total, 0);
+  }, [byDir, taxiCategoryId]);
   const transferTotal = useMemo(() => byDir.transfer.reduce((sum, group) => sum + group.total, 0), [byDir]);
 
   const [openDir, setOpenDir] = useState<{ income: boolean; expense: boolean; transfer: boolean }>({ income: true, expense: true, transfer: true });

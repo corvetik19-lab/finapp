@@ -248,20 +248,49 @@ export default async function TransactionsPage({
 
   // Build summary presets (only for summary cards)
   const currencyCode = (accounts?.[0]?.currency as string) || "RUB";
+  
+  // Находим ID категории "Такси" для специальной обработки
+  const taxiCategory = categories?.find(c => c.name.toLowerCase() === "такси");
+  const taxiCategoryId = taxiCategory?.id || null;
+  
   // Inclusive period: from <= d <= toInclusive
+  // Специальная логика для Такси: расход такси - это затраты на работу, не личные расходы
+  // Чистый доход такси = доход такси - расход такси
   function sumRange(from: Date, toInclusive: Date) {
     let inc = 0;
     let exp = 0;
+    let taxiInc = 0;
+    let taxiExp = 0;
+    
     for (const t of txc) {
       const d = new Date(t.occurred_at);
       if (d >= from && d <= toInclusive) {
-        // Используем Math.abs для корректного подсчёта (в базе могут быть разные знаки)
-        if (t.direction === "income") inc += Math.abs(Number(t.amount));
-        else if (t.direction === "expense") {
-          exp += Math.abs(Number(t.amount));
+        const amount = Math.abs(Number(t.amount));
+        const isTaxi = t.category_id === taxiCategoryId;
+        
+        if (t.direction === "income") {
+          if (isTaxi) {
+            taxiInc += amount;
+          } else {
+            inc += amount;
+          }
+        } else if (t.direction === "expense") {
+          if (isTaxi) {
+            taxiExp += amount;
+          } else {
+            exp += amount;
+          }
         }
       }
     }
+    
+    // Чистый доход такси добавляем к общему доходу (если положительный)
+    const taxiNetIncome = taxiInc - taxiExp;
+    if (taxiNetIncome > 0) {
+      inc += taxiNetIncome;
+    }
+    // Расход такси НЕ добавляем к общим расходам (это затраты на работу)
+    
     return { incomeMinor: inc, expenseMinor: exp };
   }
   function previousPeriod(from: Date, toInclusive: Date) {
