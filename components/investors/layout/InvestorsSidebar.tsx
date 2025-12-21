@@ -16,6 +16,9 @@ import {
   Shield,
   Calculator,
   TrendingUp,
+  FileSignature,
+  ClipboardCheck,
+  UserCircle,
   type LucideIcon,
 } from "lucide-react"
 
@@ -55,6 +58,13 @@ const investorsNavigation: NavSection[] = [
     ],
   },
   {
+    title: "Документы",
+    items: [
+      { title: "Шаблоны договоров", url: "/investors/templates", icon: FileSignature },
+      { title: "Акты сверки", url: "/investors/reconciliation", icon: ClipboardCheck },
+    ],
+  },
+  {
     title: "Аналитика",
     items: [
       { title: "График возвратов", url: "/investors/returns", icon: CalendarClock },
@@ -64,9 +74,15 @@ const investorsNavigation: NavSection[] = [
     ],
   },
   {
+    title: "Портал",
+    items: [
+      { title: "Личный кабинет", url: "/investor-portal", icon: UserCircle },
+      { title: "Доступ инвесторов", url: "/investors/access", icon: Users },
+    ],
+  },
+  {
     title: "Настройки",
     items: [
-      { title: "Доступ инвесторов", url: "/investors/access", icon: Users },
       { title: "Настройки", url: "/investors/settings", icon: Settings },
     ],
   },
