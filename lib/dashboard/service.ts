@@ -132,7 +132,11 @@ export async function loadDashboardOverview(monthsBack = 8, options?: DashboardO
       }
     }
 
-    if (row.direction === "expense" && occurredAt >= startBound && occurredAt <= endBound) {
+    // Breakdown считаем только за текущий месяц (как и topIncome/topExpense)
+    const currentMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const isCurrentMonth = occurredAt >= currentMonthStart && occurredAt <= endBound;
+    
+    if (row.direction === "expense" && isCurrentMonth) {
       const categoryField = row.category;
       const categoryName = Array.isArray(categoryField)
         ? categoryField[0]?.name ?? "Без категории"
