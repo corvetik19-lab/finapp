@@ -164,19 +164,12 @@ export default async function TransactionsPage({
   const hasMin = !Number.isNaN(minVal) && minVal > 0;
   const hasMax = !Number.isNaN(maxVal) && maxVal > 0;
 
-  // Вычисляем лимит для пагинации
-  const isLargePeriod = f_period === 'current-year' || f_period === 'custom';
-  const defaultLimit = isLargePeriod ? 50 : 100;
-  const userLimit = f_limit ? parseInt(f_limit, 10) : 0;
-  const effectiveLimit = userLimit > 0 ? userLimit : defaultLimit;
-
+  // Загружаем ВСЕ транзакции без ограничений
   let txnList;
   try {
-    // console.log("📊 listTransactions params:", { from: fromISO, to: toISO, period: f_period, limit: effectiveLimit });
-    
     txnList = await listTransactions(
       {
-        limit: effectiveLimit,
+        limit: 10000, // Большой лимит для загрузки всех транзакций
         direction: f_type === "income" || f_type === "expense" ? (f_type as "income" | "expense") : "all",
         accountIds: accts.length > 0 ? accts : undefined,
         categoryIds: cats.length > 0 ? cats : undefined,
