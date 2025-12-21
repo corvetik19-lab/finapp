@@ -40,16 +40,28 @@ export default async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL("/investor-portal/login", request.url));
     }
 
-    // Проверяем доступ инвестора
-    const { data: access } = await supabase
-      .from("investor_access")
-      .select("id")
-      .eq("investor_user_id", user.id)
-      .eq("status", "active")
-      .limit(1);
+    // Проверяем роль пользователя - админы и владельцы имеют полный доступ
+    const { data: membership } = await supabase
+      .from("organization_members")
+      .select("role")
+      .eq("user_id", user.id)
+      .limit(1)
+      .single();
 
-    if (!access || access.length === 0) {
-      return NextResponse.redirect(new URL("/investor-portal/login?error=no_access", request.url));
+    const isAdmin = membership?.role === "admin" || membership?.role === "owner";
+
+    // Если не админ, проверяем доступ инвестора
+    if (!isAdmin) {
+      const { data: access } = await supabase
+        .from("investor_access")
+        .select("id")
+        .eq("investor_user_id", user.id)
+        .eq("status", "active")
+        .limit(1);
+
+      if (!access || access.length === 0) {
+        return NextResponse.redirect(new URL("/investor-portal/login?error=no_access", request.url));
+      }
     }
   }
 
