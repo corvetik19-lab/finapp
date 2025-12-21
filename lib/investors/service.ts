@@ -148,7 +148,7 @@ export async function getInvestments(filters?: {
     .from("investments")
     .select(`
       *,
-      source:investment_sources(id, name, source_type),
+      source:investment_sources!investments_source_id_fkey(id, name, source_type),
       tender:tenders(id, subject, purchase_number)
     `)
     .eq("user_id", user.id);
@@ -178,7 +178,7 @@ export async function getInvestmentById(id: string): Promise<Investment | null> 
     .from("investments")
     .select(`
       *,
-      source:investment_sources(*),
+      source:investment_sources!investments_source_id_fkey(*),
       tender:tenders(id, subject, purchase_number, status)
     `)
     .eq("id", id)

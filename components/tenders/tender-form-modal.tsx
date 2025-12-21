@@ -29,7 +29,7 @@ interface TenderFormModalProps {
   companyId: string;
   types: TenderType[];
   templates?: TenderStageTemplate[]; // Шаблоны этапов
-  managers?: Array<{ id: string; full_name: string; role?: string }>;
+  managers?: Array<{ id: string; full_name: string; role?: string; role_color?: string }>;
   platforms?: Platform[]; // Справочник площадок
   tender?: Tender | null; // Для режима редактирования
   eisData?: EISTenderData | null; // Данные из ЕИС для автозаполнения

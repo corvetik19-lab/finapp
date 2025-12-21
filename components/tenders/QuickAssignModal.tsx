@@ -46,16 +46,19 @@ export function QuickAssignModal({
   companyId
 }: QuickAssignModalProps) {
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [assignedEmployeeIds, setAssignedEmployeeIds] = useState<Set<string>>(new Set());
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Загружаем список сотрудников
+  // Загружаем список сотрудников и назначений
   useEffect(() => {
     if (isOpen && companyId) {
       loadEmployees();
+      loadAssignedEmployees();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, companyId]);
 
   const loadEmployees = async () => {
@@ -78,6 +81,23 @@ export function QuickAssignModal({
       setLoading(false);
     }
   };
+
+  // Загружаем список сотрудников которые уже назначены на тендеры
+  const loadAssignedEmployees = async () => {
+    try {
+      const response = await fetch(`/api/tenders/assigned-employees?company_id=${companyId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const assignedIds = new Set<string>(data.employee_ids || []);
+        setAssignedEmployeeIds(assignedIds);
+      }
+    } catch (err) {
+      console.error('Error loading assigned employees:', err);
+    }
+  };
+
+  // Фильтруем только свободных сотрудников (не назначенных на тендеры)
+  const availableEmployees = employees.filter(emp => !assignedEmployeeIds.has(emp.id));
 
   const handleAssign = async () => {
     if (!tender || !selectedEmployeeId) return;
@@ -195,7 +215,11 @@ export function QuickAssignModal({
                   <SelectValue placeholder="Выберите сотрудника..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {employees.map((employee) => (
+                  {availableEmployees.length === 0 ? (
+                    <div className="py-4 px-2 text-center text-sm text-gray-500">
+                      Все сотрудники уже назначены на тендеры
+                    </div>
+                  ) : availableEmployees.map((employee) => (
                     <SelectItem key={employee.id} value={employee.id}>
                       <div className="flex items-center justify-between w-full gap-2">
                         <span>{employee.full_name}</span>

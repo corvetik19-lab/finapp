@@ -56,14 +56,16 @@ export function TenderKanban({ tendersByStage, stages, templates = [], onStageCh
 
   useEffect(() => {
     const supabase = getSupabaseClient();
+    // Supabase realtime - обрабатываем изменения комментариев
     const channel = supabase.channel('kanban_global_comments')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tender_comments' },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (payload: any) => {
-          if (payload.eventType === 'INSERT') {
-            setCommentsCounts(prev => ({ ...prev, [payload.new.tender_id]: (prev[payload.new.tender_id] || 0) + 1 }));
-          } else if (payload.eventType === 'DELETE') {
-            setCommentsCounts(prev => ({ ...prev, [payload.old.tender_id]: Math.max(0, (prev[payload.old.tender_id] || 0) - 1) }));
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'tender_comments' },
+        (payload) => {
+          const data = payload as { eventType: string; new: Record<string, string>; old: Record<string, string> };
+          if (data.eventType === 'INSERT' && data.new?.tender_id) {
+            setCommentsCounts(prev => ({ ...prev, [data.new.tender_id]: (prev[data.new.tender_id] || 0) + 1 }));
+          } else if (data.eventType === 'DELETE' && data.old?.tender_id) {
+            setCommentsCounts(prev => ({ ...prev, [data.old.tender_id]: Math.max(0, (prev[data.old.tender_id] || 0) - 1) }));
           }
         }
       ).subscribe();

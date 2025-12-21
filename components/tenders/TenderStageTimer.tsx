@@ -17,7 +17,7 @@ export function TenderStageTimer({
   showIcon = true,
   className = ''
 }: TenderStageTimerProps) {
-  const { duration, isWarning, formatted } = useMemo(() => {
+  const { isWarning, formatted } = useMemo(() => {
     const entered = new Date(enteredAt);
     const now = new Date();
     const diffMs = now.getTime() - entered.getTime();

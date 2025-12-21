@@ -29,9 +29,10 @@ export function ShipmentFormModal({
 }: ShipmentFormModalProps) {
   const [drivers, setDrivers] = useState<Driver[]>([]);
 
+  // Несовместимость типов react-hook-form@7.x и @hookform/resolvers - требуется приведение типов
+  type ResolverType = NonNullable<Parameters<typeof useForm<ShipmentFormInput>>[0]>["resolver"];
   const { register, handleSubmit, reset, formState: { errors } } = useForm<ShipmentFormInput>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(shipmentFormSchema) as any,
+    resolver: zodResolver(shipmentFormSchema) as unknown as ResolverType,
     defaultValues: {
       type: 'standard',
       currency: 'RUB',

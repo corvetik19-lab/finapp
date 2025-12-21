@@ -41,9 +41,9 @@ export default function ReportChart({
     // Данные для графика
     const chartData = prepareChartData(data, type);
 
-    // Создаём новый график (Chart.js types are strict for dynamic chart types)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const config: any = {
+    // Создаём новый график
+    // Chart.js типы сложные для динамического type - используем приведение
+    const config = {
       type,
       data: chartData,
       options: {
@@ -51,7 +51,7 @@ export default function ReportChart({
         maintainAspectRatio: false,
         plugins: {
           legend: {
-            position: "bottom",
+            position: "bottom" as const,
           },
           tooltip: {
             callbacks: {
@@ -83,7 +83,9 @@ export default function ReportChart({
             : undefined,
       },
     };
-    chartRef.current = new Chart(ctx, config);
+    // Chart.js требует специфической типизации для динамического type
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    chartRef.current = new Chart(ctx, config as any);
 
     return () => {
       if (chartRef.current) {

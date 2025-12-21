@@ -204,6 +204,7 @@ export async function suggestColumnMapping(columns: string[]): Promise<ColumnMap
 export async function parseCSV(
   content: string,
   mapping: ColumnMapping,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   options: ImportOptions
 ): Promise<{ rows: ParsedRow[]; preview: ImportPreview }> {
   const supabase = await createRSCClient();

@@ -13,7 +13,7 @@ interface TenderDetailClientProps {
   stages: TenderStage[];
   types?: TenderType[];
   templates?: TenderStageTemplate[];
-  employees?: Array<{ id: string; full_name: string; role?: string }>;
+  employees?: Array<{ id: string; full_name: string; role?: string; role_name?: string }>;
 }
 
 const ARCHIVED_STAGE_NAMES = [

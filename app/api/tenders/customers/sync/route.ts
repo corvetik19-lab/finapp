@@ -38,8 +38,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const organizationId = (tender.companies as any).organization_id as string;
+    const companies = tender.companies as unknown as { organization_id: string }[] | { organization_id: string };
+    const organizationId = Array.isArray(companies) ? companies[0].organization_id : companies.organization_id;
 
     // Проверяем, есть ли уже заказчик с таким именем
     const { data: existingCustomer } = await supabase

@@ -54,8 +54,17 @@ export async function GET(
     }
 
     // Форматируем данные
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const formattedTransactions = (transactions || []).map((txn: any) => ({
+    interface TransactionRow {
+      id: string;
+      direction: string;
+      amount: number;
+      currency: string;
+      occurred_at: string;
+      note?: string;
+      counterparty?: string;
+      category?: { name: string } | { name: string }[] | null;
+    }
+    const formattedTransactions = (transactions || []).map((txn: TransactionRow) => ({
       id: txn.id,
       direction: txn.direction,
       amount: txn.amount,

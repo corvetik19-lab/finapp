@@ -311,9 +311,10 @@ export async function getSupplierVerifications(supplierId: string): Promise<Supp
   return data as SupplierVerification[];
 }
 
-export async function checkRNP(_inn: string): Promise<VerificationCheck> {
+export async function checkRNP(inn: string): Promise<VerificationCheck> {
   // Реестр недобросовестных поставщиков (заглушка)
-  // В реальной реализации нужно интегрироваться с API ФАС/ЕИС
+  logger.debug(`Checking RNP for INN: ${inn}`);
+  // TODO: Интегрироваться с API ФАС/ЕИС
   return {
     type: "rnp",
     status: "clean",
@@ -321,9 +322,10 @@ export async function checkRNP(_inn: string): Promise<VerificationCheck> {
   };
 }
 
-export async function checkArbitr(_inn: string): Promise<VerificationCheck> {
+export async function checkArbitr(inn: string): Promise<VerificationCheck> {
   // Проверка арбитражных дел (заглушка)
-  // В реальной реализации нужно интегрироваться с API КАД Арбитр
+  logger.debug(`Checking Arbitr for INN: ${inn}`);
+  // TODO: Интегрироваться с API КАД Арбитр
   return {
     type: "arbitr",
     status: "clean",
@@ -331,9 +333,10 @@ export async function checkArbitr(_inn: string): Promise<VerificationCheck> {
   };
 }
 
-export async function checkFSSP(_inn: string): Promise<VerificationCheck> {
+export async function checkFSSP(inn: string): Promise<VerificationCheck> {
   // Проверка исполнительных производств (заглушка)
-  // В реальной реализации нужно интегрироваться с API ФССП
+  logger.debug(`Checking FSSP for INN: ${inn}`);
+  // TODO: Интегрироваться с API ФССП
   return {
     type: "fssp",
     status: "clean",

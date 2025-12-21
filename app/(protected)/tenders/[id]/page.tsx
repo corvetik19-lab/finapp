@@ -28,13 +28,25 @@ export default async function TenderPage({ params }: TenderPageProps) {
 
   const typesResult = await getTenderTypes(tenderResult.data.company_id);
 
-  // Загружаем список сотрудников компании
-  const { data: employees } = await supabase
+  // Загружаем список сотрудников компании с ролями из role_data
+  const { data: employeesRaw } = await supabase
     .from('employees')
-    .select('id, full_name, role')
+    .select('id, full_name, role, position, role_data:roles!employees_role_id_fkey(name)')
     .eq('company_id', tenderResult.data.company_id)
     .eq('status', 'active')
     .order('full_name');
+  
+  // Форматируем employees с role_name из role_data
+  const employees = (employeesRaw || []).map((emp) => {
+    // role_data может быть массивом или объектом в зависимости от join
+    const roleData = Array.isArray(emp.role_data) ? emp.role_data[0] : emp.role_data;
+    return {
+      id: emp.id,
+      full_name: emp.full_name,
+      role: emp.role,
+      role_name: roleData?.name || emp.position || undefined
+    };
+  });
 
   // Загружаем шаблоны этапов
   const { data: templates } = await supabase

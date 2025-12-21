@@ -12,6 +12,10 @@ import {
   Users,
   Settings,
   PiggyBank,
+  Kanban,
+  Shield,
+  Calculator,
+  TrendingUp,
   type LucideIcon,
 } from "lucide-react"
 
@@ -46,12 +50,16 @@ const investorsNavigation: NavSection[] = [
       { title: "Дашборд", url: "/investors", icon: LayoutDashboard },
       { title: "Источники", url: "/investors/sources", icon: Building2 },
       { title: "Инвестиции", url: "/investors/investments", icon: FileText },
+      { title: "Pipeline", url: "/investors/pipeline", icon: Kanban },
+      { title: "Гарантии", url: "/investors/guarantees", icon: Shield },
     ],
   },
   {
     title: "Аналитика",
     items: [
       { title: "График возвратов", url: "/investors/returns", icon: CalendarClock },
+      { title: "Аналитика", url: "/investors/analytics", icon: TrendingUp },
+      { title: "Калькулятор", url: "/investors/calculator", icon: Calculator },
       { title: "Отчёты", url: "/investors/reports", icon: BarChart3 },
     ],
   },

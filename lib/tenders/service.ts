@@ -54,7 +54,7 @@ export async function getTenders(
         executor:employees!tenders_executor_id_fkey(id, full_name, role),
         stage:tender_stages(id, name, category, color),
         type:tender_types(id, name),
-        responsible:tender_responsible(employee:employees(id, full_name, role)),
+        responsible:tender_responsible(employee:employees(id, full_name, role, position, role_data:roles!employees_role_id_fkey(name, color))),
         tender_comments(count)
       `, { count: 'exact' })
       .eq('company_id', companyId)
@@ -186,7 +186,7 @@ export async function getTenderById(
         executor:employees!tenders_executor_id_fkey(id, full_name, role),
         stage:tender_stages(*),
         type:tender_types(*),
-        responsible:tender_responsible(employee:employees(id, full_name, role))
+        responsible:tender_responsible(employee:employees(id, full_name, role, position, role_data:roles!employees_role_id_fkey(name, color)))
       `
       )
       .eq('id', tenderId)

@@ -182,13 +182,15 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      const tenderWithDetails: TenderWithDetails = {
+      // stage может быть массивом при join - берём первый элемент
+      const stageData = Array.isArray(tender.stage) ? tender.stage[0] : tender.stage;
+      const tenderWithDetails = {
         ...tender,
-        stage: tender.stage as TenderWithDetails['stage'],
-        responsible: tender.responsible as TenderWithDetails['responsible'],
+        stage: stageData,
+        responsible: tender.responsible,
         stage_entered_at: enteredAt,
         time_on_stage: timeOnStage
-      };
+      } as unknown as TenderWithDetails;
 
       // Инициализируем массив для этапа если нужно
       if (!tendersByStage[stageId]) {
@@ -204,8 +206,6 @@ export async function GET(request: NextRequest) {
 
     // Статистика
     const totalTenders = tenders?.length || 0;
-    const freeTendersCount = freeTenders.length;
-    const assignedTendersCount = totalTenders - freeTendersCount;
 
     // Статистика по этапам
     const stageStats = (stages || []).map(stage => ({
@@ -216,38 +216,56 @@ export async function GET(request: NextRequest) {
       count: tendersByStage[stage.id]?.length || 0
     }));
 
-    // Тендеры с долгим временем на этапе (более 3 дней)
-    const staleTenders = (tenders || []).filter(tender => {
+    // Маппим тендеры для формата компонента
+    const mappedTenders = (tenders || []).map(tender => {
       const enteredAt = stageEntryMap.get(`${tender.id}-${tender.stage_id}`);
-      if (!enteredAt) return false;
+      let timeOnStageSeconds = 0;
+      if (enteredAt) {
+        timeOnStageSeconds = Math.floor((Date.now() - new Date(enteredAt).getTime()) / 1000);
+      }
       
-      const diffMs = Date.now() - new Date(enteredAt).getTime();
-      const diffDays = diffMs / (1000 * 60 * 60 * 24);
-      return diffDays > 3;
-    }).map(tender => ({
-      id: tender.id,
-      purchase_number: tender.purchase_number,
-      subject: tender.subject,
-      stage: tender.stage,
-      days_on_stage: Math.floor(
-        (Date.now() - new Date(stageEntryMap.get(`${tender.id}-${tender.stage_id}`) || Date.now()).getTime()) / 
-        (1000 * 60 * 60 * 24)
-      )
-    }));
+      return {
+        id: tender.id,
+        purchase_number: tender.purchase_number,
+        subject: tender.subject,
+        customer: tender.customer,
+        initial_price: tender.nmck,
+        stage_id: tender.stage_id,
+        stage: tender.stage,
+        assigned_employees: (tender.responsible || []).map((r: unknown) => {
+          const resp = r as { employee?: unknown[] | { id?: string; full_name?: string; role_data?: { name?: string; color?: string }[] | { name?: string; color?: string } } };
+          const emp = Array.isArray(resp.employee) ? resp.employee[0] as { id?: string; full_name?: string; role_data?: { name?: string; color?: string }[] | { name?: string; color?: string } } : resp.employee;
+          const roleData = Array.isArray(emp?.role_data) ? emp.role_data[0] : emp?.role_data;
+          return {
+            id: emp?.id,
+            full_name: emp?.full_name,
+            role_name: roleData?.name,
+            role_color: roleData?.color
+          };
+        }),
+        stage_entered_at: enteredAt,
+        time_on_stage_seconds: timeOnStageSeconds,
+        is_stuck: timeOnStageSeconds > 3 * 24 * 60 * 60 // более 3 дней
+      };
+    });
+
+    const mappedFreeTenders = mappedTenders.filter(t => t.assigned_employees.length === 0);
+    const mappedStuckTenders = mappedTenders.filter(t => t.is_stuck);
 
     return NextResponse.json({
-      tenders: tenders || [],
-      tendersByStage,
-      freeTenders,
+      tenders: mappedTenders,
+      free_tenders: mappedFreeTenders,
+      stuck_tenders: mappedStuckTenders,
       stages: stages || [],
-      stats: {
-        total: totalTenders,
-        free: freeTendersCount,
-        assigned: assignedTendersCount,
-        byStage: stageStats,
-        stale: staleTenders.length
-      },
-      staleTenders
+      stage_stats: stageStats.map(s => ({
+        stage_id: s.id,
+        stage_name: s.name,
+        stage_color: s.color,
+        count: s.count
+      })),
+      total_count: totalTenders,
+      free_count: mappedFreeTenders.length,
+      stuck_count: mappedStuckTenders.length
     });
   } catch (error) {
     console.error('Error in GET /api/tenders/admin-overview:', error);

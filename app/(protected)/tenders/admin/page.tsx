@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createRSCClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { TendersAdminDashboard } from '@/components/tenders/TendersAdminDashboard';
 
@@ -8,7 +8,7 @@ export const metadata = {
 };
 
 export default async function TendersAdminPage() {
-  const supabase = await createServerClient();
+  const supabase = await createRSCClient();
   
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   
@@ -16,25 +16,37 @@ export default async function TendersAdminPage() {
     redirect('/login');
   }
 
+  // Проверяем глобальную роль
   const { data: profile } = await supabase
     .from('profiles')
-    .select('company_id, role')
+    .select('company_id, global_role')
     .eq('id', user.id)
     .single();
 
-  if (!profile?.company_id) {
-    redirect('/onboarding');
+  // Проверяем роль в компании
+  const { data: member } = await supabase
+    .from('company_members')
+    .select('company_id, role')
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .single();
+
+  const companyId = member?.company_id || profile?.company_id;
+  
+  if (!companyId) {
+    redirect('/tenders/dashboard');
   }
 
-  const isAdmin = profile.role === 'admin' || profile.role === 'super_admin';
+  const isGlobalAdmin = profile?.global_role === 'admin' || profile?.global_role === 'super_admin';
+  const isCompanyAdmin = member?.role === 'admin';
   
-  if (!isAdmin) {
+  if (!isGlobalAdmin && !isCompanyAdmin) {
     redirect('/tenders/list');
   }
 
   return (
     <div className="container mx-auto py-6 px-4">
-      <TendersAdminDashboard companyId={profile.company_id} />
+      <TendersAdminDashboard companyId={companyId} />
     </div>
   );
 }

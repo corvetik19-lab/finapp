@@ -17,7 +17,7 @@ interface TenderInfoTabProps {
   tender: Tender;
   types: TenderType[];
   templates?: TenderStageTemplate[];
-  employees?: Array<{ id: string; full_name: string; role?: string }>;
+  employees?: Array<{ id: string; full_name: string; role?: string; role_name?: string }>;
   onUpdate: () => void;
   isArchived?: boolean;
 }
@@ -30,6 +30,12 @@ export function TenderInfoTab({ tender, types, templates = [], employees = [], o
     tender.responsible?.map(r => r.employee.id) || []
   );
   const [availableMethods, setAvailableMethods] = useState<string[]>([]);
+
+  // Синхронизируем responsibleIds при изменении tender (после router.refresh)
+  useEffect(() => {
+    setResponsibleIds(tender.responsible?.map(r => r.employee.id) || []);
+    setFormData(tender);
+  }, [tender]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(tender.template_id || 'system');
   const [isTemplateLockedByType, setIsTemplateLockedByType] = useState(false);
 
@@ -85,7 +91,9 @@ export function TenderInfoTab({ tender, types, templates = [], employees = [], o
       }
     }, [formData.type_id, types, templates]);
 
-  const getRoleLabel = (role?: string | null) => {
+  const getRoleLabel = (role?: string | null, roleName?: string | null) => {
+    // Приоритет: role_name (из role_data) > перевод старого role
+    if (roleName) return roleName;
     if (!role) return null;
     return EMPLOYEE_ROLE_LABELS[role as keyof typeof EMPLOYEE_ROLE_LABELS] || role;
   };
@@ -555,7 +563,7 @@ export function TenderInfoTab({ tender, types, templates = [], employees = [], o
                         {employees
                           .filter(emp => !responsibleIds.includes(emp.id) || emp.id === id)
                           .map((employee) => {
-                            const roleLabel = getRoleLabel(employee.role);
+                            const roleLabel = getRoleLabel(employee.role, employee.role_name);
                             return (
                               <SelectItem key={employee.id} value={employee.id}>
                                 {employee.full_name}{roleLabel ? ` (${roleLabel})` : ''}
@@ -592,11 +600,16 @@ export function TenderInfoTab({ tender, types, templates = [], employees = [], o
                       <div className="text-sm font-medium">
                         {resp.employee.full_name}
                       </div>
-                      {getRoleLabel(resp.employee.role) && (
-                        <div className="text-xs text-gray-500">
-                          {getRoleLabel(resp.employee.role)}
-                        </div>
-                      )}
+                      {(() => {
+                        const empData = resp.employee as { role_data?: { name?: string } | null; position?: string; role?: string; full_name: string };
+                        const roleName = empData.role_data?.name || empData.position || empData.role;
+                        const label = getRoleLabel(resp.employee.role, roleName);
+                        return label ? (
+                          <div className="text-xs text-gray-500">
+                            {label}
+                          </div>
+                        ) : null;
+                      })()}
                     </div>
                   </div>
                 ))}

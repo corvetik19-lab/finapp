@@ -1,0 +1,88 @@
+{
+  "name": "Портал Инвестора - FinApp",
+  "short_name": "Инвестор",
+  "description": "Личный кабинет инвестора с отслеживанием инвестиций и доходности",
+  "start_url": "/investor-portal",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0EA5E9",
+  "orientation": "portrait-primary",
+  "scope": "/investor-portal",
+  "id": "/investor-portal",
+  "icons": [
+    {
+      "src": "/icons/investor-icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/investor-icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/investor-icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/investor-icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/investor-icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/investor-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/icons/investor-screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Дашборд портала инвестора"
+    },
+    {
+      "src": "/icons/investor-screenshot-narrow.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Мобильная версия портала"
+    }
+  ],
+  "categories": ["finance", "business"],
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Мои инвестиции",
+      "short_name": "Инвестиции",
+      "url": "/investor-portal/investments",
+      "icons": [{ "src": "/icons/investments-icon.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "График платежей",
+      "short_name": "Платежи",
+      "url": "/investor-portal/schedule",
+      "icons": [{ "src": "/icons/schedule-icon.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Уведомления",
+      "short_name": "Уведомления",
+      "url": "/investor-portal/notifications",
+      "icons": [{ "src": "/icons/notifications-icon.png", "sizes": "96x96" }]
+    }
+  ]
+}

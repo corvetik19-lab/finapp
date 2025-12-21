@@ -94,11 +94,12 @@ export function SuppliersVirtualTable({
         case "status":
           comparison = (a.status || "").localeCompare(b.status || "");
           break;
-        case "category":
+        case "category": {
           const catA = categories.find((c) => c.id === a.category_id)?.name || "";
           const catB = categories.find((c) => c.id === b.category_id)?.name || "";
           comparison = catA.localeCompare(catB, "ru");
           break;
+        }
         case "created_at":
           comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
           break;

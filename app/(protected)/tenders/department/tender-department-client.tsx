@@ -194,11 +194,14 @@ export function TenderDepartmentClient({ stages: initialStages, types, companyId
           first_name?: string; 
           last_name?: string; 
           email?: string; 
+          position?: string;
+          role?: string;
           role_data?: { name?: string; color?: string } | null;
         }) => ({
           id: emp.id,
           full_name: emp.full_name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.email || 'Без имени',
-          role: emp.role_data?.name || undefined,
+          // Приоритет: role_data.name > position > старое поле role
+          role: emp.role_data?.name || emp.position || undefined,
           role_color: emp.role_data?.color || undefined
         })));
       }

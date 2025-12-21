@@ -232,7 +232,7 @@ export function TendersAdminDashboard({ companyId }: TendersAdminDashboardProps)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{data.stages.length}</p>
+            <p className="text-3xl font-bold">{(data.stages || []).length}</p>
           </CardContent>
         </Card>
       </div>
@@ -244,7 +244,7 @@ export function TendersAdminDashboard({ companyId }: TendersAdminDashboardProps)
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
-            {data.stage_stats.map((stat) => (
+            {(data.stage_stats || []).map((stat) => (
               <div 
                 key={stat.stage_id} 
                 className="flex items-center gap-2 px-3 py-2 rounded-lg border"
@@ -273,9 +273,9 @@ export function TendersAdminDashboard({ companyId }: TendersAdminDashboardProps)
             <AlertTriangle className="h-4 w-4" />
             Застрявшие ({data.stuck_count})
           </TabsTrigger>
-          <TabsTrigger value="all" className="gap-2">
+          <TabsTrigger value="assigned" className="gap-2">
             <FileText className="h-4 w-4" />
-            Все ({data.total_count})
+            Назначенные ({data.total_count - data.free_count})
           </TabsTrigger>
         </TabsList>
 
@@ -288,7 +288,7 @@ export function TendersAdminDashboard({ companyId }: TendersAdminDashboardProps)
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {data.free_tenders.length === 0 ? (
+              {(!data.free_tenders || data.free_tenders.length === 0) ? (
                 <p className="text-gray-500 text-center py-8">
                   Все тендеры назначены сотрудникам
                 </p>
@@ -313,7 +313,7 @@ export function TendersAdminDashboard({ companyId }: TendersAdminDashboardProps)
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {data.stuck_tenders.length === 0 ? (
+              {(!data.stuck_tenders || data.stuck_tenders.length === 0) ? (
                 <p className="text-gray-500 text-center py-8">
                   Нет застрявших тендеров
                 </p>
@@ -329,19 +329,28 @@ export function TendersAdminDashboard({ companyId }: TendersAdminDashboardProps)
           </Card>
         </TabsContent>
 
-        <TabsContent value="all" className="mt-4">
+        <TabsContent value="assigned" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Все тендеры</CardTitle>
+              <CardTitle>Назначенные тендеры</CardTitle>
+              <CardDescription>
+                Тендеры с назначенными сотрудниками
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <TenderTable 
-                tenders={data.tenders} 
-                onAssign={handleAssignClick}
-                formatPrice={formatPrice}
-                showTimer
-                showAssignButton
-              />
+              {data.tenders.filter(t => t.assigned_employees && t.assigned_employees.length > 0).length === 0 ? (
+                <p className="text-gray-500 text-center py-8">
+                  Нет назначенных тендеров
+                </p>
+              ) : (
+                <TenderTable 
+                  tenders={data.tenders.filter(t => t.assigned_employees && t.assigned_employees.length > 0)} 
+                  onAssign={handleAssignClick}
+                  formatPrice={formatPrice}
+                  showTimer
+                  showAssignButton
+                />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -428,11 +437,11 @@ function TenderTable({
                 )}
               </td>
               <td className="py-3 px-4">
-                {tender.assigned_employees.length === 0 ? (
+                {(!tender.assigned_employees || tender.assigned_employees.length === 0) ? (
                   <span className="text-gray-400 text-sm">Не назначен</span>
                 ) : (
                   <div className="flex flex-wrap gap-1">
-                    {tender.assigned_employees.map((emp) => (
+                    {(tender.assigned_employees || []).map((emp) => (
                       <Badge 
                         key={emp.id} 
                         variant="secondary"

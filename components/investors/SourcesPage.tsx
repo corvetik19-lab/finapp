@@ -12,6 +12,11 @@ import {
   Trash2,
   Phone,
   Mail,
+  FileText,
+  Car,
+  Shield,
+  Wallet,
+  Users,
 } from "lucide-react";
 import type { InvestmentSource, SourceType, CreateSourceInput } from "@/lib/investors/types";
 import { SOURCE_TYPE_LABELS } from "@/lib/investors/types";
@@ -34,6 +39,11 @@ const SOURCE_TYPE_ICONS: Record<SourceType, typeof Building2> = {
   bank: Building2,
   private: User,
   fund: Briefcase,
+  factoring: FileText,
+  leasing: Car,
+  guarantee: Shield,
+  tender_loan: Wallet,
+  crowdfunding: Users,
   other: MoreHorizontal,
 };
 

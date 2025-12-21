@@ -31,8 +31,8 @@ export function convertToolsToOpenAI() {
     if (!schema) continue;
 
     // Конвертируем Zod схему в JSON Schema
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const jsonSchema = zodToJsonSchema(schema as any, toolName) as Record<string, unknown>;
+    // Несовместимость типов zod@3.x и zod-to-json-schema - требуется приведение
+    const jsonSchema = zodToJsonSchema(schema as unknown as Parameters<typeof zodToJsonSchema>[0], toolName) as Record<string, unknown>;
 
     openaiTools.push({
       type: "function",
@@ -58,8 +58,8 @@ export function getToolSchema(toolName: string) {
   const schema = toolSchemas[toolName as keyof typeof toolSchemas];
   if (!schema) return null;
   
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return zodToJsonSchema(schema as any, toolName);
+  // Несовместимость типов zod@3.x и zod-to-json-schema - требуется приведение
+  return zodToJsonSchema(schema as unknown as Parameters<typeof zodToJsonSchema>[0], toolName);
 }
 
 /**
@@ -126,8 +126,8 @@ export function convertToolsToGemini(): GeminiFunctionDeclaration[] {
     if (!schema) continue;
 
     // Конвертируем Zod схему в JSON Schema
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const jsonSchema = zodToJsonSchema(schema as any, toolName) as Record<string, unknown>;
+    // Несовместимость типов zod@3.x и zod-to-json-schema - требуется приведение
+    const jsonSchema = zodToJsonSchema(schema as unknown as Parameters<typeof zodToJsonSchema>[0], toolName) as Record<string, unknown>;
     
     // Конвертируем properties в формат Gemini
     const jsonProperties = (jsonSchema.properties as Record<string, Record<string, unknown>>) || {};

@@ -10,13 +10,18 @@ import {
   ArrowRight,
   Building2,
   FileText,
+  Shield,
+  Kanban,
+  Calculator,
+  BarChart3,
 } from "lucide-react";
 import type { Investment, InvestmentSource } from "@/lib/investors/types";
 import { INVESTMENT_STATUS_LABELS, SOURCE_TYPE_LABELS } from "@/lib/investors/types";
 import { formatMoney } from "@/lib/investors/calculations";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
 interface InvestorsDashboardProps {
@@ -113,6 +118,87 @@ export function InvestorsDashboard({ investments, sources }: InvestorsDashboardP
           </CardContent>
         </Card>
       </div>
+
+      {/* Быстрые действия */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Link href="/investors/pipeline" className="group">
+          <Card className="hover:border-primary transition-colors">
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="p-2 rounded-lg bg-purple-100 group-hover:bg-purple-200 transition-colors">
+                <Kanban className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="font-medium">Pipeline</p>
+                <p className="text-xs text-muted-foreground">Kanban инвестиций</p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/investors/guarantees" className="group">
+          <Card className="hover:border-primary transition-colors">
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="p-2 rounded-lg bg-blue-100 group-hover:bg-blue-200 transition-colors">
+                <Shield className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="font-medium">Гарантии</p>
+                <p className="text-xs text-muted-foreground">Банковские гарантии</p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/investors/analytics" className="group">
+          <Card className="hover:border-primary transition-colors">
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="p-2 rounded-lg bg-green-100 group-hover:bg-green-200 transition-colors">
+                <BarChart3 className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="font-medium">Аналитика</p>
+                <p className="text-xs text-muted-foreground">Детальный анализ</p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/investors/calculator" className="group">
+          <Card className="hover:border-primary transition-colors">
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="p-2 rounded-lg bg-orange-100 group-hover:bg-orange-200 transition-colors">
+                <Calculator className="h-5 w-5 text-orange-600" />
+              </div>
+              <div>
+                <p className="font-medium">Калькулятор</p>
+                <p className="text-xs text-muted-foreground">Расчёт стоимости</p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
+
+      {/* Прогресс возврата */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Прогресс возврата инвестиций</CardTitle>
+          <CardDescription>Общий прогресс по всем активным инвестициям</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Возвращено {formatMoney(totalReturned)} из {formatMoney(totalToReturn)}</span>
+              <span className="font-medium">
+                {totalToReturn > 0 ? ((totalReturned / totalToReturn) * 100).toFixed(1) : 0}%
+              </span>
+            </div>
+            <Progress 
+              value={totalToReturn > 0 ? (totalReturned / totalToReturn) * 100 : 0} 
+              className="h-3" 
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Основной контент */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

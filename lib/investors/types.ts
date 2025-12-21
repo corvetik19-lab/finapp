@@ -4,7 +4,7 @@
 // Типы источников финансирования
 // ============================================
 
-export type SourceType = "bank" | "private" | "fund" | "other";
+export type SourceType = "bank" | "private" | "fund" | "factoring" | "leasing" | "guarantee" | "tender_loan" | "crowdfunding" | "other";
 
 export interface InvestmentSource {
   id: string;
@@ -28,6 +28,16 @@ export interface InvestmentSource {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  // Новые поля
+  reliability_score: number;
+  total_invested: number;
+  total_returned: number;
+  average_delay_days: number;
+  preferred_tender_types: string[] | null;
+  min_investment_amount: number | null;
+  max_investment_amount: number | null;
+  available_credit_limit: number | null;
+  last_interaction_at: string | null;
 }
 
 export interface CreateSourceInput {
@@ -58,6 +68,8 @@ export interface UpdateSourceInput extends Partial<CreateSourceInput> {
 // ============================================
 
 export type InterestType = "annual" | "monthly" | "fixed";
+
+export type FundingStage = "application" | "security" | "execution" | "warranty";
 
 export type InvestmentStatus =
   | "draft"
@@ -97,6 +109,19 @@ export interface Investment {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  // Новые поля для интеграции с тендерами
+  funding_stage: FundingStage | null;
+  tender_stage_id: string | null;
+  target_expense_category: string | null;
+  penalty_rate: number;
+  penalty_grace_days: number;
+  accumulated_penalty: number;
+  early_return_allowed: boolean;
+  early_return_penalty_rate: number | null;
+  collateral_description: string | null;
+  collateral_value: number | null;
+  guarantor_id: string | null;
+  rating: number | null;
   // Связанные данные
   source?: InvestmentSource;
   tender?: {
@@ -328,6 +353,11 @@ export const SOURCE_TYPE_LABELS: Record<SourceType, string> = {
   bank: "Банк",
   private: "Частный инвестор",
   fund: "Инвестиционный фонд",
+  factoring: "Факторинг",
+  leasing: "Лизинг",
+  guarantee: "Банковская гарантия",
+  tender_loan: "Тендерный займ",
+  crowdfunding: "Краудфандинг",
   other: "Другое",
 };
 
@@ -369,3 +399,100 @@ export const ACCESS_STATUS_LABELS: Record<AccessStatus, string> = {
   active: "Активен",
   revoked: "Отозван",
 };
+
+// ============================================
+// Типы банковских гарантий
+// ============================================
+
+export type GuaranteeType = "application" | "contract" | "warranty" | "advance";
+
+export type GuaranteeStatus = "draft" | "pending" | "active" | "expired" | "claimed" | "returned";
+
+export interface BankGuarantee {
+  id: string;
+  user_id: string;
+  company_id: string | null;
+  tender_id: string | null;
+  source_id: string | null;
+  guarantee_type: GuaranteeType;
+  guarantee_number: string | null;
+  issue_date: string;
+  start_date: string;
+  end_date: string;
+  guarantee_amount: number;
+  commission_amount: number;
+  commission_rate: number | null;
+  status: GuaranteeStatus;
+  bank_name: string | null;
+  bank_bik: string | null;
+  document_url: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  // Связанные данные
+  source?: InvestmentSource;
+  tender?: {
+    id: string;
+    subject: string;
+    purchase_number: string;
+  };
+}
+
+export interface CreateGuaranteeInput {
+  tender_id?: string;
+  source_id?: string;
+  guarantee_type: GuaranteeType;
+  guarantee_number?: string;
+  issue_date: string;
+  start_date: string;
+  end_date: string;
+  guarantee_amount: number;
+  commission_amount?: number;
+  commission_rate?: number;
+  bank_name?: string;
+  bank_bik?: string;
+  document_url?: string;
+  notes?: string;
+}
+
+export interface UpdateGuaranteeInput extends Partial<CreateGuaranteeInput> {
+  status?: GuaranteeStatus;
+}
+
+export const GUARANTEE_TYPE_LABELS: Record<GuaranteeType, string> = {
+  application: "Обеспечение заявки",
+  contract: "Обеспечение контракта",
+  warranty: "Гарантийные обязательства",
+  advance: "Обеспечение аванса",
+};
+
+export const GUARANTEE_STATUS_LABELS: Record<GuaranteeStatus, string> = {
+  draft: "Черновик",
+  pending: "Ожидает выпуска",
+  active: "Действует",
+  expired: "Истекла",
+  claimed: "Предъявлена",
+  returned: "Возвращена",
+};
+
+export const FUNDING_STAGE_LABELS: Record<FundingStage, string> = {
+  application: "Подача заявки",
+  security: "Обеспечение",
+  execution: "Исполнение",
+  warranty: "Гарантийный период",
+};
+
+// ============================================
+// Типы связи инвестиций с расходами
+// ============================================
+
+export interface InvestmentExpenseLink {
+  id: string;
+  user_id: string;
+  company_id: string | null;
+  investment_id: string;
+  expense_id: string;
+  amount: number;
+  notes: string | null;
+  created_at: string;
+}

@@ -87,6 +87,7 @@ const tendersNavigation = {
       title: "Обзор",
       items: [
         { title: "Дашборд", url: "/tenders/dashboard", icon: LayoutDashboard },
+        { title: "Обзор для админа", url: "/tenders/admin", icon: LayoutDashboard, adminOnly: true },
         { title: "Тендерный отдел", url: "/tenders/department", icon: Briefcase },
         { title: "Реализация", url: "/tenders/realization", icon: Package },
         { title: "Календарь", url: "/tenders/calendar", icon: Calendar },

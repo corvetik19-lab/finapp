@@ -14,9 +14,12 @@ import {
   FileText,
   Star,
   Phone,
-  Mail,
   Upload,
   Users,
+  Link2,
+  ShieldCheck,
+  Kanban,
+  Send,
   type LucideIcon,
 } from "lucide-react"
 
@@ -50,15 +53,17 @@ const suppliersNavigation: NavSection[] = [
     title: "Управление",
     items: [
       { title: "Все поставщики", url: "/tenders/suppliers", icon: Factory },
-      { title: "Импорт", url: "/tenders/suppliers/import", icon: Upload },
+      { title: "Импорт CSV/XLSX", url: "/tenders/suppliers/import", icon: Upload },
       { title: "Категории", url: "/tenders/suppliers/categories", icon: List },
       { title: "Дубликаты", url: "/tenders/suppliers/duplicates", icon: Copy },
+      { title: "Верификация", url: "/tenders/suppliers/verification", icon: ShieldCheck },
     ],
   },
   {
     title: "Тендеры",
     items: [
       { title: "Подбор под тендер", url: "/tenders/suppliers/matching", icon: Users },
+      { title: "Kanban участников", url: "/tenders/suppliers/pipeline", icon: Kanban },
       { title: "Сравнение КП", url: "/tenders/suppliers/offers", icon: Scale },
     ],
   },
@@ -66,15 +71,15 @@ const suppliersNavigation: NavSection[] = [
     title: "Аналитика",
     items: [
       { title: "Дашборд", url: "/tenders/suppliers/dashboard", icon: BarChart3 },
-      { title: "Сравнение", url: "/tenders/suppliers/compare", icon: Scale },
+      { title: "Сравнение цен", url: "/tenders/suppliers/prices", icon: Scale },
       { title: "Карта", url: "/tenders/suppliers/map", icon: MapPin },
     ],
   },
   {
     title: "Коммуникации",
     items: [
+      { title: "Email кампании", url: "/tenders/suppliers/emails", icon: Send },
       { title: "История звонков", url: "/tenders/suppliers/calls", icon: Phone },
-      { title: "Email рассылки", url: "/tenders/suppliers/emails", icon: Mail },
     ],
   },
   {
@@ -86,9 +91,18 @@ const suppliersNavigation: NavSection[] = [
     ],
   },
   {
+    title: "Интеграции",
+    items: [
+      { title: "DaData обогащение", url: "/tenders/suppliers/integrations/dadata", icon: Link2 },
+      { title: "1С синхронизация", url: "/tenders/suppliers/integrations/1c", icon: Link2 },
+      { title: "ЭДО провайдеры", url: "/tenders/suppliers/integrations/edo", icon: Link2 },
+      { title: "Zakupki.gov.ru", url: "/tenders/suppliers/integrations/zakupki", icon: Link2 },
+    ],
+  },
+  {
     title: "Настройки",
     items: [
-      { title: "Настройки телефонии", url: "/tenders/suppliers/settings", icon: Settings, adminOnly: true },
+      { title: "Настройки", url: "/tenders/suppliers/settings", icon: Settings, adminOnly: true },
     ],
   },
 ]
