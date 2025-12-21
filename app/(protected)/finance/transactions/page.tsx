@@ -221,12 +221,18 @@ export default async function TransactionsPage({
   const firstDayPrevMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
   const firstDayThisYear = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
 
-  const { data: txnsForCharts = [], error: chartsError } = await supabase
+  // Загружаем ВСЕ транзакции для корректного расчёта сумм (без лимита)
+  let txnsForChartsQuery = supabase
     .from("transactions")
     .select("id,occurred_at,amount,currency,direction,category_id,account_id,counterparty")
     .gte("occurred_at", new Date(Date.UTC(now.getUTCFullYear() - 1, now.getUTCMonth(), 1)).toISOString())
-    .order("occurred_at", { ascending: true })
-    .limit(200);
+    .order("occurred_at", { ascending: true });
+
+  if (companyId) {
+    txnsForChartsQuery = txnsForChartsQuery.eq("company_id", companyId);
+  }
+
+  const { data: txnsForCharts = [], error: chartsError } = await txnsForChartsQuery;
 
   if (chartsError) {
     console.error("Error fetching transactions for charts:", chartsError);
@@ -256,9 +262,10 @@ export default async function TransactionsPage({
     for (const t of txc) {
       const d = new Date(t.occurred_at);
       if (d >= from && d <= toInclusive) {
-        if (t.direction === "income") inc += Number(t.amount);
+        // Используем Math.abs для корректного подсчёта (в базе могут быть разные знаки)
+        if (t.direction === "income") inc += Math.abs(Number(t.amount));
         else if (t.direction === "expense") {
-          exp += Number(t.amount);
+          exp += Math.abs(Number(t.amount));
         }
       }
     }
