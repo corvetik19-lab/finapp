@@ -36,8 +36,9 @@ const getAvailableYears = () => {
 };
 
 const getMonthRange = (year: number, month: number) => {
-  const from = new Date(year, month, 1);
-  const to = new Date(year, month + 1, 0);
+  // Используем UTC чтобы избежать проблем с часовыми поясами
+  const from = new Date(Date.UTC(year, month, 1));
+  const to = new Date(Date.UTC(year, month + 1, 0));
   return {
     from: from.toISOString().slice(0, 10),
     to: to.toISOString().slice(0, 10),
