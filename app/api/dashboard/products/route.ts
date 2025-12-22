@@ -82,6 +82,18 @@ export async function GET(request: Request) {
       });
     }
 
+    // Исключаем нетоварные позиции (категории, услуги, кредиты)
+    const EXCLUDED_ITEMS = [
+      "прочее", "такси", "зарядка", "кредит", "займ", "ипотека",
+      "платёж по кредиту", "платеж по кредиту", "погашение кредита",
+      "проценты по кредиту", "комиссия", "штраф", "пеня",
+    ];
+
+    const isExcluded = (name: string) => {
+      const lower = name.toLowerCase().trim();
+      return EXCLUDED_ITEMS.some((ex) => lower === ex || lower.includes(ex));
+    };
+
     // Агрегируем данные по товарам
     const productMap = new Map<
       string,
@@ -94,6 +106,9 @@ export async function GET(request: Request) {
     >();
 
     (itemsData as ProductItemRow[]).forEach((item) => {
+      // Пропускаем исключённые позиции
+      if (isExcluded(item.name)) return;
+
       if (!productMap.has(item.name)) {
         productMap.set(item.name, {
           totalQuantity: 0,
