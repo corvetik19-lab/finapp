@@ -8,29 +8,25 @@ import { loadExpenseBreakdownAction } from "@/app/(protected)/finance/dashboard/
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, ArrowLeftRight } from "lucide-react";
 
-type PresetOption = {
-  id: string;
-  label: string;
-  months?: number;
-};
-
-const PRESET_OPTIONS: PresetOption[] = [
-  { id: "months-1", label: "1 месяц", months: 1 },
-  { id: "months-3", label: "3 месяца", months: 3 },
-  { id: "months-6", label: "6 месяцев", months: 6 },
-  { id: "months-12", label: "12 месяцев", months: 12 },
-  { id: "custom", label: "Произвольный период" },
+const MONTH_NAMES = [
+  "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+  "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
 ];
 
-const formatInputDate = (date: Date) => {
-  const year = date.getFullYear();
-  const month = `${date.getMonth() + 1}`.padStart(2, "0");
-  const day = `${date.getDate()}`.padStart(2, "0");
-  return `${year}-${month}-${day}`;
+const getAvailableYears = () => {
+  const currentYear = new Date().getFullYear();
+  return [currentYear - 2, currentYear - 1, currentYear, currentYear + 1];
+};
+
+const getMonthRange = (year: number, month: number) => {
+  const from = new Date(year, month, 1);
+  const to = new Date(year, month + 1, 0);
+  return {
+    from: from.toISOString().slice(0, 10),
+    to: to.toISOString().slice(0, 10),
+  };
 };
 
 export type ExpenseByCategoryCardProps = {
@@ -52,30 +48,31 @@ export default function ExpenseByCategoryCard({
 }: ExpenseByCategoryCardProps) {
   const handleRemove = onRemove ?? noop;
   const [isPending, startTransition] = useTransition();
-  const [mode, setMode] = useState<"months" | "custom">("months");
-  const [selectedMonths, setSelectedMonths] = useState(1);
-  const [customRange, setCustomRange] = useState(() => {
-    if (range) {
-      return {
-        from: range.from.slice(0, 10),
-        to: range.to.slice(0, 10),
-      };
-    }
-    const now = new Date();
-    const from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    return { from: formatInputDate(from), to: formatInputDate(now) };
-  });
+  
+  const now = new Date();
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
+  
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareYear, setCompareYear] = useState(now.getFullYear());
+  const [compareMonth, setCompareMonth] = useState(now.getMonth() > 0 ? now.getMonth() - 1 : 11);
+  
   const [chartData, setChartData] = useState({
     breakdown,
     total,
     currency,
     range: range
-      ? {
-          from: range.from.slice(0, 10),
-          to: range.to.slice(0, 10),
-        }
-      : customRange,
+      ? { from: range.from.slice(0, 10), to: range.to.slice(0, 10) }
+      : getMonthRange(selectedYear, selectedMonth),
   });
+  
+  const [compareData, setCompareData] = useState<{
+    breakdown: DashboardBreakdownPoint[];
+    total: number;
+    currency: string;
+    range: { from: string; to: string };
+  } | null>(null);
+  
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -84,28 +81,17 @@ export default function ExpenseByCategoryCard({
       total,
       currency,
       range: range
-        ? {
-            from: range.from.slice(0, 10),
-            to: range.to.slice(0, 10),
-          }
-        : customRange,
+        ? { from: range.from.slice(0, 10), to: range.to.slice(0, 10) }
+        : getMonthRange(selectedYear, selectedMonth),
     });
-  }, [breakdown, total, currency, range, customRange]);
+  }, [breakdown, total, currency, range, selectedYear, selectedMonth]);
 
-  useEffect(() => {
-    if (range) {
-      setCustomRange({ from: range.from.slice(0, 10), to: range.to.slice(0, 10) });
-    }
-  }, [range]);
-
-  const selectValue = mode === "custom" ? "custom" : `months-${selectedMonths}`;
-
-  const fetchBreakdown = useCallback((request: Parameters<typeof loadExpenseBreakdownAction>[0]) => {
+  const fetchBreakdown = useCallback((request: Parameters<typeof loadExpenseBreakdownAction>[0], isCompare = false) => {
     startTransition(async () => {
       const result = await loadExpenseBreakdownAction(request);
       if (result.success) {
         setError(null);
-        setChartData({
+        const data = {
           breakdown: result.data.breakdown,
           total: result.data.total,
           currency: result.data.currency,
@@ -113,73 +99,83 @@ export default function ExpenseByCategoryCard({
             from: result.data.range.from.slice(0, 10),
             to: result.data.range.to.slice(0, 10),
           },
-        });
+        };
+        if (isCompare) {
+          setCompareData(data);
+        } else {
+          setChartData(data);
+        }
       } else {
         setError(result.error);
       }
     });
   }, []);
 
-  const handlePresetChange = (months: number) => {
-    setMode("months");
-    setSelectedMonths(months);
+  const handleMonthChange = (year: number, month: number) => {
+    setSelectedYear(year);
+    setSelectedMonth(month);
     setError(null);
-    fetchBreakdown({ type: "months", months });
+    const { from, to } = getMonthRange(year, month);
+    fetchBreakdown({ type: "range", from, to });
   };
 
-  const customRangeValid = useMemo(() => {
-    const fromDate = new Date(customRange.from);
-    const toDate = new Date(customRange.to);
-    if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime())) {
-      return false;
+  const handleCompareMonthChange = (year: number, month: number) => {
+    setCompareYear(year);
+    setCompareMonth(month);
+    setError(null);
+    const { from, to } = getMonthRange(year, month);
+    fetchBreakdown({ type: "range", from, to }, true);
+  };
+
+  const toggleCompareMode = () => {
+    if (!compareMode) {
+      const { from, to } = getMonthRange(compareYear, compareMonth);
+      fetchBreakdown({ type: "range", from, to }, true);
+    } else {
+      setCompareData(null);
     }
-    return fromDate <= toDate;
-  }, [customRange.from, customRange.to]);
+    setCompareMode(!compareMode);
+  };
 
   useEffect(() => {
-    if (mode === "custom") {
-      if (customRangeValid) {
-        fetchBreakdown({ type: "range", from: customRange.from, to: customRange.to });
-      } else {
-        setError("Дата начала должна быть не позже даты окончания");
-      }
-    }
-  }, [mode, customRangeValid, customRange.from, customRange.to, fetchBreakdown]);
+    const { from, to } = getMonthRange(selectedYear, selectedMonth);
+    fetchBreakdown({ type: "range", from, to });
+  }, []);
 
   const hasData = chartData.breakdown.length > 0;
-  const periodLabel = mode === "custom"
-    ? `${chartData.range.from} — ${chartData.range.to}`
-    : PRESET_OPTIONS.find((option) => option.id === selectValue)?.label ?? "Период";
+  const periodLabel = `${MONTH_NAMES[selectedMonth]} ${selectedYear}`;
+  const comparePeriodLabel = compareMode ? `${MONTH_NAMES[compareMonth]} ${compareYear}` : "";
+
+  const availableYears = useMemo(() => getAvailableYears(), []);
 
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <CardTitle className="text-base">Расходы по категориям</CardTitle>
             <p className="text-xs text-muted-foreground">Топ категорий, % распределения</p>
           </div>
           <div className="flex items-center gap-2">
-            <Select value={selectValue} onValueChange={(value) => {
-              if (value === "custom") {
-                setMode("custom");
-                setError(null);
-              } else {
-                const preset = PRESET_OPTIONS.find((option) => option.id === value);
-                if (preset && typeof preset.months === "number") {
-                  handlePresetChange(preset.months);
-                }
-              }
-            }} disabled={isPending}>
-              <SelectTrigger className="w-[150px] h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
+            <Select value={String(selectedYear)} onValueChange={(v) => handleMonthChange(Number(v), selectedMonth)} disabled={isPending}>
+              <SelectTrigger className="w-[80px] h-8 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {PRESET_OPTIONS.map((option) => (
-                  <SelectItem key={option.id} value={option.id}>{option.label}</SelectItem>
+                {availableYears.map((y) => (
+                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            <Select value={String(selectedMonth)} onValueChange={(v) => handleMonthChange(selectedYear, Number(v))} disabled={isPending}>
+              <SelectTrigger className="w-[110px] h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {MONTH_NAMES.map((name, idx) => (
+                  <SelectItem key={idx} value={String(idx)}>{name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button variant={compareMode ? "default" : "outline"} size="sm" className="h-8" onClick={toggleCompareMode} disabled={isPending}>
+              <ArrowLeftRight className="h-4 w-4" />
+            </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleRemove} disabled={isPending}>
               {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
             </Button>
@@ -187,16 +183,25 @@ export default function ExpenseByCategoryCard({
         </div>
       </CardHeader>
       <CardContent>
-        {mode === "custom" && (
-          <div className="flex gap-4 mb-4">
-            <div className="flex-1">
-              <Label className="text-xs">От</Label>
-              <Input type="date" value={customRange.from} onChange={(e) => setCustomRange((prev) => ({ ...prev, from: e.target.value }))} disabled={isPending} className="h-8" />
-            </div>
-            <div className="flex-1">
-              <Label className="text-xs">До</Label>
-              <Input type="date" value={customRange.to} onChange={(e) => setCustomRange((prev) => ({ ...prev, to: e.target.value }))} disabled={isPending} className="h-8" />
-            </div>
+        {compareMode && (
+          <div className="flex items-center gap-2 mb-4 p-2 bg-muted rounded-lg">
+            <span className="text-xs text-muted-foreground">Сравнить с:</span>
+            <Select value={String(compareYear)} onValueChange={(v) => handleCompareMonthChange(Number(v), compareMonth)} disabled={isPending}>
+              <SelectTrigger className="w-[80px] h-7 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {availableYears.map((y) => (
+                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={String(compareMonth)} onValueChange={(v) => handleCompareMonthChange(compareYear, Number(v))} disabled={isPending}>
+              <SelectTrigger className="w-[100px] h-7 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {MONTH_NAMES.map((name, idx) => (
+                  <SelectItem key={idx} value={String(idx)}>{name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
         {error && <div className="text-sm text-red-500 mb-2">{error}</div>}
@@ -206,18 +211,37 @@ export default function ExpenseByCategoryCard({
               <ExpenseBreakdownDonut labels={chartData.breakdown.map((item) => item.category)} values={chartData.breakdown.map((item) => item.amount)} currency={chartData.currency} />
             </div>
             <div className="space-y-2">
-              {chartData.breakdown.map((item) => (
-                <div key={item.category} className="flex items-center justify-between text-sm">
-                  <div>
-                    <span className="font-medium">{item.category}</span>
-                    <span className="text-xs text-muted-foreground ml-2">{item.percent.toFixed(1)}%</span>
+              {chartData.breakdown.map((item) => {
+                const compareItem = compareData?.breakdown.find((c) => c.category === item.category);
+                const diff = compareItem ? item.amount - compareItem.amount : null;
+                return (
+                  <div key={item.category} className="flex items-center justify-between text-sm">
+                    <div>
+                      <span className="font-medium">{item.category}</span>
+                      <span className="text-xs text-muted-foreground ml-2">{item.percent.toFixed(1)}%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">{formatMoney(Math.round(item.amount * 100), chartData.currency)}</span>
+                      {compareMode && diff !== null && (
+                        <span className={`text-xs ${diff > 0 ? "text-red-500" : diff < 0 ? "text-green-500" : "text-muted-foreground"}`}>
+                          {diff > 0 ? "+" : ""}{formatMoney(Math.round(diff * 100), chartData.currency)}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <span className="font-semibold">{formatMoney(Math.round(item.amount * 100), chartData.currency)}</span>
-                </div>
-              ))}
+                );
+              })}
               <div className="pt-2 border-t text-xs text-muted-foreground">
-                <div>Период: {periodLabel}</div>
-                <div>Всего: {formatMoney(Math.round(chartData.total * 100), chartData.currency)}</div>
+                <div className="flex justify-between">
+                  <span>{periodLabel}</span>
+                  <span>{formatMoney(Math.round(chartData.total * 100), chartData.currency)}</span>
+                </div>
+                {compareMode && compareData && (
+                  <div className="flex justify-between mt-1">
+                    <span>{comparePeriodLabel}</span>
+                    <span>{formatMoney(Math.round(compareData.total * 100), compareData.currency)}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

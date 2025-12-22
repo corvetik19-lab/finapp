@@ -13,6 +13,7 @@ export const DASHBOARD_WIDGETS = {
   EXPENSE_BY_CATEGORY: "expense-by-category",
   CATEGORY_MANAGEMENT: "category-management",
   TOP_PRODUCTS: "top-products",
+  TOP_PRODUCTS_RANKING: "top-products-ranking",
 } as const;
 
 export type DashboardWidgetKey = typeof DASHBOARD_WIDGETS[keyof typeof DASHBOARD_WIDGETS];
@@ -36,6 +37,7 @@ export const DEFAULT_WIDGET_ORDER: DashboardWidgetKey[] = [
   DASHBOARD_WIDGETS.FINANCIAL_TRENDS,
   DASHBOARD_WIDGETS.EXPENSE_BY_CATEGORY,
   DASHBOARD_WIDGETS.TOP_PRODUCTS,
+  DASHBOARD_WIDGETS.TOP_PRODUCTS_RANKING,
   DASHBOARD_WIDGETS.NET_WORTH,
   DASHBOARD_WIDGETS.PLANS,
   DASHBOARD_WIDGETS.UPCOMING_PAYMENTS,
@@ -88,6 +90,11 @@ export const WIDGET_INFO: Record<DashboardWidgetKey, { title: string; descriptio
     title: "Управление товарами",
     description: "Отслеживание и анализ покупок товаров",
     icon: "inventory_2",
+  },
+  [DASHBOARD_WIDGETS.TOP_PRODUCTS_RANKING]: {
+    title: "Топ-10 товаров",
+    description: "Рейтинг популярных товаров с динамикой",
+    icon: "emoji_events",
   },
 };
 

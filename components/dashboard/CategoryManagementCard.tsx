@@ -364,9 +364,9 @@ export default function CategoryManagementCard({
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {visibleItems.map((item) => (
                     <div key={item.id} role="button" tabIndex={0} onClick={() => void handleOpenModal(item.id, item.name)} onKeyDown={(event) => onCardKeyDown(event, item.id, item.name)}
-                      className={`p-3 rounded-lg border cursor-pointer transition-colors hover:bg-muted/50 ${item.totalMinor >= 0 ? "border-l-4 border-l-green-500" : "border-l-4 border-l-red-500"}`}>
+                      className="p-3 rounded-lg border bg-card cursor-pointer transition-all hover:shadow-md hover:border-primary/30">
                       <div className="flex items-center justify-between mb-2">
-                        <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${item.totalMinor >= 0 ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"}`}>
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                           <Tag className="h-4 w-4" />
                         </div>
                         <div className="flex items-center gap-1">

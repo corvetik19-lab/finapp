@@ -21,6 +21,7 @@ import { loadUpcomingPayments } from "@/lib/dashboard/upcoming-payments";
 import DashboardClient from "@/components/dashboard/DashboardClient";
 import { DASHBOARD_WIDGETS } from "@/lib/dashboard/preferences/shared";
 import ProductManagementCard from "@/components/dashboard/ProductManagementCard";
+import TopProductsWidget from "@/components/dashboard/TopProductsWidget";
 
 const FINANCIAL_TRENDS_DEFAULT_MONTHS = 1;
 
@@ -318,6 +319,12 @@ export default async function DashboardPage() {
         currency={overview.currency}
         from={startOfMonth.toISOString()}
         to={startOfNextMonth.toISOString()}
+      />
+    ),
+    [DASHBOARD_WIDGETS.TOP_PRODUCTS_RANKING]: isWidgetVisible(DASHBOARD_WIDGETS.TOP_PRODUCTS_RANKING, widgetVisibility) && (
+      <TopProductsWidget
+        key="top-products-ranking"
+        currency={overview.currency}
       />
     ),
   };

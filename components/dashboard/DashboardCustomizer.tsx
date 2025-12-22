@@ -83,6 +83,12 @@ const AVAILABLE_WIDGETS = [
     description: "Отслеживание и анализ покупок товаров",
     icon: "📦",
   },
+  {
+    id: "top-products-ranking",
+    name: "Топ-10 товаров",
+    description: "Рейтинг популярных товаров с динамикой",
+    icon: "🏆",
+  },
 ];
 
 export function DashboardCustomizer({ onClose }: DashboardCustomizerProps) {

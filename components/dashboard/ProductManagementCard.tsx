@@ -5,8 +5,8 @@ import { formatMoney } from "@/lib/utils/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Package, ShoppingBasket, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Package, ShoppingBasket, Eye, EyeOff, Loader2, ArrowLeftRight, X } from "lucide-react";
 
 export type ProductSummaryPeriod = "week" | "month" | "year" | "custom";
 
@@ -18,12 +18,33 @@ export type ProductSummaryItem = {
   transactionCount: number;
 };
 
-const PERIODS: { id: ProductSummaryPeriod; label: string }[] = [
-  { id: "week", label: "Неделя" },
-  { id: "month", label: "Месяц" },
-  { id: "year", label: "Год" },
-  { id: "custom", label: "Произвольно" },
+export type ProductTransactionItem = {
+  id: string;
+  date: string;
+  amount: number;
+  quantity: number;
+  unit: string;
+  note?: string;
+};
+
+const MONTH_NAMES = [
+  "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+  "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
 ];
+
+const getAvailableYears = () => {
+  const currentYear = new Date().getFullYear();
+  return [currentYear - 2, currentYear - 1, currentYear, currentYear + 1];
+};
+
+const getMonthRange = (year: number, month: number) => {
+  const from = new Date(year, month, 1);
+  const to = new Date(year, month + 1, 0);
+  return {
+    from: from.toISOString().slice(0, 10),
+    to: to.toISOString().slice(0, 10),
+  };
+};
 
 const INITIAL_VISIBLE_COUNT = 6;
 
@@ -39,20 +60,21 @@ export default function ProductManagementCard({
   allProducts,
   visibleProducts: initialVisibleProducts,
   currency,
-  from: initialFrom,
-  to: initialTo,
 }: ProductManagementCardProps) {
   const [isPending, startTransition] = useTransition();
+  const now = new Date();
 
   const [products, setProducts] = useState(allProducts);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const [period, setPeriod] = useState<ProductSummaryPeriod>("month");
-  const [customRange, setCustomRange] = useState<{ from: string; to: string }>({
-    from: initialFrom.slice(0, 10),
-    to: initialTo.slice(0, 10),
-  });
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
+  
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareYear, setCompareYear] = useState(now.getFullYear());
+  const [compareMonth, setCompareMonth] = useState(now.getMonth() > 0 ? now.getMonth() - 1 : 11);
+  const [compareProducts, setCompareProducts] = useState<ProductSummaryItem[]>([]);
 
   const [visibleIds, setVisibleIds] = useState<string[]>(() =>
     initialVisibleProducts.length > 0
@@ -65,40 +87,24 @@ export default function ProductManagementCard({
     return defaults[0]?.name ?? null;
   });
 
-  // Загрузка данных при изменении периода
-  useEffect(() => {
-    if (period === "custom") return;
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalProduct, setModalProduct] = useState<string | null>(null);
+  const [modalTransactions, setModalTransactions] = useState<ProductTransactionItem[]>([]);
+  const [modalLoading, setModalLoading] = useState(false);
 
-    const fetchData = async () => {
-      startTransition(async () => {
-        try {
-          const response = await fetch(
-            `/api/dashboard/products?period=${period}`
-          );
-          if (!response.ok) throw new Error("Failed to fetch products");
-          const data = await response.json();
-          setProducts(data.products);
-          setError(null);
-        } catch (err) {
-          setError("Не удалось загрузить данные");
-          console.error(err);
-        }
-      });
-    };
+  const availableYears = useMemo(() => getAvailableYears(), []);
 
-    fetchData();
-  }, [period]);
-
-  // Применение произвольного периода
-  const handleApplyCustomRange = () => {
+  const fetchProducts = async (from: string, to: string, isCompare = false) => {
     startTransition(async () => {
       try {
-        const response = await fetch(
-          `/api/dashboard/products?from=${customRange.from}&to=${customRange.to}`
-        );
+        const response = await fetch(`/api/dashboard/products?from=${from}&to=${to}`);
         if (!response.ok) throw new Error("Failed to fetch products");
         const data = await response.json();
-        setProducts(data.products);
+        if (isCompare) {
+          setCompareProducts(data.products);
+        } else {
+          setProducts(data.products);
+        }
         setError(null);
       } catch (err) {
         setError("Не удалось загрузить данные");
@@ -107,7 +113,55 @@ export default function ProductManagementCard({
     });
   };
 
-  // Сохранение настроек видимости
+  const handleMonthChange = (year: number, month: number) => {
+    setSelectedYear(year);
+    setSelectedMonth(month);
+    const { from, to } = getMonthRange(year, month);
+    fetchProducts(from, to);
+  };
+
+  const handleCompareMonthChange = (year: number, month: number) => {
+    setCompareYear(year);
+    setCompareMonth(month);
+    const { from, to } = getMonthRange(year, month);
+    fetchProducts(from, to, true);
+  };
+
+  const toggleCompareMode = () => {
+    if (!compareMode) {
+      const { from, to } = getMonthRange(compareYear, compareMonth);
+      fetchProducts(from, to, true);
+    } else {
+      setCompareProducts([]);
+    }
+    setCompareMode(!compareMode);
+  };
+
+  useEffect(() => {
+    const { from, to } = getMonthRange(selectedYear, selectedMonth);
+    fetchProducts(from, to);
+  }, []);
+
+  const handleOpenModal = async (productName: string) => {
+    setModalProduct(productName);
+    setModalOpen(true);
+    setModalLoading(true);
+    setModalTransactions([]);
+
+    try {
+      const { from, to } = getMonthRange(selectedYear, selectedMonth);
+      const response = await fetch(`/api/dashboard/product-transactions?name=${encodeURIComponent(productName)}&from=${from}&to=${to}`);
+      if (response.ok) {
+        const data = await response.json();
+        setModalTransactions(data.transactions || []);
+      }
+    } catch (err) {
+      console.error("Failed to load product transactions:", err);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
   const savePreferences = async (newVisibleIds: string[]) => {
     setSaving(true);
     try {
@@ -123,28 +177,24 @@ export default function ProductManagementCard({
     }
   };
 
-  // Переключение видимости товара
   const handleToggleVisibility = (productName: string) => {
     const newVisible = visibleIds.includes(productName)
       ? visibleIds.filter((id) => id !== productName)
       : [...visibleIds, productName];
-
     setVisibleIds(newVisible);
     savePreferences(newVisible);
   };
 
-  // Добавление скрытого товара
   const handleAddHidden = () => {
     if (!selectedHiddenId) return;
     const newVisible = [...visibleIds, selectedHiddenId];
     setVisibleIds(newVisible);
     savePreferences(newVisible);
-
     const remaining = products.filter((p) => !newVisible.includes(p.name));
     setSelectedHiddenId(remaining[0]?.name ?? null);
   };
 
-  const visibleProducts = useMemo(
+  const visibleProductsList = useMemo(
     () => products.filter((p) => visibleIds.includes(p.name)),
     [products, visibleIds]
   );
@@ -154,94 +204,165 @@ export default function ProductManagementCard({
     [products, visibleIds]
   );
 
+  const periodLabel = `${MONTH_NAMES[selectedMonth]} ${selectedYear}`;
+
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            Управление товарами
-          </CardTitle>
-          <Select value={period} onValueChange={(v) => setPeriod(v as ProductSummaryPeriod)} disabled={isPending}>
-            <SelectTrigger className="w-32 h-8">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PERIODS.map((p) => (
-                <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {period === "custom" && (
-          <div className="flex items-center gap-2">
-            <Input type="date" value={customRange.from} onChange={(e) => setCustomRange((prev) => ({ ...prev, from: e.target.value }))} className="h-8" />
-            <span className="text-muted-foreground">—</span>
-            <Input type="date" value={customRange.to} onChange={(e) => setCustomRange((prev) => ({ ...prev, to: e.target.value }))} className="h-8" />
-            <Button size="sm" onClick={handleApplyCustomRange} disabled={isPending}>
-              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Применить"}
-            </Button>
+    <>
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Управление товарами
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Select value={String(selectedYear)} onValueChange={(v) => handleMonthChange(Number(v), selectedMonth)} disabled={isPending}>
+                <SelectTrigger className="w-[80px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {availableYears.map((y) => (
+                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={String(selectedMonth)} onValueChange={(v) => handleMonthChange(selectedYear, Number(v))} disabled={isPending}>
+                <SelectTrigger className="w-[100px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {MONTH_NAMES.map((name, idx) => (
+                    <SelectItem key={idx} value={String(idx)}>{name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button variant={compareMode ? "default" : "outline"} size="sm" className="h-8" onClick={toggleCompareMode} disabled={isPending}>
+                <ArrowLeftRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        )}
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {compareMode && (
+            <div className="flex items-center gap-2 p-2 bg-muted rounded-lg">
+              <span className="text-xs text-muted-foreground">Сравнить с:</span>
+              <Select value={String(compareYear)} onValueChange={(v) => handleCompareMonthChange(Number(v), compareMonth)} disabled={isPending}>
+                <SelectTrigger className="w-[80px] h-7 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {availableYears.map((y) => (
+                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={String(compareMonth)} onValueChange={(v) => handleCompareMonthChange(compareYear, Number(v))} disabled={isPending}>
+                <SelectTrigger className="w-[100px] h-7 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {MONTH_NAMES.map((name, idx) => (
+                    <SelectItem key={idx} value={String(idx)}>{name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
-        {error && <div className="text-sm text-destructive">{error}</div>}
+          {error && <div className="text-sm text-destructive">{error}</div>}
 
-        {products.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Package className="h-12 w-12 mx-auto mb-2 opacity-30" />
-            <p>Нет данных по товарам</p>
-            <p className="text-xs">Добавьте позиции товаров в транзакции, чтобы увидеть статистику</p>
-          </div>
-        ) : (
-          <>
-            <div className="space-y-2">
-              {visibleProducts.map((product) => (
-                <div key={product.name} className="flex items-center gap-3 p-2 rounded-lg border hover:bg-muted/50 transition-colors">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
-                    <ShoppingBasket className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm truncate">{product.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {product.quantity} {product.unit} • {product.transactionCount} покупок
+          {products.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Package className="h-12 w-12 mx-auto mb-2 opacity-30" />
+              <p>Нет данных по товарам за {periodLabel}</p>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-2">
+                {visibleProductsList.map((product) => {
+                  const compareProduct = compareProducts.find((p) => p.name === product.name);
+                  const diff = compareProduct ? product.totalAmount - compareProduct.totalAmount : null;
+                  return (
+                    <div 
+                      key={product.name} 
+                      className="flex items-center gap-3 p-2 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
+                      onClick={() => handleOpenModal(product.name)}
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                        <ShoppingBasket className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">{product.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {product.quantity} {product.unit} • {product.transactionCount} покупок
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-medium">{formatMoney(Math.round(product.totalAmount * 100), currency)}</div>
+                        {compareMode && diff !== null && (
+                          <div className={`text-xs ${diff > 0 ? "text-red-500" : diff < 0 ? "text-green-500" : "text-muted-foreground"}`}>
+                            {diff > 0 ? "+" : ""}{formatMoney(Math.round(diff * 100), currency)}
+                          </div>
+                        )}
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); handleToggleVisibility(product.name); }} title="Скрыть товар">
+                        <EyeOff className="h-4 w-4" />
+                      </Button>
                     </div>
+                  );
+                })}
+              </div>
+
+              {hiddenProducts.length > 0 && (
+                <div className="pt-2 border-t">
+                  <div className="text-xs text-muted-foreground mb-2">Скрытые товары ({hiddenProducts.length})</div>
+                  <div className="flex gap-2">
+                    <Select value={selectedHiddenId || ""} onValueChange={setSelectedHiddenId}>
+                      <SelectTrigger className="flex-1 h-8">
+                        <SelectValue placeholder="Выберите товар" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {hiddenProducts.map((product) => (
+                          <SelectItem key={product.name} value={product.name}>
+                            {product.name} — {formatMoney(Math.round(product.totalAmount * 100), currency)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button size="sm" variant="outline" onClick={handleAddHidden} disabled={!selectedHiddenId || saving}>
+                      <Eye className="h-4 w-4 mr-1" />
+                      Показать
+                    </Button>
                   </div>
-                  <div className="text-sm font-medium">{formatMoney(Math.round(product.totalAmount * 100), currency)}</div>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleToggleVisibility(product.name)} title="Скрыть товар">
-                    <EyeOff className="h-4 w-4" />
-                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShoppingBasket className="h-5 w-5" />
+              {modalProduct}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="text-sm text-muted-foreground mb-2">Транзакции за {periodLabel}</div>
+          {modalLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : modalTransactions.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">Нет транзакций</div>
+          ) : (
+            <div className="space-y-2 max-h-[300px] overflow-y-auto">
+              {modalTransactions.map((tx) => (
+                <div key={tx.id} className="flex items-center justify-between p-2 rounded-lg border">
+                  <div>
+                    <div className="text-sm font-medium">{new Date(tx.date).toLocaleDateString("ru-RU")}</div>
+                    <div className="text-xs text-muted-foreground">{tx.quantity} {tx.unit}{tx.note ? ` • ${tx.note}` : ""}</div>
+                  </div>
+                  <div className="text-sm font-medium">{formatMoney(Math.round(tx.amount * 100), currency)}</div>
                 </div>
               ))}
             </div>
-
-            {hiddenProducts.length > 0 && (
-              <div className="pt-2 border-t">
-                <div className="text-xs text-muted-foreground mb-2">Скрытые товары ({hiddenProducts.length})</div>
-                <div className="flex gap-2">
-                  <Select value={selectedHiddenId || ""} onValueChange={setSelectedHiddenId}>
-                    <SelectTrigger className="flex-1 h-8">
-                      <SelectValue placeholder="Выберите товар" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {hiddenProducts.map((product) => (
-                        <SelectItem key={product.name} value={product.name}>
-                          {product.name} — {formatMoney(Math.round(product.totalAmount * 100), currency)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button size="sm" variant="outline" onClick={handleAddHidden} disabled={!selectedHiddenId || saving}>
-                    <Eye className="h-4 w-4 mr-1" />
-                    Показать
-                  </Button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
