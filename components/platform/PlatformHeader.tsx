@@ -10,7 +10,7 @@ import OrganizationSwitcher from "./OrganizationSwitcher";
 import { stopImpersonating } from "@/lib/admin/organizations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Shield, Settings, Calendar, Search, LogOut, Landmark, User } from "lucide-react";
+import { Shield, Settings, Calendar, Search, LogOut, Landmark, User, Receipt, MessageSquare } from "lucide-react";
 
 interface PlatformHeaderProps {
   user?: {
@@ -149,6 +149,22 @@ export default function PlatformHeader({
                 </Link>
               </Button>
             )}
+
+            {/* Receipts Button */}
+            <Button asChild variant="outline" size="sm" className="hidden md:flex bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200 hover:from-emerald-100 hover:to-teal-100 text-emerald-700">
+              <Link href="/finance/receipts" title="Чеки">
+                <Receipt className="h-4 w-4 mr-1.5" />
+                <span className="hidden lg:inline">Чеки</span>
+              </Link>
+            </Button>
+
+            {/* AI Chat Button */}
+            <Button asChild variant="outline" size="sm" className="hidden md:flex bg-gradient-to-r from-violet-50 to-purple-50 border-violet-200 hover:from-violet-100 hover:to-purple-100 text-violet-700">
+              <Link href="/ai-chat" title="AI Чат">
+                <MessageSquare className="h-4 w-4 mr-1.5" />
+                <span className="hidden lg:inline">AI Чат</span>
+              </Link>
+            </Button>
 
             {/* Calendar - Hidden on mobile */}
             <Button variant="ghost" size="icon" className="hidden md:flex" aria-label="Календарь">

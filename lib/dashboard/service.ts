@@ -160,12 +160,9 @@ export async function loadDashboardOverview(monthsBack = 8, options?: DashboardO
       }
     }
 
-    // Breakdown считаем только за текущий месяц (как и topIncome/topExpense)
-    const currentMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-    const isCurrentMonth = occurredAt >= currentMonthStart && occurredAt <= endBound;
-    
+    // Breakdown считаем за весь запрошенный период
     // Расход такси не включаем в breakdown (он учтён в чистом доходе такси)
-    if (row.direction === "expense" && isCurrentMonth && !isTaxi) {
+    if (row.direction === "expense" && !isTaxi) {
       breakdownMap.set(categoryName, (breakdownMap.get(categoryName) ?? 0) + Math.abs(amountMajor));
     }
   }

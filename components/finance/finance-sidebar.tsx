@@ -90,14 +90,14 @@ const financeNavigation = {
     title: "Инструменты",
     icon: Zap,
     items: [
-      { title: "Чеки", url: "/finance/receipts", icon: Receipt },
+      // Чеки вынесены в header
     ],
   },
   ai: {
     title: "AI",
     icon: Sparkles,
     items: [
-      { title: "AI Чат", url: "/ai-chat", icon: MessageSquare },
+      // AI Чат вынесен в header
       { title: "AI Советник", url: "/ai-advisor", icon: Lightbulb },
       { title: "AI Аналитика", url: "/ai-analytics", icon: LineChart },
     ],
@@ -234,12 +234,14 @@ export function FinanceSidebar({ ...props }: React.ComponentProps<typeof Sidebar
           items={financeNavigation.reports.items}
         />
 
-        {/* Tools - Collapsible */}
-        <NavCollapsible
-          title={financeNavigation.tools.title}
-          icon={financeNavigation.tools.icon}
-          items={financeNavigation.tools.items}
-        />
+        {/* Tools - скрыт т.к. Чеки вынесены в header */}
+        {financeNavigation.tools.items.length > 0 && (
+          <NavCollapsible
+            title={financeNavigation.tools.title}
+            icon={financeNavigation.tools.icon}
+            items={financeNavigation.tools.items}
+          />
+        )}
 
         {/* AI - Collapsible */}
         <NavCollapsible
