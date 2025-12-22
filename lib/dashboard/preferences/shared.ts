@@ -92,8 +92,8 @@ export const WIDGET_INFO: Record<DashboardWidgetKey, { title: string; descriptio
     icon: "inventory_2",
   },
   [DASHBOARD_WIDGETS.TOP_PRODUCTS_RANKING]: {
-    title: "Топ-10 товаров",
-    description: "Рейтинг популярных товаров с динамикой",
+    title: "Топ-10 покупок",
+    description: "Рейтинг популярных расходных товаров с динамикой",
     icon: "emoji_events",
   },
 };

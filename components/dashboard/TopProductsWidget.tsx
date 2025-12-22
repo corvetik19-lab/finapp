@@ -159,7 +159,7 @@ export default function TopProductsWidget({ currency }: TopProductsWidgetProps) 
           <div className="flex items-center justify-between flex-wrap gap-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Trophy className="h-4 w-4 text-yellow-500" />
-              Топ-10 товаров
+              Топ-10 покупок
             </CardTitle>
             <div className="flex items-center gap-2">
               <Select value={String(selectedYear)} onValueChange={(v) => handleMonthChange(Number(v), selectedMonth)} disabled={isPending}>

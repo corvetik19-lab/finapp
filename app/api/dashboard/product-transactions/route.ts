@@ -31,10 +31,11 @@ export async function GET(request: Request) {
       to.setHours(23, 59, 59, 999);
     }
 
-    // Загружаем транзакции за период
+    // Загружаем только расходные транзакции за период
     const { data: transactions } = await supabase
       .from("transactions")
       .select("id, occurred_at, note")
+      .eq("direction", "expense")
       .gte("occurred_at", from.toISOString())
       .lte("occurred_at", to.toISOString());
 
