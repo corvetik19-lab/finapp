@@ -132,6 +132,21 @@ export default function TransactionsGroupedList({
 
   const taxiNetIncome = taxiIncome - taxiExpense; // Чистый доход такси
 
+  // Группировка для отображения: в категории "Такси доход" показываем ЧИСТЫЙ доход
+  const byDirDisplay = useMemo(() => {
+    return {
+      income: byDir.income.map(g => {
+        if (g.category?.id === taxiCategoryId) {
+          // Для такси показываем чистый доход (доход - расход)
+          return { ...g, total: taxiNetIncome };
+        }
+        return g;
+      }),
+      expense: byDir.expense, // Расход такси остаётся видимым
+      transfer: byDir.transfer,
+    };
+  }, [byDir, taxiCategoryId, taxiNetIncome]);
+
   // Общий доход: все доходы, но Такси заменяем на чистый доход
   const incomeTotal = useMemo(() => {
     const otherIncome = byDir.income
@@ -472,9 +487,9 @@ export default function TransactionsGroupedList({
 
   return (
     <div className="space-y-4">
-      <DirBlock dir="income" groups={byDir.income} total={incomeTotal} open={openDir.income} toggleDir={toggleDir} openCats={openCats} toggleCat={toggleCat} setSelected={setSelected} setEditMode={setEditMode} setEditKey={setEditKey} setRemovingIds={setRemovingIds} removingIds={removingIds} />
-      <DirBlock dir="expense" groups={byDir.expense} total={expenseTotal} open={openDir.expense} toggleDir={toggleDir} openCats={openCats} toggleCat={toggleCat} setSelected={setSelected} setEditMode={setEditMode} setEditKey={setEditKey} setRemovingIds={setRemovingIds} removingIds={removingIds} />
-      <DirBlock dir="transfer" groups={byDir.transfer} total={transferTotal} open={openDir.transfer} toggleDir={toggleDir} openCats={openCats} toggleCat={toggleCat} setSelected={setSelected} setEditMode={setEditMode} setEditKey={setEditKey} setRemovingIds={setRemovingIds} removingIds={removingIds} />
+      <DirBlock dir="income" groups={byDirDisplay.income} total={incomeTotal} open={openDir.income} toggleDir={toggleDir} openCats={openCats} toggleCat={toggleCat} setSelected={setSelected} setEditMode={setEditMode} setEditKey={setEditKey} setRemovingIds={setRemovingIds} removingIds={removingIds} />
+      <DirBlock dir="expense" groups={byDirDisplay.expense} total={expenseTotal} open={openDir.expense} toggleDir={toggleDir} openCats={openCats} toggleCat={toggleCat} setSelected={setSelected} setEditMode={setEditMode} setEditKey={setEditKey} setRemovingIds={setRemovingIds} removingIds={removingIds} />
+      <DirBlock dir="transfer" groups={byDirDisplay.transfer} total={transferTotal} open={openDir.transfer} toggleDir={toggleDir} openCats={openCats} toggleCat={toggleCat} setSelected={setSelected} setEditMode={setEditMode} setEditKey={setEditKey} setRemovingIds={setRemovingIds} removingIds={removingIds} />
 
       {viewingFile && <FileViewerModal fileName={viewingFile.fileName} fileUrl={viewingFile.fileUrl} mimeType={viewingFile.mimeType} onClose={() => setViewingFile(null)} />}
 
