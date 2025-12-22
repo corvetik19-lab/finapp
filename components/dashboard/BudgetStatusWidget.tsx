@@ -4,16 +4,30 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { X, Loader2, BookmarkPlus } from "lucide-react";
 
-const STATUS_LABEL: Record<BudgetWithUsage["status"], string> = {
+// Статусы для расходов
+const EXPENSE_STATUS_LABEL: Record<BudgetWithUsage["status"], string> = {
   ok: "В пределах",
   warning: "Почти лимит",
   over: "Перерасход",
 };
 
-const STATUS_COLORS: Record<BudgetWithUsage["status"], string> = {
+// Статусы для доходов
+const INCOME_STATUS_LABEL: Record<BudgetWithUsage["status"], string> = {
+  ok: "План не выполнен",
+  warning: "Близко к плану",
+  over: "✓ План выполнен",
+};
+
+const EXPENSE_STATUS_COLORS: Record<BudgetWithUsage["status"], string> = {
   ok: "text-green-600 bg-green-100",
   warning: "text-yellow-600 bg-yellow-100",
   over: "text-red-600 bg-red-100",
+};
+
+const INCOME_STATUS_COLORS: Record<BudgetWithUsage["status"], string> = {
+  ok: "text-blue-600 bg-blue-100",
+  warning: "text-blue-600 bg-blue-100",
+  over: "text-green-600 bg-green-100",
 };
 
 type BudgetStatusWidgetProps = {
@@ -39,11 +53,18 @@ export default function BudgetStatusWidget({ budgets, currency, onDelete, deleti
     <div className="grid gap-3 sm:grid-cols-2">
       {sorted.map((budget) => {
         const categoryName = budget.category?.name || "Без категории";
-        const statusLabel = STATUS_LABEL[budget.status];
+        const isIncome = budget.category?.kind === "income" || budget.category?.kind === "both";
+        const statusLabel = isIncome ? INCOME_STATUS_LABEL[budget.status] : EXPENSE_STATUS_LABEL[budget.status];
+        const statusColors = isIncome ? INCOME_STATUS_COLORS[budget.status] : EXPENSE_STATUS_COLORS[budget.status];
         const progressPct = Math.min(Math.max(budget.progress * 100, 0), 100);
 
         const periodStart = new Date(budget.period_start).toLocaleDateString("ru-RU", { day: "2-digit", month: "short" });
         const periodEnd = new Date(budget.period_end).toLocaleDateString("ru-RU", { day: "2-digit", month: "short" });
+        
+        // Для доходов: зелёный прогресс-бар, для расходов - красный при превышении
+        const progressBarClass = isIncome 
+          ? "[&>div]:bg-green-500"
+          : budget.status === "over" ? "[&>div]:bg-red-500" : budget.status === "warning" ? "[&>div]:bg-yellow-500" : "";
 
         return (
           <div key={budget.id} className="border rounded-lg p-3 space-y-2">
@@ -61,12 +82,12 @@ export default function BudgetStatusWidget({ budgets, currency, onDelete, deleti
                 )}
               </div>
             </div>
-            <Progress value={progressPct} className={`h-1.5 ${budget.status === "over" ? "[&>div]:bg-red-500" : budget.status === "warning" ? "[&>div]:bg-yellow-500" : ""}`} />
+            <Progress value={progressPct} className={`h-1.5 ${progressBarClass}`} />
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">
-                Потрачено: {formatMoney(budget.spent_minor, budget.currency || currency)}
+                {isIncome ? "Получено" : "Потрачено"}: {formatMoney(budget.spent_minor, budget.currency || currency)}
               </span>
-              <span className={`px-1.5 py-0.5 rounded text-xs ${STATUS_COLORS[budget.status]}`}>
+              <span className={`px-1.5 py-0.5 rounded text-xs ${statusColors}`}>
                 {statusLabel}
               </span>
             </div>
