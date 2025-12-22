@@ -106,6 +106,11 @@ export async function loadDashboardOverview(monthsBack = 8, options?: DashboardO
   const rows = (data ?? []) as SupabaseDashboardRow[];
   const trendMap = new Map<string, DashboardTrendPoint>();
   const breakdownMap = new Map<string, number>();
+  
+  // Специальная логика для Такси: расход такси - затраты на работу, не личные расходы
+  // Чистый доход такси = доход такси - расход такси
+  const taxiIncomeByMonth = new Map<string, number>();
+  const taxiExpenseByMonth = new Map<string, number>();
 
   const totalMonths = Math.max(
     1,
@@ -120,15 +125,38 @@ export async function loadDashboardOverview(monthsBack = 8, options?: DashboardO
 
   const currency = rows[0]?.currency ?? "RUB";
 
+  // Функция для получения названия категории
+  const getCategoryName = (row: SupabaseDashboardRow): string => {
+    const categoryField = row.category;
+    return Array.isArray(categoryField)
+      ? categoryField[0]?.name ?? "Без категории"
+      : categoryField?.name ?? "Без категории";
+  };
+
   for (const row of rows) {
     const occurredAt = new Date(row.occurred_at);
     const monthKey = `${occurredAt.getUTCFullYear()}-${String(occurredAt.getUTCMonth() + 1).padStart(2, "0")}`;
     const amountMajor = toMajor(row.amount);
     const trendPoint = trendMap.get(monthKey);
+    const categoryName = getCategoryName(row);
+    const isTaxi = categoryName.toLowerCase() === "такси";
+    
     if (trendPoint) {
-      if (row.direction === "income") trendPoint.income += amountMajor;
+      if (row.direction === "income") {
+        if (isTaxi) {
+          // Такси доход накапливаем отдельно
+          taxiIncomeByMonth.set(monthKey, (taxiIncomeByMonth.get(monthKey) ?? 0) + amountMajor);
+        } else {
+          trendPoint.income += amountMajor;
+        }
+      }
       if (row.direction === "expense") {
-        trendPoint.expense += Math.abs(amountMajor);
+        if (isTaxi) {
+          // Такси расход накапливаем отдельно (не добавляем к общим расходам)
+          taxiExpenseByMonth.set(monthKey, (taxiExpenseByMonth.get(monthKey) ?? 0) + Math.abs(amountMajor));
+        } else {
+          trendPoint.expense += Math.abs(amountMajor);
+        }
       }
     }
 
@@ -136,14 +164,21 @@ export async function loadDashboardOverview(monthsBack = 8, options?: DashboardO
     const currentMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
     const isCurrentMonth = occurredAt >= currentMonthStart && occurredAt <= endBound;
     
-    if (row.direction === "expense" && isCurrentMonth) {
-      const categoryField = row.category;
-      const categoryName = Array.isArray(categoryField)
-        ? categoryField[0]?.name ?? "Без категории"
-        : categoryField?.name ?? "Без категории";
+    // Расход такси не включаем в breakdown (он учтён в чистом доходе такси)
+    if (row.direction === "expense" && isCurrentMonth && !isTaxi) {
       breakdownMap.set(categoryName, (breakdownMap.get(categoryName) ?? 0) + Math.abs(amountMajor));
     }
   }
+  
+  // Добавляем чистый доход такси к доходам каждого месяца
+  trendMap.forEach((trendPoint, monthKey) => {
+    const taxiInc = taxiIncomeByMonth.get(monthKey) ?? 0;
+    const taxiExp = taxiExpenseByMonth.get(monthKey) ?? 0;
+    const taxiNetIncome = taxiInc - taxiExp;
+    if (taxiNetIncome > 0) {
+      trendPoint.income += taxiNetIncome;
+    }
+  });
 
   const trend = Array.from(trendMap.entries())
     .sort((a, b) => a[0].localeCompare(b[0]))
