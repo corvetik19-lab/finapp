@@ -121,11 +121,24 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
     const isIncome = budget.category?.kind === "income" || budget.category?.kind === "both";
     const progressValue = Math.min(Math.max(budget.progress, 0), 1) * 100;
     
-    const cardStyle = budget.status === "over" 
-      ? "bg-gradient-to-br from-red-50 to-white dark:from-red-950/20 dark:to-card border-red-200/50 dark:border-red-800/30" 
-      : budget.status === "warning" 
-        ? "bg-gradient-to-br from-amber-50 to-white dark:from-amber-950/20 dark:to-card border-amber-200/50 dark:border-amber-800/30" 
-        : "bg-gradient-to-br from-green-50 to-white dark:from-green-950/20 dark:to-card border-green-200/50 dark:border-green-800/30";
+    // Для доходов: зелёный если план выполнен, иначе нейтральный
+    // Для расходов: зелёный в норме, жёлтый при warning, красный при превышении
+    const getCardStyle = () => {
+      if (isIncome) {
+        // Для доходов логика обратная: чем больше получено - тем лучше
+        return budget.progress >= 1
+          ? "bg-gradient-to-br from-green-50 to-white dark:from-green-950/20 dark:to-card border-green-200/50 dark:border-green-800/30"
+          : "bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-card border-blue-200/50 dark:border-blue-800/30";
+      }
+      // Для расходов
+      return budget.status === "over" 
+        ? "bg-gradient-to-br from-red-50 to-white dark:from-red-950/20 dark:to-card border-red-200/50 dark:border-red-800/30" 
+        : budget.status === "warning" 
+          ? "bg-gradient-to-br from-amber-50 to-white dark:from-amber-950/20 dark:to-card border-amber-200/50 dark:border-amber-800/30" 
+          : "bg-gradient-to-br from-green-50 to-white dark:from-green-950/20 dark:to-card border-green-200/50 dark:border-green-800/30";
+    };
+    
+    const cardStyle = getCardStyle();
 
     return (
       <Card key={budget.id} className={`${cardStyle} hover:shadow-md transition-shadow`}>
@@ -256,14 +269,18 @@ export default function BudgetsList({ budgets, categories }: BudgetsListProps) {
               </div>
 
               <div className={`flex items-center gap-2 text-xs ${
-                budget.status === "over" ? "text-red-600" : budget.status === "warning" ? "text-amber-600" : "text-green-600"
+                isIncome
+                  ? (budget.progress >= 1 ? "text-green-600" : "text-blue-600")
+                  : (budget.status === "over" ? "text-red-600" : budget.status === "warning" ? "text-amber-600" : "text-green-600")
               }`}>
                 <span className={`w-2 h-2 rounded-full ${
-                  budget.status === "over" ? "bg-red-500" : budget.status === "warning" ? "bg-amber-500" : "bg-green-500"
+                  isIncome
+                    ? (budget.progress >= 1 ? "bg-green-500" : "bg-blue-500")
+                    : (budget.status === "over" ? "bg-red-500" : budget.status === "warning" ? "bg-amber-500" : "bg-green-500")
                 }`} />
                 {isIncome
-                  ? (budget.progress >= 1 ? "План выполнен" : "План не выполнен")
-                  : (budget.status === "over" ? "Лимит превышен" : budget.status === "warning" ? "Осталось менее 15%" : "В пределах лимита")
+                  ? (budget.progress >= 1 ? "✓ План выполнен" : `Осталось получить ${Math.round((1 - budget.progress) * 100)}%`)
+                  : (budget.status === "over" ? "Лимит превышен" : budget.status === "warning" ? "Почти лимит" : "В пределах лимита")
                 }
               </div>
 
