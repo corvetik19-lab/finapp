@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Children, isValidElement, cloneElement } from "react";
+import { useState, useEffect, Children, isValidElement, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Settings2 } from "lucide-react";
 import { DashboardCustomizer } from "./DashboardCustomizer";
@@ -35,6 +35,13 @@ const WIDGET_TITLES: Record<string, string> = {
   "top-products-ranking": "Топ-10 покупок",
 };
 
+// Извлекает чистый ключ без React-префикса (.$key -> key)
+const getCleanKey = (key: string | null): string => {
+  if (!key) return "";
+  // React добавляет префикс ".$" или "." к ключам
+  return key.replace(/^\.\$?/, "");
+};
+
 type DashboardClientProps = {
   children: React.ReactNode;
   widgetVisibility: WidgetVisibilityState;
@@ -47,20 +54,35 @@ export default function DashboardClient({
 }: DashboardClientProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [widgetOrder, setWidgetOrder] = useState<string[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  // Извлекаем ключи виджетов из children
-  useEffect(() => {
-    const keys: string[] = [];
+  // Преобразуем children в массив с чистыми ключами
+  const childrenWithKeys = useMemo(() => {
+    const result: Array<{ element: React.ReactElement; cleanKey: string }> = [];
     Children.forEach(children, (child) => {
       if (isValidElement(child) && child.key) {
-        keys.push(String(child.key));
+        const cleanKey = getCleanKey(String(child.key));
+        if (cleanKey) {
+          result.push({ element: child, cleanKey });
+        }
       }
     });
+    return result;
+  }, [children]);
+
+  // Извлекаем ключи виджетов из children
+  useEffect(() => {
+    const keys = childrenWithKeys.map((c) => c.cleanKey);
+    
+    if (keys.length === 0) {
+      setIsInitialized(true);
+      return;
+    }
 
     // Загружаем сохранённый порядок
     const savedOrder = localStorage.getItem("dashboard-widget-order");
@@ -78,7 +100,8 @@ export default function DashboardClient({
     } else {
       setWidgetOrder(keys);
     }
-  }, [children]);
+    setIsInitialized(true);
+  }, [childrenWithKeys]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -94,10 +117,15 @@ export default function DashboardClient({
   };
 
   // Сортируем children по widgetOrder
-  const childrenArray = Children.toArray(children);
-  const sortedChildren = widgetOrder
-    .map((key) => childrenArray.find((child) => isValidElement(child) && child.key === key))
-    .filter((child): child is React.ReactElement => isValidElement(child));
+  const sortedChildren = useMemo(() => {
+    if (widgetOrder.length === 0) {
+      // Если порядок ещё не загружен, показываем в исходном порядке
+      return childrenWithKeys;
+    }
+    return widgetOrder
+      .map((key) => childrenWithKeys.find((c) => c.cleanKey === key))
+      .filter((c): c is { element: React.ReactElement; cleanKey: string } => c !== undefined);
+  }, [widgetOrder, childrenWithKeys]);
 
   return (
     <div className="space-y-6">
@@ -126,21 +154,22 @@ export default function DashboardClient({
       <OnboardingChecklist />
 
       {/* Виджеты с drag & drop и сворачиванием */}
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={widgetOrder} strategy={verticalListSortingStrategy}>
-          <div className="space-y-4">
-            {sortedChildren.map((child) => {
-              const key = String(child.key ?? "");
-              const title = WIDGET_TITLES[key] || key;
-              return (
-                <CollapsibleWidget key={key} id={key} title={title}>
-                  {child}
-                </CollapsibleWidget>
-              );
-            })}
-          </div>
-        </SortableContext>
-      </DndContext>
+      {isInitialized && (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={sortedChildren.map((c) => c.cleanKey)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-4">
+              {sortedChildren.map(({ element, cleanKey }) => {
+                const title = WIDGET_TITLES[cleanKey] || cleanKey;
+                return (
+                  <CollapsibleWidget key={cleanKey} id={cleanKey} title={title}>
+                    {element}
+                  </CollapsibleWidget>
+                );
+              })}
+            </div>
+          </SortableContext>
+        </DndContext>
+      )}
 
       {showCustomizeButton && isSettingsOpen && (
         <DashboardCustomizer onClose={() => setIsSettingsOpen(false)} />
