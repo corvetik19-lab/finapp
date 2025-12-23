@@ -29,10 +29,9 @@ export default function AIChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [model, setModel] = useState("gemini-2.0-flash");
-  const [thinkingLevel] = useState<"minimal" | "low" | "medium" | "high">("medium");
-  const [enableSearch, setEnableSearch] = useState(true);
-  const [enableUrlContext, setEnableUrlContext] = useState(true);
+  const [model, setModel] = useState("openai/gpt-4o-mini");
+  const [enableSearch, setEnableSearch] = useState(false);
+  const [enableUrlContext, setEnableUrlContext] = useState(false);
   const [enableCodeExecution, setEnableCodeExecution] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [currentThinking, setCurrentThinking] = useState("");
@@ -230,9 +229,9 @@ export default function AIChatPage() {
           })),
           model,
           config: {
-            thinkingLevel,
-            enableSearch,
-            enableCodeExecution,
+            temperature: 0.7,
+            maxTokens: 4096,
+            webSearch: enableSearch,
           },
         }),
         signal: abortControllerRef.current.signal,
@@ -497,8 +496,8 @@ export default function AIChatPage() {
             <div className={styles.emptyIcon}>
               <Sparkles size={48} />
             </div>
-            <h2>Gemini AI Чат</h2>
-            <p>Начните диалог с ИИ. Задайте любой вопрос или попросите помощь.</p>
+            <h2>OpenRouter AI Чат</h2>
+            <p>Доступ к 400+ моделям. Выберите модель и начните диалог.</p>
             <div className={styles.suggestions}>
               <button onClick={() => setInput("Объясни квантовую запутанность простыми словами")}>
                 Объясни квантовую запутанность

@@ -1,18 +1,22 @@
 /**
- * Google Gemini API Client via Vertex AI
- * Интеграция с Google Gemini через Vertex AI (обход гео-блокировки)
+ * Google Gemini API Client
+ * Интеграция с Google Gemini API для финансового ассистента
  * 
- * Документация: https://cloud.google.com/vertex-ai/docs/generative-ai/model-reference/gemini
+ * Гео-блокировка обходится через Vercel:
+ * - API routes выполняются на серверах Vercel в US регионах
+ * - preferredRegion = ["iad1"] (Washington DC)
+ * 
+ * Документация: https://ai.google.dev/gemini-api/docs
  * 
  * Модели:
- * - gemini-2.5-flash - Быстрая модель
- * - gemini-2.0-flash - Предыдущее поколение
- * - text-embedding-004 - Embeddings (Vertex AI)
+ * - gemini-2.0-flash - Основная модель (быстрая, Function Calling)
+ * - gemini-2.5-flash - Новейшая flash модель
+ * - text-embedding-004 - Embeddings
  */
 
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Ленивая инициализация клиента (сбрасывается при изменении env)
+// Ленивая инициализация клиента
 let _client: GoogleGenAI | null = null;
 
 // Сброс клиента для dev mode
@@ -22,83 +26,25 @@ export function resetGeminiClient() {
 
 /**
  * Получить клиент Gemini API
- * Приоритет: Vertex AI (для обхода гео-блокировки Gemini 3)
+ * Использует GEMINI_API_KEY (гео обходится через Vercel US regions)
  */
 export function getGeminiClient(): GoogleGenAI {
   if (!_client) {
-    // Приоритет Vertex AI для обхода гео-блокировки Gemini 3
-    const projectId = process.env.GOOGLE_PROJECT_ID;
-    const location = process.env.GOOGLE_LOCATION || "us-central1";
+    const apiKey = process.env.GEMINI_API_KEY;
     
-    if (projectId) {
-      console.log(`[Gemini] Initializing with Vertex AI: project=${projectId}, location=${location}`);
-      _client = new GoogleGenAI({
-        vertexai: true,
-        project: projectId,
-        location: location,
-      });
-    } else {
-      // Fallback на API Key (может не работать для Gemini 3 в некоторых регионах)
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (apiKey) {
-        console.log("[Gemini] Initializing with API Key");
-        _client = new GoogleGenAI({ apiKey });
-      } else {
-        throw new Error("Neither GOOGLE_PROJECT_ID nor GEMINI_API_KEY configured");
-      }
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY not configured. Add it to environment variables.");
     }
+    
+    console.log("[Gemini] Initializing with API Key (Vercel handles geo via US regions)");
+    _client = new GoogleGenAI({ apiKey });
   }
   return _client;
 }
 
-// Отдельный клиент для Veo (только US регионы)
-let _veoClient: GoogleGenAI | null = null;
-
-export function getVeoClient(): GoogleGenAI {
-  if (!_veoClient) {
-    const projectId = process.env.GOOGLE_PROJECT_ID;
-    
-    if (projectId) {
-      _veoClient = new GoogleGenAI({
-        vertexai: true,
-        project: projectId,
-        location: "us-central1", // Veo доступен только в US
-      });
-    } else {
-      throw new Error("GOOGLE_PROJECT_ID required for Veo video generation");
-    }
-  }
-  return _veoClient;
-}
-
-// Отдельный клиент для Image генерации
-// Используем API Key напрямую (не Vertex AI) - там квоты выше
-let _imageClient: GoogleGenAI | null = null;
-
+// Клиент для генерации изображений (использует тот же API Key)
 export function getImageClient(): GoogleGenAI {
-  if (!_imageClient) {
-    // Сначала пробуем API ключ (квоты обычно выше чем в Vertex AI)
-    const apiKey = process.env.GEMINI_API_KEY;
-    
-    if (apiKey) {
-      console.log("[Gemini Image] Initializing with API Key (higher quotas)");
-      _imageClient = new GoogleGenAI({ apiKey });
-    } else {
-      // Fallback на Vertex AI
-      const projectId = process.env.GOOGLE_PROJECT_ID;
-      if (projectId) {
-        console.log(`[Gemini Image] Initializing with Vertex AI: project=${projectId}, location=global`);
-        _imageClient = new GoogleGenAI({
-          vertexai: true,
-          project: projectId,
-          location: "global",
-        });
-      } else {
-        throw new Error("Neither GEMINI_API_KEY nor GOOGLE_PROJECT_ID configured for image generation");
-      }
-    }
-  }
-  return _imageClient;
+  return getGeminiClient();
 }
 
 /**

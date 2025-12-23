@@ -1,19 +1,33 @@
 import { NextRequest } from "next/server";
 import { createRouteClient } from "@/lib/supabase/server";
-import { getGeminiClient } from "@/lib/ai/gemini-client";
+import { streamChatCompletion, ChatMessage } from "@/lib/ai-studio/openrouter/client";
+import { DEFAULT_MODEL } from "@/lib/ai-studio/openrouter/models";
 import { hasAIStudioAccess, logAIStudioUsage } from "@/lib/ai-studio/access";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
+interface WebSearchConfig {
+  enabled: boolean;
+  maxResults?: number;
+  engine?: "native" | "exa";
+}
+
+interface ReasoningConfig {
+  enabled?: boolean;
+  effort?: "none" | "minimal" | "low" | "medium" | "high" | "xhigh";
+  maxTokens?: number;
+}
+
 interface StreamRequest {
-  messages: Array<{ role: "user" | "assistant"; content: string }>;
+  messages: Array<{ role: "user" | "assistant"; content: string; imageUrl?: string }>;
   model: string;
   systemPrompt?: string;
   config?: {
-    thinkingLevel?: "minimal" | "low" | "medium" | "high";
-    enableSearch?: boolean;
-    enableCodeExecution?: boolean;
+    temperature?: number;
+    maxTokens?: number;
+    webSearch?: boolean | WebSearchConfig;
+    reasoning?: ReasoningConfig;
   };
 }
 
@@ -39,91 +53,162 @@ export async function POST(req: NextRequest) {
 
     const { messages, model, systemPrompt, config }: StreamRequest = await req.json();
 
-    const client = getGeminiClient();
-    const actualModel = model || "gemini-2.0-flash";
+    const actualModel = model || DEFAULT_MODEL;
 
-    // Формируем contents для Gemini
-    const contents: Array<{ role: "user" | "model"; parts: Array<{ text: string }> }> = [];
+    // Формируем сообщения для OpenRouter
+    const openRouterMessages: ChatMessage[] = [];
     
+    // Добавляем системный промпт
     if (systemPrompt) {
-      contents.push(
-        { role: "user", parts: [{ text: `Инструкции:\n${systemPrompt}` }] },
-        { role: "model", parts: [{ text: "Понял, следую инструкциям." }] }
-      );
+      openRouterMessages.push({
+        role: "system",
+        content: systemPrompt,
+      });
     }
 
     // Добавляем историю сообщений
     for (const msg of messages) {
-      contents.push({
-        role: msg.role === "user" ? "user" : "model",
-        parts: [{ text: msg.content }],
+      openRouterMessages.push({
+        role: msg.role as "user" | "assistant",
+        content: msg.content,
       });
     }
 
     // Создаём streaming response
     const encoder = new TextEncoder();
+    let inputTokens = 0;
+    let outputTokens = 0;
 
-    try {
-      console.log(`[AI Studio] START - model: ${actualModel}`);
-      
-      const response = await client.models.generateContent({
-        model: actualModel,
-        contents,
-      });
+    console.log(`[AI Studio] START - model: ${actualModel}, messages: ${openRouterMessages.length}`);
 
-      const text = response.text || "";
-      const usage = response.usageMetadata;
-      
-      console.log(`[AI Studio] SUCCESS - length: ${text.length}`);
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          // Подготавливаем параметры запроса
+          const requestParams: Parameters<typeof streamChatCompletion>[0] = {
+            model: actualModel,
+            messages: openRouterMessages,
+            temperature: config?.temperature ?? 0.7,
+            max_tokens: config?.maxTokens ?? 4096,
+            stream: true,
+          };
 
-      // Логируем использование
-      await logAIStudioUsage(
-        user.id,
-        null,
-        "chat",
-        actualModel,
-        usage?.promptTokenCount || 0,
-        usage?.candidatesTokenCount || 0
-      );
-
-      // Создаём SSE стрим с ответом
-      const stream = new ReadableStream({
-        async start(controller) {
-          // Отправляем текст чанками
-          const chunkSize = 20;
-          for (let i = 0; i < text.length; i += chunkSize) {
-            const chunk = text.slice(i, i + chunkSize);
-            const data = `data: ${JSON.stringify({ type: "text", text: chunk, done: false })}\n\n`;
-            controller.enqueue(encoder.encode(data));
+          // Добавляем web search plugin если включен
+          if (config?.webSearch) {
+            const webConfig = typeof config.webSearch === 'object' ? config.webSearch : { enabled: true };
+            if (webConfig.enabled !== false) {
+              requestParams.plugins = [{
+                id: "web",
+                ...(webConfig.maxResults && { max_results: webConfig.maxResults }),
+                ...(webConfig.engine && { engine: webConfig.engine }),
+              }];
+            }
           }
-          
+
+          // Добавляем reasoning config если включен
+          if (config?.reasoning?.enabled) {
+            requestParams.reasoning = {
+              enabled: true,
+              ...(config.reasoning.effort && { effort: config.reasoning.effort }),
+              ...(config.reasoning.maxTokens && { max_tokens: config.reasoning.maxTokens }),
+            };
+          }
+
+          const streamGenerator = streamChatCompletion(requestParams);
+
+          let fullContent = "";
+          let fullReasoning = "";
+          let annotations: Array<{ type: string; url_citation?: { url: string; title: string; content?: string } }> = [];
+
+          for await (const chunk of streamGenerator) {
+            const delta = chunk.choices?.[0]?.delta;
+            
+            // Обработка reasoning tokens
+            if (delta?.reasoning) {
+              fullReasoning += delta.reasoning;
+              const thinkingData = `data: ${JSON.stringify({ type: "thinking", text: delta.reasoning, done: false })}\n\n`;
+              controller.enqueue(encoder.encode(thinkingData));
+            }
+            
+            if (delta?.content) {
+              fullContent += delta.content;
+              const data = `data: ${JSON.stringify({ type: "text", text: delta.content, done: false })}\n\n`;
+              controller.enqueue(encoder.encode(data));
+            }
+
+            // Обработка annotations (web search results)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const message = (chunk.choices?.[0] as any)?.message;
+            if (message?.annotations) {
+              annotations = message.annotations;
+            }
+
+            // Обновляем usage если есть
+            if (chunk.usage) {
+              inputTokens = chunk.usage.prompt_tokens || 0;
+              outputTokens = chunk.usage.completion_tokens || 0;
+            }
+
+            // Проверяем finish_reason
+            const finishReason = chunk.choices?.[0]?.finish_reason;
+            if (finishReason) {
+              console.log(`[AI Studio] Finish reason: ${finishReason}`);
+              
+              // Отправляем annotations если есть
+              if (annotations.length > 0) {
+                const sourcesData = `data: ${JSON.stringify({ 
+                  type: "sources", 
+                  sources: annotations.map(a => ({
+                    url: a.url_citation?.url,
+                    title: a.url_citation?.title,
+                    content: a.url_citation?.content
+                  })).filter(s => s.url)
+                })}\n\n`;
+                controller.enqueue(encoder.encode(sourcesData));
+              }
+            }
+          }
+
+          console.log(`[AI Studio] SUCCESS - length: ${fullContent.length}, tokens: ${inputTokens}/${outputTokens}`);
+
+          // Логируем использование
+          await logAIStudioUsage(
+            user.id,
+            null,
+            "chat",
+            actualModel,
+            inputTokens,
+            outputTokens
+          );
+
           // Финальное сообщение
-          const finalData = `data: ${JSON.stringify({ type: "done", done: true, usage: { inputTokens: usage?.promptTokenCount || 0, outputTokens: usage?.candidatesTokenCount || 0 } })}\n\n`;
+          const finalData = `data: ${JSON.stringify({ 
+            type: "done", 
+            done: true, 
+            usage: { inputTokens, outputTokens } 
+          })}\n\n`;
           controller.enqueue(encoder.encode(finalData));
           controller.close();
-        },
-      });
-
-      return new Response(stream, {
-        headers: {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          "Connection": "keep-alive",
-        },
-      });
-    } catch (error) {
-      console.error("[AI Studio] Error:", error);
-      const errorStream = new ReadableStream({
-        start(controller) {
-          const errorData = `data: ${JSON.stringify({ type: "error", error: error instanceof Error ? error.message : "Error", done: true })}\n\n`;
+        } catch (error) {
+          console.error("[AI Studio] Stream error:", error);
+          const errorData = `data: ${JSON.stringify({ 
+            type: "error", 
+            error: error instanceof Error ? error.message : "Error", 
+            done: true 
+          })}\n\n`;
           controller.enqueue(encoder.encode(errorData));
           controller.close();
-        },
-      });
-      return new Response(errorStream, {
-        headers: { "Content-Type": "text/event-stream" },
-      });
-    }
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+      },
+    });
   } catch (error) {
     console.error("Chat stream error:", error);
     return new Response(

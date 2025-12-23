@@ -1,5 +1,5 @@
 /**
- * AI Studio - Полная интеграция Gemini AI
+ * AI Studio - Интеграция с OpenRouter (400+ моделей)
  */
 
 // Access control
@@ -13,8 +13,27 @@ export {
   logAIStudioUsage,
 } from "./access";
 
-// Models configuration
-export { AI_STUDIO_MODELS, getModelConfig, getDefaultModel } from "./models";
+// OpenRouter models configuration
+export {
+  OPENROUTER_MODELS,
+  MODEL_CATEGORIES,
+  getModelById,
+  getModelsByCategory,
+  getRecommendedModels,
+  getToolsModels,
+  getVisionModels,
+  getDefaultModel,
+  DEFAULT_MODEL,
+} from "./models";
+
+// OpenRouter client
+export {
+  chatCompletion,
+  streamChatCompletion,
+  getModels,
+  checkApiKey,
+  createTool,
+} from "./openrouter/client";
 
 // Types
 export type {
@@ -24,3 +43,8 @@ export type {
   GenerationConfig,
   ThinkingLevel,
 } from "./types";
+
+export type {
+  OpenRouterModelConfig,
+  ModelCategory,
+} from "./openrouter/models";

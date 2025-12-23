@@ -74,7 +74,7 @@ const menuSections = [
   },
   {
     id: "chat",
-    label: "Gemini Чат",
+    label: "OpenRouter Чат",
     icon: MessageCircle,
     href: "/ai-studio/chat",
     items: [],
@@ -173,7 +173,7 @@ export default function AIStudioSidebar({ isAdmin = false, userRole }: SidebarPr
           <Sparkles className={styles.logoSvg} />
         </div>
         <div className={styles.logoText}>
-          <span className={styles.logoTitle}>Gemini</span>
+          <span className={styles.logoTitle}>OpenRouter</span>
           <span className={styles.logoSubtitle}>AI Studio</span>
         </div>
       </Link>

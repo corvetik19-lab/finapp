@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { Send, Paperclip, Mic, Globe, Link, Code, Sparkles } from "lucide-react";
+import { Send, Paperclip, Mic, Globe, Link, Code, MessageSquare } from "lucide-react";
 import styles from "./ChatInput.module.css";
 
 interface ChatInputProps {
@@ -100,7 +100,7 @@ export default function ChatInput({
         )}
 
         <div className={styles.textareaWrapper}>
-          <Sparkles className={styles.geminiIcon} />
+          <MessageSquare className={styles.geminiIcon} />
           <textarea
             ref={textareaRef}
             value={value}
