@@ -104,7 +104,10 @@ export async function POST(req: Request) {
     const client = getGeminiClient();
     const model = GEMINI_MODELS.CHAT;
     
-    console.log(`[AI Chat] Using generateContent with model: ${model}`);
+    // Логируем регион Vercel для отладки гео
+    const vercelRegion = process.env.VERCEL_REGION || "local";
+    console.log(`[AI Chat] Vercel Region: ${vercelRegion}`);
+    console.log(`[AI Chat] Using model: ${model}`);
     console.log(`[AI Chat] Tools count: ${functionDeclarations.length}`);
 
     // Создаём streaming response
@@ -198,7 +201,9 @@ export async function POST(req: Request) {
           controller.close();
         } catch (error) {
           console.error("[AI Chat] Error:", error);
-          controller.enqueue(encoder.encode("❌ Произошла ошибка. Попробуйте ещё раз."));
+          const errorMessage = error instanceof Error ? error.message : "Unknown error";
+          console.error("[AI Chat] Error message:", errorMessage);
+          controller.enqueue(encoder.encode(`❌ Ошибка: ${errorMessage}`));
           controller.close();
         }
       },
