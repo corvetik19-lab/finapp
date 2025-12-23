@@ -127,17 +127,26 @@ export async function POST(req: Request) {
             console.log(`[AI Chat] Iteration ${iterations}`);
 
             // Вызываем Gemini API
-            const response = await client.models.generateContent({
-              model,
-              contents: [
-                { role: "user", parts: [{ text: systemPrompt }] },
-                { role: "model", parts: [{ text: "Понял, готов помогать!" }] },
-                ...conversationHistory,
-              ],
-              config: {
-                tools: [{ functionDeclarations: functionDeclarations as unknown as import("@google/genai").FunctionDeclaration[] }],
-              },
-            });
+            let response;
+            try {
+              response = await client.models.generateContent({
+                model,
+                contents: [
+                  { role: "user", parts: [{ text: systemPrompt }] },
+                  { role: "model", parts: [{ text: "Понял, готов помогать!" }] },
+                  ...conversationHistory,
+                ],
+                config: {
+                  tools: [{ functionDeclarations: functionDeclarations as unknown as import("@google/genai").FunctionDeclaration[] }],
+                },
+              });
+            } catch (apiError) {
+              console.error("[AI Chat] Gemini API Error:", apiError);
+              const errMsg = apiError instanceof Error ? apiError.message : JSON.stringify(apiError);
+              controller.enqueue(encoder.encode(`❌ Gemini API Error: ${errMsg}`));
+              controller.close();
+              return;
+            }
 
             // Проверяем function calls
             const functionCalls = response.functionCalls;

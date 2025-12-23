@@ -58,18 +58,17 @@ export function getImageClient(): GoogleGenAI {
  * - gemini-3-pro-image-preview - Генерация изображений (64K tokens)
  */
 export const GEMINI_MODELS = {
-  // Основная модель для чата - Gemini 2.0 Flash (стабильная, Function Calling)
-  // Gemini 3 модели в Preview могут быть недоступны в некоторых регионах
-  CHAT: "gemini-2.0-flash",
+  // Основная модель для чата - Gemini 3 Flash (Function Calling + Thinking)
+  CHAT: "gemini-3-flash-preview",
   
-  // Продвинутая модель - Gemini 2.5 Pro
-  PRO: "gemini-2.5-pro-preview-06-05",
+  // Продвинутая модель - Gemini 3 Pro (Deep Thinking)
+  PRO: "gemini-3-pro-preview",
   
-  // Быстрая модель - Gemini 2.0 Flash
-  FAST: "gemini-2.0-flash",
+  // Быстрая модель - Gemini 3 Flash
+  FAST: "gemini-3-flash-preview",
   
   // Flash модель
-  FLASH: "gemini-2.0-flash",
+  FLASH: "gemini-3-flash-preview",
   
   // Модель для embeddings
   EMBEDDINGS: "text-embedding-004",
