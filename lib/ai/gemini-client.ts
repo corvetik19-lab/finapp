@@ -1,16 +1,17 @@
 /**
- * Google Gemini API Client
- * Интеграция с Google Gemini API для финансового ассистента
+ * Google Gemini 3 API Client
+ * Интеграция с Google Gemini 3 API для финансового ассистента
  * 
  * Гео-блокировка обходится через Vercel:
  * - API routes выполняются на серверах Vercel в US регионах
  * - preferredRegion = ["iad1"] (Washington DC)
  * 
- * Документация: https://ai.google.dev/gemini-api/docs
+ * Документация: https://ai.google.dev/gemini-api/docs/gemini-3
  * 
- * Модели:
- * - gemini-2.0-flash - Основная модель (быстрая, Function Calling)
- * - gemini-2.5-flash - Новейшая flash модель
+ * Модели Gemini 3 (Preview):
+ * - gemini-3-flash-preview - Быстрая модель с Function Calling и Thinking
+ * - gemini-3-pro-preview - Продвинутая модель с Deep Thinking
+ * - gemini-3-pro-image-preview - Генерация изображений
  * - text-embedding-004 - Embeddings
  */
 
@@ -49,49 +50,54 @@ export function getImageClient(): GoogleGenAI {
 
 /**
  * Модели Gemini 3 для разных задач
- * Документация: https://ai.google.dev/gemini-api/docs/models
+ * Документация: https://ai.google.dev/gemini-api/docs/gemini-3
  * 
- * Gemini 3 модели:
- * - gemini-3-pro-preview - Главная модель с Deep Thinking и Function Calling
- * - gemini-3-flash-preview - Быстрая модель с Function Calling
- * - gemini-3-pro-image-preview - Генерация и редактирование изображений
+ * Gemini 3 модели (все поддерживают Function Calling и Thinking):
+ * - gemini-3-flash-preview - Быстрая модель (1M tokens context)
+ * - gemini-3-pro-preview - Продвинутая модель с Deep Thinking (1M tokens)
+ * - gemini-3-pro-image-preview - Генерация изображений (64K tokens)
  */
 export const GEMINI_MODELS = {
-  // Основная модель для чата (Gemini 2.0 Flash - самая новая стабильная)
-  CHAT: "gemini-2.0-flash",
+  // Основная модель для чата - Gemini 3 Flash (быстрая + Function Calling)
+  CHAT: "gemini-3-flash-preview",
   
-  // Продвинутая модель мышления (Gemini 2.0 Flash)
-  PRO: "gemini-2.0-flash",
+  // Продвинутая модель с Deep Thinking - Gemini 3 Pro
+  PRO: "gemini-3-pro-preview",
   
-  // Быстрая модель (Gemini 2.0 Flash)
-  FAST: "gemini-2.0-flash",
+  // Быстрая модель - Gemini 3 Flash
+  FAST: "gemini-3-flash-preview",
   
-  // Gemini 2.0 Flash
-  FLASH: "gemini-2.0-flash",
+  // Flash модель
+  FLASH: "gemini-3-flash-preview",
   
   // Модель для embeddings
   EMBEDDINGS: "text-embedding-004",
   
-  // Генерация изображений (Gemini 3 Pro Image)
+  // Генерация изображений - Gemini 3 Pro Image
   IMAGE: "gemini-3-pro-image-preview",
   
   // Генерация видео (Veo 3.1)
   VIDEO: "veo-3.1-generate-preview",
   VIDEO_FAST: "veo-3.1-fast-generate-001",
   
-  // Озвучка текста
+  // Озвучка текста - Gemini 3 Flash
   TTS: "gemini-3-flash-preview",
   
-  // Голосовой ассистент
+  // Голосовой ассистент - Gemini 3 Flash
   LIVE: "gemini-3-flash-preview",
 } as const;
 
 /**
- * Уровни мышления для Gemini 3 Pro
+ * Уровни мышления для Gemini 3
+ * 
+ * Gemini 3 Pro: low, high
+ * Gemini 3 Flash: minimal, low, medium, high
  */
 export const THINKING_LEVELS = {
-  LOW: "low",    // Быстрые ответы, минимальная задержка
-  HIGH: "high",  // Глубокое reasoning (по умолчанию)
+  MINIMAL: "minimal", // Почти без размышлений (только Flash)
+  LOW: "low",         // Минимальная задержка
+  MEDIUM: "medium",   // Сбалансированное мышление (только Flash)
+  HIGH: "high",       // Глубокое reasoning (по умолчанию)
 } as const;
 
 /**
