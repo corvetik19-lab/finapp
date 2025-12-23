@@ -103,11 +103,12 @@ function convertPropertyToGemini(prop: Record<string, unknown>): Record<string, 
 
 /**
  * Интерфейс для Gemini function declaration
+ * Поддерживает оба формата: parameters (2.5) и parametersJsonSchema (3.0)
  */
 export interface GeminiFunctionDeclaration {
   name: string;
-  description: string;
-  parameters: {
+  description?: string;
+  parameters?: {
     type: string;
     properties: Record<string, unknown>;
     required?: string[];
@@ -126,7 +127,6 @@ export function convertToolsToGemini(): GeminiFunctionDeclaration[] {
     if (!schema) continue;
 
     // Конвертируем Zod схему в JSON Schema
-    // Несовместимость типов zod@3.x и zod-to-json-schema - требуется приведение
     const jsonSchema = zodToJsonSchema(schema as unknown as Parameters<typeof zodToJsonSchema>[0], toolName) as Record<string, unknown>;
     
     // Конвертируем properties в формат Gemini
@@ -149,4 +149,62 @@ export function convertToolsToGemini(): GeminiFunctionDeclaration[] {
   }
 
   return geminiTools;
+}
+
+/**
+ * Интерфейс для Interactions API tool
+ */
+interface InteractionsTool {
+  type: "function";
+  name: string;
+  description: string;
+  parameters: {
+    type: "object";
+    properties: Record<string, unknown>;
+    required?: string[];
+  };
+}
+
+/**
+ * Конвертирует наши tools в формат Interactions API (Gemini 3)
+ * Формат: { type: 'function', name: '...', description: '...', parameters: {...} }
+ */
+export function convertToolsForInteractions(): InteractionsTool[] {
+  const tools: InteractionsTool[] = [];
+
+  for (const [toolName, toolDef] of Object.entries(aiTools)) {
+    const schema = toolSchemas[toolName as keyof typeof toolSchemas];
+    
+    if (!schema) continue;
+
+    // Конвертируем Zod схему в JSON Schema
+    const jsonSchema = zodToJsonSchema(schema as unknown as Parameters<typeof zodToJsonSchema>[0], toolName) as Record<string, unknown>;
+    
+    // Простые properties для Interactions API
+    const jsonProperties = (jsonSchema.properties as Record<string, Record<string, unknown>>) || {};
+    const simpleProperties: Record<string, unknown> = {};
+    
+    for (const [propName, propDef] of Object.entries(jsonProperties)) {
+      simpleProperties[propName] = {
+        type: propDef.type || "string",
+        description: propDef.description || propName,
+      };
+      if (propDef.enum) {
+        (simpleProperties[propName] as Record<string, unknown>).enum = propDef.enum;
+      }
+    }
+
+    tools.push({
+      type: "function",
+      name: toolName,
+      description: toolDef.description,
+      parameters: {
+        type: "object",
+        properties: simpleProperties,
+        required: (jsonSchema.required as string[]) || [],
+      },
+    });
+  }
+
+  return tools;
 }

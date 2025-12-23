@@ -40,179 +40,90 @@ export async function POST(req: NextRequest) {
     const { messages, model, systemPrompt, config }: StreamRequest = await req.json();
 
     const client = getGeminiClient();
+    const actualModel = model || "gemini-2.0-flash";
 
-    // Формируем contents с системным промптом
+    // Формируем contents для Gemini
     const contents: Array<{ role: "user" | "model"; parts: Array<{ text: string }> }> = [];
     
     if (systemPrompt) {
       contents.push(
-        { role: "user", parts: [{ text: `Системные инструкции:\n${systemPrompt}` }] },
+        { role: "user", parts: [{ text: `Инструкции:\n${systemPrompt}` }] },
         { role: "model", parts: [{ text: "Понял, следую инструкциям." }] }
       );
     }
 
-    messages.forEach((m) => {
+    // Добавляем историю сообщений
+    for (const msg of messages) {
       contents.push({
-        role: m.role === "user" ? "user" : "model",
-        parts: [{ text: m.content }],
+        role: msg.role === "user" ? "user" : "model",
+        parts: [{ text: msg.content }],
       });
-    });
-
-    // Конфигурация генерации
-    const generationConfig: Record<string, unknown> = {
-      maxOutputTokens: 65536,
-      temperature: 0.7,
-    };
-
-    // Thinking level для моделей Gemini 3
-    const isGemini3 = model.includes("gemini-3");
-    if (isGemini3 && config?.thinkingLevel) {
-      generationConfig.thinkingConfig = {
-        thinkingBudget: config.thinkingLevel === "minimal" ? 0 
-          : config.thinkingLevel === "low" ? 1024 
-          : config.thinkingLevel === "medium" ? 8192 
-          : 32768
-      };
-    }
-
-    // Tools
-    const tools: Array<Record<string, unknown>> = [];
-    if (config?.enableSearch) {
-      tools.push({ googleSearch: {} });
-    }
-    if (config?.enableCodeExecution) {
-      tools.push({ codeExecution: {} });
     }
 
     // Создаём streaming response
     const encoder = new TextEncoder();
-    let totalInputTokens = 0;
-    let totalOutputTokens = 0;
 
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          const response = await client.models.generateContentStream({
-            model: model || "gemini-3-flash-preview",
-            contents,
-            config: {
-              ...generationConfig,
-              tools: tools.length > 0 ? tools : undefined,
-            },
-          });
+    try {
+      console.log(`[AI Studio] START - model: ${actualModel}`);
+      
+      const response = await client.models.generateContent({
+        model: actualModel,
+        contents,
+      });
 
-          for await (const chunk of response) {
-            if (chunk.usageMetadata) {
-              totalInputTokens = chunk.usageMetadata.promptTokenCount || 0;
-              totalOutputTokens = chunk.usageMetadata.candidatesTokenCount || 0;
-            }
+      const text = response.text || "";
+      const usage = response.usageMetadata;
+      
+      console.log(`[AI Studio] SUCCESS - length: ${text.length}`);
 
-            // Обрабатываем части ответа
-            if (chunk.candidates?.[0]?.content?.parts) {
-              for (const part of chunk.candidates[0].content.parts) {
-                // Thinking (мысли модели)
-                if ("thought" in part && part.thought === true && "text" in part) {
-                  const data = JSON.stringify({ 
-                    type: "thinking", 
-                    text: part.text || "",
-                    done: false 
-                  });
-                  controller.enqueue(encoder.encode(`data: ${data}\n\n`));
-                }
-                // Обычный текст
-                else if ("text" in part && part.text) {
-                  const data = JSON.stringify({ 
-                    type: "text", 
-                    text: part.text,
-                    done: false 
-                  });
-                  controller.enqueue(encoder.encode(`data: ${data}\n\n`));
-                }
-                // Результат выполнения кода
-                else if ("executableCode" in part) {
-                  const execCode = part as { executableCode: { code: string; language: string } };
-                  const data = JSON.stringify({
-                    type: "code",
-                    code: execCode.executableCode.code,
-                    language: execCode.executableCode.language,
-                    done: false
-                  });
-                  controller.enqueue(encoder.encode(`data: ${data}\n\n`));
-                }
-                else if ("codeExecutionResult" in part) {
-                  const execResult = part as { codeExecutionResult: { output: string } };
-                  const data = JSON.stringify({
-                    type: "code_result",
-                    output: execResult.codeExecutionResult.output,
-                    done: false
-                  });
-                  controller.enqueue(encoder.encode(`data: ${data}\n\n`));
-                }
-              }
-            }
+      // Логируем использование
+      await logAIStudioUsage(
+        user.id,
+        null,
+        "chat",
+        actualModel,
+        usage?.promptTokenCount || 0,
+        usage?.candidatesTokenCount || 0
+      );
 
-            // Grounding metadata (источники)
-            if (chunk.candidates?.[0]?.groundingMetadata?.groundingChunks) {
-              const sources = chunk.candidates[0].groundingMetadata.groundingChunks
-                .filter((c: { web?: { uri?: string; title?: string } }) => c.web?.uri)
-                .map((c: { web?: { uri?: string; title?: string } }) => ({
-                  title: c.web?.title || c.web?.uri || "Источник",
-                  url: c.web?.uri || ""
-                }));
-              
-              if (sources.length > 0) {
-                const data = JSON.stringify({
-                  type: "sources",
-                  sources,
-                  done: false
-                });
-                controller.enqueue(encoder.encode(`data: ${data}\n\n`));
-              }
-            }
+      // Создаём SSE стрим с ответом
+      const stream = new ReadableStream({
+        async start(controller) {
+          // Отправляем текст чанками
+          const chunkSize = 20;
+          for (let i = 0; i < text.length; i += chunkSize) {
+            const chunk = text.slice(i, i + chunkSize);
+            const data = `data: ${JSON.stringify({ type: "text", text: chunk, done: false })}\n\n`;
+            controller.enqueue(encoder.encode(data));
           }
-
-          // Финальное сообщение с метаданными
-          const finalData = JSON.stringify({
-            type: "done",
-            done: true,
-            usage: {
-              inputTokens: totalInputTokens,
-              outputTokens: totalOutputTokens,
-            },
-          });
-          controller.enqueue(encoder.encode(`data: ${finalData}\n\n`));
-
-          // Логируем использование
-          await logAIStudioUsage(
-            user.id,
-            null,
-            "chat",
-            model || "gemini-3-flash-preview",
-            totalInputTokens,
-            totalOutputTokens
-          );
-
+          
+          // Финальное сообщение
+          const finalData = `data: ${JSON.stringify({ type: "done", done: true, usage: { inputTokens: usage?.promptTokenCount || 0, outputTokens: usage?.candidatesTokenCount || 0 } })}\n\n`;
+          controller.enqueue(encoder.encode(finalData));
           controller.close();
-        } catch (error) {
-          console.error("Stream error:", error);
-          const errorData = JSON.stringify({ 
-            type: "error",
-            error: error instanceof Error ? error.message : "Stream error",
-            done: true 
-          });
-          controller.enqueue(encoder.encode(`data: ${errorData}\n\n`));
-          controller.close();
-        }
-      },
-    });
+        },
+      });
 
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-      },
-    });
+      return new Response(stream, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive",
+        },
+      });
+    } catch (error) {
+      console.error("[AI Studio] Error:", error);
+      const errorStream = new ReadableStream({
+        start(controller) {
+          const errorData = `data: ${JSON.stringify({ type: "error", error: error instanceof Error ? error.message : "Error", done: true })}\n\n`;
+          controller.enqueue(encoder.encode(errorData));
+          controller.close();
+        },
+      });
+      return new Response(errorStream, {
+        headers: { "Content-Type": "text/event-stream" },
+      });
+    }
   } catch (error) {
     console.error("Chat stream error:", error);
     return new Response(

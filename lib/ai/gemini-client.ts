@@ -12,20 +12,25 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Ленивая инициализация клиента
+// Ленивая инициализация клиента (сбрасывается при изменении env)
 let _client: GoogleGenAI | null = null;
 
+// Сброс клиента для dev mode
+export function resetGeminiClient() {
+  _client = null;
+}
+
 /**
- * Получить клиент Gemini API через Vertex AI
+ * Получить клиент Gemini API
+ * Приоритет: Vertex AI (для обхода гео-блокировки Gemini 3)
  */
 export function getGeminiClient(): GoogleGenAI {
   if (!_client) {
+    // Приоритет Vertex AI для обхода гео-блокировки Gemini 3
     const projectId = process.env.GOOGLE_PROJECT_ID;
-    // Gemini 3 Pro доступен только в global регионе!
-    const location = process.env.GOOGLE_LOCATION || "global";
+    const location = process.env.GOOGLE_LOCATION || "us-central1";
     
     if (projectId) {
-      // Используем Vertex AI (для обхода гео-блокировки)
       console.log(`[Gemini] Initializing with Vertex AI: project=${projectId}, location=${location}`);
       _client = new GoogleGenAI({
         vertexai: true,
@@ -33,13 +38,14 @@ export function getGeminiClient(): GoogleGenAI {
         location: location,
       });
     } else {
-      // Fallback на обычный API ключ
+      // Fallback на API Key (может не работать для Gemini 3 в некоторых регионах)
       const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey) {
+      if (apiKey) {
+        console.log("[Gemini] Initializing with API Key");
+        _client = new GoogleGenAI({ apiKey });
+      } else {
         throw new Error("Neither GOOGLE_PROJECT_ID nor GEMINI_API_KEY configured");
       }
-      console.log("[Gemini] Initializing with API Key");
-      _client = new GoogleGenAI({ apiKey });
     }
   }
   return _client;
@@ -96,40 +102,42 @@ export function getImageClient(): GoogleGenAI {
 }
 
 /**
- * Модели для разных задач
+ * Модели Gemini 3 для разных задач
+ * Документация: https://ai.google.dev/gemini-api/docs/models
+ * 
+ * Gemini 3 модели:
+ * - gemini-3-pro-preview - Главная модель с Deep Thinking и Function Calling
+ * - gemini-3-flash-preview - Быстрая модель с Function Calling
+ * - gemini-3-pro-image-preview - Генерация и редактирование изображений
  */
 export const GEMINI_MODELS = {
-  // Основная модель для чата и анализа (Gemini 3 Pro)
-  CHAT: "gemini-3-pro-preview",
+  // Основная модель для чата (Gemini 2.0 Flash - самая новая стабильная)
+  CHAT: "gemini-2.0-flash",
   
-  // Продвинутая модель мышления
-  PRO: "gemini-2.5-pro",
+  // Продвинутая модель мышления (Gemini 2.0 Flash)
+  PRO: "gemini-2.0-flash",
   
-  // Экспериментальная быстрая модель
-  FLASH_EXP: "gemini-2.0-flash-exp",
+  // Быстрая модель (Gemini 2.0 Flash)
+  FAST: "gemini-2.0-flash",
   
-  // Быстрая модель для простых задач
-  FAST: "gemini-2.5-flash",
-  
-  // Сверхбыстрая модель
-  LITE: "gemini-2.5-flash-lite",
+  // Gemini 2.0 Flash
+  FLASH: "gemini-2.0-flash",
   
   // Модель для embeddings
   EMBEDDINGS: "text-embedding-004",
   
-  // Генерация изображений (Gemini 3 Pro Image - Nano Banana)
+  // Генерация изображений (Gemini 3 Pro Image)
   IMAGE: "gemini-3-pro-image-preview",
-  IMAGE_FAST: "gemini-2.0-flash-exp",
   
   // Генерация видео (Veo 3.1)
   VIDEO: "veo-3.1-generate-preview",
   VIDEO_FAST: "veo-3.1-fast-generate-001",
   
-  // Озвучка текста (через Gemini)
-  TTS: "gemini-2.0-flash",
+  // Озвучка текста
+  TTS: "gemini-3-flash-preview",
   
   // Голосовой ассистент
-  LIVE: "gemini-2.0-flash",
+  LIVE: "gemini-3-flash-preview",
 } as const;
 
 /**
@@ -150,13 +158,19 @@ export const EMBEDDING_DIMENSIONS = {
 } as const;
 
 /**
- * Информация о моделях Gemini
+ * Информация о моделях Gemini 3
  */
 export const GEMINI_MODELS_INFO = {
   "gemini-3-pro-preview": {
     name: "Gemini 3 Pro",
     description: "🧠 Новейшая модель с Deep Thinking",
-    features: ["thinking", "advanced", "recommended"],
+    features: ["thinking", "advanced", "recommended", "function_calling"],
+    contextWindow: "1M tokens",
+  },
+  "gemini-3-flash-preview": {
+    name: "Gemini 3 Flash",
+    description: "⚡ Быстрая модель Gemini 3 с Function Calling",
+    features: ["fast", "function_calling", "thinking"],
     contextWindow: "1M tokens",
   },
   "gemini-3-pro-image-preview": {
@@ -165,53 +179,17 @@ export const GEMINI_MODELS_INFO = {
     features: ["image", "thinking"],
     contextWindow: "64K tokens",
   },
-  "gemini-2.5-pro": {
-    name: "Gemini 2.5 Pro",
-    description: "🧠 Продвинутое мышление для сложных задач",
-    features: ["thinking", "advanced"],
-    contextWindow: "1M tokens",
-  },
-  "gemini-2.5-flash": {
-    name: "Gemini 2.5 Flash",
-    description: "⚡ Быстрая модель, баланс цена/качество",
-    features: ["fast", "costEffective"],
-    contextWindow: "1M tokens",
-  },
-  "gemini-2.5-flash-lite": {
-    name: "Gemini 2.5 Flash-Lite",
-    description: "💨 Сверхбыстрая для простых задач",
-    features: ["fast", "lite"],
-    contextWindow: "1M tokens",
-  },
-  "gemini-2.5-flash-image": {
-    name: "Gemini 2.5 Flash Image",
-    description: "🖼️ Быстрая генерация изображений",
-    features: ["image", "fast"],
-    contextWindow: "64K tokens",
-  },
   "veo-3.1-generate-preview": {
     name: "Veo 3.1",
     description: "🎬 720p/1080p видео с нативным аудио",
     features: ["video", "audio"],
     contextWindow: "1K tokens",
   },
-  "veo-3.1-fast-generate-preview": {
+  "veo-3.1-fast-generate-001": {
     name: "Veo 3.1 Fast",
     description: "🎬 Быстрая генерация видео",
     features: ["video", "fast"],
     contextWindow: "1K tokens",
-  },
-  "gemini-2.5-flash-preview-tts": {
-    name: "Gemini TTS",
-    description: "🎤 Озвучка текста",
-    features: ["tts", "audio"],
-    contextWindow: "8K tokens",
-  },
-  "gemini-2.5-flash-native-audio-preview-12-2025": {
-    name: "Gemini Live",
-    description: "🎙️ Голосовой ассистент реального времени",
-    features: ["live", "audio", "realtime"],
-    contextWindow: "128K tokens",
   },
   "text-embedding-004": {
     name: "Text Embedding 004",

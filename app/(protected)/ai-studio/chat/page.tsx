@@ -29,7 +29,7 @@ export default function AIChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [model, setModel] = useState("gemini-3-flash-preview");
+  const [model, setModel] = useState("gemini-2.0-flash");
   const [thinkingLevel] = useState<"minimal" | "low" | "medium" | "high">("medium");
   const [enableSearch, setEnableSearch] = useState(true);
   const [enableUrlContext, setEnableUrlContext] = useState(true);

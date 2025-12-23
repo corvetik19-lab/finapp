@@ -15,21 +15,14 @@ interface FormattedModel {
  * GET - получить список доступных Gemini моделей
  */
 export async function GET() {
-  // Список доступных Gemini моделей (только 2 основные)
+  // Список доступных Gemini моделей (Vertex AI)
   const geminiModels: FormattedModel[] = [
     {
-      id: "gemini-2.5-pro",
-      name: "Gemini 3 Pro",
+      id: "gemini-2.0-flash",
+      name: "Gemini 2.0 Flash",
       is_free: true,
-      description: "🧠 Новейшая модель с advanced reasoning (по умолчанию)",
-      features: ["thinking", "advanced", "recommended"],
-    },
-    {
-      id: "gemini-2.5-flash",
-      name: "Gemini 2.5 Flash",
-      is_free: true,
-      description: "⚡ Быстрая модель, баланс цена/качество",
-      features: ["fast", "costEffective"],
+      description: "🚀 Самая новая модель через Vertex AI (по умолчанию)",
+      features: ["thinking", "advanced", "recommended", "fast"],
     },
   ];
 
