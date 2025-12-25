@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { createRouteClient } from "@/lib/supabase/server";
-import { getGeminiClient, getImageClient } from "@/lib/ai/gemini-client";
+import { getOpenRouterClient, OPENROUTER_CHAT_MODEL } from "@/lib/ai/openrouter-client";
 import { hasAIStudioAccess, logAIStudioUsage } from "@/lib/ai-studio/access";
-import { Modality } from "@google/genai";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -49,126 +48,48 @@ export async function POST(req: Request) {
 
     const { messages, model, config }: ChatRequest = await req.json();
 
-    // Проверяем, является ли это модель генерации изображений
-    const isImageModel = model.includes("image") || model.includes("imagen");
-    
-    // Используем соответствующий клиент (image клиент использует location=global)
-    const client = isImageModel ? getImageClient() : getGeminiClient();
+    // Используем OpenRouter клиент
+    const client = getOpenRouterClient();
 
-    // Формируем contents
-    const contents = messages.map((m) => ({
-      role: m.role === "user" ? "user" : "model",
-      parts: [{ text: m.content }],
+    // Формируем сообщения для OpenRouter (OpenAI-совместимый формат)
+    const openRouterMessages = messages.map((m) => ({
+      role: m.role as "user" | "assistant",
+      content: m.content,
     }));
 
-    // Формируем tools на основе конфигурации
-    const tools: Array<Record<string, unknown>> = [];
-    
+    // Добавляем системный промпт если нужен поиск
     if (config.enableSearch) {
-      tools.push({ googleSearch: {} });
-    }
-    
-    if (config.enableCodeExecution) {
-      tools.push({ codeExecution: {} });
-    }
-
-    // Конфигурация генерации
-    const generateConfig: Record<string, unknown> = {};
-    
-    // Добавляем tools если есть
-    if (tools.length > 0) {
-      generateConfig.tools = tools;
+      openRouterMessages.unshift({
+        role: "user" as const,
+        content: "[System: You have access to web search. When answering questions, search for current information when needed.]",
+      });
     }
 
-    if (isImageModel) {
-      // Используем Modality enum из SDK как в документации
-      generateConfig.responseModalities = [Modality.TEXT, Modality.IMAGE];
+    // Используем модель из запроса или дефолтную
+    // Маппинг старых моделей на OpenRouter
+    let actualModel = model;
+    if (model.includes("gemini-2.0") || model.includes("gemini-2.5")) {
+      actualModel = OPENROUTER_CHAT_MODEL; // google/gemini-3-flash-preview
+    } else if (model.includes("gemini-3")) {
+      actualModel = "google/gemini-3-flash-preview";
     }
-
-    // Генерируем ответ
-    // Для моделей изображений используем gemini-3-pro-image-preview
-    const actualModel = isImageModel ? "gemini-3-pro-image-preview" : model;
     
-    console.log(`[AI Studio Chat] Model: ${actualModel}, isImageModel: ${isImageModel}`);
+    console.log(`[AI Studio Chat] Model: ${actualModel}`);
     
-    const response = await client.models.generateContent({
-      model: actualModel,
-      contents,
-      config: Object.keys(generateConfig).length > 0 ? generateConfig : undefined,
+    const response = await client.chat(openRouterMessages, {
+      temperature: 0.7,
+      max_tokens: 8192,
     });
 
-    // Извлекаем данные из ответа
-    let content = "";
-    let thinking = "";
-    let imageUrl = "";
+    // Извлекаем данные из ответа OpenRouter
+    const content = response.choices[0]?.message?.content || "";
+    const thinking = ""; // OpenRouter не возвращает thinking отдельно
     const sources: Array<{ title: string; url: string }> = [];
     const codeResults: Array<{ code: string; output: string; language: string }> = [];
 
-    if (response.candidates && response.candidates[0]) {
-      const candidate = response.candidates[0];
-
-      // Извлекаем текст, мысли, изображения и результаты кода
-      if (candidate.content?.parts) {
-        for (const part of candidate.content.parts) {
-          // Проверяем на мысли AI
-          if ("thought" in part && part.thought) {
-            thinking += (part.text || "") + "\n";
-          } 
-          // Проверяем на изображение (inlineData)
-          else if ("inlineData" in part && part.inlineData) {
-            const inlineData = part.inlineData as { data?: string; mimeType?: string };
-            if (inlineData.data) {
-              imageUrl = `data:${inlineData.mimeType || "image/png"};base64,${inlineData.data}`;
-            }
-          }
-          // Проверяем на результат выполнения кода
-          else if ("executableCode" in part) {
-            const execCode = part as { executableCode: { code: string; language: string } };
-            codeResults.push({
-              code: execCode.executableCode.code || "",
-              output: "",
-              language: execCode.executableCode.language || "python",
-            });
-          }
-          else if ("codeExecutionResult" in part) {
-            const execResult = part as { codeExecutionResult: { output: string } };
-            if (codeResults.length > 0) {
-              codeResults[codeResults.length - 1].output = execResult.codeExecutionResult.output || "";
-            }
-          }
-          // Обычный текст
-          else if ("text" in part) {
-            content += part.text || "";
-          }
-        }
-      }
-
-      // Извлекаем источники из grounding metadata (Google Search)
-      if (candidate.groundingMetadata?.groundingChunks) {
-        for (const chunk of candidate.groundingMetadata.groundingChunks) {
-          if (chunk.web) {
-            sources.push({
-              title: chunk.web.title || chunk.web.uri || "Источник",
-              url: chunk.web.uri || "",
-            });
-          }
-        }
-      }
-      
-      // Также проверяем searchEntryPoint для Google Search
-      if (candidate.groundingMetadata?.searchEntryPoint?.renderedContent) {
-        // Есть данные поиска Google
-      }
-    }
-
-    // Если контент пустой, используем response.text
-    if (!content && response.text) {
-      content = response.text;
-    }
-
     // Логируем использование
-    const inputTokens = response.usageMetadata?.promptTokenCount || 0;
-    const outputTokens = response.usageMetadata?.candidatesTokenCount || 0;
+    const inputTokens = response.usage?.prompt_tokens || 0;
+    const outputTokens = response.usage?.completion_tokens || 0;
 
     await logAIStudioUsage(
       user.id,
@@ -183,7 +104,6 @@ export async function POST(req: Request) {
     return NextResponse.json({
       content: content.trim(),
       thinking: thinking.trim() || undefined,
-      imageUrl: imageUrl || undefined,
       sources: sources.length > 0 ? sources : undefined,
       codeResults: codeResults.length > 0 ? codeResults : undefined,
       usage: {

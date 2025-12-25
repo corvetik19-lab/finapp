@@ -4,7 +4,7 @@
 
 import { createAdminClient, createRouteClient } from "@/lib/supabase/helpers";
 import type { ToolParameters } from "./tools";
-import { searchRelevantTransactions } from "./rag-pipeline";
+import { createEmbedding } from "./openrouter-embeddings";
 import { logger } from "@/lib/logger";
 
 type TransactionSummaryRow = {
@@ -23,6 +23,37 @@ type ProgramRecord = {
   is_active?: boolean | null;
   duration?: number | null;
 };
+
+// === ГЕНЕРАЦИЯ EMBEDDING ДЛЯ ТРАНЗАКЦИИ ===
+async function generateTransactionEmbedding(
+  supabase: ReturnType<typeof createAdminClient>,
+  transactionId: string,
+  note: string,
+  categoryName: string,
+  direction: string
+) {
+  try {
+    // Формируем текст для embedding
+    const textForEmbedding = `${direction === "expense" ? "Расход" : "Доход"}: ${note}. Категория: ${categoryName}`;
+    
+    // Генерируем embedding
+    const embedding = await createEmbedding(textForEmbedding);
+    
+    // Сохраняем в БД
+    const { error } = await supabase
+      .from("transactions")
+      .update({ embedding })
+      .eq("id", transactionId);
+    
+    if (error) {
+      logger.error("Failed to save embedding:", error);
+    } else {
+      logger.debug("Embedding generated for transaction:", transactionId);
+    }
+  } catch (err) {
+    logger.error("Error generating transaction embedding:", err);
+  }
+}
 
 // === ДЕБЕТОВЫЕ КАРТЫ ===
 export async function handleAddDebitCard(params: ToolParameters<"addDebitCard"> & { userId: string }) {
@@ -116,6 +147,7 @@ export async function handleAddTransaction(params: ToolParameters<"addTransactio
   }
 
   // Создать транзакцию
+  const noteText = params.note || "";
   const { data, error } = await supabase
     .from("transactions")
     .insert({
@@ -124,13 +156,22 @@ export async function handleAddTransaction(params: ToolParameters<"addTransactio
       category_id: categoryId,
       amount: Math.round(params.amount * 100),
       direction: params.direction,
-      description: params.description || "",
-      date: params.date || new Date().toISOString().split("T")[0],
+      note: noteText,
+      occurred_at: params.date ? new Date(params.date).toISOString() : new Date().toISOString(),
     })
     .select()
     .single();
 
   if (error) throw error;
+  
+  // Генерируем embedding для транзакции (асинхронно)
+  if (data?.id && noteText) {
+    const adminSupabase = createAdminClient();
+    generateTransactionEmbedding(adminSupabase, data.id, noteText, params.categoryName, params.direction).catch(err => {
+      logger.error("Failed to generate embedding:", err);
+    });
+  }
+  
   return { 
     success: true, 
     data, 
@@ -257,14 +298,15 @@ export async function handleGetFinancialSummary(params: ToolParameters<"getFinan
   }
 
   // Получить транзакции
-  const { data: transactions } = await supabase
+  const { data: transactions, error } = await supabase
     .from("transactions")
     .select("amount, direction")
     .eq("user_id", userId)
-    .gte("date", startDate.toISOString().split("T")[0])
-    .lte("date", now.toISOString().split("T")[0]);
+    .gte("occurred_at", startDate.toISOString())
+    .lte("occurred_at", now.toISOString());
 
-  if (!transactions) {
+  if (error || !transactions) {
+    logger.error("getFinancialSummary error:", error);
     return { success: false, message: "Не удалось получить данные" };
   }
 
@@ -455,7 +497,7 @@ export async function handleAddCategory(
 
 // === ДОБАВИТЬ ТРАНЗАКЦИЮ (AI) ===
 export async function handleAIAddTransaction(
-  params: { amount: number; direction: string; categoryName: string; accountName?: string; note?: string; date?: string; userId?: string }
+  params: { amount: number; direction: string; categoryName: string; accountName?: string; description?: string; note?: string; date?: string; userId?: string }
 ) {
   const supabase = createAdminClient();
   
@@ -535,6 +577,7 @@ export async function handleAIAddTransaction(
   const amountInCents = Math.round(params.amount * 100);
   
   // Создать транзакцию
+  const noteText = params.description || params.note || null;
   const { data, error } = await supabase
     .from("transactions")
     .insert({
@@ -544,13 +587,20 @@ export async function handleAIAddTransaction(
       amount: amountInCents,
       direction: params.direction,
       currency: "RUB",
-      note: params.note || null,
+      note: noteText,
       occurred_at: params.date ? new Date(params.date).toISOString() : new Date().toISOString(),
     })
     .select()
     .single();
 
   if (error) throw error;
+  
+  // Генерируем embedding для транзакции (асинхронно, не блокируя ответ)
+  if (data?.id && noteText) {
+    generateTransactionEmbedding(supabase, data.id, noteText, params.categoryName, params.direction).catch(err => {
+      logger.error("Failed to generate embedding:", err);
+    });
+  }
   
   const directionText = params.direction === "expense" ? "Расход" : "Доход";
   return { 
@@ -1262,29 +1312,102 @@ export async function handleAIAddWorkout(
 // === RAG: УМНЫЙ ПОИСК ТРАНЗАКЦИЙ ===
 export async function handleSearchTransactions(params: { query: string; limit?: number; userId: string }) {
   try {
-    const results = await searchRelevantTransactions(params.query, params.userId, params.limit || 5);
+    const supabase = createAdminClient();
+    const limit = params.limit || 50;
     
-    if (results.length === 0) {
+    logger.debug("Searching transactions", { query: params.query, userId: params.userId });
+    
+    // Извлекаем ключевые слова из запроса
+    const keywords = params.query.toLowerCase()
+      .replace(/за\s+(последний|этот|прошлый)\s+(месяц|неделю|год)/gi, '')
+      .replace(/все\s+|найди\s+|покажи\s+/gi, '')
+      .replace(/покупки|транзакции|расходы|траты|магазине?/gi, '')
+      .trim()
+      .split(/\s+/)
+      .filter(w => w.length > 2);
+    
+    // Определяем период
+    const dateFilter = new Date();
+    if (/месяц/i.test(params.query)) {
+      dateFilter.setMonth(dateFilter.getMonth() - 1);
+    } else if (/неделю/i.test(params.query)) {
+      dateFilter.setDate(dateFilter.getDate() - 7);
+    } else if (/год/i.test(params.query)) {
+      dateFilter.setFullYear(dateFilter.getFullYear() - 1);
+    } else {
+      dateFilter.setMonth(dateFilter.getMonth() - 1);
+    }
+    
+    // Поиск транзакций за период
+    const { data: transactions, error } = await supabase
+      .from("transactions")
+      .select(`id, amount, direction, currency, occurred_at, note, category_id, account_id`)
+      .eq("user_id", params.userId)
+      .gte("occurred_at", dateFilter.toISOString())
+      .order("occurred_at", { ascending: false })
+      .limit(limit);
+    
+    if (error) {
+      logger.error("Search error:", error);
+      return { success: false, error: error.message };
+    }
+    
+    if (!transactions || transactions.length === 0) {
       return {
         success: true,
-        message: "Транзакции не найдены по запросу",
+        message: "Транзакции не найдены за указанный период",
         transactions: []
       };
     }
+    
+    // Получаем категории и счета
+    const categoryIds = [...new Set(transactions.map(t => t.category_id).filter(Boolean))];
+    const accountIds = [...new Set(transactions.map(t => t.account_id).filter(Boolean))];
+    
+    let categories: Array<{ id: string; name: string }> = [];
+    let accounts: Array<{ id: string; name: string }> = [];
+    
+    if (categoryIds.length > 0) {
+      const { data } = await supabase.from("categories").select("id, name").in("id", categoryIds);
+      categories = data || [];
+    }
+    
+    if (accountIds.length > 0) {
+      const { data } = await supabase.from("accounts").select("id, name").in("id", accountIds);
+      accounts = data || [];
+    }
+    
+    const categoryMap = Object.fromEntries(categories.map(c => [c.id, c.name]));
+    const accountMap = Object.fromEntries(accounts.map(a => [a.id, a.name]));
+    
+    // Фильтруем по ключевым словам если есть
+    let filteredTransactions = transactions;
+    if (keywords.length > 0) {
+      filteredTransactions = transactions.filter(t => {
+        const note = (t.note || "").toLowerCase();
+        const catName = (categoryMap[t.category_id] || "").toLowerCase();
+        const accName = (accountMap[t.account_id] || "").toLowerCase();
+        return keywords.some(k => note.includes(k) || catName.includes(k) || accName.includes(k));
+      });
+    }
+    
+    // Если фильтр по ключевым словам ничего не нашёл, показываем все
+    if (filteredTransactions.length === 0 && keywords.length > 0) {
+      filteredTransactions = transactions;
+    }
 
     // Форматируем результаты для AI
-    const formatted = results.map(t => ({
+    const formatted = filteredTransactions.map(t => ({
       дата: new Date(t.occurred_at).toLocaleDateString("ru-RU"),
-      описание: t.note,
-      сумма: `${t.amount_major.toFixed(2)} ${t.currency}`,
-      категория: t.category_name || "Без категории",
-      счет: t.account_name || "Неизвестно",
-      схожесть: `${(t.similarity * 100).toFixed(0)}%`
+      описание: t.note || "",
+      сумма: `${(Math.abs(t.amount) / 100).toFixed(2)} ${t.currency || "RUB"}`,
+      категория: categoryMap[t.category_id] || "Без категории",
+      счет: accountMap[t.account_id] || "Неизвестно"
     }));
 
     return {
       success: true,
-      message: `Найдено ${results.length} транзакций`,
+      message: `Найдено ${formatted.length} транзакций за период`,
       transactions: formatted
     };
   } catch (error) {

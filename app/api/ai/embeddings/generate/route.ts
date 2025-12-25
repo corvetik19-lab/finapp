@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createRSCClient } from "@/lib/supabase/helpers";
-import { createEmbedding, buildTransactionText } from "@/lib/ai/embeddings";
+import { createEmbedding, buildTransactionText } from "@/lib/ai/openrouter-embeddings";
 
 /**
  * API для генерации embeddings для транзакций

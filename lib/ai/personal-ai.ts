@@ -3,8 +3,8 @@
  * Персональный ассистент, заметки, голосовой ввод
  */
 
-import { getGeminiClient, GEMINI_MODELS } from "./gemini-client";
-import { createEmbedding } from "./embeddings";
+import { getGeminiClient, GEMINI_MODELS } from "./openrouter-compat";
+import { createEmbedding } from "./openrouter-embeddings";
 import { createRSCClient } from "@/lib/supabase/helpers";
 import { logger } from "@/lib/logger";
 

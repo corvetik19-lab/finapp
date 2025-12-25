@@ -47,7 +47,7 @@ export async function getChatMessages(chatId: string): Promise<AiMessage[]> {
 /**
  * Создать новый чат
  */
-export async function createChat(model: string = "openai/gpt-4o-mini"): Promise<string | null> {
+export async function createChat(model: string = "google/gemini-3-flash-preview"): Promise<string | null> {
   const supabase = await createRouteClient();
   
   const { data: { user } } = await supabase.auth.getUser();

@@ -3,7 +3,7 @@
  * Оценка рисков, рекомендации, мониторинг
  */
 
-import { getGeminiClient, GEMINI_MODELS } from "./gemini-client";
+import { getGeminiClient, GEMINI_MODELS } from "./openrouter-compat";
 import { searchEntities, getEntityRelations } from "./entity-extractor";
 import { createRSCClient } from "@/lib/supabase/helpers";
 import { logger } from "@/lib/logger";

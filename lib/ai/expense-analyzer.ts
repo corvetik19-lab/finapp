@@ -3,7 +3,7 @@
  * Детальный анализ, паттерны, оптимизация
  */
 
-import { getGeminiClient, GEMINI_MODELS } from "./gemini-client";
+import { getGeminiClient, GEMINI_MODELS } from "./openrouter-compat";
 import { createRSCClient } from "@/lib/supabase/helpers";
 import { logger } from "@/lib/logger";
 

@@ -9,20 +9,19 @@ import { resolve } from 'path';
 // Загружаем переменные окружения из .env.local
 config({ path: resolve(process.cwd(), '.env.local') });
 
-// Проверяем OpenAI ключ
-const openaiKey = process.env.OPENAI_API_KEY;
-console.log('🔑 OpenAI Key present:', !!openaiKey);
-console.log('🔑 OpenAI Key length:', openaiKey?.length || 0);
-console.log('🔑 OpenAI Key starts with:', openaiKey?.substring(0, 10) || 'N/A');
+// Проверяем OpenRouter ключ (embeddings идут через OpenRouter)
+const openrouterKey = process.env.OPENROUTER_FINANCE_API_KEY;
+console.log('🔑 OpenRouter Key present:', !!openrouterKey);
+console.log('🔑 OpenRouter Key length:', openrouterKey?.length || 0);
 
-if (!openaiKey || openaiKey === 'dummy-key-for-build') {
-  console.error('❌ Missing or invalid OpenAI API key');
-  console.error('Please set OPENAI_API_KEY in .env.local');
+if (!openrouterKey) {
+  console.error('❌ Missing OpenRouter API key');
+  console.error('Please set OPENROUTER_FINANCE_API_KEY in .env.local');
   process.exit(1);
 }
 
 import { createClient } from '@supabase/supabase-js';
-import { createEmbedding, buildTransactionText } from '../lib/ai/embeddings';
+import { createEmbedding, buildTransactionText } from '../lib/ai/openrouter-embeddings';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;

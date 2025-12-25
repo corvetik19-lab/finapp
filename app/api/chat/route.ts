@@ -1,5 +1,5 @@
-import OpenAI from "openai";
 import { createRSCClient } from "@/lib/supabase/server";
+import { getOpenRouterClient } from "@/lib/ai/openrouter-client";
 import type { CoreMessage } from "ai";
 
 interface TransactionData {
@@ -26,7 +26,7 @@ export const maxDuration = 30;
 
 export async function POST(req: Request) {
   try {
-    const { messages, model }: { messages: CoreMessage[]; model?: string } = await req.json();
+    const { messages }: { messages: CoreMessage[] } = await req.json();
 
     // Получаем данные пользователя для контекста
     const supabase = await createRSCClient();
@@ -135,24 +135,20 @@ ${contextInfo}
 - "Какой у меня баланс?"
 `;
 
-    // Используем OpenAI API напрямую
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    // Используем OpenRouter API
+    const client = getOpenRouterClient();
 
-    const completion = await openai.chat.completions.create({
-      model: model || "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...messages.map((m: CoreMessage) => ({
-          role: m.role as "user" | "assistant",
-          content: m.content as string,
-        })),
-      ],
+    const response = await client.chat([
+      { role: "system", content: systemPrompt },
+      ...messages.map((m: CoreMessage) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content as string,
+      })),
+    ], {
       temperature: 0.7,
     });
 
-    const responseText = completion.choices[0]?.message?.content || "Извините, не смог обработать запрос.";
+    const responseText = response.choices[0]?.message?.content || "Извините, не смог обработать запрос.";
 
     return new Response(responseText, {
       headers: {

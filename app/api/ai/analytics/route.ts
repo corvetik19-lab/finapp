@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
-import { generateText } from "ai";
-import { getAnalyticsModel } from "@/lib/ai/openai-client";
+import { getOpenRouterClient } from "@/lib/ai/openrouter-client";
 import { createRouteClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
@@ -103,10 +102,10 @@ export async function GET() {
       количествоПланов: plans?.length || 0,
     };
 
-    // Генерируем анализ через OpenAI
-    const { text } = await generateText({
-      model: getAnalyticsModel(),
-      prompt: `Ты — финансовый аналитик. Проанализируй финансовые данные пользователя и дай персональные рекомендации.
+    // Генерируем анализ через OpenRouter
+    const client = getOpenRouterClient();
+    const response = await client.chat([
+      { role: "user", content: `Ты — финансовый аналитик. Проанализируй финансовые данные пользователя и дай персональные рекомендации.
 
 Данные пользователя:
 ${JSON.stringify(financialData, null, 2)}
@@ -167,8 +166,10 @@ ${JSON.stringify(financialData, null, 2)}
 - Все тексты на русском языке
 - Конкретные цифры и примеры из данных пользователя
 - Практичные и применимые советы
-- Позитивный и поддерживающий тон`,
-    });
+- Позитивный и поддерживающий тон` }
+    ], { temperature: 0.7 });
+
+    const text = response.choices[0]?.message?.content || "";
 
     // Парсим ответ от AI
     let analysis;

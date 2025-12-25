@@ -2,9 +2,8 @@
  * AI прогнозирование расходов
  */
 
-import { generateText } from "ai";
-import { getAnalyticsModel } from "./openai-client";
 import { logger } from "@/lib/logger";
+import { getOpenRouterClient } from "./openrouter-client";
 
 /**
  * AI прогнозирование расходов и финансовые сценарии
@@ -302,12 +301,12 @@ ${savingsGoal ? `- Цель накоплений: ${(savingsGoal / 100).toFixed(
 
 Дай практический совет как оптимизировать бюджет.`;
 
-    const { text } = await generateText({
-      model: getAnalyticsModel(),
-      prompt,
-      temperature: 0.7,
-    });
+    const client = getOpenRouterClient();
+    const response = await client.chat([
+      { role: "user", content: prompt }
+    ], { temperature: 0.7 });
 
+    const text = response.choices[0]?.message?.content || "";
     return text.trim();
   } catch (error) {
     logger.error("Forecast insights generation error:", error);

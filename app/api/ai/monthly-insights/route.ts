@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createRSCClient } from "@/lib/supabase/server";
-import OpenAI from "openai";
+import { getOpenRouterClient } from "@/lib/ai/openrouter-client";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -125,26 +125,22 @@ ${topCategories.map(([cat, data]) => `- ${cat}: ${(data.total / 100).toLocaleStr
 
 Тон: дружелюбный, мотивирующий, конкретный.`;
 
-        const openai = new OpenAI({
-          apiKey: process.env.OPENAI_API_KEY,
-        });
+        const client = getOpenRouterClient();
 
-        const completion = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [
-            {
-              role: "system",
-              content: "Ты профессиональный финансовый консультант, помогаешь людям управлять личными финансами.",
-            },
-            {
-              role: "user",
-              content: prompt,
-            },
-          ],
+        const response = await client.chat([
+          {
+            role: "system",
+            content: "Ты профессиональный финансовый консультант, помогаешь людям управлять личными финансами.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ], {
           temperature: 0.7,
         });
 
-        const summary = completion.choices[0]?.message?.content || "Не удалось сгенерировать инсайт";
+        const summary = response.choices[0]?.message?.content || "Не удалось сгенерировать инсайт";
 
         // Сохранить инсайт в БД
         const { error: insertError } = await supabase

@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { createRouteClient } from "@/lib/supabase/server";
-import { getGeminiClient } from "@/lib/ai/gemini-client";
 import { hasAIStudioAccess, logAIStudioUsage } from "@/lib/ai-studio/access";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * POST - Text-to-Speech (Gemini TTS)
+ * POST - Text-to-Speech
+ * TTS недоступен через OpenRouter - используйте браузерный синтез речи
  */
 export async function POST(req: Request) {
   try {
@@ -32,38 +32,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Text required" }, { status: 400 });
     }
 
-    const client = getGeminiClient();
-    const model = "gemini-2.0-flash";
-
-    // Генерируем текстовое описание для озвучки
-    // Примечание: TTS модели пока недоступны в global регионе
-    // Используем текстовую модель для подготовки текста
-    const response = await client.models.generateContent({
-      model,
-      contents: `Prepare this text for speech synthesis, keeping it natural and well-paced: "${text}"`,
-    });
-
-    // Извлекаем подготовленный текст
-    let preparedText = text;
-    if (response.candidates && response.candidates[0]?.content?.parts) {
-      for (const part of response.candidates[0].content.parts) {
-        if ("text" in part && part.text) {
-          preparedText = part.text;
-          break;
-        }
-      }
-    }
-
     // Логируем использование
-    await logAIStudioUsage(user.id, null, "audio", model, text.length, 0, {
+    await logAIStudioUsage(user.id, null, "audio", "tts", text.length, 0, {
       voice,
     });
 
-    // Временно возвращаем сообщение что TTS недоступен
-    // TTS модели пока недоступны в global регионе Vertex AI
+    // TTS недоступен через OpenRouter
     return NextResponse.json({
-      error: "TTS временно недоступен. Используйте браузерный синтез речи.",
-      preparedText,
+      error: "TTS недоступен. Используйте браузерный синтез речи (Web Speech API).",
+      preparedText: text,
       status: "unavailable",
     }, { status: 503 });
   } catch (error) {

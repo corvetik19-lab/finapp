@@ -3,7 +3,7 @@
  * Комбинирует семантический поиск с графом знаний
  */
 
-import { getGeminiClient, GEMINI_MODELS } from "./gemini-client";
+import { getGeminiClient, GEMINI_MODELS } from "./openrouter-compat";
 import { searchDocumentChunks } from "./document-processor";
 import { searchEntities, getEntityRelations } from "./entity-extractor";
 import { createRSCClient } from "@/lib/supabase/helpers";

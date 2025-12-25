@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/helpers";
-import { createEmbedding, buildTransactionText } from "@/lib/ai/embeddings";
+import { createEmbedding, buildTransactionText } from "@/lib/ai/openrouter-embeddings";
 import { logger } from "@/lib/logger";
 
 // Этот endpoint вызывается CRON job для обработки очереди embeddings

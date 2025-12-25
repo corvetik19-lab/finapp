@@ -29,8 +29,8 @@ export const toolSchemas = {
   addTransaction: z.object({
     amount: z.number().describe("Сумма транзакции"),
     categoryName: z.string().describe("Название категории"),
-    accountName: z.string().describe("Название счёта/карты"),
-    description: z.string().optional().describe("Описание транзакции"),
+    accountName: z.string().optional().describe("Название счёта/карты"),
+    note: z.string().optional().describe("Заметка к транзакции"),
     date: z.string().optional().describe("Дата в формате YYYY-MM-DD"),
     direction: z.enum(["income", "expense"]).describe("Тип: доход или расход"),
   }),

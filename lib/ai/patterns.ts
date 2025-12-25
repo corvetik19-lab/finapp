@@ -1,6 +1,5 @@
-import { generateText } from "ai";
-import { getAnalyticsModel } from "./openai-client";
 import { logger } from "@/lib/logger";
+import { getOpenRouterClient } from "./openrouter-client";
 
 /**
  * Анализ паттернов трат пользователя через AI
@@ -74,18 +73,19 @@ export async function detectSpendingAnomaly(
 Сообщение: [текст]
 Рекомендация: [текст]`;
 
-    const { text } = await generateText({
-      model: getAnalyticsModel(),
-      prompt,
-      temperature: 0.7,
-    });
+    const client = getOpenRouterClient();
+    const response = await client.chat([
+      { role: "user", content: prompt }
+    ], { temperature: 0.7 });
+
+    const text = response.choices[0]?.message?.content || "";
 
     // Парсим ответ
-    const lines = text.split("\n").filter((l) => l.trim());
+    const lines = text.split("\n").filter((l: string) => l.trim());
     let message = "";
     let recommendation = "";
 
-    lines.forEach((line) => {
+    lines.forEach((line: string) => {
       if (line.startsWith("Сообщение:")) {
         message = line.replace("Сообщение:", "").trim();
       } else if (line.startsWith("Рекомендация:")) {
@@ -242,12 +242,12 @@ export async function generateFinancialInsight(
 
 Дай позитивный и мотивирующий совет. Без лишнего текста, сразу по делу.`;
 
-    const { text } = await generateText({
-      model: getAnalyticsModel(),
-      prompt,
-      temperature: 0.8,
-    });
+    const client = getOpenRouterClient();
+    const response = await client.chat([
+      { role: "user", content: prompt }
+    ], { temperature: 0.8 });
 
+    const text = response.choices[0]?.message?.content || "";
     return text.trim();
   } catch (error) {
     logger.error("AI insight generation error:", error);

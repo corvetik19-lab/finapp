@@ -1,6 +1,5 @@
-import { generateText } from "ai";
-import { getAnalyticsModel } from "./openai-client";
 import { logger } from "@/lib/logger";
+import { getOpenRouterClient } from "./openrouter-client";
 
 /**
  * AI Финансовый советник - комплексный анализ финансового здоровья
@@ -273,11 +272,12 @@ ${context.goals ? `- Финансовые цели: ${context.goals.join(", ")}`
 
 Только валидный JSON массив, без markdown, без текста до и после!`;
 
-    const { text } = await generateText({
-      model: getAnalyticsModel(),
-      prompt,
-      temperature: 0.7,
-    });
+    const client = getOpenRouterClient();
+    const response = await client.chat([
+      { role: "user", content: prompt }
+    ], { temperature: 0.7 });
+
+    const text = response.choices[0]?.message?.content || "";
 
     // Парсим JSON
     const jsonMatch = text.match(/\[[\s\S]*\]/);

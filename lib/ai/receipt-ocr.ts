@@ -1,6 +1,5 @@
 "use server";
 
-import { getGeminiClient, GEMINI_MODELS } from "@/lib/ai/gemini-client";
 import { createRSCClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
 
@@ -53,20 +52,33 @@ async function processFileBuffer(buffer: Buffer, mimeType: string): Promise<OCRR
       }
     }
 
-    // 2. Обработка Изображений (Gemini Vision)
+    // 2. Обработка Изображений (OpenRouter Vision API)
     if (mimeType.startsWith("image/")) {
       const base64Image = buffer.toString("base64");
+      const dataUrl = `data:${mimeType};base64,${base64Image}`;
       
-      const client = getGeminiClient();
-      
-      const response = await client.models.generateContent({
-        model: GEMINI_MODELS.FAST, // gemini-2.5-flash для быстрого OCR
-        contents: [
-          {
-            role: "user",
-            parts: [
-              {
-                text: `Ты - профессиональный OCR сканер чеков. 
+      const apiKey = process.env.OPENROUTER_FINANCE_API_KEY;
+      if (!apiKey) {
+        return { success: false, text: "", error: "OpenRouter API не настроен" };
+      }
+
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "https://finapp.vercel.app",
+          "X-Title": "FinApp Finance OCR",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview", // Gemini 3 Flash - мультимодальная модель
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: `Ты - профессиональный OCR сканер чеков. 
 Твоя задача - извлечь ВЕСЬ текст с изображения чека.
 
 Правила:
@@ -77,19 +89,28 @@ async function processFileBuffer(buffer: Buffer, mimeType: string): Promise<OCRR
 5. Если текст неразборчив, напиши "[неразборчиво]".
 
 Распознай этот чек:`
-              },
-              {
-                inlineData: {
-                  mimeType: mimeType,
-                  data: base64Image,
+                },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: dataUrl,
+                  }
                 }
-              }
-            ]
-          }
-        ],
+              ]
+            }
+          ],
+          max_tokens: 4096,
+        }),
       });
 
-      const text = response.text || "";
+      if (!response.ok) {
+        const errorText = await response.text();
+        logger.error("OpenRouter Vision error:", errorText);
+        return { success: false, text: "", error: "Ошибка распознавания изображения" };
+      }
+
+      const data = await response.json();
+      const text = data.choices?.[0]?.message?.content || "";
       
       if (!text) {
         return { success: false, text: "", error: "Нейросеть не вернула текст" };

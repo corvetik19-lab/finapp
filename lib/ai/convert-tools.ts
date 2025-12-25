@@ -1,10 +1,20 @@
 /**
- * Утилита для конвертации Zod схем в формат OpenAI и Gemini Function Calling
+ * Утилита для конвертации Zod схем в формат OpenAI/OpenRouter и Gemini Function Calling
  */
 
 import { aiTools, toolSchemas } from "./tools";
 import { zodToJsonSchema } from "zod-to-json-schema";
-import { Type } from "@google/genai";
+import type { OpenRouterTool } from "./openrouter-client";
+
+// Type для Gemini (если всё ещё нужен для legacy)
+const Type = {
+  STRING: "STRING",
+  NUMBER: "NUMBER",
+  INTEGER: "INTEGER",
+  BOOLEAN: "BOOLEAN",
+  ARRAY: "ARRAY",
+  OBJECT: "OBJECT",
+} as const;
 
 interface OpenAITool {
   type: "function";
@@ -202,6 +212,38 @@ export function convertToolsForInteractions(): InteractionsTool[] {
         type: "object",
         properties: simpleProperties,
         required: (jsonSchema.required as string[]) || [],
+      },
+    });
+  }
+
+  return tools;
+}
+
+/**
+ * Конвертирует наши tools в формат OpenRouter (OpenAI-совместимый)
+ * Формат: { type: 'function', function: { name, description, parameters } }
+ */
+export function convertToolsToOpenRouter(): OpenRouterTool[] {
+  const tools: OpenRouterTool[] = [];
+
+  for (const [toolName, toolDef] of Object.entries(aiTools)) {
+    const schema = toolSchemas[toolName as keyof typeof toolSchemas];
+    
+    if (!schema) continue;
+
+    // Конвертируем Zod схему в JSON Schema
+    const jsonSchema = zodToJsonSchema(schema as unknown as Parameters<typeof zodToJsonSchema>[0], toolName) as Record<string, unknown>;
+
+    tools.push({
+      type: "function",
+      function: {
+        name: toolName,
+        description: toolDef.description,
+        parameters: {
+          type: "object",
+          properties: (jsonSchema.properties as Record<string, unknown>) || {},
+          required: (jsonSchema.required as string[]) || [],
+        },
       },
     });
   }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createRSCClient } from "@/lib/supabase/helpers";
-import { createEmbedding } from "@/lib/ai/embeddings";
+import { createEmbedding } from "@/lib/ai/openrouter-embeddings";
 
 /**
  * API для умного поиска транзакций (RAG)

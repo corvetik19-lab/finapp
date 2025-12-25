@@ -1,7 +1,6 @@
-import { generateText } from "ai";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { getCommandsModel } from "./openai-client";
 import { logger } from "@/lib/logger";
+import { getOpenRouterClient } from "./openrouter-client";
 
 /**
  * AI команды через естественный язык
@@ -66,11 +65,12 @@ export async function parseCommand(text: string): Promise<ParsedCommand> {
 
 Только JSON, без пояснений.`;
 
-    const { text: response } = await generateText({
-      model: getCommandsModel(),
-      prompt,
-      temperature: 0.3,
-    });
+    const client = getOpenRouterClient();
+    const aiResponse = await client.chat([
+      { role: "user", content: prompt }
+    ], { temperature: 0.3 });
+
+    const response = aiResponse.choices[0]?.message?.content || "";
 
     // Парсим JSON
     const jsonMatch = response.match(/\{[\s\S]*\}/);

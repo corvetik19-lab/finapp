@@ -3,7 +3,7 @@
  * Комбинирует семантический поиск похожих транзакций и GPT для точной категоризации
  */
 
-import { createEmbedding } from "./embeddings";
+import { createEmbedding } from "./openrouter-embeddings";
 import { createRouteClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
 
@@ -149,8 +149,8 @@ async function gptCategorizeWithContext(
   availableCategories: Category[],
   similarTransactions: Transaction[]
 ): Promise<CategorizationResult> {
-  const OpenAI = (await import('openai')).default;
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const { getOpenRouterClient } = await import('./openrouter-client');
+  const client = getOpenRouterClient();
   
   const categoryList = availableCategories
     .map((c) => `- ${c.name} (${c.type})`)
@@ -166,12 +166,10 @@ async function gptCategorizeWithContext(
         .join('\n')}`
     : '';
   
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
-      {
-        role: 'system',
-        content: `Ты финансовый помощник. Определи наиболее подходящую категорию для транзакции из списка доступных категорий. 
+  const response = await client.chat([
+    {
+      role: 'system',
+      content: `Ты финансовый помощник. Определи наиболее подходящую категорию для транзакции из списка доступных категорий. 
         
 Учитывай похожие транзакции из истории пользователя для более точного определения.
 
@@ -181,22 +179,21 @@ async function gptCategorizeWithContext(
   "confidence": 0.95,
   "explanation": "краткое объяснение"
 }`,
-      },
-      {
-        role: 'user',
-        content: `Описание транзакции: "${description}"
+    },
+    {
+      role: 'user',
+      content: `Описание транзакции: "${description}"
 
 Доступные категории:
 ${categoryList}${similarContext}
 
 Выбери наиболее подходящую категорию.`,
-      },
-    ],
+    },
+  ], {
     temperature: 0.3,
-    response_format: { type: 'json_object' },
   });
   
-  const result = JSON.parse(response.choices[0].message.content || '{}');
+  const result = JSON.parse(response.choices[0]?.message?.content || '{}');
   
   // Находим ID категории по названию
   const category = availableCategories.find(
@@ -227,40 +224,37 @@ async function fallbackCategorization(
   description: string,
   availableCategories: Category[]
 ): Promise<CategorizationResult> {
-  const OpenAI = (await import('openai')).default;
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const { getOpenRouterClient } = await import('./openrouter-client');
+  const client = getOpenRouterClient();
   
   const categoryList = availableCategories
     .map((c) => `- ${c.name} (${c.type})`)
     .join('\n');
   
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
-      {
-        role: 'system',
-        content: `Ты финансовый помощник. Определи наиболее подходящую категорию для транзакции. Отвечай ТОЛЬКО в формате JSON:
+  const response = await client.chat([
+    {
+      role: 'system',
+      content: `Ты финансовый помощник. Определи наиболее подходящую категорию для транзакции. Отвечай ТОЛЬКО в формате JSON:
 {
   "categoryName": "название категории",
   "confidence": 0.95,
   "explanation": "краткое объяснение"
 }`,
-      },
-      {
-        role: 'user',
-        content: `Описание транзакции: "${description}"
+    },
+    {
+      role: 'user',
+      content: `Описание транзакции: "${description}"
 
 Доступные категории:
 ${categoryList}
 
 Выбери наиболее подходящую категорию.`,
-      },
-    ],
+    },
+  ], {
     temperature: 0.3,
-    response_format: { type: 'json_object' },
   });
   
-  const result = JSON.parse(response.choices[0].message.content || '{}');
+  const result = JSON.parse(response.choices[0]?.message?.content || '{}');
   
   const category = availableCategories.find(
     (c) => c.name.toLowerCase() === result.categoryName?.toLowerCase()

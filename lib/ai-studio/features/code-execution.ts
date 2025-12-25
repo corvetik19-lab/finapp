@@ -1,6 +1,6 @@
 "use server";
 
-import { getGeminiClient } from "@/lib/ai/gemini-client";
+import { getOpenRouterClient } from "@/lib/ai/openrouter-client";
 
 export interface CodeExecutionResult {
   code: string;
@@ -10,60 +10,38 @@ export interface CodeExecutionResult {
   error?: string;
 }
 
-// Выполнение кода с Gemini Code Execution
+// Выполнение кода через OpenRouter (без реального выполнения)
 export async function executeCode(
   prompt: string,
   existingCode?: string
 ): Promise<CodeExecutionResult | { error: string }> {
   try {
-    const client = getGeminiClient();
+    const client = getOpenRouterClient();
     
     const fullPrompt = existingCode
-      ? `У меня есть код:\n\`\`\`\n${existingCode}\n\`\`\`\n\n${prompt}`
-      : prompt;
+      ? `У меня есть код:\n\`\`\`\n${existingCode}\n\`\`\`\n\n${prompt}\n\nНапиши код и покажи ожидаемый результат.`
+      : `${prompt}\n\nНапиши код и покажи ожидаемый результат.`;
     
-    const response = await client.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: [{
-        role: "user",
-        parts: [{ text: fullPrompt }],
-      }],
-      config: {
-        tools: [{
-          codeExecution: {},
-        }],
-      },
+    const response = await client.chat([
+      { role: "user", content: fullPrompt }
+    ], {
+      temperature: 0.7,
+      max_tokens: 4096,
     });
 
-    // Извлекаем код и результат выполнения
-    let code = "";
-    let output = "";
-    let language = "python";
+    const text = response.choices[0]?.message?.content || "";
     
-    const parts = response.candidates?.[0]?.content?.parts || [];
+    // Извлекаем код из текста
+    const codeMatch = text.match(/```(\w+)?\n([\s\S]*?)```/);
+    const code = codeMatch ? codeMatch[2].trim() : "";
+    const language = codeMatch?.[1] || "python";
     
-    for (const part of parts) {
-      if ("executableCode" in part && part.executableCode) {
-        code = part.executableCode.code || "";
-        language = part.executableCode.language || "python";
-      }
-      if ("codeExecutionResult" in part && part.codeExecutionResult) {
-        output = part.codeExecutionResult.output || "";
-      }
-    }
-
-    // Если нет executableCode, попробуем извлечь код из текста
-    if (!code && response.text) {
-      const codeMatch = response.text.match(/```(\w+)?\n([\s\S]*?)```/);
-      if (codeMatch) {
-        language = codeMatch[1] || "python";
-        code = codeMatch[2];
-      }
-    }
+    // Удаляем блок кода для получения объяснения/вывода
+    const output = text.replace(/```[\s\S]*?```/g, "").trim();
 
     return {
       code,
-      output: output || response.text || "",
+      output,
       language,
       success: true,
     };
@@ -73,25 +51,25 @@ export async function executeCode(
   }
 }
 
-// Генерация и объяснение кода
+// Генерация и объяснение кода через OpenRouter
 export async function generateCode(
   description: string,
   language: string = "python"
 ): Promise<{ code: string; explanation: string } | { error: string }> {
   try {
-    const client = getGeminiClient();
+    const client = getOpenRouterClient();
     
-    const response = await client.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: [{
-        role: "user",
-        parts: [{ 
-          text: `Напиши код на ${language} для следующей задачи:\n${description}\n\nПредоставь код и краткое объяснение.` 
-        }],
-      }],
+    const response = await client.chat([
+      { 
+        role: "user", 
+        content: `Напиши код на ${language} для следующей задачи:\n${description}\n\nПредоставь код и краткое объяснение.`
+      }
+    ], {
+      temperature: 0.7,
+      max_tokens: 4096,
     });
 
-    const text = response.text || "";
+    const text = response.choices[0]?.message?.content || "";
     
     // Извлекаем код
     const codeMatch = text.match(/```(\w+)?\n([\s\S]*?)```/);

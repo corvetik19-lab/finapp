@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { suggestCategory } from "@/lib/ai/embeddings";
+import { suggestCategory } from "@/lib/ai/openrouter-embeddings";
 import { createRouteClient } from "@/lib/supabase/helpers";
 
 export async function POST(request: NextRequest) {

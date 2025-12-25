@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createEmbedding } from "@/lib/ai/embeddings";
+import { createEmbedding } from "@/lib/ai/openrouter-embeddings";
 import { searchSimilarTransactions } from "@/lib/ai/search";
 
 export async function POST(request: NextRequest) {

@@ -554,7 +554,7 @@ export async function createTransaction(input: InsertTransactionInput): Promise<
     // Запускаем в фоне, не ждём результата
     (async () => {
       try {
-        const { createEmbedding, buildTransactionText } = await import("@/lib/ai/embeddings");
+        const { createEmbedding, buildTransactionText } = await import("@/lib/ai/openrouter-embeddings");
         
         // Получаем название категории, если есть
         let categoryName: string | null = null;

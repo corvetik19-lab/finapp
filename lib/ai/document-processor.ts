@@ -3,8 +3,8 @@
  * Извлекает текст, разбивает на чанки, генерирует embeddings
  */
 
-import { getGeminiClient, GEMINI_MODELS } from "./gemini-client";
-import { createEmbedding } from "./embeddings";
+import { getGeminiClient, GEMINI_MODELS } from "./openrouter-compat";
+import { createEmbedding } from "./openrouter-embeddings";
 import { createRSCClient } from "@/lib/supabase/helpers";
 import { logger } from "@/lib/logger";
 
@@ -130,39 +130,63 @@ export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
 }
 
 /**
- * Извлекает текст из изображения с помощью Gemini Vision
+ * Извлекает текст из изображения с помощью OpenRouter Vision
+ * Использует OpenAI GPT-4o Vision через OpenRouter
  */
 export async function extractTextFromImage(
   buffer: Buffer, 
   mimeType: string
 ): Promise<string> {
   try {
-    const client = getGeminiClient();
     const base64Image = buffer.toString("base64");
+    const dataUrl = `data:${mimeType};base64,${base64Image}`;
     
-    const response = await client.models.generateContent({
-      model: GEMINI_MODELS.FAST,
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              text: `Извлеки весь текст с этого изображения документа. 
+    // Используем OpenAI Vision через OpenRouter
+    const apiKey = process.env.OPENROUTER_FINANCE_API_KEY;
+    if (!apiKey) {
+      throw new Error("OPENROUTER_FINANCE_API_KEY not configured");
+    }
+
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "https://finapp.vercel.app",
+        "X-Title": "FinApp Finance",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview", // Gemini 3 Flash - мультимодальная модель
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `Извлеки весь текст с этого изображения документа. 
 Сохрани структуру и форматирование. 
 Верни только текст без комментариев.`
-            },
-            {
-              inlineData: {
-                mimeType: mimeType,
-                data: base64Image,
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: dataUrl,
+                }
               }
-            }
-          ]
-        }
-      ],
+            ]
+          }
+        ],
+        max_tokens: 4096,
+      }),
     });
 
-    return response.text || "";
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`OpenRouter Vision error: ${error}`);
+    }
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || "";
   } catch (error) {
     logger.error("Image OCR error:", error);
     throw new Error("Failed to extract text from image");

@@ -7,13 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import {
-  Search,
-  ChevronDown,
   Check,
   Send,
   Square,
   Sparkles,
-  Settings2,
   History,
   Plus,
   MessageCircle,
@@ -46,32 +43,13 @@ interface Message {
   timestamp: Date;
 }
 
-interface AIModel {
-  id: string;
-  name: string;
-  is_free: boolean;
-  description?: string;
-}
-
-type ModelGroups = {
-  recommended: AIModel[];
-  all: AIModel[];
-};
-
-type ModelGroupKey = Exclude<keyof ModelGroups, "all">;
 
 export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [selectedModel, setSelectedModel] = useState("gemini-2.5-pro");
-  const [models, setModels] = useState<ModelGroups>({
-    recommended: [],
-    all: [],
-  });
-  const [showModelSelector, setShowModelSelector] = useState(false);
-  const [modelSearchQuery, setModelSearchQuery] = useState("");
+  const selectedModel = "google/gemini-3-flash-preview"; // Единственная модель
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [showHistory, setShowHistory] = useState(false);
@@ -99,28 +77,7 @@ export default function Chat() {
     loadChats();
   }, [refreshKey]);
 
-  // Загрузка моделей
-  useEffect(() => {
-    async function loadModels() {
-      try {
-        const res = await fetch("/api/ai/models");
-        if (res.ok) {
-          const data = await res.json();
-          const allModels: AIModel[] = data.models || [];
-          
-          // Все модели - только Gemini 3 Pro и 2.5 Flash
-          setModels({
-            recommended: allModels,
-            all: allModels,
-          });
-        }
-      } catch {
-        // Ignore errors
-      }
-    }
-    loadModels();
-  }, []);
-
+  
   // Автоскролл
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -368,31 +325,7 @@ export default function Chat() {
     await handleSubmit(lastUserMessage.content);
   };
 
-  // Фильтрация моделей
-  const filterModels = (modelList: AIModel[]) => {
-    if (!modelSearchQuery.trim()) return modelList;
-    const query = modelSearchQuery.toLowerCase();
-    return modelList.filter(
-      (model) =>
-        model.name.toLowerCase().includes(query) ||
-        model.id.toLowerCase().includes(query)
-    );
-  };
-
-  const modelGroupConfig: Array<{
-    key: ModelGroupKey;
-    title: string;
-    badge?: string;
-  }> = [
-    { key: "recommended", title: "🌟 Доступные модели" },
-  ];
-
-  const filteredModelGroups = modelGroupConfig.map((group) => ({
-    ...group,
-    models: filterModels(models[group.key]),
-  }));
-
-  const currentModelName = models.all.find((m) => m.id === selectedModel)?.name || selectedModel;
+  const currentModelName = "Gemini 3 Flash";
 
   // Форматирование даты
   const formatDate = (dateString: string) => {
@@ -448,17 +381,10 @@ export default function Chat() {
               <History className="h-4 w-4" />
               <span className="hidden sm:inline">История</span>
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowModelSelector(true)}
-              disabled={isLoading}
-              className="gap-1.5"
-            >
-              <Settings2 className="h-4 w-4" />
-              <span className="hidden md:inline">{currentModelName}</span>
-              <ChevronDown className="h-3 w-3" />
-            </Button>
+            <Badge variant="outline" className="gap-1.5 py-1.5 px-3">
+              <Sparkles className="h-3 w-3" />
+              <span>{currentModelName}</span>
+            </Badge>
           </div>
         </header>
 
@@ -770,76 +696,6 @@ export default function Chat() {
         </SheetContent>
       </Sheet>
 
-      {/* Model Selector Sheet */}
-      <Sheet open={showModelSelector} onOpenChange={setShowModelSelector}>
-        <SheetContent side="right" className="w-80 p-0 flex flex-col !bg-white dark:!bg-zinc-950">
-          <SheetHeader className="p-4 border-b bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white">
-                <Settings2 className="w-4 h-4" />
-              </div>
-              <SheetTitle>Выбор модели Gemini</SheetTitle>
-            </div>
-          </SheetHeader>
-          <div className="p-4">
-            <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Поиск моделей..."
-                value={modelSearchQuery}
-                onChange={(e) => setModelSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-2 text-sm border rounded-lg bg-background"
-              />
-            </div>
-          </div>
-          <div className="overflow-y-auto max-h-[calc(100vh-180px)] px-4 pb-4">
-            {filteredModelGroups.map(
-              (group) =>
-                group.models.length > 0 && (
-                  <div key={group.key} className="mb-4">
-                    <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
-                      {group.title}
-                      <Badge variant="outline">{group.models.length}</Badge>
-                    </h3>
-                    {group.models.map((model) => (
-                      <button
-                        key={model.id}
-                        onClick={() => {
-                          setSelectedModel(model.id);
-                          setShowModelSelector(false);
-                        }}
-                        className={cn(
-                          "w-full text-left p-2 rounded-md hover:bg-muted flex items-center justify-between transition-colors",
-                          selectedModel === model.id && "bg-muted"
-                        )}
-                      >
-                        <div>
-                          <div className="font-medium text-sm flex items-center gap-2">
-                            {model.name}
-                            {model.is_free && (
-                              <Badge variant="secondary" className="text-xs">
-                                FREE
-                              </Badge>
-                            )}
-                          </div>
-                          {model.description && (
-                            <div className="text-xs text-muted-foreground">
-                              {model.description}
-                            </div>
-                          )}
-                        </div>
-                        {selectedModel === model.id && (
-                          <Check className="h-4 w-4 text-primary" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )
-            )}
-          </div>
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }

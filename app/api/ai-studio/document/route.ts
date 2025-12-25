@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { createRouteClient } from "@/lib/supabase/server";
-import { getGeminiClient } from "@/lib/ai/gemini-client";
+import { OPENROUTER_CHAT_MODEL } from "@/lib/ai/openrouter-client";
 import { hasAIStudioAccess, logAIStudioUsage } from "@/lib/ai-studio/access";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
 /**
- * POST - Анализ документов
+ * POST - Анализ документов через OpenRouter Vision
  */
 export async function POST(req: Request) {
   try {
@@ -39,8 +39,10 @@ export async function POST(req: Request) {
     const base64 = Buffer.from(arrayBuffer).toString("base64");
     const mimeType = file.type || "application/pdf";
 
-    const client = getGeminiClient();
-    const model = "gemini-2.5-flash";
+    const apiKey = process.env.OPENROUTER_FINANCE_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: "OpenRouter API not configured" }, { status: 500 });
+    }
 
     // Формируем промпт
     const systemPrompt = query
@@ -55,26 +57,40 @@ export async function POST(req: Request) {
   "keyPoints": ["...", "..."]
 }`;
 
-    // Анализируем документ
-    const response = await client.models.generateContent({
-      model,
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              inlineData: {
-                mimeType,
-                data: base64,
-              },
-            },
-            { text: systemPrompt },
-          ],
-        },
-      ],
+    // Анализируем документ через OpenRouter Vision API
+    const dataUrl = `data:${mimeType};base64,${base64}`;
+    
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "https://finapp.vercel.app",
+        "X-Title": "FinApp AI Studio",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview", // Vision model - Gemini 3 мультимодальная
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: systemPrompt },
+              { type: "image_url", image_url: { url: dataUrl } }
+            ]
+          }
+        ],
+        max_tokens: 4096,
+      }),
     });
 
-    const text = response.text || "";
+    if (!response.ok) {
+      const error = await response.text();
+      console.error("OpenRouter error:", error);
+      return NextResponse.json({ error: "Ошибка анализа документа" }, { status: 500 });
+    }
+
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content || "";
 
     // Пробуем распарсить JSON
     let result = {
@@ -96,10 +112,10 @@ export async function POST(req: Request) {
     }
 
     // Логируем использование
-    const inputTokens = response.usageMetadata?.promptTokenCount || 0;
-    const outputTokens = response.usageMetadata?.candidatesTokenCount || 0;
+    const inputTokens = data.usage?.prompt_tokens || 0;
+    const outputTokens = data.usage?.completion_tokens || 0;
 
-    await logAIStudioUsage(user.id, null, "document", model, inputTokens, outputTokens, {
+    await logAIStudioUsage(user.id, null, "document", OPENROUTER_CHAT_MODEL, inputTokens, outputTokens, {
       fileName: file.name,
       fileSize: file.size,
     });

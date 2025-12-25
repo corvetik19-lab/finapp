@@ -1,9 +1,11 @@
 /**
  * RAG Pipeline для AI чата
  * Обогащает ответы контекстом из транзакций пользователя
+ * 
+ * Использует OpenRouter для embeddings (text-embedding-3-large)
  */
 
-import { createEmbedding } from "./embeddings";
+import { createEmbedding } from "./openrouter-embeddings";
 import { createRSCClient } from "@/lib/supabase/helpers";
 import { logger } from "@/lib/logger";
 

@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { createRouteClient } from "@/lib/supabase/server";
-import { getGeminiClient } from "@/lib/ai/gemini-client";
+import { getOpenRouterClient, OPENROUTER_CHAT_MODEL } from "@/lib/ai/openrouter-client";
 import { hasAIStudioAccess, logAIStudioUsage } from "@/lib/ai-studio/access";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 180;
 
 /**
- * POST - Deep Research Agent
+ * POST - Deep Research Agent (OpenRouter)
  */
 export async function POST(req: Request) {
   try {
@@ -32,13 +32,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Topic required" }, { status: 400 });
     }
 
-    const client = getGeminiClient();
-    const model = "gemini-2.5-flash";
+    const client = getOpenRouterClient();
 
     // Deep Research prompt
     const researchPrompt = `Проведи глубокое исследование на тему: "${topic}"
-
-Используй поиск Google для получения актуальной информации.
 
 Предоставь результат в формате JSON:
 {
@@ -53,27 +50,22 @@ export async function POST(req: Request) {
   "sources": [
     {
       "title": "название источника",
-      "url": "ссылка"
+      "url": "ссылка (если известна)"
     }
   ]
 }
 
-Включи 3-5 секций и укажи реальные источники информации.`;
+Включи 3-5 секций с детальной информацией.`;
 
-    // Выполняем исследование с Google Search
-    const response = await client.models.generateContent({
-      model,
-      contents: researchPrompt,
-      config: {
-        tools: [{ googleSearch: {} }],
-        thinkingConfig: {
-          thinkingBudget: 16384,
-          includeThoughts: true,
-        },
-      },
+    // Выполняем исследование через OpenRouter
+    const response = await client.chat([
+      { role: "user", content: researchPrompt }
+    ], {
+      temperature: 0.7,
+      max_tokens: 8192,
     });
 
-    const text = response.text || "";
+    const text = response.choices[0]?.message?.content || "";
 
     // Парсим результат
     let result = {
@@ -94,30 +86,17 @@ export async function POST(req: Request) {
           sources: parsed.sources || [],
         };
       } else {
-        // Если не JSON, используем текст как summary
         result.summary = text;
       }
     } catch {
       result.summary = text;
     }
 
-    // Извлекаем источники из grounding metadata
-    if (response.candidates && response.candidates[0]?.groundingMetadata?.groundingChunks) {
-      for (const chunk of response.candidates[0].groundingMetadata.groundingChunks) {
-        if (chunk.web && !result.sources.find(s => s.url === chunk.web?.uri)) {
-          result.sources.push({
-            title: chunk.web.title || "Source",
-            url: chunk.web.uri || "",
-          });
-        }
-      }
-    }
-
     // Логируем использование
-    const inputTokens = response.usageMetadata?.promptTokenCount || 0;
-    const outputTokens = response.usageMetadata?.candidatesTokenCount || 0;
+    const inputTokens = response.usage?.prompt_tokens || 0;
+    const outputTokens = response.usage?.completion_tokens || 0;
 
-    await logAIStudioUsage(user.id, null, "research", model, inputTokens, outputTokens, {
+    await logAIStudioUsage(user.id, null, "research", OPENROUTER_CHAT_MODEL, inputTokens, outputTokens, {
       topic,
     });
 

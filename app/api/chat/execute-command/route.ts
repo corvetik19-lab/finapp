@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRSCClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/helpers';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   parseCommand,
@@ -8,6 +9,7 @@ import {
   formatTransactionConfirmation,
   type TransactionCommand
 } from '@/lib/ai/command-parser';
+import { createEmbedding } from '@/lib/ai/openrouter-embeddings';
 
 export const dynamic = 'force-dynamic';
 
@@ -155,8 +157,9 @@ async function handleAddTransaction(
       }
     }
 
-    // Создаём транзакцию
-    const amount = transaction.type === 'expense' ? -Math.abs(transaction.amount) : Math.abs(transaction.amount);
+    // Создаём транзакцию - сумма в БД хранится в копейках
+    const amountInCents = Math.round(transaction.amount * 100);
+    const amount = transaction.type === 'expense' ? -Math.abs(amountInCents) : Math.abs(amountInCents);
     
     const { data: newTransaction, error } = await supabase
       .from('transactions')
@@ -166,7 +169,8 @@ async function handleAddTransaction(
         category_id: categoryId,
         amount,
         direction: transaction.type === 'income' ? 'income' : 'expense',
-        description: transaction.description || (transaction.type === 'income' ? 'Доход' : 'Расход'),
+        note: transaction.description || (transaction.type === 'income' ? 'Доход' : 'Расход'),
+        currency: 'RUB',
         occurred_at: new Date().toISOString()
       })
       .select()
@@ -190,6 +194,26 @@ async function handleAddTransaction(
     }
 
     console.log('✅ Transaction created:', newTransaction);
+    
+    // Генерируем embedding для транзакции (асинхронно)
+    if (newTransaction?.id && transaction.description) {
+      const adminSupabase = createAdminClient();
+      const direction = transaction.type === 'income' ? 'Доход' : 'Расход';
+      const textForEmbedding = `${direction}: ${transaction.description}. Категория: ${transaction.category || 'Без категории'}`;
+      
+      createEmbedding(textForEmbedding).then(embedding => {
+        adminSupabase
+          .from('transactions')
+          .update({ embedding })
+          .eq('id', newTransaction.id)
+          .then(({ error }) => {
+            if (error) console.error('Failed to save embedding:', error);
+            else console.log('Embedding generated for transaction:', newTransaction.id);
+          });
+      }).catch(err => {
+        console.error('Failed to generate embedding:', err);
+      });
+    }
 
     return {
       success: true,

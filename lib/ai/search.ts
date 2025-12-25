@@ -177,7 +177,7 @@ export async function generateMissingEmbeddings(): Promise<{ processed: number; 
   // В production лучше делать батчами через createEmbeddings()
   for (const transaction of transactions) {
     try {
-      const { createEmbedding, buildTransactionText } = await import("./embeddings");
+      const { createEmbedding, buildTransactionText } = await import("./openrouter-embeddings");
       
       // category может быть массивом из-за Supabase join
       type CategoryJoinResult = { name?: string } | { name?: string }[] | null;

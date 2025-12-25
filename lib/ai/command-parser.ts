@@ -33,23 +33,28 @@ export function parseAddTransaction(text: string): TransactionCommand | null {
   const type: 'income' | 'expense' = isIncome && !isExpense ? 'income' : 'expense';
 
   // Парсинг суммы - поддерживает разные форматы
+  // Сначала ищем число с валютой
   const amountPatterns = [
-    /(\d+(?:[.,]\d+)?)\s*(?:руб|₽|р|rub)/i, // "500 руб", "1500.50₽"
-    /(?:руб|₽|р|rub)\s*(\d+(?:[.,]\d+)?)/i, // "₽500", "руб 1500"
-    /(\d+(?:[.,]\d+)?)\s*(?:тысяч|тыс|к)/i, // "5 тысяч", "1.5к"
-    /(\d{3,}(?:[.,]\d+)?)/i, // Просто число >= 100
+    /(\d+(?:[\s.,]?\d+)*)\s*(?:рубл[яейь]|руб|₽|р\.?(?=\s|$)|rub)/i, // "150 рублей", "500 руб", "1500₽"
+    /(?:рубл[яейь]|руб|₽|rub)\s*(\d+(?:[\s.,]?\d+)*)/i, // "₽500", "руб 1500"
+    /(\d+(?:[\s.,]?\d+)*)\s*(?:тысяч[иа]?|тыс\.?|к)(?:\s|$)/i, // "5 тысяч", "1.5к"
+    /(\d+)(?=\s|$)/i, // Просто число
   ];
 
   let amount: number | null = null;
   let multiplier = 1;
+  let matchedText = '';
 
   for (const pattern of amountPatterns) {
     const match = text.match(pattern);
     if (match) {
-      amount = parseFloat(match[1].replace(',', '.'));
+      // Убираем пробелы из числа и заменяем запятую на точку
+      const numStr = match[1].replace(/\s/g, '').replace(',', '.');
+      amount = parseFloat(numStr);
+      matchedText = match[0];
       
       // Если указано в тысячах
-      if (/тысяч|тыс|к/i.test(match[0])) {
+      if (/тысяч|тыс|к/i.test(matchedText)) {
         multiplier = 1000;
       }
       break;
@@ -65,13 +70,16 @@ export function parseAddTransaction(text: string): TransactionCommand | null {
   // Парсинг описания и категории
   // Удаляем команду, сумму и валюту из текста
   let cleanText = text
-    .replace(/(?:добав|трат|потрат|купи|оплат|заплат|списан|расход|доход|получ|заработ)/gi, '')
-    .replace(/\d+(?:[.,]\d+)?\s*(?:руб|₽|р|rub|тысяч|тыс|к)?/gi, '')
+    // Удаляем глаголы-команды (без \b для кириллицы)
+    .replace(/(?:добавь|добави|добавить|трата|тратил|трачу|потратил|потратила|купил|купила|оплатил|оплатила|заплатил|заплатила|списал|списала|расход|доход|получил|получила|заработал|заработала)(?:\s|$)/gi, ' ')
+    // Удаляем сумму с валютой (более точный паттерн)
+    .replace(/\d+(?:[\s.,]?\d+)*\s*(?:рублей|рубля|рубль|руб\.?|₽|р\.?|rub|тысячи|тысяч|тысяча|тыс\.?)?/gi, ' ')
+    // Нормализуем пробелы
     .replace(/\s+/g, ' ')
     .trim();
 
-  // Убираем предлоги
-  cleanText = cleanText.replace(/^(?:на|в|для|по|за)\s+/i, '');
+  // Убираем предлоги в начале
+  cleanText = cleanText.replace(/^(?:на|в|для|по|за)\s+/i, '').trim();
 
   // Парсинг категории (после "на", "в", "для")
   let category: string | undefined;
@@ -205,12 +213,13 @@ export function parseCommand(text: string): ParsedCommand {
  * Форматирует сумму в рублях
  */
 export function formatMoney(amount: number): string {
+  // amount уже в рублях, не в копейках
   return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
     currency: 'RUB',
     minimumFractionDigits: 0,
     maximumFractionDigits: 2
-  }).format(amount / 100);
+  }).format(amount);
 }
 
 /**

@@ -1,23 +1,30 @@
 /**
- * AI Chat API - Финансовый ассистент на Gemini
+ * AI Chat API - Финансовый ассистент на OpenRouter
  * 
- * Гео-блокировка обходится через Vercel:
- * - preferredRegion = ["iad1"] выполняет функцию в Washington DC
- * - Gemini API доступен в US без ограничений
+ * Использует OpenRouter API для доступа к google/gemini-2.5-flash-preview-05-20
+ * Модель жёстко зафиксирована и НЕ должна меняться!
+ * 
+ * Функционал:
+ * - Streaming ответы
+ * - Tool Calling (Function Calling)
+ * - Агентский цикл выполнения инструментов
  */
 
 import { toolHandlers } from "@/lib/ai/tool-handlers";
 import { createRouteClient } from "@/lib/supabase/helpers";
-import { convertToolsToGemini } from "@/lib/ai/convert-tools";
-import { getGeminiClient, GEMINI_MODELS } from "@/lib/ai/gemini-client";
+import { convertToolsToOpenRouter } from "@/lib/ai/convert-tools";
+import { 
+  getOpenRouterClient, 
+  OPENROUTER_CHAT_MODEL,
+  type OpenRouterMessage,
+} from "@/lib/ai/openrouter-client";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
-// Выполнять в US регионе для обхода гео-блокировки Gemini
-export const preferredRegion = ["iad1"];
 
 // Tools для function calling
-const functionDeclarations = convertToolsToGemini();
+const openRouterTools = convertToolsToOpenRouter();
 
 // System prompt для финансового ассистента
 const systemPrompt = `Ты — финансовый AI-ассистент приложения FinApp.
@@ -50,11 +57,12 @@ const systemPrompt = `Ты — финансовый AI-ассистент при
 - addCreditCard - добавить кредитную карту
 
 ПРАВИЛА:
-1. ВСЕГДА используй инструменты для получения данных (не выдумывай!)
-2. Суммы в РУБЛЯХ (не копейках)
-3. direction="expense" для расходов, "income" для доходов
-4. Отвечай кратко и по делу, используй эмодзи: 💰 📊 ✅ ❌ 📈 📉 💳 🎯
-5. При ошибках - объясни понятно что пошло не так
+1. ВСЕГДА вызывай инструменты через function calling для получения данных (НЕ выдумывай данные!)
+2. НИКОГДА не возвращай JSON как текст - используй function calling!
+3. Суммы в РУБЛЯХ (не копейках)
+4. direction="expense" для расходов, "income" для доходов
+5. После получения данных от инструментов - формулируй красивый текстовый ответ с эмодзи: 💰 📊 ✅ ❌ 📈 📉 💳 🎯
+6. При ошибках - объясни понятно что пошло не так
 
 ПРИМЕРЫ:
 - "Сколько у меня денег?" → getAccountBalance
@@ -74,41 +82,40 @@ export async function POST(req: Request) {
     
     const userId = user.id;
 
-    // Проверяем API ключ
-    if (!process.env.GEMINI_API_KEY) {
-      return Response.json({ error: "Gemini API not configured" }, { status: 500 });
+    // Проверяем API ключ OpenRouter
+    if (!process.env.OPENROUTER_FINANCE_API_KEY) {
+      logger.error("[AI Chat] OPENROUTER_FINANCE_API_KEY not configured");
+      return Response.json({ error: "OpenRouter API not configured" }, { status: 500 });
     }
 
     const { messages } = await req.json();
     
-    // Конвертируем сообщения в формат Gemini
-    const geminiContents: Array<{
-      role: "user" | "model";
-      parts: Array<{ text: string }>;
-    }> = [];
+    // Конвертируем сообщения в формат OpenRouter
+    const openRouterMessages: OpenRouterMessage[] = [
+      { role: "system", content: systemPrompt },
+    ];
     
     for (const msg of messages) {
       if (msg.role === "user") {
-        geminiContents.push({
+        openRouterMessages.push({
           role: "user",
-          parts: [{ text: msg.content }],
+          content: msg.content,
         });
       } else if (msg.role === "assistant") {
-        geminiContents.push({
-          role: "model",
-          parts: [{ text: msg.content || "" }],
+        openRouterMessages.push({
+          role: "assistant",
+          content: msg.content || "",
         });
       }
     }
     
-    const client = getGeminiClient();
-    const model = GEMINI_MODELS.CHAT;
+    const client = getOpenRouterClient();
     
-    // Логируем регион Vercel для отладки гео
-    const vercelRegion = process.env.VERCEL_REGION || "local";
-    console.log(`[AI Chat] Vercel Region: ${vercelRegion}`);
-    console.log(`[AI Chat] Using model: ${model}`);
-    console.log(`[AI Chat] Tools count: ${functionDeclarations.length}`);
+    logger.info("[AI Chat] Request", {
+      model: OPENROUTER_CHAT_MODEL,
+      messagesCount: openRouterMessages.length,
+      toolsCount: openRouterTools.length,
+    });
 
     // Создаём streaming response
     const encoder = new TextEncoder();
@@ -118,100 +125,117 @@ export async function POST(req: Request) {
         try {
           // Агентский цикл с function calling
           let iterations = 0;
-          const maxIterations = 5;
-          let conversationHistory = [...geminiContents];
+          const maxIterations = 10;
+          const conversationHistory = [...openRouterMessages];
           let finalText = "";
 
           while (iterations < maxIterations) {
             iterations++;
-            console.log(`[AI Chat] Iteration ${iterations}`);
+            logger.debug(`[AI Chat] Iteration ${iterations}`);
 
-            // Вызываем Gemini API
+            // Вызываем OpenRouter API
             let response;
             try {
-              response = await client.models.generateContent({
-                model,
-                contents: [
-                  { role: "user", parts: [{ text: systemPrompt }] },
-                  { role: "model", parts: [{ text: "Понял, готов помогать!" }] },
-                  ...conversationHistory,
-                ],
-                config: {
-                  tools: [{ functionDeclarations: functionDeclarations as unknown as import("@google/genai").FunctionDeclaration[] }],
-                },
+              response = await client.chat(conversationHistory, {
+                tools: openRouterTools,
+                tool_choice: "auto",
+                temperature: 0.7,
+                max_tokens: 4096,
               });
             } catch (apiError) {
-              console.error("[AI Chat] Gemini API Error:", apiError);
+              logger.error("[AI Chat] OpenRouter API Error:", apiError);
               const errMsg = apiError instanceof Error ? apiError.message : JSON.stringify(apiError);
-              controller.enqueue(encoder.encode(`❌ Gemini API Error: ${errMsg}`));
+              controller.enqueue(encoder.encode(`❌ OpenRouter API Error: ${errMsg}`));
               controller.close();
               return;
             }
 
+            const choice = response.choices[0];
+            if (!choice) {
+              controller.enqueue(encoder.encode("❌ No response from AI"));
+              controller.close();
+              return;
+            }
+
+            const message = choice.message;
+            const toolCalls = message.tool_calls;
+
             // Проверяем function calls
-            const functionCalls = response.functionCalls;
-            
-            if (functionCalls && functionCalls.length > 0) {
-              console.log(`[AI Chat] Function calls: ${functionCalls.length}`);
+            if (toolCalls && toolCalls.length > 0) {
+              logger.info(`[AI Chat] Tool calls: ${toolCalls.length}`);
               
-              // Добавляем ответ модели с function call
+              // Добавляем ответ модели с tool calls в историю
+              // ВАЖНО: сохраняем reasoning_details для Gemini 3
               conversationHistory.push({
-                role: "model",
-                parts: [{ text: "" }],
+                role: "assistant",
+                content: message.content,
+                tool_calls: toolCalls,
+                reasoning_details: message.reasoning_details, // Для Gemini 3
               });
 
-              // Выполняем каждый function call
-              for (const fc of functionCalls) {
-                const functionName = fc.name as keyof typeof toolHandlers;
-                const functionArgs = fc.args || {};
+              // Выполняем каждый tool call
+              for (const tc of toolCalls) {
+                const functionName = tc.function.name;
+                let functionArgs: Record<string, unknown> = {};
                 
-                console.log(`[AI Chat] Executing: ${functionName}`, functionArgs);
+                try {
+                  functionArgs = JSON.parse(tc.function.arguments || "{}");
+                } catch {
+                  logger.error(`[AI Chat] Failed to parse arguments for ${functionName}`);
+                  functionArgs = {};
+                }
+                
+                logger.info(`[AI Chat] Executing: ${functionName}`, functionArgs);
 
                 let result;
                 try {
-                  const handler = toolHandlers[functionName];
+                  const handler = toolHandlers[functionName as keyof typeof toolHandlers];
                   if (handler) {
                     const argsWithUserId = { ...functionArgs, userId };
                     result = await handler(argsWithUserId as never);
-                    console.log(`[AI Chat] Result:`, JSON.stringify(result).substring(0, 200));
+                    logger.debug(`[AI Chat] Result:`, JSON.stringify(result).substring(0, 200));
                   } else {
                     result = { error: `Unknown function: ${functionName}` };
                   }
                 } catch (err) {
-                  console.error(`[AI Chat] Function error:`, err);
-                  result = { error: err instanceof Error ? err.message : "Error" };
+                  logger.error(`[AI Chat] Function error:`, err);
+                  result = { error: err instanceof Error ? err.message : "Error executing function" };
                 }
 
-                // Добавляем результат в историю
+                // Добавляем результат tool call в историю
                 conversationHistory.push({
-                  role: "user",
-                  parts: [{ text: `Результат ${functionName}: ${JSON.stringify(result)}` }],
+                  role: "tool",
+                  tool_call_id: tc.id,
+                  content: JSON.stringify(result),
                 });
               }
               
-              continue; // Продолжаем цикл
+              continue; // Продолжаем цикл для получения финального ответа
             }
 
             // Нет function calls - финальный ответ
-            finalText = response.text || "Готово!";
+            finalText = message.content || "Готово!";
             break;
           }
 
-          console.log(`[AI Chat] Final: ${finalText.substring(0, 100)}...`);
+          if (iterations >= maxIterations && !finalText) {
+            finalText = "⚠️ Превышено количество итераций. Попробуйте упростить запрос.";
+          }
 
-          // Стримим ответ
+          logger.info(`[AI Chat] Final response: ${finalText.substring(0, 100)}...`);
+
+          // Стримим ответ по словам для плавного отображения
           const words = finalText.split(' ');
           for (let i = 0; i < words.length; i++) {
             const chunk = (i === 0 ? words[i] : ' ' + words[i]);
             controller.enqueue(encoder.encode(chunk));
-            await new Promise(r => setTimeout(r, 20));
+            await new Promise(r => setTimeout(r, 15));
           }
 
           controller.close();
         } catch (error) {
-          console.error("[AI Chat] Error:", error);
+          logger.error("[AI Chat] Stream error:", error);
           const errorMessage = error instanceof Error ? error.message : "Unknown error";
-          console.error("[AI Chat] Error message:", errorMessage);
           controller.enqueue(encoder.encode(`❌ Ошибка: ${errorMessage}`));
           controller.close();
         }
@@ -226,7 +250,7 @@ export async function POST(req: Request) {
     });
     
   } catch (error) {
-    console.error("[AI Chat] Critical error:", error);
+    logger.error("[AI Chat] Critical error:", error);
     return Response.json(
       { error: "AI service error", message: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { GEMINI_MODELS_INFO, checkGeminiApiKey } from "@/lib/ai/gemini-client";
+import { OPENROUTER_CHAT_MODEL, OPENROUTER_MODELS_INFO, checkOpenRouterApiKey } from "@/lib/ai/openrouter-client";
 
 export const dynamic = "force-dynamic";
 
@@ -12,39 +12,39 @@ interface FormattedModel {
 }
 
 /**
- * GET - получить список доступных Gemini моделей
+ * GET - получить список доступных моделей для AI чата (OpenRouter)
  */
 export async function GET() {
-  // Список доступных Gemini моделей (Vertex AI)
-  const geminiModels: FormattedModel[] = [
+  // Доступные модели через OpenRouter
+  const openRouterModels: FormattedModel[] = [
     {
-      id: "gemini-2.0-flash",
-      name: "Gemini 2.0 Flash",
-      is_free: true,
-      description: "🚀 Самая новая модель через Vertex AI (по умолчанию)",
-      features: ["thinking", "advanced", "recommended", "fast"],
+      id: OPENROUTER_CHAT_MODEL,
+      name: "Gemini 2.5 Flash (OpenRouter)",
+      is_free: false,
+      description: "🚀 Google Gemini 2.5 Flash через OpenRouter (по умолчанию)",
+      features: ["thinking", "advanced", "recommended", "fast", "tool-calling"],
     },
   ];
 
   // Группировка моделей
   const groupedModels = {
-    "Доступные модели": geminiModels,
+    "Доступные модели": openRouterModels,
   };
 
   // Проверяем доступность API
   let apiAvailable = false;
   try {
-    apiAvailable = await checkGeminiApiKey();
+    apiAvailable = await checkOpenRouterApiKey();
   } catch {
     apiAvailable = false;
   }
 
   return NextResponse.json({
-    models: geminiModels,
+    models: openRouterModels,
     grouped: groupedModels,
-    modelsInfo: GEMINI_MODELS_INFO,
-    total: geminiModels.length,
+    modelsInfo: OPENROUTER_MODELS_INFO,
+    total: openRouterModels.length,
     apiAvailable,
-    provider: "google-gemini",
+    provider: "openrouter",
   });
 }
