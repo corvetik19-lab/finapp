@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { formatMoney } from "@/lib/utils/format";
 import type { Loan } from "@/lib/loans/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -35,14 +35,8 @@ export default function LoanTransactionsModal({
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen && loan) {
-      loadTransactions();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, loan]);
-
-  const loadTransactions = async () => {
+  const loadTransactions = useCallback(async () => {
+    if (!loan) return;
     setIsLoading(true);
     setError(null);
     try {
@@ -57,7 +51,13 @@ export default function LoanTransactionsModal({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [loan]);
+
+  useEffect(() => {
+    if (isOpen && loan) {
+      loadTransactions();
+    }
+  }, [isOpen, loan, loadTransactions]);
 
   const handleDelete = async (transactionId: string) => {
     if (!confirm("Удалить эту транзакцию? Это отменит погашение кредита.")) {

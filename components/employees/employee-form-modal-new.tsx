@@ -4,9 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState, useEffect, useCallback } from 'react';
 import { createEmployeeSchema, type CreateEmployeeFormData } from '@/lib/employees/validation';
-// Employee тип импортирован для возможного использования
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { Employee } from '@/lib/employees/types';
+import type { Employee as _Employee } from '@/lib/employees/types';
 import { EMPLOYEE_STATUS_LABELS } from '@/lib/employees/types';
 import {
   Dialog,

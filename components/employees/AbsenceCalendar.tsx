@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -65,12 +65,7 @@ export function AbsenceCalendar({ companyId, employeeId, employees }: AbsenceCal
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
-  useEffect(() => {
-    loadAbsences();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [companyId, employeeId, year, month]);
-
-  const loadAbsences = async () => {
+  const loadAbsences = useCallback(async () => {
     try {
       setLoading(true);
       const startDate = new Date(year, month, 1).toISOString().split('T')[0];
@@ -92,7 +87,11 @@ export function AbsenceCalendar({ companyId, employeeId, employees }: AbsenceCal
     } finally {
       setLoading(false);
     }
-  };
+  }, [companyId, employeeId, year, month]);
+
+  useEffect(() => {
+    loadAbsences();
+  }, [loadAbsences]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

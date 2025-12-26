@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import type { TenderComment } from '@/lib/tenders/types';
 import { User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,12 +16,7 @@ export function TenderComments({ tenderId }: TenderCommentsProps) {
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    loadComments();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenderId]);
-
-  const loadComments = async () => {
+  const loadComments = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -39,7 +34,11 @@ export function TenderComments({ tenderId }: TenderCommentsProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [tenderId]);
+
+  useEffect(() => {
+    loadComments();
+  }, [loadComments]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

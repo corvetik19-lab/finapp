@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -50,12 +50,7 @@ export function EmployeeDocuments({ employeeId }: EmployeeDocumentsProps) {
     expires_at: ''
   });
 
-  useEffect(() => {
-    loadDocuments();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [employeeId]);
-
-  const loadDocuments = async () => {
+  const loadDocuments = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/employees/${employeeId}/documents`);
@@ -69,7 +64,11 @@ export function EmployeeDocuments({ employeeId }: EmployeeDocumentsProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [employeeId]);
+
+  useEffect(() => {
+    loadDocuments();
+  }, [loadDocuments]);
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();

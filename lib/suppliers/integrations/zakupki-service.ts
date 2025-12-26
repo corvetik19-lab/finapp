@@ -68,8 +68,7 @@ export interface ZakupkiContract {
 // API функции (заглушки - требуют API ключ zakupki.gov.ru)
 // =====================================================
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const ZAKUPKI_API_URL = "https://zakupki.gov.ru/epz/order/extendedsearch/results.html";
+const _ZAKUPKI_API_URL = "https://zakupki.gov.ru/epz/order/extendedsearch/results.html";
 
 export async function searchPurchases(query: {
   searchText?: string;

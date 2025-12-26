@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Tender } from '@/lib/tenders/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -21,14 +21,7 @@ export function AddContractModal({ isOpen, onClose, onSelect, companyId }: AddCo
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    if (isOpen) {
-      loadReadyTenders();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, companyId]);
-
-  const loadReadyTenders = async () => {
+  const loadReadyTenders = useCallback(async () => {
     try {
       setLoading(true);
       const stagesResponse = await fetch(`/api/tenders/stages?company_id=${companyId}`);
@@ -52,7 +45,13 @@ export function AddContractModal({ isOpen, onClose, onSelect, companyId }: AddCo
     } finally {
       setLoading(false);
     }
-  };
+  }, [companyId]);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadReadyTenders();
+    }
+  }, [isOpen, loadReadyTenders]);
 
   const filteredTenders = tenders.filter(tender =>
     tender.customer?.toLowerCase().includes(searchQuery.toLowerCase()) ||

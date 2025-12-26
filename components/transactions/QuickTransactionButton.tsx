@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { getQuickPresets } from "@/lib/quick-presets/service";
 import { createTransactionFromValues } from "@/app/(protected)/finance/transactions/actions";
@@ -27,14 +27,7 @@ export default function QuickTransactionButton({ accounts }: { accounts: Account
   const router = useRouter();
   const { show: showToast } = useToast();
 
-  useEffect(() => {
-    if (open) {
-      loadPresets();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
-
-  async function loadPresets() {
+  const loadPresets = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getQuickPresets();
@@ -45,7 +38,13 @@ export default function QuickTransactionButton({ accounts }: { accounts: Account
     } finally {
       setLoading(false);
     }
-  }
+  }, [showToast]);
+
+  useEffect(() => {
+    if (open) {
+      loadPresets();
+    }
+  }, [open, loadPresets]);
 
   async function handlePresetClick(preset: QuickTransactionPreset) {
     // Если сумма не указана (0 или null), показываем форму для ввода

@@ -229,8 +229,7 @@ export async function preparePowerOfAttorney(): Promise<Partial<PowerOfAttorney>
 // Числительные для печати
 // ============================================
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function numberToWordsRuInternal(num: number): string {
+function _numberToWordsRuInternal(num: number): string {
   const ones = ["", "один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять"];
   const teens = ["десять", "одиннадцать", "двенадцать", "тринадцать", "четырнадцать", 
                  "пятнадцать", "шестнадцать", "семнадцать", "восемнадцать", "девятнадцать"];
@@ -240,7 +239,7 @@ function numberToWordsRuInternal(num: number): string {
                     "шестьсот", "семьсот", "восемьсот", "девятьсот"];
   
   if (num === 0) return "ноль";
-  if (num < 0) return "минус " + numberToWordsRuInternal(-num);
+  if (num < 0) return "минус " + _numberToWordsRuInternal(-num);
   
   let result = "";
   

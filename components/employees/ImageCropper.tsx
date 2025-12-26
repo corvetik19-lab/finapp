@@ -15,8 +15,7 @@ export function ImageCropper({
   imageSrc, 
   onCrop, 
   onCancel, 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  aspectRatio = 1 
+  aspectRatio: _aspectRatio = 1 
 }: ImageCropperProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);

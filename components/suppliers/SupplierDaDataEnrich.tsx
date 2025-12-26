@@ -59,8 +59,7 @@ interface SupplierDaDataEnrichProps {
 export function SupplierDaDataEnrich({
   supplierId,
   currentInn,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  currentData,
+  currentData: _currentData,
   onEnrich,
   onApplyData,
 }: SupplierDaDataEnrichProps) {

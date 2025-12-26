@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -52,16 +52,7 @@ export function QuickAssignModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Загружаем список сотрудников и назначений
-  useEffect(() => {
-    if (isOpen && companyId) {
-      loadEmployees();
-      loadAssignedEmployees();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, companyId]);
-
-  const loadEmployees = async () => {
+  const loadEmployees = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -80,10 +71,9 @@ export function QuickAssignModal({
     } finally {
       setLoading(false);
     }
-  };
+  }, [companyId]);
 
-  // Загружаем список сотрудников которые уже назначены на тендеры
-  const loadAssignedEmployees = async () => {
+  const loadAssignedEmployees = useCallback(async () => {
     try {
       const response = await fetch(`/api/tenders/assigned-employees?company_id=${companyId}`);
       if (response.ok) {
@@ -94,7 +84,14 @@ export function QuickAssignModal({
     } catch (err) {
       console.error('Error loading assigned employees:', err);
     }
-  };
+  }, [companyId]);
+
+  useEffect(() => {
+    if (isOpen && companyId) {
+      loadEmployees();
+      loadAssignedEmployees();
+    }
+  }, [isOpen, companyId, loadEmployees, loadAssignedEmployees]);
 
   // Фильтруем только свободных сотрудников (не назначенных на тендеры)
   const availableEmployees = employees.filter(emp => !assignedEmployeeIds.has(emp.id));

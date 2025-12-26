@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Line } from "react-chartjs-2";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -63,14 +63,7 @@ export default function EnhancedForecastView() {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (mounted) {
-      loadForecast();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [months, mounted]);
-
-  async function loadForecast() {
+  const loadForecast = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -88,7 +81,13 @@ export default function EnhancedForecastView() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [months]);
+
+  useEffect(() => {
+    if (mounted) {
+      loadForecast();
+    }
+  }, [months, mounted, loadForecast]);
 
   const formatMoney = (amount: number) => {
     return new Intl.NumberFormat("ru-RU", {

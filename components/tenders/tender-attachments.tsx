@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import type { TenderAttachment } from '@/lib/tenders/types';
 import { FileText, Table, Image, FolderArchive, File, CloudUpload, Download, Trash2, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,12 +15,7 @@ export function TenderAttachments({ tenderId }: TenderAttachmentsProps) {
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  useEffect(() => {
-    loadAttachments();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenderId]);
-
-  const loadAttachments = async () => {
+  const loadAttachments = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -38,7 +33,11 @@ export function TenderAttachments({ tenderId }: TenderAttachmentsProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [tenderId]);
+
+  useEffect(() => {
+    loadAttachments();
+  }, [loadAttachments]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;

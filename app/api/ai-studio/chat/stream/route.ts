@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
           const streamGenerator = streamChatCompletion(requestParams);
 
           let fullContent = "";
-          let fullReasoning = "";
+          let _fullReasoning = "";
           let annotations: Array<{ type: string; url_citation?: { url: string; title: string; content?: string } }> = [];
 
           for await (const chunk of streamGenerator) {
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
             
             // Обработка reasoning tokens
             if (delta?.reasoning) {
-              fullReasoning += delta.reasoning;
+              _fullReasoning += delta.reasoning;
               const thinkingData = `data: ${JSON.stringify({ type: "thinking", text: delta.reasoning, done: false })}\n\n`;
               controller.enqueue(encoder.encode(thinkingData));
             }
@@ -137,10 +137,10 @@ export async function POST(req: NextRequest) {
             }
 
             // Обработка annotations (web search results)
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const message = (chunk.choices?.[0] as any)?.message;
-            if (message?.annotations) {
-              annotations = message.annotations;
+            type AnnotationType = { type: string; url_citation?: { url: string; title: string; content?: string } };
+            const choice = chunk.choices?.[0] as { message?: { annotations?: AnnotationType[] } } | undefined;
+            if (choice?.message?.annotations) {
+              annotations = choice.message.annotations;
             }
 
             // Обновляем usage если есть

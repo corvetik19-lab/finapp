@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -70,16 +70,7 @@ export function SupplierAccounting({ supplierId, counterpartyId }: SupplierAccou
     lastPurchaseDate: null as string | null,
   });
 
-  useEffect(() => {
-    if (isLinked) {
-      loadData();
-    } else {
-      setIsLoading(false);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supplierId, isLinked]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
       const [docsResult, statsResult] = await Promise.all([
@@ -95,7 +86,15 @@ export function SupplierAccounting({ supplierId, counterpartyId }: SupplierAccou
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [supplierId]);
+
+  useEffect(() => {
+    if (isLinked) {
+      loadData();
+    } else {
+      setIsLoading(false);
+    }
+  }, [isLinked, loadData]);
 
   const handleSync = async () => {
     setIsSyncing(true);

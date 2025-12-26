@@ -1,10 +1,9 @@
 'use server';
 
 import { createRouteClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { GlobalRole, AppModule } from '@/lib/auth/types';
 import { revalidatePath } from 'next/cache';
-
-import { createClient } from '@supabase/supabase-js';
 import { logger } from "@/lib/logger";
 
 export interface AdminAuthUser {
@@ -15,23 +14,7 @@ export interface AdminAuthUser {
 }
 
 export async function getAllAuthUsers(): Promise<AdminAuthUser[]> {
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!serviceKey) {
-        logger.error('SUPABASE_SERVICE_ROLE_KEY is not set');
-        return [];
-    }
-
-    const adminClient = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        serviceKey,
-        {
-            auth: {
-                autoRefreshToken: false,
-                persistSession: false,
-            },
-        }
-    );
+    const adminClient = createAdminClient();
 
     const { data: { users }, error } = await adminClient.auth.admin.listUsers();
 
@@ -65,23 +48,7 @@ export interface UserWithOrganizations extends AdminAuthUser {
 }
 
 export async function getUsersWithOrganizations(): Promise<UserWithOrganizations[]> {
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!serviceKey) {
-        logger.error('SUPABASE_SERVICE_ROLE_KEY is not set');
-        return [];
-    }
-
-    const adminClient = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        serviceKey,
-        {
-            auth: {
-                autoRefreshToken: false,
-                persistSession: false,
-            },
-        }
-    );
+    const adminClient = createAdminClient();
 
     // Получаем всех пользователей
     const { data: { users }, error } = await adminClient.auth.admin.listUsers();

@@ -182,7 +182,7 @@ export function EmployeesListClient({ companyId }: EmployeesListClientProps) {
     }
   }, [companyId]);
 
-  const loadEmployees = async () => {
+  const loadEmployees = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -228,7 +228,7 @@ export function EmployeesListClient({ companyId }: EmployeesListClientProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [companyId, filters, sortField, sortOrder]);
 
   // Загрузка при монтировании
   useEffect(() => {
@@ -238,8 +238,7 @@ export function EmployeesListClient({ companyId }: EmployeesListClientProps) {
 
   useEffect(() => {
     loadEmployees();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, sortField, sortOrder]);
+  }, [loadEmployees]);
   
   // Получить уникальные отделы для фильтра
   const departments = [...new Set(employees.map(e => e.department).filter(Boolean))] as string[];

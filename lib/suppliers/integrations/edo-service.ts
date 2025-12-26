@@ -121,7 +121,6 @@ export async function checkEDOConnection(inn: string): Promise<EDOContragent | n
 export async function inviteToEDO(
   inn: string,
   kpp?: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _message?: string
 ): Promise<{ success: boolean; error?: string }> {
   const config = await getEDOConfig();

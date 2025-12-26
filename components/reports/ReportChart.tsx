@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Chart, registerables } from "chart.js";
+import { Chart, registerables, ChartConfiguration } from "chart.js";
 import type { ReportData } from "@/lib/reports/types";
 import { getCategoryColor, formatCurrency } from "@/lib/reports/utils";
 import { Button } from "@/components/ui/button";
@@ -84,8 +84,7 @@ export default function ReportChart({
       },
     };
     // Chart.js требует специфической типизации для динамического type
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    chartRef.current = new Chart(ctx, config as any);
+    chartRef.current = new Chart(ctx, config as ChartConfiguration);
 
     return () => {
       if (chartRef.current) {

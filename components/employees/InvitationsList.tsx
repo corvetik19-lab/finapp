@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,12 +39,7 @@ export function InvitationsList({ companyId, onInvite }: InvitationsListProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadInvitations();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [companyId]);
-
-  const loadInvitations = async () => {
+  const loadInvitations = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/employees/invitations?companyId=${companyId}`);
@@ -58,7 +53,11 @@ export function InvitationsList({ companyId, onInvite }: InvitationsListProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [companyId]);
+
+  useEffect(() => {
+    loadInvitations();
+  }, [loadInvitations]);
 
   const handleCancel = async (id: string) => {
     if (!confirm('Отменить приглашение?')) return;

@@ -110,8 +110,7 @@ export function SupplierEmailCampaign({
   onCreateCampaign,
   onSendCampaign,
   onDeleteCampaign,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onAddRecipients,
+  onAddRecipients: _onAddRecipients,
 }: SupplierEmailCampaignProps) {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");

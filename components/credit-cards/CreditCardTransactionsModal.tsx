@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { formatMoney } from "@/lib/utils/format";
 import type { CreditCard } from "./CreditCardsList";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -37,14 +37,8 @@ export default function CreditCardTransactionsModal({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen && card) {
-      loadTransactions();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, card]);
-
-  const loadTransactions = async () => {
+  const loadTransactions = useCallback(async () => {
+    if (!card) return;
     setIsLoading(true);
     setError(null);
     try {
@@ -59,7 +53,13 @@ export default function CreditCardTransactionsModal({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [card]);
+
+  useEffect(() => {
+    if (isOpen && card) {
+      loadTransactions();
+    }
+  }, [isOpen, card, loadTransactions]);
 
   if (!isOpen) return null;
 

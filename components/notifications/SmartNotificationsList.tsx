@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,12 +27,7 @@ export default function SmartNotificationsList() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "unread">("unread");
 
-  useEffect(() => {
-    fetchNotifications();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
-
-  async function fetchNotifications() {
+  const fetchNotifications = useCallback(async () => {
     try {
       const url = `/api/notifications?${filter === "unread" ? "unread=true" : ""}`;
       const res = await fetch(url);
@@ -45,7 +40,11 @@ export default function SmartNotificationsList() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [filter]);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   async function markAsRead(id: string) {
     try {

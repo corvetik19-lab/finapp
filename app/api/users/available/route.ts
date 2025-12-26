@@ -62,10 +62,8 @@ export async function GET(request: Request) {
     const usersMap = new Map((adminUsers || []).map(u => [u.id, u]));
 
     // Создаём Set из user_id членов компании
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const companyMemberIds = new Set((companyMembers || []).map(m => m.user_id));
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const companyMembersMap = new Map((companyMembers || []).map(m => [m.user_id, m]));
+    const _companyMemberIds = new Set((companyMembers || []).map(m => m.user_id));
+    const _companyMembersMap = new Map((companyMembers || []).map(m => [m.user_id, m]));
 
     // Получаем профили для global_role
     const { data: profilesData } = await adminClient

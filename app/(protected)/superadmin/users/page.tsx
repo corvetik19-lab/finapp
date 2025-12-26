@@ -136,16 +136,14 @@ export default async function UsersPage() {
   const regularUsers = users.filter(u => u.global_role === 'user').length;
 
   // Получаем ID супер-админов (используется в OrganizationsList)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const superAdminIds = new Set(users.filter(u => u.global_role === 'super_admin').map(u => u.id));
+  const _superAdminIds = new Set(users.filter(u => u.global_role === 'super_admin').map(u => u.id));
 
   // Группировка пользователей по организациям
   const usersByOrg = new Map<string, { org: { id: string; name: string; owner_id?: string }; users: UserData[] }>();
   const usersWithoutOrg: UserData[] = [];
 
   // Определяем организации супер-админов (где все админы - супер-админы)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const superAdminOrgIds = new Set<string>();
+  const _superAdminOrgIds = new Set<string>();
   
   users.forEach(user => {
     if (user.memberships.length === 0) {

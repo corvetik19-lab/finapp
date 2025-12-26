@@ -75,8 +75,7 @@ export async function PATCH(
     const body = await request.json();
     
     // Remove fields that shouldn't be updated
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { id: _id, company_id, created_by, created_at, ...updateData } = body;
+    const { id: _id, company_id: _company_id, created_by: _created_by, created_at: _created_at, ...updateData } = body;
 
     const { data, error } = await supabase
       .from('tender_tasks')

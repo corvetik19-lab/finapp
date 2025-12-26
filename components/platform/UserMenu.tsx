@@ -38,8 +38,7 @@ interface UserMenuProps {
 export default function UserMenu({ 
   user, 
   isAdmin = false, 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  isSuperAdmin = false,
+  isSuperAdmin: _isSuperAdmin = false,
   roleName,
   roleColor,
   rolePermissions,

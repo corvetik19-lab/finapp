@@ -337,8 +337,7 @@ export default function AIChatPage() {
     setCurrentChatId(null);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const getModelName = (modelId: string) => {
+  const _getModelName = (modelId: string) => {
     const names: Record<string, string> = {
       "gemini-3-flash-preview": "Gemini 3 Flash",
       "gemini-3-pro-preview": "Gemini 3 Pro",

@@ -40,6 +40,19 @@ export function AttachmentsList({ transactionId, onDelete, onViewFile }: Attachm
   };
 
   const fetchAttachments = useCallback(async () => {
+    const getSignedUrlInternal = async (filePath: string | null): Promise<string> => {
+      if (!filePath) return '';
+      try {
+        const { data, error } = await supabase.storage
+          .from('attachments')
+          .createSignedUrl(filePath, 3600);
+        if (error) return '';
+        return data.signedUrl;
+      } catch {
+        return '';
+      }
+    };
+
     try {
       setLoading(true);
       setError(null);
@@ -54,26 +67,21 @@ export function AttachmentsList({ transactionId, onDelete, onViewFile }: Attachm
 
       setAttachments(data || []);
       
-      // console.log('fetchAttachments: loaded attachments:', data);
-      
       // Генерируем signed URLs для всех файлов
       const urls: Record<string, string> = {};
       for (const attachment of data || []) {
         if (attachment.storage_path) {
-          // console.log('fetchAttachments: generating URL for attachment:', attachment.id, attachment.storage_path);
-          const url = await getSignedUrl(attachment.storage_path);
+          const url = await getSignedUrlInternal(attachment.storage_path);
           urls[attachment.id] = url;
         }
       }
       
-      // console.log('fetchAttachments: generated URLs:', urls);
       setSignedUrls(urls);
     } catch {
       setError('Не удалось загрузить вложения');
     } finally {
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactionId, supabase]);
 
   useEffect(() => {
@@ -135,26 +143,6 @@ export function AttachmentsList({ transactionId, onDelete, onViewFile }: Attachm
       }
     } catch {
       alert('Не удалось удалить файл');
-    }
-  };
-
-  const getSignedUrl = async (filePath: string | null): Promise<string> => {
-    if (!filePath) {
-      return '';
-    }
-    
-    try {
-      const { data, error } = await supabase.storage
-        .from('attachments')
-        .createSignedUrl(filePath, 3600); // 1 hour expiry
-      
-      if (error) {
-        return '';
-      }
-      
-      return data.signedUrl;
-    } catch {
-      return '';
     }
   };
 

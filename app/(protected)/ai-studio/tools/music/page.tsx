@@ -39,8 +39,7 @@ export default function MusicPage() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [taskId, setTaskId] = useState<string | null>(null);
+  const [_taskId, setTaskId] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [progressText, setProgressText] = useState("");
 
@@ -48,8 +47,7 @@ export default function MusicPage() {
                           selectedModel.type === "music-cover" || 
                           selectedModel.type === "vocal-separation";
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [tracks, setTracks] = useState<Array<{
+  const [_tracks, setTracks] = useState<Array<{
     id: string;
     audioUrl: string;
     imageUrl?: string;

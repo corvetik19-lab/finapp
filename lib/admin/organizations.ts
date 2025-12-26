@@ -1,22 +1,13 @@
 ﻿'use server';
 
 import { createRouteClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { Organization } from '@/lib/auth/types';
-import { createClient } from '@supabase/supabase-js';
 import { logger } from "@/lib/logger";
 
 export async function getOrganizations() {
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        {
-            auth: {
-                autoRefreshToken: false,
-                persistSession: false,
-            },
-        }
-    );
+    const supabase = createAdminClient();
 
     const { data, error } = await supabase
         .from('organizations')
@@ -157,11 +148,7 @@ export async function toggleOrganizationStatus(orgId: string, isActive: boolean)
 
 export async function joinOrganizationAsAdmin(orgId: string) {
     // Use service role for admin operations that need to bypass RLS
-    const serviceSupabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        { auth: { autoRefreshToken: false, persistSession: false } }
-    );
+    const serviceSupabase = createAdminClient();
     const supabase = await createRouteClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -206,11 +193,7 @@ export async function joinOrganizationAsAdmin(orgId: string) {
 }
 
 export async function leaveOrganizationAsAdmin(orgId: string) {
-    const serviceSupabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        { auth: { autoRefreshToken: false, persistSession: false } }
-    );
+    const serviceSupabase = createAdminClient();
     const supabase = await createRouteClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -271,11 +254,7 @@ export async function deleteOrganization(orgId: string) {
 }
 
 export async function loginAsEmployee(employeeUserId: string, organizationId: string) {
-    const serviceSupabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        { auth: { autoRefreshToken: false, persistSession: false } }
-    );
+    const serviceSupabase = createAdminClient();
     const supabase = await createRouteClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -329,11 +308,7 @@ export async function loginAsEmployee(employeeUserId: string, organizationId: st
 }
 
 export async function stopImpersonating() {
-    const serviceSupabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        { auth: { autoRefreshToken: false, persistSession: false } }
-    );
+    const serviceSupabase = createAdminClient();
     const supabase = await createRouteClient();
     const { data: { user } } = await supabase.auth.getUser();
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { AttachmentPreviewModal } from './AttachmentPreviewModal';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -65,12 +65,7 @@ export function TenderCommentsSection({ tenderId, onCountChange }: TenderComment
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const newCommentFormRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    loadComments();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenderId]);
-
-  const loadComments = async () => {
+  const loadComments = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/tenders/${tenderId}/comments`);
@@ -93,7 +88,11 @@ export function TenderCommentsSection({ tenderId, onCountChange }: TenderComment
     } finally {
       setLoading(false);
     }
-  };
+  }, [tenderId, onCountChange]);
+
+  useEffect(() => {
+    loadComments();
+  }, [loadComments]);
 
   const handleEdit = (comment: TenderComment) => {
     setEditingId(comment.id);

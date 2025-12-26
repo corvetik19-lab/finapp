@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   getProductItems,
   createProductItem,
@@ -44,11 +44,44 @@ export function ProductItemsManager() {
   
   const [uncategorizedId, setUncategorizedId] = useState<string | null>(null);
 
+  const loadCategories = useCallback(async () => {
+    try {
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, name, kind")
+        .in("kind", ["income", "expense", "both"])
+        .order("kind", { ascending: true })
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+      setCategories(data || []);
+      
+      const uncategorized = data?.find(cat => cat.name === "Без категории");
+      if (uncategorized) {
+        setUncategorizedId(uncategorized.id);
+      }
+    } catch (error) {
+      console.error("Error loading categories:", error);
+    }
+  }, []);
+
+  const loadItems = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await getProductItems(false);
+      setItems(data);
+    } catch (error) {
+      console.error("Error loading product items:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadItems();
     loadCategories();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadItems, loadCategories]);
 
   const incomeCategories = categories.filter((cat) => cat.kind === "income" || cat.kind === "both");
   const expenseCategories = categories.filter((cat) => cat.kind === "expense" || cat.kind === "both");
@@ -73,44 +106,6 @@ export function ProductItemsManager() {
     });
   };
 
-  async function loadCategories() {
-    try {
-      const supabase = getSupabaseClient();
-      const { data, error } = await supabase
-        .from("categories")
-        .select("id, name, kind")
-        .in("kind", ["income", "expense", "both"])
-        .order("kind", { ascending: true })
-        .order("name", { ascending: true });
-
-      if (error) throw error;
-      setCategories(data || []);
-      
-      // Найти или создать категорию "Без категории"
-      const uncategorized = data?.find(cat => cat.name === "Без категории");
-      if (uncategorized) {
-        setUncategorizedId(uncategorized.id);
-        // Установить по умолчанию для новых товаров
-        if (!formData.category_id) {
-          setFormData(prev => ({ ...prev, category_id: uncategorized.id }));
-        }
-      }
-    } catch (error) {
-      console.error("Error loading categories:", error);
-    }
-  }
-
-  async function loadItems() {
-    try {
-      setLoading(true);
-      const data = await getProductItems(false); // показываем все, включая неактивные
-      setItems(data);
-    } catch (error) {
-      console.error("Error loading product items:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

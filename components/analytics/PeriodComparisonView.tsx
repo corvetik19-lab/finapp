@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Line } from "react-chartjs-2";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,12 +19,7 @@ export default function PeriodComparisonView() {
   const [error, setError] = useState<string | null>(null);
   const [comparisonType, setComparisonType] = useState<"month" | "year">("month");
 
-  useEffect(() => {
-    loadComparison();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [comparisonType]);
-
-  async function loadComparison() {
+  const loadComparison = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/analytics/comparison?type=${comparisonType}`);
@@ -39,7 +34,11 @@ export default function PeriodComparisonView() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [comparisonType]);
+
+  useEffect(() => {
+    loadComparison();
+  }, [loadComparison]);
 
   if (loading) {
     return <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground mr-2" />Анализируем данные...</div>;

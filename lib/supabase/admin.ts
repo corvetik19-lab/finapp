@@ -1,24 +1,21 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { env } from '@/lib/env';
 
 let adminClient: SupabaseClient | null = null;
 
 /**
  * Создаёт клиент Supabase с сервисным ключом (обход RLS)
  * ТОЛЬКО для серверных операций!
+ * 
+ * Использует singleton паттерн для переиспользования клиента.
+ * Переменные окружения валидируются через lib/env.ts
  */
 export function createAdminClient(): SupabaseClient {
   if (adminClient) {
     return adminClient;
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error('Missing Supabase admin credentials');
-  }
-
-  adminClient = createClient(supabaseUrl, serviceRoleKey, {
+  adminClient = createClient(env.supabaseUrl, env.supabaseServiceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,

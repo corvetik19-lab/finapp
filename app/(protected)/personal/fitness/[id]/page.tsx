@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,12 +30,7 @@ export default function ProgramDetailPage() {
   const [showAddExercise, setShowAddExercise] = useState(false);
   const [selectedExerciseDay, setSelectedExerciseDay] = useState(1);
 
-  useEffect(() => {
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [programId]);
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [programs, exercises, programExs] = await Promise.all([
@@ -53,7 +48,11 @@ export default function ProgramDetailPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [programId]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   async function handleAddExercise(exerciseId: string) {
     if (!program) return;

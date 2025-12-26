@@ -34,7 +34,11 @@ export default [
       ...nextPlugin.configs["core-web-vitals"].rules,
       "react/react-in-jsx-scope": "off",
       "react/prop-types": "off",
-      "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-unused-vars": ["warn", { 
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }],
       "@typescript-eslint/no-explicit-any": "warn",
       "no-empty": "warn",
       "no-case-declarations": "warn",

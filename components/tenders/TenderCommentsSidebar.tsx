@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/toast/ToastContext';
 import { AttachmentPreviewModal } from './AttachmentPreviewModal';
@@ -180,14 +180,7 @@ export function TenderCommentsSidebar({ tenderId, isOpen, onClose, onUpdate }: T
     }, 2000);
   };
 
-  useEffect(() => {
-    if (isOpen) {
-      loadComments();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, tenderId]);
-
-  const loadComments = async (silent = false) => {
+  const loadComments = useCallback(async (silent = false) => {
     try {
       if (!silent) setLoading(true);
       const response = await fetch(`/api/tenders/${tenderId}/comments`);
@@ -211,7 +204,13 @@ export function TenderCommentsSidebar({ tenderId, isOpen, onClose, onUpdate }: T
     } finally {
       if (!silent) setLoading(false);
     }
-  };
+  }, [tenderId]);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadComments();
+    }
+  }, [isOpen, loadComments]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

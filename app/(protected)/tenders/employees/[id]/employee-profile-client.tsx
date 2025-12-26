@@ -143,7 +143,7 @@ export function EmployeeProfileClient({ employeeId }: EmployeeProfileClientProps
     }
   }, [employeeId]);
 
-  const loadEmployee = async () => {
+  const loadEmployee = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -162,13 +162,12 @@ export function EmployeeProfileClient({ employeeId }: EmployeeProfileClientProps
     } finally {
       setLoading(false);
     }
-  };
+  }, [employeeId]);
 
   useEffect(() => {
     loadEmployee();
     loadStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [employeeId, loadStats]);
+  }, [loadEmployee, loadStats]);
 
   // Загрузка тендеров при переключении на вкладку
   useEffect(() => {

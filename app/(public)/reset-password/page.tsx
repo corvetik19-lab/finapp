@@ -56,8 +56,7 @@ function ResetPasswordPageContent() {
       }
     };
     run();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [sp]);
 
   const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<FormValues>({
     resolver: zodResolver(schema),

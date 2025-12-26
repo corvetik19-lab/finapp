@@ -108,8 +108,7 @@ interface TenderSuppliersPipelineProps {
 }
 
 export function TenderSuppliersPipeline({
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  tenderId,
+  tenderId: _tenderId,
   participants,
   onStatusChange,
   onRecordOffer,
