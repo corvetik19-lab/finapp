@@ -59,8 +59,16 @@ export default function CreditCardDetails({ card }: CreditCardDetailsProps) {
             <div className="flex justify-between text-sm"><span className="text-muted-foreground">Льготный период:</span><span className="font-medium">{card.gracePeriod} дней</span></div>
           </div>
           <div className="space-y-2">
-            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Задолженность:</span><span className="font-medium">{formatMoney(card.balance, card.currency)}</span></div>
-            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Мин. платеж:</span><span className="font-medium">{formatMoney(card.minPayment, card.currency)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Задолженность:</span><span className="font-medium">{formatMoney(card.debt ?? 0, card.currency)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Мин. платёж:</span><span className="font-medium">{formatMoney(card.minPayment, card.currency)}</span></div>
+            <div className="text-xs text-muted-foreground ml-4 space-y-0.5">
+              <div>• Погашение долга ({card.minPaymentPercent}%): {formatMoney(Math.round((card.debt ?? 0) * card.minPaymentPercent / 100), card.currency)}</div>
+              {card.monthlyInterest && card.monthlyInterest > 0 ? (
+                <div>• Проценты банка ({card.interestRate}% годовых): {formatMoney(card.monthlyInterest, card.currency)}</div>
+              ) : card.isInGracePeriod ? (
+                <div className="text-green-600">• Льготный период — проценты не начисляются</div>
+              ) : null}
+            </div>
             <div className="flex justify-between text-sm"><span className="text-muted-foreground">Доступно:</span><span className="font-medium">{formatMoney(card.available, card.currency)}</span></div>
             <div className="flex justify-between text-sm"><span className="text-muted-foreground">След. платеж:</span><span className="font-medium">{card.nextPaymentDate ? new Date(card.nextPaymentDate).toLocaleDateString("ru-RU") : "—"}</span></div>
             <div className="flex justify-between text-sm"><span className="text-muted-foreground">Дней до платежа:</span><span className={cn("font-medium", daysUntilPayment !== null && daysUntilPayment < 0 ? "text-destructive" : daysUntilPayment !== null && daysUntilPayment <= 3 ? "text-yellow-600" : "")}>{daysUntilPayment !== null ? `${daysUntilPayment} ${getDaysWord(daysUntilPayment)}` : "—"}</span></div>

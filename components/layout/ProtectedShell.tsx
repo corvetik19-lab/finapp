@@ -23,7 +23,7 @@ type ProtectedShellProps = {
 
 export default function ProtectedShell({ children, activeOrganization }: ProtectedShellProps) {
   const pathname = usePathname();
-  const isAiChatPage = pathname === "/ai-chat";
+  const isAiChatPage = pathname === "/finance/ai-chat";
   const isAiStudioPage = pathname.startsWith("/ai-studio");
   const isTendersPage = pathname.startsWith("/tenders");
   const isInvestorsPage = pathname.startsWith("/investors");
@@ -75,7 +75,7 @@ export default function ProtectedShell({ children, activeOrganization }: Protect
               <Link href="/mobile/expenses" className={cn("flex flex-col items-center gap-1 px-3 py-1 text-xs", pathname === '/mobile/expenses' ? "text-primary" : "text-muted-foreground")}><PieChart className="h-5 w-5" /><span>Расходы</span></Link>
               <Link href="/mobile/receipts" className={cn("flex flex-col items-center gap-1 px-3 py-1 text-xs", pathname === '/mobile/receipts' ? "text-primary" : "text-muted-foreground")}><Receipt className="h-5 w-5" /><span>Чеки</span></Link>
               <Link href="/mobile/payments" className={cn("flex flex-col items-center gap-1 px-3 py-1 text-xs", pathname === '/mobile/payments' ? "text-primary" : "text-muted-foreground")}><CalendarDays className="h-5 w-5" /><span>Платежи</span></Link>
-              <Link href="/ai-chat" className={cn("flex flex-col items-center gap-1 px-3 py-1 text-xs", pathname === '/ai-chat' ? "text-primary" : "text-muted-foreground")}><Bot className="h-5 w-5" /><span>AI</span></Link>
+              <Link href="/finance/ai-chat" className={cn("flex flex-col items-center gap-1 px-3 py-1 text-xs", pathname === '/finance/ai-chat' ? "text-primary" : "text-muted-foreground")}><Bot className="h-5 w-5" /><span>AI</span></Link>
             </div>
           </nav>
         </div>

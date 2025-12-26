@@ -19,7 +19,10 @@ export type CreditCard = {
   interestRate: number;
   gracePeriod: number;
   nextPaymentDate: string | null;
-  minPayment: number;
+  minPayment: number; // рассчитанный мин. платёж в минорных единицах
+  minPaymentPercent: number; // процент от долга для мин. платежа
+  monthlyInterest?: number; // проценты банка за месяц
+  isInGracePeriod?: boolean; // находится ли в льготном периоде
   cardNumberLast4: string | null;
 };
 

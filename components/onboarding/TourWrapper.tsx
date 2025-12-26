@@ -17,7 +17,7 @@ export default function TourWrapper({ children }: TourWrapperProps) {
       if (pathname.includes('/transactions')) currentPage = 'transactions';
       else if (pathname.includes('/budgets')) currentPage = 'budgets';
       else if (pathname.includes('/reports')) currentPage = 'reports';
-      else if (pathname.includes('/ai-chat')) currentPage = 'ai-chat';
+      else if (pathname.includes('/finance/ai-chat')) currentPage = 'ai-chat';
       
       // Получаем текущие настройки
       const response = await fetch('/api/settings/tour');

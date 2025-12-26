@@ -106,7 +106,7 @@ export default function OnboardingTour() {
       } else if (steps[next].id === "budgets") {
         router.push("/finance/budgets");
       } else if (steps[next].id === "ai-features") {
-        router.push("/ai-chat");
+        router.push("/finance/ai-chat");
       }
     }
   }

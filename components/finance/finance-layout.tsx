@@ -35,6 +35,7 @@ const breadcrumbTitles: Record<string, string> = {
   "/finance/settings/categories": "Категории",
   "/finance/settings/products": "Товары",
   "/finance/settings/presets": "Быстрые пресеты",
+  "/finance/ai-chat": "AI Чат",
 }
 
 function getBreadcrumbs(pathname: string) {

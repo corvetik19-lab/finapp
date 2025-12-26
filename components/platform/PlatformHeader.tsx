@@ -160,7 +160,7 @@ export default function PlatformHeader({
 
             {/* AI Chat Button */}
             <Button asChild variant="outline" size="sm" className="hidden md:flex bg-gradient-to-r from-violet-50 to-purple-50 border-violet-200 hover:from-violet-100 hover:to-purple-100 text-violet-700">
-              <Link href="/ai-chat" title="AI Чат">
+              <Link href="/finance/ai-chat" title="AI Чат">
                 <MessageSquare className="h-4 w-4 mr-1.5" />
                 <span className="hidden lg:inline">AI Чат</span>
               </Link>

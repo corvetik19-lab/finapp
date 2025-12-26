@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       interest_rate,
       grace_period,
       next_payment_date,
-      min_payment,
+      min_payment_percent,
       currency = "RUB",
     } = body;
 
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
         interest_rate: interest_rate || null,
         grace_period: grace_period || null,
         next_payment_date: next_payment_date || null,
-        min_payment: min_payment || 0,
+        min_payment_percent: min_payment_percent || 5,
       })
       .select()
       .single();

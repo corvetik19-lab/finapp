@@ -196,8 +196,11 @@ npx supabase gen types typescript --project-id <id> > types/database.generated.t
 
 **Статус**: Отложено на неопределённый срок.
 
-**Причина**: 
-- 44+ файлов в `app/(protected)/tenders/accounting/` используют прямые импорты из `@/components/accounting/ComponentName`
+**Причина*
+
+
+
+ файлов в `app/(protected)/tenders/accounting/` используют прямые импорты из `@/components/accounting/ComponentName`
 - Массовая замена импортов через PowerShell приводит к проблемам с кодировкой UTF-8
 - Ручное изменение 44+ файлов слишком трудозатратно
 

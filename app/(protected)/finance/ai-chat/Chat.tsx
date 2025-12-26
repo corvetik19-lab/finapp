@@ -346,20 +346,18 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex h-full bg-white dark:bg-zinc-950 relative">
+    <div className="flex h-[calc(100vh-10rem)] bg-white dark:bg-zinc-950 relative -mx-4 -my-4">
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <header className="h-12 border-b flex items-center justify-between px-4 bg-white dark:bg-zinc-950">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-sm">
-                <Sparkles className="w-3.5 h-3.5" />
-              </div>
-              <div>
-                <h1 className="font-semibold text-sm">AI Ассистент</h1>
-              </div>
+        {/* Toolbar */}
+        <div className="h-12 border-b flex items-center justify-between px-4 bg-white dark:bg-zinc-950">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-sm">
+              <Sparkles className="w-3.5 h-3.5" />
             </div>
+            <Badge variant="outline" className="gap-1.5 py-1 px-2">
+              <span className="text-xs">{currentModelName}</span>
+            </Badge>
           </div>
 
           <div className="flex items-center gap-2">
@@ -381,12 +379,8 @@ export default function Chat() {
               <History className="h-4 w-4" />
               <span className="hidden sm:inline">История</span>
             </Button>
-            <Badge variant="outline" className="gap-1.5 py-1.5 px-3">
-              <Sparkles className="h-3 w-3" />
-              <span>{currentModelName}</span>
-            </Badge>
           </div>
-        </header>
+        </div>
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto">

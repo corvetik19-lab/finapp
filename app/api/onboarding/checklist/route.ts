@@ -59,7 +59,7 @@ export async function GET() {
         title: "Попробовать AI",
         description: "Задайте вопрос AI помощнику о ваших финансах",
         completed: checks[4],
-        action: "/ai-chat",
+        action: "/finance/ai-chat",
         icon: "🤖",
       },
     ];

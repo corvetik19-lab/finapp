@@ -127,7 +127,7 @@ export default function OnboardingChecklist() {
           title: 'Попробовать AI чат',
           description: 'Задайте вопрос или используйте команду',
           icon: '🤖',
-          link: '/ai-chat',
+          link: '/finance/ai-chat',
           completed: progress.ai_messages > 0,
         },
       ];

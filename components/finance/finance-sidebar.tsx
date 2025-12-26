@@ -9,7 +9,6 @@ import {
   CreditCard,
   Wallet,
   PiggyBank,
-  Receipt,
   FileBarChart,
   TrendingUp,
   Settings,
@@ -21,9 +20,6 @@ import {
   Tag,
   Package,
   Zap,
-  MessageSquare,
-  Lightbulb,
-  LineChart,
   FileText,
   type LucideIcon,
 } from "lucide-react"
@@ -93,15 +89,7 @@ const financeNavigation = {
       // Чеки вынесены в header
     ],
   },
-  ai: {
-    title: "AI",
-    icon: Sparkles,
-    items: [
-      // AI Чат вынесен в header
-      { title: "AI Советник", url: "/ai-advisor", icon: Lightbulb },
-      { title: "AI Аналитика", url: "/ai-analytics", icon: LineChart },
-    ],
-  },
+  // AI секция убрана - AI Чат доступен в header
   settings: {
     title: "Настройки",
     icon: Settings,
@@ -243,12 +231,7 @@ export function FinanceSidebar({ ...props }: React.ComponentProps<typeof Sidebar
           />
         )}
 
-        {/* AI - Collapsible */}
-        <NavCollapsible
-          title={financeNavigation.ai.title}
-          icon={financeNavigation.ai.icon}
-          items={financeNavigation.ai.items}
-        />
+        {/* AI секция убрана - AI Чат доступен в header */}
 
         {/* Settings - Collapsible */}
         <NavCollapsible

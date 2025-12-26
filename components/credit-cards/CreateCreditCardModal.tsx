@@ -30,7 +30,7 @@ export default function CreateCreditCardModal({
     interest_rate: "",
     grace_period: "",
     payment_day: "", // День платежа (1-31)
-    min_payment: "",
+    min_payment_percent: "",
   });
 
   const isEditMode = Boolean(editingCard);
@@ -55,7 +55,7 @@ export default function CreateCreditCardModal({
         interest_rate: editingCard.interestRate ? editingCard.interestRate.toString() : "",
         grace_period: editingCard.gracePeriod ? editingCard.gracePeriod.toString() : "",
         payment_day: paymentDay,
-        min_payment: (editingCard.minPayment / 100).toString(),
+        min_payment_percent: editingCard.minPaymentPercent ? editingCard.minPaymentPercent.toString() : "5",
       });
     } else if (!editingCard && isOpen) {
       setFormData({
@@ -65,7 +65,7 @@ export default function CreateCreditCardModal({
         interest_rate: "",
         grace_period: "",
         payment_day: "",
-        min_payment: "",
+        min_payment_percent: "",
       });
     }
   }, [editingCard, isOpen]);
@@ -85,7 +85,7 @@ export default function CreateCreditCardModal({
       const balanceMinor = creditLimitMinor - debtMinor; // доступный остаток
       const interestRate = formData.interest_rate ? parseFloat(formData.interest_rate) : null;
       const gracePeriod = formData.grace_period ? parseInt(formData.grace_period) : null;
-      const minPaymentMinor = formData.min_payment ? Math.round(parseFloat(formData.min_payment) * 100) : 0;
+      const minPaymentPercent = formData.min_payment_percent ? parseFloat(formData.min_payment_percent) : 5;
 
       // Формируем дату платежа из дня месяца (всегда следующий месяц)
       let nextPaymentDate = null;
@@ -121,7 +121,7 @@ export default function CreateCreditCardModal({
         interest_rate: interestRate,
         grace_period: gracePeriod,
         next_payment_date: nextPaymentDate,
-        min_payment: minPaymentMinor,
+        min_payment_percent: minPaymentPercent,
       };
 
       // Баланс отправляем только при создании
@@ -150,7 +150,7 @@ export default function CreateCreditCardModal({
         interest_rate: "",
         grace_period: "",
         payment_day: "",
-        min_payment: "",
+        min_payment_percent: "",
       });
       onSuccess();
     } catch (err) {
@@ -180,7 +180,7 @@ export default function CreateCreditCardModal({
             <div className="space-y-2"><Label htmlFor="card-rate">Ставка (%)</Label><Input id="card-rate" type="number" step="0.1" placeholder="25.9" value={formData.interest_rate} onChange={(e) => setFormData((prev) => ({ ...prev, interest_rate: e.target.value }))} disabled={isSaving} /></div>
             <div className="space-y-2"><Label htmlFor="card-grace">Льготный период (дн.)</Label><Input id="card-grace" type="number" placeholder="55" value={formData.grace_period} onChange={(e) => setFormData((prev) => ({ ...prev, grace_period: e.target.value }))} disabled={isSaving} /></div>
             <div className="space-y-2"><Label htmlFor="card-payment-day">День платежа</Label><Input id="card-payment-day" type="number" min="1" max="31" placeholder="25" value={formData.payment_day} onChange={(e) => setFormData((prev) => ({ ...prev, payment_day: e.target.value }))} disabled={isSaving} /><p className="text-xs text-muted-foreground">День месяца (1-31)</p></div>
-            <div className="col-span-2 space-y-2"><Label htmlFor="card-min-payment">Мин. платеж (₽)</Label><Input id="card-min-payment" type="number" step="0.01" min="0" placeholder="1000" value={formData.min_payment} onChange={(e) => setFormData((prev) => ({ ...prev, min_payment: e.target.value }))} disabled={isSaving} /></div>
+            <div className="col-span-2 space-y-2"><Label htmlFor="card-min-payment">Мин. платёж (% от долга)</Label><Input id="card-min-payment" type="number" step="0.1" min="0" max="100" placeholder="5" value={formData.min_payment_percent} onChange={(e) => setFormData((prev) => ({ ...prev, min_payment_percent: e.target.value }))} disabled={isSaving} /><p className="text-xs text-muted-foreground">Обычно 3-10% от задолженности</p></div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose} disabled={isSaving}>Отмена</Button>

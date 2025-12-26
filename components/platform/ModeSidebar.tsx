@@ -103,16 +103,7 @@ const MODE_MENUS: ModeMenuConfig = {
         { key: 'custom-reports', label: 'Свои отчёты', icon: 'description', href: '/finance/reports/custom' },
       ]
     },
-    {
-      key: 'ai',
-      label: 'AI',
-      icon: 'psychology',
-      children: [
-        { key: 'ai-chat', label: 'AI Чат', icon: 'chat', href: '/ai-chat' },
-        { key: 'ai-advisor', label: 'AI Советник', icon: 'lightbulb', href: '/ai-advisor' },
-        { key: 'ai-analytics', label: 'AI Аналитика', icon: 'auto_graph', href: '/ai-analytics' },
-      ]
-    },
+    // AI секция убрана - AI Чат доступен через /finance/ai-chat и в хедере
     { key: 'settings', label: 'Настройки режима', icon: 'tune', href: '/finance/settings' },
   ],
 

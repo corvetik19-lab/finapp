@@ -140,11 +140,13 @@ class OpenRouterFinanceClient {
   private baseUrl = "https://openrouter.ai/api/v1";
 
   constructor() {
-    const key = process.env.OPENROUTER_FINANCE_API_KEY;
+    // Используем OPENROUTER_API_KEY (единый ключ для всего приложения)
+    // Fallback на OPENROUTER_FINANCE_API_KEY для обратной совместимости
+    const key = process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_FINANCE_API_KEY;
     if (!key) {
       throw new Error(
-        "OPENROUTER_FINANCE_API_KEY not configured. " +
-        "Add it to environment variables for Finance mode AI."
+        "OPENROUTER_API_KEY not configured. " +
+        "Add it to environment variables for AI features."
       );
     }
     this.apiKey = key;
@@ -407,7 +409,7 @@ export function getEmbeddingDimension(): number {
  * Проверяет доступность OpenRouter API
  */
 export async function checkOpenRouterApiKey(): Promise<boolean> {
-  const apiKey = process.env.OPENROUTER_FINANCE_API_KEY;
+  const apiKey = process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_FINANCE_API_KEY;
   if (!apiKey) {
     return false;
   }

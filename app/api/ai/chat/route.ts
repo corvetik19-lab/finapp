@@ -82,9 +82,9 @@ export async function POST(req: Request) {
     
     const userId = user.id;
 
-    // Проверяем API ключ OpenRouter
-    if (!process.env.OPENROUTER_FINANCE_API_KEY) {
-      logger.error("[AI Chat] OPENROUTER_FINANCE_API_KEY not configured");
+    // Проверяем API ключ OpenRouter (единый ключ для всех AI функций)
+    if (!process.env.OPENROUTER_API_KEY && !process.env.OPENROUTER_FINANCE_API_KEY) {
+      logger.error("[AI Chat] OPENROUTER_API_KEY not configured");
       return Response.json({ error: "OpenRouter API not configured" }, { status: 500 });
     }
 

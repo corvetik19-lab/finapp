@@ -110,8 +110,6 @@ export default async function proxy(request: NextRequest) {
       pathname.startsWith("/reports") ||
       pathname.startsWith("/tenders") ||
       pathname.startsWith("/ai-studio") ||
-      pathname.startsWith("/ai-advisor") ||
-      pathname.startsWith("/ai-analytics") ||
       pathname.startsWith("/personal") ||
       pathname.startsWith("/admin") ||
       pathname.startsWith("/superadmin")) {
@@ -138,8 +136,6 @@ export const config = {
     "/reports/:path*",
     "/tenders/:path*",
     "/ai-studio/:path*",
-    "/ai-advisor/:path*",
-    "/ai-analytics/:path*",
     "/personal/:path*",
     "/admin/:path*",
     "/superadmin/:path*",

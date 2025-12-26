@@ -18,7 +18,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       interest_rate,
       grace_period,
       next_payment_date,
-      min_payment,
+      min_payment_percent,
       card_number_last4,
     } = body;
 
@@ -29,7 +29,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     if (interest_rate !== undefined) updateData.interest_rate = interest_rate;
     if (grace_period !== undefined) updateData.grace_period = grace_period;
     if (next_payment_date !== undefined) updateData.next_payment_date = next_payment_date;
-    if (min_payment !== undefined) updateData.min_payment = min_payment;
+    if (min_payment_percent !== undefined) updateData.min_payment_percent = min_payment_percent;
     if (card_number_last4 !== undefined) updateData.card_number_last4 = card_number_last4;
 
     const { data: card, error } = await supabase

@@ -85,7 +85,7 @@ export default function FirstStepsChecklist() {
         title: "Попробовать AI",
         description: "Задайте вопрос AI помощнику о ваших финансах",
         completed: false,
-        action: "/ai-chat",
+        action: "/finance/ai-chat",
         icon: "🤖",
       },
     ];

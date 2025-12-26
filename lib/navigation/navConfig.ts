@@ -38,16 +38,7 @@ export const NAV_CONFIG: NavConfig[] = [
     ]
   },
   
-  {
-    label: "AI",
-    icon: "psychology",
-    requiredPermission: "dashboard:view",
-    items: [
-      { label: "AI Советник", href: "/ai-advisor", icon: "lightbulb", requiredPermission: "dashboard:view" },
-      { label: "AI Чат", href: "/ai-chat", icon: "smart_toy", requiredPermission: "dashboard:view" },
-      { label: "AI Аналитика", href: "/ai-analytics", icon: "psychology", requiredPermission: "dashboard:view" },
-    ]
-  },
+  // AI секция убрана - AI Чат доступен через /finance/ai-chat и в хедере
   
   {
     label: "Личное",
