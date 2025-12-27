@@ -6,6 +6,7 @@ import { createRouteClient, getCachedUser } from "@/lib/supabase/server";
 import { AppMode, Organization, MemberPermissions } from "@/lib/organizations/types";
 import { cache } from "react";
 import { logger } from "@/lib/logger";
+import { USER_LEVEL_MODES, hasUserModeAccess as hasUserSubscriptionAccess } from "@/lib/auth/user-mode-access";
 
 /**
  *    
@@ -181,7 +182,7 @@ export async function hasUserModeAccess(mode: AppMode): Promise<boolean> {
 
   const supabase = await createRouteClient();
 
-  // 1.  -
+  // 1. Проверяем роль super_admin
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('global_role')
@@ -196,13 +197,22 @@ export async function hasUserModeAccess(mode: AppMode): Promise<boolean> {
     return true;
   }
 
+  // 2. Для user-level режимов (finance, investments) проверяем пользовательские подписки
+  if (USER_LEVEL_MODES.includes(mode)) {
+    const hasSubscription = await hasUserSubscriptionAccess(user.id, mode);
+    if (hasSubscription) {
+      return true;
+    }
+  }
+
+  // 3. Проверяем доступ через организацию
   const org = await getCurrentOrganization();
   if (!org) {
+    // Нет организации - для user-level режимов уже проверили подписку выше
     return false;
   }
 
-  // ,     
-  //       -
+  // Проверяем что организация имеет доступ к этому режиму
   if (!org.allowed_modes?.includes(mode)) {
     return false;
   }

@@ -4,10 +4,12 @@ import { createRouteClient } from "@/lib/supabase/helpers";
 export async function GET() {
   const supabase = await createRouteClient();
 
+  // Загружаем только кредитные карты (type='card' И credit_limit > 0)
   const { data: cards, error } = await supabase
     .from("accounts")
     .select("*")
     .eq("type", "card")
+    .gt("credit_limit", 0)
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
@@ -39,8 +41,11 @@ export async function POST(request: NextRequest) {
       balance,
       interest_rate,
       grace_period,
+      grace_period_active,
+      grace_period_start_date,
       next_payment_date,
       min_payment_percent,
+      min_payment_amount,
       currency = "RUB",
     } = body;
 
@@ -63,8 +68,11 @@ export async function POST(request: NextRequest) {
         credit_limit,
         interest_rate: interest_rate || null,
         grace_period: grace_period || null,
+        grace_period_active: grace_period_active ?? false,
+        grace_period_start_date: grace_period_start_date || null,
         next_payment_date: next_payment_date || null,
-        min_payment_percent: min_payment_percent || 5,
+        min_payment_percent: min_payment_percent || 0,
+        min_payment_amount: min_payment_amount || null,
       })
       .select()
       .single();

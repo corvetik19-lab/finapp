@@ -34,6 +34,7 @@ export default async function TransactionsPage({
   const companyId = await getCurrentCompanyId();
 
   // Загружаем счета (карты, наличные и т.д.)
+  // Загружаем все счета пользователя - включая те, что без company_id (кредитные карты)
   let accountsQuery = supabase
     .from("accounts")
     .select("id,name,currency,balance,type,credit_limit")
@@ -41,22 +42,19 @@ export default async function TransactionsPage({
     .order("created_at", { ascending: true });
 
   if (companyId) {
-    accountsQuery = accountsQuery.eq("company_id", companyId);
+    // Загружаем счета с company_id ИЛИ без company_id (для кредитных карт)
+    accountsQuery = accountsQuery.or(`company_id.eq.${companyId},company_id.is.null`);
   }
 
   const { data: accountsData = [] } = await accountsQuery;
 
-  // Загружаем кредиты
-  let loansQuery = supabase
+  // Загружаем кредиты (таблица loans не имеет company_id)
+  const loansQuery = supabase
     .from("loans")
     .select("id,name,bank,principal_amount,principal_paid,currency")
     .is("deleted_at", null)
     .eq("status", "active")
     .order("created_at", { ascending: true });
-
-  if (companyId) {
-    loansQuery = loansQuery.eq("company_id", companyId);
-  }
 
   const { data: loansData = [] } = await loansQuery;
 
@@ -106,7 +104,7 @@ export default async function TransactionsPage({
   const f_max = qp("max") || ""; // major units
   const f_from = qp("from") || ""; // YYYY-MM-DD
   const f_to = qp("to") || "";   // YYYY-MM-DD
-  const f_limit = qp("limit") || ""; // pagination limit
+  const _f_limit = qp("limit") || ""; // pagination limit (reserved for future use)
   // Summary (top) custom period params
   const s_period = (qp("s_period") || "month").toString(); // month|prev|year|custom
   const s_from = qp("s_from") || "";

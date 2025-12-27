@@ -64,6 +64,26 @@ export default function CreditCardsPageClient({ initialCards }: CreditCardsPageC
     setEditingCard(null);
   };
 
+  const handleUpdateMinPayment = async (cardId: string, amount: number) => {
+    try {
+      const response = await fetch(`/api/credit-cards/${cardId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ min_payment_amount: amount }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Ошибка при обновлении минимального платежа");
+      }
+
+      toast.show("Минимальный платёж обновлён", { type: "success" });
+      router.refresh();
+    } catch (error) {
+      console.error("Update min payment error:", error);
+      toast.show(error instanceof Error ? error.message : "Ошибка при обновлении", { type: "error" });
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -71,7 +91,7 @@ export default function CreditCardsPageClient({ initialCards }: CreditCardsPageC
         <Button onClick={() => setIsModalOpen(true)} disabled={isDeleting}><Plus className="h-4 w-4 mr-1" />Добавить карту</Button>
       </div>
 
-      <CreditCardsList cards={initialCards} onEdit={handleEdit} onDelete={handleDelete} onCardClick={(card) => setTransactionsModalCard(card)} />
+      <CreditCardsList cards={initialCards} onEdit={handleEdit} onDelete={handleDelete} onCardClick={(card) => setTransactionsModalCard(card)} onUpdateMinPayment={handleUpdateMinPayment} />
 
       {initialCards.length > 0 && selectedCard && (
         <div className="space-y-4">

@@ -88,13 +88,13 @@ export default async function proxy(request: NextRequest) {
 
     const globalRole = profile?.global_role;
 
-    // Superadmin маршруты только для superadmin
-    if (pathname.startsWith("/superadmin") && globalRole !== "superadmin") {
+    // Superadmin маршруты только для super_admin
+    if (pathname.startsWith("/superadmin") && globalRole !== "super_admin") {
       return NextResponse.redirect(new URL("/blocked", request.url));
     }
 
-    // Admin маршруты для admin и superadmin
-    if (pathname.startsWith("/admin") && !["admin", "superadmin"].includes(globalRole || "")) {
+    // Admin маршруты для admin и super_admin
+    if (pathname.startsWith("/admin") && !["admin", "super_admin"].includes(globalRole || "")) {
       return NextResponse.redirect(new URL("/blocked", request.url));
     }
   }

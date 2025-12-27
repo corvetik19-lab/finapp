@@ -18,6 +18,17 @@ type Category = {
   kind: "income" | "expense";
 };
 
+type CreditCard = {
+  id: string;
+  name: string;
+};
+
+type Loan = {
+  id: string;
+  name: string;
+  bank: string;
+};
+
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -38,6 +49,8 @@ export default function PaymentTemplateFormModal({
   mode = "create",
 }: Props) {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
+  const [loans, setLoans] = useState<Loan[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const form = useForm<PaymentTemplateFormInput>({
@@ -52,15 +65,24 @@ export default function PaymentTemplateFormModal({
     },
   });
 
-  // Загрузка категорий
+  // Загрузка категорий, кредитных карт и кредитов
   useEffect(() => {
     if (!open) return;
 
-    fetch("/api/categories")
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data.categories)) {
-          setCategories(data.categories);
+    Promise.all([
+      fetch("/api/categories").then((res) => res.json()),
+      fetch("/api/credit-cards").then((res) => res.json()),
+      fetch("/api/loans").then((res) => res.json()),
+    ])
+      .then(([categoriesData, creditCardsData, loansData]) => {
+        if (Array.isArray(categoriesData.categories)) {
+          setCategories(categoriesData.categories);
+        }
+        if (Array.isArray(creditCardsData.cards)) {
+          setCreditCards(creditCardsData.cards.map((c: { id: string; name: string }) => ({ id: c.id, name: c.name })));
+        }
+        if (Array.isArray(loansData.loans)) {
+          setLoans(loansData.loans.map((l: { id: string; name: string; bank: string }) => ({ id: l.id, name: l.name, bank: l.bank })));
         }
       })
       .catch(() => {});
@@ -77,6 +99,8 @@ export default function PaymentTemplateFormModal({
         categoryId: defaultValues?.categoryId ?? undefined,
         dayOfMonth: defaultValues?.dayOfMonth ?? 15,
         description: defaultValues?.description ?? "",
+        linkedCreditCardId: defaultValues?.linkedCreditCardId ?? undefined,
+        linkedLoanId: defaultValues?.linkedLoanId ?? undefined,
       });
       setError(null);
     }
@@ -220,6 +244,66 @@ export default function PaymentTemplateFormModal({
               rows={2}
             />
           </div>
+
+          {/* Связь с кредитной картой или кредитом */}
+          {(creditCards.length > 0 || loans.length > 0) && (
+            <div className="space-y-2">
+              <Label>Связать с кредитной картой или кредитом (опционально)</Label>
+              <Select
+                value={
+                  form.watch("linkedCreditCardId")
+                    ? `card:${form.watch("linkedCreditCardId")}`
+                    : form.watch("linkedLoanId")
+                      ? `loan:${form.watch("linkedLoanId")}`
+                      : "__none__"
+                }
+                onValueChange={(v) => {
+                  if (v === "__none__") {
+                    form.setValue("linkedCreditCardId", undefined);
+                    form.setValue("linkedLoanId", undefined);
+                  } else if (v.startsWith("card:")) {
+                    form.setValue("linkedCreditCardId", v.replace("card:", ""));
+                    form.setValue("linkedLoanId", undefined);
+                  } else if (v.startsWith("loan:")) {
+                    form.setValue("linkedCreditCardId", undefined);
+                    form.setValue("linkedLoanId", v.replace("loan:", ""));
+                  }
+                }}
+                disabled={pending}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Не привязан" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Не привязан</SelectItem>
+                  {creditCards.length > 0 && (
+                    <>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">💳 Кредитные карты</div>
+                      {creditCards.map((card) => (
+                        <SelectItem key={card.id} value={`card:${card.id}`}>
+                          {card.name}
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
+                  {loans.length > 0 && (
+                    <>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">🏦 Кредиты</div>
+                      {loans.map((loan) => (
+                        <SelectItem key={loan.id} value={`loan:${loan.id}`}>
+                          {loan.name} ({loan.bank})
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Info className="h-3 w-3" />
+                Платёж будет связан с выбранной кредитной картой или кредитом
+              </p>
+            </div>
+          )}
 
           <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted p-2 rounded">
             <Info className="h-4 w-4 flex-shrink-0" />

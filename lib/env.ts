@@ -80,11 +80,11 @@ const clientEnvSchema = z.object({
 /**
  * Полная схема для всех переменных окружения
  */
-const fullEnvSchema = serverEnvSchema.merge(clientEnvSchema);
+const _fullEnvSchema = serverEnvSchema.merge(clientEnvSchema);
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
 export type ClientEnv = z.infer<typeof clientEnvSchema>;
-export type Env = z.infer<typeof fullEnvSchema>;
+export type Env = z.infer<typeof _fullEnvSchema>;
 
 /**
  * Валидация клиентских переменных окружения

@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, CheckCheck, Calendar, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, CheckCheck, Calendar, Loader2, Link2 } from "lucide-react";
 
 type UpcomingPaymentDirection = "income" | "expense";
 
@@ -29,6 +29,10 @@ export type UpcomingPayment = {
   paidAt?: string | null;
   paidTransactionId?: string | null;
   categoryId?: string | null;
+  linkedCreditCardId?: string | null;
+  linkedCreditCardName?: string | null;
+  linkedLoanId?: string | null;
+  linkedLoanName?: string | null;
 };
 
 export type UpcomingPaymentsCardProps = {
@@ -318,6 +322,8 @@ export default function UpcomingPaymentsCard({
         direction: values.direction,
         accountName: values.accountName,
         categoryId: values.categoryId,
+        linkedCreditCardId: values.linkedCreditCardId,
+        linkedLoanId: values.linkedLoanId,
       };
 
       const res = await fetch("/api/upcoming-payments", {
@@ -471,6 +477,8 @@ export default function UpcomingPaymentsCard({
         direction: editingPayment.direction ?? "expense",
         accountName: editingPayment.accountName ?? undefined,
         categoryId: editingPayment.categoryId ?? undefined,
+        linkedCreditCardId: editingPayment.linkedCreditCardId ?? undefined,
+        linkedLoanId: editingPayment.linkedLoanId ?? undefined,
       };
     }
     return undefined;
@@ -553,6 +561,22 @@ export default function UpcomingPaymentsCard({
                         {formatDueDate(payment.dueDate)}
                         {payment.accountName && ` · ${payment.accountName}`}
                       </div>
+                      {/* Связь с кредитной картой или кредитом - красивый бейдж по центру */}
+                      {(payment.linkedCreditCardName || payment.linkedLoanName) && (
+                        <div className="flex items-center justify-center gap-2 mt-2 py-1.5 px-3 rounded-lg bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border border-indigo-200/50 dark:border-indigo-800/50">
+                          <Link2 className="h-3.5 w-3.5 text-indigo-500" />
+                          {payment.linkedCreditCardName && (
+                            <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">
+                              💳 {payment.linkedCreditCardName}
+                            </span>
+                          )}
+                          {payment.linkedLoanName && (
+                            <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">
+                              🏦 {payment.linkedLoanName}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       {!isPaid && daysLeftLabel && (

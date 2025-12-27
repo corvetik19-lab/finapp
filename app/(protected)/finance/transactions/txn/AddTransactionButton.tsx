@@ -136,9 +136,10 @@ export default function AddTransactionButton({
   const accountValue = watch("account_id");
   const directionValue = useWatch({ control, name: "direction" }) ?? "expense";
 
-  // Группируем счета по типам (исключаем кредитные карты - они только для переводов)
+  // Группируем счета по типам
   const groupedAccounts = useMemo(() => {
     const debitCards: Account[] = [];
+    const creditCards: Account[] = [];
     const loans: Account[] = [];
     const other: Account[] = [];
 
@@ -147,8 +148,8 @@ export default function AddTransactionButton({
         // Кредиты из таблицы loans
         loans.push(acc);
       } else if (acc.credit_limit && acc.credit_limit > 0) {
-        // Кредитные карты - пропускаем, они только для переводов
-        return;
+        // Кредитные карты
+        creditCards.push(acc);
       } else if (acc.type === 'card') {
         // Дебетовые карты
         debitCards.push(acc);
@@ -158,8 +159,26 @@ export default function AddTransactionButton({
       }
     });
 
-    return { debitCards, loans, other };
+    return { debitCards, creditCards, loans, other };
   }, [accounts]);
+
+  // Определяем тип выбранного счёта
+  const selectedAccount = useMemo(() => {
+    return accounts.find(a => a.id === accountValue);
+  }, [accounts, accountValue]);
+
+  const isCreditAccount = useMemo(() => {
+    if (!selectedAccount) return false;
+    // Кредитная карта или кредит
+    return (selectedAccount.credit_limit && selectedAccount.credit_limit > 0) || selectedAccount.type === 'loan';
+  }, [selectedAccount]);
+
+  // При смене счёта на кредитный - принудительно ставим "расход"
+  useEffect(() => {
+    if (isCreditAccount && directionValue === 'income') {
+      setValue('direction', 'expense');
+    }
+  }, [isCreditAccount, directionValue, setValue]);
 
   useEffect(() => {
     const current = accounts.find((a) => a.id === accountValue);
@@ -249,10 +268,17 @@ export default function AddTransactionButton({
               {/* Ряд 1: Тип */}
               <div className="space-y-1.5">
                 <Label>Тип</Label>
-                <select {...register("direction")} className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring" defaultValue="expense">
+                <select 
+                  {...register("direction")} 
+                  className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring" 
+                  defaultValue="expense"
+                >
                   <option value="expense">Расход</option>
-                  <option value="income">Доход</option>
+                  {!isCreditAccount && <option value="income">Доход</option>}
                 </select>
+                {isCreditAccount && (
+                  <p className="text-xs text-muted-foreground">Для кредитных карт и кредитов доступны только расходы</p>
+                )}
               </div>
 
               {/* Ряд 2: Счет/Карта + Сумма (₽) */}
@@ -270,6 +296,16 @@ export default function AddTransactionButton({
                     {groupedAccounts.debitCards.length > 0 && (
                       <optgroup label="💳 Дебетовые карты">
                         {groupedAccounts.debitCards.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    
+                    {groupedAccounts.creditCards.length > 0 && (
+                      <optgroup label="💳 Кредитные карты">
+                        {groupedAccounts.creditCards.map((a) => (
                           <option key={a.id} value={a.id}>
                             {a.name}
                           </option>

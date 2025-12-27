@@ -32,6 +32,17 @@ export const upcomingPaymentFormSchema = z.object({
     .optional()
     .transform((val) => (val && val.length > 0 ? val : undefined))
     .pipe(z.string().uuid().optional()),
+  // Связь с кредитной картой или кредитом (опционально)
+  linkedCreditCardId: z
+    .string()
+    .optional()
+    .transform((val) => (val && val.length > 0 ? val : undefined))
+    .pipe(z.string().uuid().optional()),
+  linkedLoanId: z
+    .string()
+    .optional()
+    .transform((val) => (val && val.length > 0 ? val : undefined))
+    .pipe(z.string().uuid().optional()),
 });
 
 export type UpcomingPaymentFormInput = z.input<typeof upcomingPaymentFormSchema>;

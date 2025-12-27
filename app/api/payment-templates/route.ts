@@ -29,7 +29,11 @@ export async function GET() {
         day_of_month,
         description,
         created_at,
-        categories (name)
+        linked_credit_card_id,
+        linked_loan_id,
+        categories (name),
+        credit_card:linked_credit_card_id (name),
+        loan:linked_loan_id (name, bank)
       `)
       .eq("user_id", user.id)
       .order("name");
@@ -38,20 +42,30 @@ export async function GET() {
       return NextResponse.json({ success: false, error: error.message }, { status: 400 });
     }
 
-    const templates = (data ?? []).map((t) => ({
-      id: t.id,
-      name: t.name,
-      amountMinor: t.amount_minor,
-      currency: t.currency,
-      direction: t.direction,
-      categoryId: t.category_id,
-      categoryName: (t.categories as { name: string } | null | { name: string }[])
-        ? (Array.isArray(t.categories) ? t.categories[0]?.name : (t.categories as { name: string })?.name) ?? null
-        : null,
-      dayOfMonth: t.day_of_month,
-      description: t.description,
-      createdAt: t.created_at,
-    }));
+    const templates = (data ?? []).map((t) => {
+      const creditCardData = t.credit_card as { name: string } | { name: string }[] | null;
+      const creditCard = Array.isArray(creditCardData) ? creditCardData[0] : creditCardData;
+      const loanData = t.loan as { name: string; bank: string } | { name: string; bank: string }[] | null;
+      const loan = Array.isArray(loanData) ? loanData[0] : loanData;
+      return {
+        id: t.id,
+        name: t.name,
+        amountMinor: t.amount_minor,
+        currency: t.currency,
+        direction: t.direction,
+        categoryId: t.category_id,
+        categoryName: (t.categories as { name: string } | null | { name: string }[])
+          ? (Array.isArray(t.categories) ? t.categories[0]?.name : (t.categories as { name: string })?.name) ?? null
+          : null,
+        dayOfMonth: t.day_of_month,
+        description: t.description,
+        createdAt: t.created_at,
+        linkedCreditCardId: t.linked_credit_card_id,
+        linkedCreditCardName: creditCard?.name ?? null,
+        linkedLoanId: t.linked_loan_id,
+        linkedLoanName: loan ? `${loan.name} (${loan.bank})` : null,
+      };
+    });
 
     return NextResponse.json({ success: true, templates });
   } catch (error) {
@@ -71,7 +85,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: message }, { status: 400 });
     }
 
-    const { id, name, amountMajor, direction, categoryId, dayOfMonth, description } = parsed.data;
+    const { id, name, amountMajor, direction, categoryId, dayOfMonth, description, linkedCreditCardId, linkedLoanId } = parsed.data;
     const amountMinor = Math.round(amountMajor * 100);
 
     const supabase = await createRouteClient();
@@ -91,6 +105,8 @@ export async function POST(req: Request) {
       category_id: categoryId ?? null,
       day_of_month: dayOfMonth ?? null,
       description: description ?? null,
+      linked_credit_card_id: linkedCreditCardId ?? null,
+      linked_loan_id: linkedLoanId ?? null,
       user_id: user.id,
     };
 

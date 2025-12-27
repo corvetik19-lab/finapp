@@ -247,6 +247,21 @@ export default function PaymentTemplatesManager({ onApplied }: Props) {
                         </>
                       )}
                     </div>
+                    {/* Связь с кредитной картой или кредитом */}
+                    {(template.linkedCreditCardName || template.linkedLoanName) && (
+                      <div className="flex items-center gap-1 mt-1">
+                        {template.linkedCreditCardName && (
+                          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                            💳 {template.linkedCreditCardName}
+                          </span>
+                        )}
+                        {template.linkedLoanName && (
+                          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                            🏦 {template.linkedLoanName}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-1">
                     <Button

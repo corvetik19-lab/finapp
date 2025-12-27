@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     // Загружаем выбранные шаблоны
     const { data: templates, error: templatesError } = await supabase
       .from("payment_templates")
-      .select("id, name, amount_minor, currency, direction, category_id, day_of_month")
+      .select("id, name, amount_minor, currency, direction, category_id, day_of_month, linked_credit_card_id, linked_loan_id")
       .in("id", templateIds)
       .eq("user_id", user.id);
 
@@ -81,6 +81,8 @@ export async function POST(req: Request) {
           currency: template.currency,
           direction: template.direction,
           category_id: template.category_id,
+          linked_credit_card_id: template.linked_credit_card_id ?? null,
+          linked_loan_id: template.linked_loan_id ?? null,
           status: "pending",
         };
       });

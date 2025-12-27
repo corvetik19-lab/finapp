@@ -16,6 +16,7 @@ import {
   ArrowLeft,
   Settings,
   UserCog,
+  Wallet,
 } from "lucide-react"
 
 import {
@@ -35,6 +36,7 @@ import {
 const superadminNavigation = [
   { title: "Обзор", url: "/superadmin", icon: LayoutDashboard },
   { title: "Биллинг", url: "/superadmin/billing", icon: CreditCard },
+  { title: "Подписки пользователей", url: "/superadmin/user-subscriptions", icon: Wallet },
   { title: "Организации", url: "/superadmin/organizations", icon: Building2 },
   { title: "Пользователи", url: "/superadmin/users", icon: Users },
   { title: "Тарифы", url: "/superadmin/plans", icon: Package },

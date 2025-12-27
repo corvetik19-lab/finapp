@@ -19,49 +19,68 @@ export default async function CreditCardsPage() {
 
   const cards = (cardsData ?? []).map((card) => {
     const debt = Math.max(0, (card.credit_limit ?? 0) - (card.balance ?? 0));
-    const minPaymentPercent = card.min_payment_percent ?? 3; // Мин. % от долга (обычно 3-5%)
-    const interestRate = card.interest_rate ?? 0; // Годовая ставка (например 25.9%)
-    const gracePeriod = card.grace_period ?? 0;
+    const minPaymentPercent = parseFloat(String(card.min_payment_percent ?? 3));
+    const interestRate = parseFloat(String(card.interest_rate ?? 0));
+    const gracePeriodDays = card.grace_period ?? 0;
     
-    // Рассчитываем мин. платёж:
-    // 1. Обязательная часть: % от долга (minPaymentPercent)
-    // 2. Проценты банка: годовая ставка / 12 месяцев (если вне льготного периода)
-    
-    // Определяем, истёк ли льготный период
-    // Упрощённо: если есть дата платежа, проверяем прошло ли gracePeriod дней с начала месяца
+    // Расчёт оставшихся дней льготного периода
+    let gracePeriodRemaining = 0;
     let isInGracePeriod = false;
-    if (gracePeriod > 0 && card.next_payment_date) {
-      const paymentDate = new Date(card.next_payment_date);
-      const today = new Date();
-      const daysUntilPayment = Math.ceil((paymentDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      // Если до платежа меньше дней чем льготный период, значит мы в льготном периоде
-      isInGracePeriod = daysUntilPayment > 0 && daysUntilPayment <= gracePeriod;
+    
+    if (card.grace_period_active === true && gracePeriodDays > 0) {
+      if (card.grace_period_start_date) {
+        // Если есть дата начала - рассчитываем оставшиеся дни
+        const startDate = new Date(card.grace_period_start_date);
+        startDate.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const daysPassed = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        gracePeriodRemaining = Math.max(0, gracePeriodDays - daysPassed);
+        isInGracePeriod = gracePeriodRemaining > 0;
+      } else {
+        // Если даты нет - показываем полное значение (для совместимости)
+        gracePeriodRemaining = gracePeriodDays;
+        isInGracePeriod = true;
+      }
     }
     
-    // Базовый платёж (% от долга)
-    const basePayment = debt * minPaymentPercent / 100;
+    // Минимальный платёж:
+    // - Если пользователь ввёл вручную (min_payment_amount) - используем его
+    // - Иначе рассчитываем автоматически
+    let minPayment: number;
+    if (card.min_payment_amount != null && card.min_payment_amount > 0) {
+      minPayment = card.min_payment_amount;
+    } else {
+      // Автоматический расчёт: % от долга + проценты (если не льготный период)
+      const basePayment = debt * minPaymentPercent / 100;
+      const dailyInterest = (debt * interestRate / 100) / 365;
+      const monthlyInterest = isInGracePeriod ? 0 : (dailyInterest * 30);
+      minPayment = Math.round(basePayment + monthlyInterest);
+    }
     
-    // Проценты банка (месячная ставка = годовая / 12)
-    const monthlyInterest = isInGracePeriod ? 0 : (debt * interestRate / 12 / 100);
-    
-    // Итоговый мин. платёж
-    const minPayment = Math.round(basePayment + monthlyInterest);
+    // Проценты для отображения (рассчитываются как разница: мин.платёж - погашение долга)
+    const principalPayment = Math.round(debt * minPaymentPercent / 100);
+    const monthlyInterest = Math.max(0, minPayment - principalPayment);
     
     return {
       id: card.id,
       bank: card.name,
-      balance: card.balance ?? 0, // доступный остаток в минорных единицах
+      balance: card.balance ?? 0,
       limit: card.credit_limit ?? 0,
-      available: card.balance ?? 0, // доступный остаток
-      debt, // задолженность
+      available: card.balance ?? 0,
+      debt,
       currency: card.currency ?? "RUB",
-      interestRate: card.interest_rate ?? 0,
-      gracePeriod: card.grace_period ?? 0,
+      interestRate,
+      gracePeriod: gracePeriodDays,
+      gracePeriodActive: card.grace_period_active ?? false,
+      gracePeriodStartDate: card.grace_period_start_date ?? null,
       nextPaymentDate: card.next_payment_date ?? null,
-      minPayment, // рассчитанный мин. платёж
-      minPaymentPercent, // процент от долга
-      monthlyInterest: Math.round(monthlyInterest), // проценты банка за месяц
-      isInGracePeriod, // в льготном периоде
+      minPayment,
+      minPaymentPercent,
+      monthlyInterest: Math.round(monthlyInterest),
+      isInGracePeriod,
+      gracePeriodRemaining, // Оставшиеся дни льготного периода (0 если закончился)
       cardNumberLast4: card.card_number_last4 ?? null,
     };
   });

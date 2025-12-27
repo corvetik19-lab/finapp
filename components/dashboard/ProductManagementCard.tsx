@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Package, ShoppingBasket, Eye, EyeOff, Loader2, ArrowLeftRight, X } from "lucide-react";
+import { Package, ShoppingBasket, Eye, EyeOff, Loader2, ArrowLeftRight } from "lucide-react";
 
 export type ProductSummaryPeriod = "week" | "month" | "year" | "custom";
 
@@ -141,7 +141,7 @@ export default function ProductManagementCard({
   useEffect(() => {
     const { from, to } = getMonthRange(selectedYear, selectedMonth);
     fetchProducts(from, to);
-  }, []);
+  }, [selectedYear, selectedMonth]);
 
   const handleOpenModal = async (productName: string) => {
     setModalProduct(productName);

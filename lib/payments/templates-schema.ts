@@ -8,6 +8,8 @@ export const paymentTemplateFormSchema = z.object({
   categoryId: z.string().optional().nullable().transform((v) => (v === "" || v === "__none__" ? null : v)),
   dayOfMonth: z.coerce.number().int().min(1).max(31).optional().nullable(),
   description: z.string().max(500).optional().nullable(),
+  linkedCreditCardId: z.string().optional().nullable().transform((v) => (v === "" || v === "__none__" ? null : v)),
+  linkedLoanId: z.string().optional().nullable().transform((v) => (v === "" || v === "__none__" ? null : v)),
 });
 
 export type PaymentTemplateFormInput = z.input<typeof paymentTemplateFormSchema>;
@@ -24,4 +26,8 @@ export type PaymentTemplate = {
   dayOfMonth: number | null;
   description: string | null;
   createdAt: string;
+  linkedCreditCardId?: string | null;
+  linkedCreditCardName?: string | null;
+  linkedLoanId?: string | null;
+  linkedLoanName?: string | null;
 };

@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { formatMoney } from "@/lib/utils/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Trophy, ShoppingBasket, Loader2, TrendingUp, TrendingDown, Minus } from "lucide-react";
@@ -106,7 +105,7 @@ export default function TopProductsWidget({ currency }: TopProductsWidgetProps) 
     const prevYear = selectedMonth === 0 ? selectedYear - 1 : selectedYear;
     const prevRange = getMonthRange(prevYear, prevMonth);
     fetchProducts(prevRange.from, prevRange.to, true);
-  }, []);
+  }, [selectedYear, selectedMonth]);
 
   const handleOpenModal = async (productName: string) => {
     setModalProduct(productName);

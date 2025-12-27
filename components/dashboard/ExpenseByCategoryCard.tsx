@@ -141,7 +141,8 @@ export default function ExpenseByCategoryCard({
   useEffect(() => {
     const { from, to } = getMonthRange(selectedYear, selectedMonth);
     fetchBreakdown({ type: "range", from, to });
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedYear, selectedMonth]);
 
   const hasData = chartData.breakdown.length > 0;
   const periodLabel = `${MONTH_NAMES[selectedMonth]} ${selectedYear}`;

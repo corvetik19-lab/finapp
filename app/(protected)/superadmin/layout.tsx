@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
-import { getCachedUser, createRSCClient } from '@/lib/supabase/server';
+import { getCachedUser } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { SuperadminLayout as SuperadminLayoutWrapper } from '@/components/superadmin/superadmin-layout';
 
 export default async function SuperAdminLayout({
@@ -13,7 +14,8 @@ export default async function SuperAdminLayout({
     redirect('/auth/login');
   }
 
-  const supabase = await createRSCClient();
+  // Используем admin client для обхода RLS
+  const supabase = createAdminClient();
 
   // Проверяем что пользователь - супер-админ
   const { data: profile } = await supabase

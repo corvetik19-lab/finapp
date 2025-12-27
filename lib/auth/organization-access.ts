@@ -22,11 +22,17 @@ export async function checkOrganizationAccess(userId: string): Promise<Organizat
   const supabase = createAdminClient();
 
   // Получаем профиль пользователя
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('global_role')
     .eq('id', userId)
     .single();
+
+  // Логируем для отладки
+  if (profileError) {
+    console.error('[checkOrganizationAccess] Profile error:', profileError);
+  }
+  console.log('[checkOrganizationAccess] userId:', userId, 'profile:', profile);
 
   // Super admin всегда имеет доступ
   if (profile?.global_role === 'super_admin') {

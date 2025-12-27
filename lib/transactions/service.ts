@@ -488,17 +488,47 @@ export async function createTransaction(input: InsertTransactionInput): Promise<
   // Получаем информацию о счёте для определения типа
   const { data: accountData, error: accountError } = await supabase
     .from("accounts")
-    .select("id, type, credit_limit")
+    .select("id, type, credit_limit, balance, min_payment_percent")
     .eq("id", parsed.account_id)
     .single();
 
   if (accountError) throw accountError;
 
+  // Для пополнения кредитной карты рассчитываем разбивку на основной долг и проценты
+  const isCreditCard = accountData.type === "card" && accountData.credit_limit != null;
+  let principalAmount: number | null = null;
+  let interestAmount: number | null = null;
+
+  if (isCreditCard && parsed.direction === "income") {
+    // Текущий долг = лимит - доступный остаток
+    const currentDebt = Math.max(0, (accountData.credit_limit || 0) - (accountData.balance || 0));
+    const minPaymentPercent = parseFloat(String(accountData.min_payment_percent ?? 3));
+    
+    // Минимальный платёж (основной долг) = % от долга
+    const calculatedPrincipal = Math.round(currentDebt * minPaymentPercent / 100);
+    
+    // Если платёж больше минимального - разбиваем
+    if (amountMinor > calculatedPrincipal) {
+      principalAmount = calculatedPrincipal;
+      interestAmount = amountMinor - calculatedPrincipal;
+    } else {
+      // Если платёж меньше или равен минимальному - всё идёт на основной долг
+      principalAmount = amountMinor;
+      interestAmount = 0;
+    }
+  }
+
+  const insertPayload = {
+    ...payload,
+    principal_amount: principalAmount,
+    interest_amount: interestAmount,
+  };
+
   const { data, error } = await supabase
     .from("transactions")
-    .insert(payload)
+    .insert(insertPayload)
     .select(
-      "id,user_id,account_id,category_id,direction,amount,currency,occurred_at,note,counterparty,tags,attachment_count,created_at,updated_at"
+      "id,user_id,account_id,category_id,direction,amount,currency,occurred_at,note,counterparty,tags,attachment_count,created_at,updated_at,principal_amount,interest_amount"
     )
     .single();
   if (error) throw error;
@@ -510,7 +540,6 @@ export async function createTransaction(input: InsertTransactionInput): Promise<
   // Для обычных счетов:
   //   - расход УМЕНЬШАЕТ баланс
   //   - доход УВЕЛИЧИВАЕТ баланс
-  const isCreditCard = accountData.type === "card" && accountData.credit_limit != null;
   let balanceChange = 0;
 
   if (isCreditCard) {
@@ -1000,6 +1029,41 @@ export async function createTransfer(input: TransferInput): Promise<string> {
   if (error) throw error;
   if (!data || typeof data !== "string") {
     throw new Error("Не удалось создать перевод");
+  }
+
+  // Проверяем, является ли счёт назначения кредитной картой
+  // Если да - рассчитываем разбивку на основной долг и проценты
+  const { data: toAccount } = await supabase
+    .from("accounts")
+    .select("id, type, credit_limit, balance, min_payment_percent")
+    .eq("id", parsed.to_account_id)
+    .single();
+
+  if (toAccount && toAccount.type === "card" && toAccount.credit_limit != null) {
+    // Текущий долг = лимит - доступный остаток (до перевода)
+    const currentDebt = Math.max(0, (toAccount.credit_limit || 0) - (toAccount.balance || 0));
+    const minPaymentPercent = parseFloat(String(toAccount.min_payment_percent ?? 3));
+    
+    // Минимальный платёж (основной долг) = % от долга
+    const calculatedPrincipal = Math.round(currentDebt * minPaymentPercent / 100);
+    
+    let principalAmount: number;
+    let interestAmount: number;
+    
+    if (amountMinor > calculatedPrincipal) {
+      principalAmount = calculatedPrincipal;
+      interestAmount = amountMinor - calculatedPrincipal;
+    } else {
+      principalAmount = amountMinor;
+      interestAmount = 0;
+    }
+
+    // Обновляем транзакцию пополнения (income на кредитную карту)
+    await supabase
+      .from("transactions")
+      .update({ principal_amount: principalAmount, interest_amount: interestAmount })
+      .eq("transfer_id", data)
+      .eq("transfer_to_account_id", parsed.to_account_id);
   }
 
   return data;

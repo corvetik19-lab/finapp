@@ -36,6 +36,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
         account_id,
         transfer_from_account_id,
         transfer_to_account_id,
+        principal_amount,
+        interest_amount,
         categories(name)
       `
       )
@@ -90,6 +92,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
       transfer_to_account_name: txn.transfer_to_account_id
         ? accountNames.get(txn.transfer_to_account_id) || null
         : null,
+      principal_amount: txn.principal_amount || null,
+      interest_amount: txn.interest_amount || null,
     }));
 
     return NextResponse.json({ transactions: formattedTransactions });

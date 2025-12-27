@@ -6,7 +6,7 @@ import { getCurrentCompanyId } from "@/lib/platform/organization";
 // Делаем страницу динамической
 export const dynamic = 'force-dynamic';
 
-function toUpcomingPayment(record: PaymentRecord): UpcomingPayment {
+function toUpcomingPayment(record: PaymentRecord & { linkedCreditCardName?: string | null; linkedLoanName?: string | null }): UpcomingPayment {
   return {
     id: record.id,
     name: record.name?.trim() ? record.name : "Без названия",
@@ -24,6 +24,10 @@ function toUpcomingPayment(record: PaymentRecord): UpcomingPayment {
     paidAt: record.paid_at ?? null,
     paidTransactionId: record.paid_transaction_id ?? null,
     categoryId: record.category_id ?? null,
+    linkedCreditCardId: record.linked_credit_card_id ?? null,
+    linkedCreditCardName: record.linkedCreditCardName ?? null,
+    linkedLoanId: record.linked_loan_id ?? null,
+    linkedLoanName: record.linkedLoanName ?? null,
   };
 }
 
@@ -39,6 +43,8 @@ type PaymentRecord = {
   paid_at: string | null;
   paid_transaction_id: string | null;
   category_id: string | null;
+  linked_credit_card_id: string | null;
+  linked_loan_id: string | null;
 };
 
 function getCurrency(payments: UpcomingPayment[]): string {
@@ -52,9 +58,11 @@ export default async function PaymentsPage() {
   let query = supabase
     .from("upcoming_payments")
     .select(`
-      id,name,due_date,amount_minor,currency,account_name,account_id,direction,status,paid_at,paid_transaction_id,category_id,
+      id,name,due_date,amount_minor,currency,account_name,account_id,direction,status,paid_at,paid_transaction_id,category_id,linked_credit_card_id,linked_loan_id,
       accounts:account_id(name),
-      transactions:paid_transaction_id(account_id,accounts:account_id(name))
+      transactions:paid_transaction_id(account_id,accounts:account_id(name)),
+      credit_card:linked_credit_card_id(name),
+      loan:linked_loan_id(name,bank)
     `)
     .order("due_date", { ascending: true });
 
@@ -72,6 +80,8 @@ export default async function PaymentsPage() {
   const rawRecords = (data ?? []) as unknown as (PaymentRecord & {
     accounts?: { name: string } | null;
     transactions?: { accounts?: { name?: string } | null } | null;
+    credit_card?: { name: string } | null;
+    loan?: { name: string; bank: string } | null;
   })[];
   const payments = rawRecords.map((item) => {
     // Приоритет получения названия счёта:
@@ -90,7 +100,11 @@ export default async function PaymentsPage() {
       }
     }
 
-    return toUpcomingPayment({ ...item, account_name: accountName });
+    // Названия связанных кредитных карт/кредитов
+    const linkedCreditCardName = item.credit_card?.name ?? null;
+    const linkedLoanName = item.loan ? `${item.loan.name} (${item.loan.bank})` : null;
+
+    return toUpcomingPayment({ ...item, account_name: accountName, linkedCreditCardName, linkedLoanName });
   });
   const currency = getCurrency(payments);
 
